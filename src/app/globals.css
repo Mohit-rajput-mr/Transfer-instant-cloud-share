@@ -193,7 +193,7 @@ a { color: inherit; }
 .log time { color: var(--mute); font-family: var(--mono); font-size: 10px; }
 .share { display: grid; grid-template-columns: 112px 1fr; gap: 16px; align-items: center; }
 .share img { width: 112px; height: 112px; border-radius: 10px; background: #fff; padding: 6px; image-rendering: pixelated; }
-.share-code { font-size: 30px; color: #fff; letter-spacing: 0.04em; }
+.share-code { font-size: 30px; color: #fff; letter-spacing: 0.04em; text-transform: lowercase; }
 .linkbox { display: flex; gap: 8px; align-items: center; border: 1px solid #262626; border-radius: 999px; padding: 4px 4px 4px 14px; }
 .linkbox span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: 11px; color: #bbb; }
 .linkbox .pill { flex-shrink: 0; }

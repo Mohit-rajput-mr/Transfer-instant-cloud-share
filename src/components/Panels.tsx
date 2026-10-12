@@ -306,8 +306,8 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
           <p className="note">Decrypted on this device and saved as <b>{orb.fileName}</b>.</p>
           <button className="ghost-btn" onClick={onClose}>Back to the void</button>
         </>
-      ) : orb.status === "sealed" ? (
-        <div className="sealed-msg mono">Sealed: the sender&apos;s download limit was reached. It will burn up shortly.</div>
+      ) : orb.status === "sealed" && !busy ? (
+        <div className="sealed-msg mono">{err ? `${err} · ` : ""}Sealed: the sender&apos;s download limit was reached. It will burn up shortly.</div>
       ) : busy ? (
         <>
           <Progress stage={stage} frac={frac} extra={formatBytes(orb.size * frac)} />
