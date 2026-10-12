@@ -444,7 +444,8 @@ a { color: inherit; }
 .hq-layers .chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); }
 .hq-layers .chip.on { background: #fff; }
 .hq-layers .chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 1px rgba(128,128,128,0.6); }
-.hq-hint { position: absolute; right: 22px; bottom: 26px; color: #555; font-size: 9.5px; }
+.hq-hint { position: absolute; right: 22px; bottom: 26px; color: #555; font-size: 9.5px; text-align: right; line-height: 1.6; }
+.hq-hint span { color: #444; text-transform: none; }
 .hq-side { overflow-y: auto; border-left: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 14px; background: rgba(0,0,0,0.35); }
 .hq-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .hq-tile { gap: 6px; padding: 12px; }

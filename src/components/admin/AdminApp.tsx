@@ -156,7 +156,7 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
             ))}
             <button className={`chip${spin ? " on" : ""}`} onClick={() => setSpin((s) => !s)}>⟳ Auto-spin</button>
           </div>
-          <p className="hq-hint mono">Drag to rotate · scroll to zoom · hover a dot</p>
+          <p className="hq-hint mono">Drag to rotate · scroll to zoom down to street level · hover a dot<br /><span>Basemap © Esri, HERE, Garmin, © OpenStreetMap contributors</span></p>
         </section>
 
         <aside className="hq-side">

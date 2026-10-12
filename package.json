@@ -16,6 +16,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-globe.gl": "^2.38.0",
+    "sharp": "^0.35.5",
     "three": "^0.186.1"
   },
   "devDependencies": {

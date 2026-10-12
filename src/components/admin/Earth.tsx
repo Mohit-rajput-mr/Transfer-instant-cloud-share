@@ -23,6 +23,10 @@ const LABEL: Record<Dot["kind"], [string, string]> = {
 
 // Markers are plain DOM nodes pinned to lat/lng, so they keep the same pixel size at any zoom
 // and sit exactly on their coordinate instead of growing like 3D geometry.
+// Gray map tiles (Esri Dark Gray Canvas, merged with its label layer by /api/tile).
+// The globe swaps in sharper tiles as you zoom, so city names and borders never blur.
+const tile = (x: number, y: number, l: number) => `/api/tile/${l}/${x}/${y}`;
+
 function marker(d: object) {
   const p = d as Dot;
   const el = document.createElement("div");
@@ -52,7 +56,17 @@ export default function Earth({ data, layers, spin }: { data: Overview | null; l
     c.autoRotate = spin;
     c.autoRotateSpeed = 0.45;
     c.enableDamping = true;
-    c.minDistance = 120;
+    c.minDistance = 100.06; // down to neighbourhood level
+    c.zoomSpeed = 1.4;
+    // the closer you are, the slower a drag rotates, so street level stays controllable
+    const tune = () => {
+      const d = g.camera().position.length() - 100;
+      c.rotateSpeed = Math.max(0.002, Math.min(1, d / 220));
+      c.autoRotateSpeed = 0.45 * Math.min(1, d / 150);
+    };
+    tune();
+    c.addEventListener("change", tune);
+    return () => c.removeEventListener("change", tune);
     c.maxDistance = 600;
   }, [spin]);
 
@@ -93,10 +107,10 @@ export default function Earth({ data, layers, spin }: { data: Overview | null; l
         width={size.w}
         height={size.h}
         backgroundColor="rgba(0,0,0,0)"
-        globeImageUrl="/globe/earth-night.jpg"
+        globeTileEngineUrl={tile}
         showAtmosphere
-        atmosphereColor="#7fb4ff"
-        atmosphereAltitude={0.16}
+        atmosphereColor="#9aa4b2"
+        atmosphereAltitude={0.12}
         htmlElementsData={dots}
         htmlLat={(d) => (d as Dot).lat}
         htmlLng={(d) => (d as Dot).lon}
