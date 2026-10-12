@@ -543,3 +543,7 @@ a { color: inherit; }
   .big-pick { width: calc(50% - 8px); padding: 14px 10px; }
   .send-menu { left: 18px; bottom: 112px; width: calc(100vw - 36px); }
 }
+
+.spot-help { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.25); font-size: 11.5px; color: #bbb; line-height: 1.5; }
+.spot-help > b { color: #fff; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+.inline-link { text-decoration: underline; text-underline-offset: 2px; color: #ddd; }

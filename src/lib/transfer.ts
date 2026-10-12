@@ -5,7 +5,7 @@ import {
   type DownloadSink,
 } from "./crypto";
 import { deviceId, deviceLabel, setOwnerKey, type Orb } from "./client";
-import { FOLDER_MIME, directoryOutput, folderSink, zipOutput, type Manifest, type pickFolderTarget } from "./bundle";
+import { FOLDER_MIME, directoryOutput, folderSink, zipOutput, type DirHandle, type Manifest } from "./bundle";
 
 export type Stage = "packing" | "deriving" | "encrypting" | "uploading" | "finalizing" | "decrypting" | "done";
 
@@ -146,8 +146,8 @@ export async function receive(opts: {
   /** text and links: return the decrypted text instead of saving a file */
   inline?: boolean;
   /** folders: where to rebuild them (null → zip fallback) */
-  folderTarget?: ReturnType<typeof pickFolderTarget>;
-}): Promise<string | { folder: string; files: number; asZip: boolean } | void> {
+  folderTarget?: DirHandle | null;
+}): Promise<string | { folder: string; files: number; asZip: boolean; where?: string } | void> {
   const { orb, passcode, onProgress, signal } = opts;
   onProgress("deriving", 0);
   const { key, auth } = await deriveKeys(passcode, fromB64(orb.salt), orb.iterations);
@@ -162,13 +162,13 @@ export async function receive(opts: {
 
   let sink: DownloadSink;
   let mem: ReturnType<typeof memorySink> | null = null;
-  let folderInfo: { folder: string; files: number; asZip: boolean } | null = null;
+  let folderInfo: { folder: string; files: number; asZip: boolean; where?: string } | null = null;
   const handle = r.mime === FOLDER_MIME ? null : await opts.target;
   if (r.mime === FOLDER_MIME) {
-    const dir = (await opts.folderTarget) ?? null;
+    const dir = opts.folderTarget ?? null;
     sink = folderSink(
       (m: Manifest) => (dir ? directoryOutput(dir, m.name) : zipOutput(m.name)),
-      (m) => (folderInfo = { folder: m.name, files: m.files.length, asZip: !dir }),
+      (m) => (folderInfo = { folder: m.name, files: m.files.length, asZip: !dir, where: dir?.name }),
     );
   } else if (handle) {
     const w = await handle.createWritable();

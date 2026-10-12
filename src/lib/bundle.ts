@@ -66,23 +66,81 @@ export interface FolderOutput {
   abort(): Promise<void>;
 }
 
-type DirHandle = {
+export type DirHandle = {
   name: string;
   getDirectoryHandle(n: string, o?: { create?: boolean }): Promise<DirHandle>;
   getFileHandle(n: string, o?: { create?: boolean }): Promise<{ createWritable(): Promise<{ write(d: BufferSource): Promise<void>; close(): Promise<void>; abort(): Promise<void> }> }>;
+  queryPermission?(o: { mode: "readwrite" }): Promise<PermissionState>;
+  requestPermission?(o: { mode: "readwrite" }): Promise<PermissionState>;
 };
-type PickerWindow = Window & { showDirectoryPicker?: (o?: { mode?: "readwrite"; id?: string }) => Promise<DirHandle> };
+type PickerWindow = Window & {
+  showDirectoryPicker?: (o?: { mode?: "readwrite"; id?: string; startIn?: string }) => Promise<DirHandle>;
+};
 
 export const canWriteFolders = () => typeof window !== "undefined" && !!(window as PickerWindow).showDirectoryPicker;
 
-// Must be called inside the click gesture.
-export function pickFolderTarget(): Promise<DirHandle | null> {
+// The chosen "landing spot" is remembered (IndexedDB can store directory handles), so after the
+// first time a received folder saves straight there with one click.
+const DB = "orbit", STORE = "kv", KEY = "landing-dir";
+function idb<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T | undefined> {
+  return new Promise((resolve) => {
+    try {
+      const open = indexedDB.open(DB, 1);
+      open.onupgradeneeded = () => open.result.createObjectStore(STORE);
+      open.onerror = () => resolve(undefined);
+      open.onsuccess = () => {
+        const req = fn(open.result.transaction(STORE, mode).objectStore(STORE));
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(undefined);
+      };
+    } catch {
+      resolve(undefined);
+    }
+  });
+}
+export const savedLanding = () => idb<DirHandle>("readonly", (s) => s.get(KEY) as IDBRequest<DirHandle>);
+export const forgetLanding = () => idb("readwrite", (s) => s.delete(KEY));
+const rememberLanding = (h: DirHandle) => idb("readwrite", (s) => s.put(h, KEY));
+
+export type FolderPick = { handle: DirHandle } | { cancelled: true } | { unsupported: true };
+
+/**
+ * Must be called from a click. Uses the remembered landing spot if we still have permission,
+ * otherwise opens the picker in Downloads (where Chrome allows any sub-folder, e.g. "Orbit").
+ */
+export async function pickFolderTarget(fresh = false): Promise<FolderPick> {
   const w = window as PickerWindow;
-  if (!w.showDirectoryPicker) return Promise.resolve(null);
-  return w.showDirectoryPicker({ mode: "readwrite", id: "orbit-receive" }).catch(() => null);
+  if (!w.showDirectoryPicker) return { unsupported: true };
+  if (!fresh) {
+    const saved = await savedLanding();
+    if (saved?.queryPermission) {
+      let perm = await saved.queryPermission({ mode: "readwrite" }).catch(() => "denied" as PermissionState);
+      if (perm === "prompt") perm = await saved.requestPermission!({ mode: "readwrite" }).catch(() => "denied" as PermissionState);
+      if (perm === "granted") return { handle: saved };
+    }
+  }
+  try {
+    const handle = await w.showDirectoryPicker({ mode: "readwrite", id: "orbit-landing", startIn: "downloads" });
+    rememberLanding(handle);
+    return { handle };
+  } catch {
+    return { cancelled: true };
+  }
 }
 
 const safe = (part: string) => part.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").replace(/^\.+$/, "_").slice(0, 200) || "_";
+
+async function freshDir(parent: DirHandle, name: string): Promise<DirHandle> {
+  for (let i = 1; i < 100; i++) {
+    const candidate = i === 1 ? name : `${name} (${i})`;
+    try {
+      await parent.getDirectoryHandle(candidate); // exists → try the next name
+    } catch {
+      return parent.getDirectoryHandle(candidate, { create: true });
+    }
+  }
+  return parent.getDirectoryHandle(`${name} ${Date.now()}`, { create: true });
+}
 
 export function directoryOutput(parent: DirHandle, name: string): FolderOutput {
   let root: Promise<DirHandle> | null = null;
@@ -91,7 +149,7 @@ export function directoryOutput(parent: DirHandle, name: string): FolderOutput {
   const dir = (path: string[]): Promise<DirHandle> => {
     const key = path.join("/");
     if (!dirs.has(key))
-      dirs.set(key, path.length ? dir(path.slice(0, -1)).then((d) => d.getDirectoryHandle(path[path.length - 1], { create: true })) : (root ??= parent.getDirectoryHandle(safe(name), { create: true })));
+      dirs.set(key, path.length ? dir(path.slice(0, -1)).then((d) => d.getDirectoryHandle(path[path.length - 1], { create: true })) : (root ??= freshDir(parent, safe(name))));
     return dirs.get(key)!;
   };
   return {
