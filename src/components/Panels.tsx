@@ -1,29 +1,58 @@
 "use client";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import QRCode from "qrcode";
 import {
   deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, ownerKey, timeAgo, type Orb, type OwnerView,
 } from "@/lib/client";
 import { launch, pickSaveTarget, receive, UnlockError, type Stage } from "@/lib/transfer";
 
+// Screen point the card zooms out of (the tapped sphere / button). Set right before opening.
+let origin: { x: number; y: number } | null = null;
+export const setCardOrigin = (x: number, y: number) => {
+  origin = { x, y };
+};
+
+const CloseCtx = createContext<() => void>(() => {});
+export const useCloseCard = () => useContext(CloseCtx);
+
 export function Drawer({ label, onClose, children }: { label: string; onClose: () => void; children: ReactNode }) {
+  const [closing, setClosing] = useState(false);
+  const [from] = useState(() => {
+    const o = origin;
+    origin = null;
+    if (!o || typeof window === "undefined") return { x: 0, y: 40 };
+    return { x: o.x - window.innerWidth / 2, y: o.y - window.innerHeight / 2 };
+  });
+  const closingRef = useRef(false);
+  const close = useCallback(() => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    setClosing(true);
+    setTimeout(onClose, 320);
+  }, [onClose]);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [close]);
+  const vars = { "--fx": `${from.x}px`, "--fy": `${from.y}px` } as CSSProperties;
   return (
-    <>
-      <div className="scrim" onClick={onClose} />
-      <aside className="drawer" role="dialog" aria-label={label}>
+    <CloseCtx.Provider value={close}>
+      <div className={`scrim${closing ? " out" : ""}`} onClick={close} />
+      <aside className={`drawer${closing ? " out" : ""}`} style={vars} role="dialog" aria-label={label}>
         <div className="drawer-head">
           <span className="mono dim">{label}</span>
-          <button className="x" onClick={onClose} aria-label="Close">×</button>
+          <button className="x" onClick={close} aria-label="Close">×</button>
         </div>
         <div className="drawer-body">{children}</div>
       </aside>
-    </>
+    </CloseCtx.Provider>
   );
+}
+
+function BackBtn() {
+  const close = useCloseCard();
+  return <button className="ghost-btn" onClick={close}>Back to the void</button>;
 }
 
 const STAGE_LABEL: Record<Stage, string> = {
@@ -38,7 +67,7 @@ const STAGE_LABEL: Record<Stage, string> = {
 function Progress({ stage, frac, extra }: { stage: Stage; frac: number; extra?: string }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div className="wide big-num">{Math.floor(frac * 100)}%</div>
+      <div className="wide big-num">{Math.floor(frac * 100)}<span className="pct">%</span></div>
       <div className="progress"><i style={{ transform: `scaleX(${frac})` }} /></div>
       <div className="stage mono"><span>{STAGE_LABEL[stage]}</span><span>{extra}</span></div>
     </div>
@@ -99,17 +128,11 @@ export function ShareBlock({ id }: { id: string }) {
     } catch {}
   };
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <div className="share">
-        {qr ? <img src={qr} alt="QR code to this object" /> : <div style={{ width: 112, height: 112 }} />}
-        <div>
-          <span className="mono dim">Orbit code</span>
-          <div className="wide share-code">{id}</div>
-          <p className="note" style={{ marginTop: 8 }}>Scan, open the link, or just open this site on the other device. The object is already floating there.</p>
-        </div>
-      </div>
-      <div className="linkbox">
-        <span>{link.replace(/^https?:\/\//, "")}</span>
+    <div className="share-mini">
+      {qr ? <img src={qr} alt="QR code to this object" /> : <div className="qr-ph" />}
+      <div className="share-side">
+        <span className="mono dim">Orbit code</span>
+        <div className="wide share-code">{id}</div>
         <button className={`pill${copied ? " solid" : ""}`} onClick={copy}>{copied ? "Copied" : "Copy link"}</button>
       </div>
     </div>
@@ -171,71 +194,73 @@ export function SendPanel(props: { files: File[]; onClose: () => void; onLaunche
   if (done.length) {
     return (
       <Drawer label="Launched" onClose={onClose}>
-        <div>
-          <span className="mono dim">Status</span>
-          <div className="wide d-title" style={{ marginTop: 8 }}>In orbit.</div>
-          <p className="d-sub">{done.length > 1 ? `${done.length} objects are` : "Your object is"} floating in the void for the next 30 minutes. Encrypted on this device. Nobody, not even the server, can open {done.length > 1 ? "them" : "it"} without the passcode.</p>
+        <div className="col">
+          <div className="wide d-title">In orbit.</div>
+          <p className="note">{done.length > 1 ? `${done.length} objects float` : "It floats"} in the void for 30 minutes. Encrypted on this device. <b>Share the passcode separately.</b></p>
+          {done.length > 1 && (
+            <div className="files">{done.map((o) => <div key={o.id}><span>{o.name}</span><span className="mono dim">{o.id}</span></div>)}</div>
+          )}
+          {err && <p className="err">{err}</p>}
+          <div className="grow" />
+          <button className="cta" onClick={() => props.onOpenOwner(done[0].id)}>Mission control →</button>
         </div>
-        {done.length === 1 ? (
+        <div className="col">
           <ShareBlock id={done[0].id} />
-        ) : (
-          <div className="files">{done.map((o) => <div key={o.id}><span>{o.name}</span><span className="mono dim">{o.id}</span></div>)}</div>
-        )}
-        <p className="note"><b>Share the passcode separately</b>: say it out loud or send it in another app.</p>
-        {err && <p className="err">{err}</p>}
-        <button className="cta" onClick={() => props.onOpenOwner(done[0].id)}>Live mission control →</button>
-        <button className="ghost-btn" onClick={onClose}>Back to the void</button>
+          <div className="grow" />
+          <BackBtn />
+        </div>
       </Drawer>
     );
   }
 
   return (
     <Drawer label="New object" onClose={() => (busy ? abort.current?.abort() : onClose())}>
-      <div>
-        <span className="mono dim">{single ? files[0].type || "file" : `${files.length} files`}</span>
-        <div className="wide d-title" style={{ marginTop: 8 }}>{single ? ext(files[0].name) : `${files.length}×`}</div>
-        <p className="d-sub">{single ? files[0].name : "Each file becomes its own floating object, sharing one passcode."} · {formatBytes(total)}</p>
-      </div>
-
-      {!single && (
-        <div className="files">
-          {files.map((f, i) => (
-            <div key={i}><span>{f.name}</span><span className="mono dim">{formatBytes(f.size)}</span></div>
-          ))}
+      <div className="col">
+        <div>
+          <span className="mono dim">{single ? files[0].type || "file" : `${files.length} files`} · {formatBytes(total)}</span>
+          <div className="wide d-title">{single ? ext(files[0].name) : `${files.length}×`}</div>
+          <p className="note ellip">{single ? files[0].name : "Each file becomes its own object, one passcode."}</p>
         </div>
-      )}
-
-      {busy ? (
-        <>
+        {busy ? (
           <Progress stage={stage} frac={frac} extra={files.length > 1 ? `${index + 1} / ${files.length}` : formatBytes(files[0].size * frac)} />
-          <button className="ghost-btn" onClick={() => abort.current?.abort()}>Abort launch</button>
-        </>
-      ) : (
-        <>
-          {single && (
-            <div className="field">
-              <label><span className="mono">Name in orbit</span><span className="mono dim">{name.length}/60</span></label>
-              <input className="line-input" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Give it a name" />
-            </div>
-          )}
-          <PasscodeInput value={code} onChange={setCode} onEnter={go} autoFocus generate />
+        ) : single ? (
           <div className="field">
-            <label><span className="mono">Burn after downloads</span><span className="mono dim">{max ? `${max} max` : "unlimited"}</span></label>
-            <div className="chips">
-              {[null, 1, 2, 3, 5, 10].map((m) => (
-                <button key={String(m)} className={`chip${max === m ? " on" : ""}`} onClick={() => setMax(m)}>{m ?? "∞"}</button>
-              ))}
+            <label><span className="mono">Name in orbit</span><span className="mono dim">{name.length}/60</span></label>
+            <input className="line-input" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Give it a name" />
+          </div>
+        ) : (
+          <div className="files">
+            {files.map((f, i) => (
+              <div key={i}><span>{f.name}</span><span className="mono dim">{formatBytes(f.size)}</span></div>
+            ))}
+          </div>
+        )}
+        <div className="grow" />
+        <p className="mono dim">30 min lifetime · AES-256-GCM on device</p>
+      </div>
+      <div className="col">
+        {busy ? (
+          <>
+            <div className="grow" />
+            <button className="ghost-btn" onClick={() => abort.current?.abort()}>Abort launch</button>
+          </>
+        ) : (
+          <>
+            <PasscodeInput value={code} onChange={setCode} onEnter={go} autoFocus generate />
+            <div className="field">
+              <label><span className="mono">Burn after downloads</span><span className="mono dim">{max ? `${max} max` : "unlimited"}</span></label>
+              <div className="chips">
+                {[null, 1, 2, 3, 5, 10].map((m) => (
+                  <button key={String(m)} className={`chip${max === m ? " on" : ""}`} onClick={() => setMax(m)}>{m ?? "∞"}</button>
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="kv">
-            <div><span className="mono">Lifetime</span><b>30 minutes</b></div>
-            <div><span className="mono">Encryption</span><b>AES-256-GCM · on device</b></div>
-          </div>
-          {err && <p className="err">{err}</p>}
-          <button className="cta" disabled={code.length < 4} onClick={go}>Launch into orbit ↗</button>
-          {code.length > 0 && code.length < 4 && <p className="note">Passcode needs at least 4 characters.</p>}
-        </>
-      )}
+            {err && <p className="err">{err}</p>}
+            <div className="grow" />
+            <button className="cta" disabled={code.length < 4} onClick={go}>{code.length > 0 && code.length < 4 ? "Min 4 characters" : "Launch ↗"}</button>
+          </>
+        )}
+      </div>
     </Drawer>
   );
 }
@@ -298,38 +323,45 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
 
   return (
     <Drawer label="Incoming object" onClose={() => (busy ? abort.current?.abort() : onClose())}>
-      <div>
-        <span className="mono dim">{orb.fileName}</span>
-        <div className="wide d-title" style={{ marginTop: 8 }}>{orb.name}</div>
+      <div className="col">
+        <div>
+          <span className="mono dim ellip">{orb.fileName}</span>
+          <div className="wide d-title">{orb.name}</div>
+        </div>
+        <div className="grow" />
+        <div className="kv">
+          <div><span className="mono">Size</span><b>{formatBytes(orb.size)}</b></div>
+          <div><span className="mono">Burns in</span><b>{formatClock(left)}</b></div>
+          <div><span className="mono">Downloads</span><b>{orb.downloads}{orb.maxDownloads ? ` / ${orb.maxDownloads}` : ""}</b></div>
+          <div><span className="mono">Live now</span><b>{watchers}</b></div>
+        </div>
       </div>
-      <div className="kv">
-        <div><span className="mono">Size</span><b>{formatBytes(orb.size)}</b></div>
-        <div><span className="mono">Burns in</span><b>{formatClock(left)}</b></div>
-        <div><span className="mono">Downloads</span><b>{orb.downloads}{orb.maxDownloads ? ` / ${orb.maxDownloads}` : ""}</b></div>
-        <div><span className="mono">Watching now</span><b>{watchers}</b></div>
+      <div className="col">
+        {landed ? (
+          <>
+            <div className="wide d-title">Landed ✓</div>
+            <p className="note">Decrypted on this device and saved as <b>{orb.fileName}</b>.</p>
+            <div className="grow" />
+            <BackBtn />
+          </>
+        ) : orb.status === "sealed" && !busy ? (
+          <div className="sealed-msg mono">{err ? `${err} · ` : ""}Sealed: the sender&apos;s download limit was reached. It will burn up shortly.</div>
+        ) : busy ? (
+          <>
+            <Progress stage={stage} frac={frac} extra={formatBytes(orb.size * frac)} />
+            <div className="grow" />
+            <button className="ghost-btn" onClick={() => abort.current?.abort()}>Abort</button>
+          </>
+        ) : (
+          <>
+            <PasscodeInput value={code} onChange={setCode} onEnter={go} autoFocus />
+            {err && <p className="err">{err}</p>}
+            <p className="note">Decrypted locally. The passcode never leaves this device.</p>
+            <div className="grow" />
+            <button className="cta" disabled={!code} onClick={go}>Decrypt + download ↓</button>
+          </>
+        )}
       </div>
-
-      {landed ? (
-        <>
-          <div className="wide d-title">Landed ✓</div>
-          <p className="note">Decrypted on this device and saved as <b>{orb.fileName}</b>.</p>
-          <button className="ghost-btn" onClick={onClose}>Back to the void</button>
-        </>
-      ) : orb.status === "sealed" && !busy ? (
-        <div className="sealed-msg mono">{err ? `${err} · ` : ""}Sealed: the sender&apos;s download limit was reached. It will burn up shortly.</div>
-      ) : busy ? (
-        <>
-          <Progress stage={stage} frac={frac} extra={formatBytes(orb.size * frac)} />
-          <button className="ghost-btn" onClick={() => abort.current?.abort()}>Abort</button>
-        </>
-      ) : (
-        <>
-          <PasscodeInput value={code} onChange={setCode} onEnter={go} autoFocus />
-          {err && <p className="err">{err}</p>}
-          <button className="cta" disabled={!code} onClick={go}>Decrypt + download ↓</button>
-          <p className="note">The passcode never leaves this device. It derives the key that decrypts the file locally.</p>
-        </>
-      )}
     </Drawer>
   );
 }
@@ -385,9 +417,14 @@ export function OwnerPanel(props: { id: string; now: number; watchers: number; p
   if (gone) {
     return (
       <Drawer label="Mission control" onClose={onClose}>
-        <div className="wide d-title">Burned up.</div>
-        <p className="note">This object has left orbit: it expired, was destroyed, or hit its download limit.</p>
-        <button className="ghost-btn" onClick={onClose}>Back to the void</button>
+        <div className="col">
+          <div className="wide d-title">Burned up.</div>
+          <p className="note">This object has left orbit: it expired, was destroyed, or hit its download limit.</p>
+        </div>
+        <div className="col">
+          <div className="grow" />
+          <BackBtn />
+        </div>
       </Drawer>
     );
   }
@@ -398,56 +435,53 @@ export function OwnerPanel(props: { id: string; now: number; watchers: number; p
   return (
     <Drawer label="Mission control · sender only" onClose={onClose}>
       {!data ? (
-        <div className="mono dim">Establishing uplink…</div>
+        <>
+          <div className="col">
+            <div className="skel" style={{ width: "60%", height: 10 }} />
+            <div className="skel" style={{ width: "80%", height: 52, marginTop: 4 }} />
+            <div className="grow" />
+            <div className="tiles">{[0, 1, 2, 3].map((i) => <div key={i} className="tile skel" style={{ height: 56 }} />)}</div>
+          </div>
+          <div className="col">
+            <div className="skel" style={{ height: 84 }} />
+            <div className="skel" style={{ height: 60 }} />
+            <div className="grow" />
+            <div className="skel" style={{ height: 36, borderRadius: 999 }} />
+          </div>
+        </>
       ) : (
         <>
-          <div>
-            <span className="mono dim">{data.fileName} · {formatBytes(data.size)}</span>
-            <div className="wide d-title" style={{ marginTop: 8 }}>{data.name}</div>
-          </div>
-          <div>
-            <span className="mono dim">Burns up in</span>
-            <div className="wide big-num" style={{ color: left < 60_000 ? "var(--danger)" : undefined }}>{formatClock(left)}</div>
-          </div>
-          <div className="stats">
-            <div className="stat live-row">
-              <div><span className="mono">Accessing now</span><p className="note">Devices with this object open right now</p></div>
-              <span className="wide">{watchers}</span>
+          <div className="col">
+            <div>
+              <span className="mono dim ellip">{data.name} · {formatBytes(data.size)}</span>
+              <div className="wide big-num" style={{ color: left < 60_000 ? "var(--danger)" : undefined }}>{formatClock(left)}</div>
+              <span className="mono dim">until burn-up</span>
             </div>
-            <div className="stat">
-              <div><span className="mono">Opened by</span><p className="note">Devices that tapped it</p></div>
-              <span className={`wide${data.views ? "" : " faint"}`}>{data.views}</span>
-            </div>
-            <div className="stat">
-              <div><span className="mono">Downloads</span><p className="note">{data.maxDownloads ? `Burns after ${data.maxDownloads}` : "No limit set"}</p></div>
-              <span className="wide">{data.downloads}{data.maxDownloads ? <span style={{ color: "#333" }}>/{data.maxDownloads}</span> : null}</span>
-            </div>
-            <div className="stat">
-              <div><span className="mono">Unique devices</span><p className="note">Distinct devices that received it</p></div>
-              <span className={`wide${data.devices ? "" : " faint"}`}>{data.devices}</span>
-            </div>
-            <div className="stat">
-              <div><span className="mono">Wrong passcodes</span><p className="note">{data.failed ? `From ${uniqueFails} device${uniqueFails === 1 ? "" : "s"} · locks at 12` : "No intruders"}</p></div>
-              <span className={`wide${data.failed ? "" : " faint"}`} style={data.failed ? { color: "var(--danger)" } : undefined}>{data.failed}</span>
+            <div className="grow" />
+            <div className="tiles">
+              <div className="tile live-tile"><b className="wide">{watchers}</b><span className="mono">Live now</span></div>
+              <div className="tile"><b className="wide">{data.views}</b><span className="mono">Opened</span></div>
+              <div className="tile"><b className="wide">{data.downloads}{data.maxDownloads ? <small>/{data.maxDownloads}</small> : null}</b><span className="mono">Downloads</span></div>
+              <div className={`tile${data.failed ? " bad" : ""}`}><b className="wide">{data.failed}</b><span className="mono" title={`${uniqueFails} devices · locks at 12`}>Wrong code</span></div>
             </div>
           </div>
-          <div>
-            <span className="mono dim">Flight log</span>
-            <div className="log" style={{ marginTop: 8 }}>
+          <div className="col">
+            <ShareBlock id={id} />
+            <div className="log">
               {data.events.length === 0 && <div><i style={{ background: "#333" }} /><span className="dim">Waiting for the first receiver…</span><time /></div>}
               {data.events.map((e, i) => (
                 <div key={i} className={e.kind === "fail" ? "fail" : e.kind === "view" ? "view" : ""}>
                   <i />
-                  <span>{e.device || "Unknown device"} · {e.kind === "fail" ? "wrong passcode" : e.kind === "view" ? "opened it" : "downloaded"}</span>
+                  <span>{e.device || "Unknown"} · {e.kind === "fail" ? "wrong code" : e.kind === "view" ? "opened" : "downloaded"}</span>
                   <time>{timeAgo(e.at, now)}</time>
                 </div>
               ))}
             </div>
+            <div className="grow" />
+            <button className={`danger-btn${arm ? " arm" : ""}`} onClick={destroy} disabled={deleting}>
+              {deleting ? "Destroying…" : arm ? "Tap again to destroy" : "Destroy now"}
+            </button>
           </div>
-          <ShareBlock id={id} />
-          <button className={`danger-btn${arm ? " arm" : ""}`} onClick={destroy} disabled={deleting}>
-            {deleting ? "Destroying…" : arm ? "Tap again to destroy forever" : "Destroy now"}
-          </button>
         </>
       )}
     </Drawer>

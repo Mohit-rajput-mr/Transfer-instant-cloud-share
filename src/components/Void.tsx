@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Starfield from "./Starfield";
 import OrbView, { layout } from "./OrbView";
-import { OwnerPanel, SendPanel, UnlockPanel } from "./Panels";
+import { OwnerPanel, SendPanel, UnlockPanel, setCardOrigin } from "./Panels";
 import { deviceId, deviceLabel, ownerKey, type Orb } from "@/lib/client";
 import { supabase, type Presence, type RealtimeChannel } from "@/lib/realtime";
 
@@ -368,7 +368,15 @@ export default function Void() {
       </div>
 
       {!panel && (
-        <button className="send-fab" onClick={() => fileInput.current?.click()} aria-label="Send a file">
+        <button
+          className="send-fab"
+          onClick={(e) => {
+            const r = e.currentTarget.getBoundingClientRect();
+            setCardOrigin(r.left + r.width / 2, r.top + r.height / 2);
+            fileInput.current?.click();
+          }}
+          aria-label="Send a file"
+        >
           <span className="ico">↑</span>
           <span>Send<small>or drop anywhere</small></span>
         </button>

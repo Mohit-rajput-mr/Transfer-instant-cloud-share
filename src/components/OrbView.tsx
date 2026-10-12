@@ -1,5 +1,6 @@
 "use client";
 import { useRef, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
+import { setCardOrigin } from "./Panels";
 import { ext, formatBytes, formatClock, type Orb } from "@/lib/client";
 
 export const LIFETIME_MS = 30 * 60 * 1000;
@@ -171,11 +172,13 @@ export default function OrbView(props: {
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
-      onClick={() => {
+      onClick={(e) => {
         if (suppressClick.current) {
           suppressClick.current = false;
           return;
         }
+        const r = e.currentTarget.querySelector(".orb-body")?.getBoundingClientRect();
+        if (r) setCardOrigin(r.left + r.width / 2, r.top + r.height / 2);
         onOpen();
       }}
       aria-label={`Open ${orb.name}`}
