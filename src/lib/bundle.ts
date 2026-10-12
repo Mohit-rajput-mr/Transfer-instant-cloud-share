@@ -79,50 +79,14 @@ type PickerWindow = Window & {
 
 export const canWriteFolders = () => typeof window !== "undefined" && !!(window as PickerWindow).showDirectoryPicker;
 
-// The chosen "landing spot" is remembered (IndexedDB can store directory handles), so after the
-// first time a received folder saves straight there with one click.
-const DB = "orbit", STORE = "kv", KEY = "landing-dir";
-function idb<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T | undefined> {
-  return new Promise((resolve) => {
-    try {
-      const open = indexedDB.open(DB, 1);
-      open.onupgradeneeded = () => open.result.createObjectStore(STORE);
-      open.onerror = () => resolve(undefined);
-      open.onsuccess = () => {
-        const req = fn(open.result.transaction(STORE, mode).objectStore(STORE));
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => resolve(undefined);
-      };
-    } catch {
-      resolve(undefined);
-    }
-  });
-}
-export const savedLanding = () => idb<DirHandle>("readonly", (s) => s.get(KEY) as IDBRequest<DirHandle>);
-export const forgetLanding = () => idb("readwrite", (s) => s.delete(KEY));
-const rememberLanding = (h: DirHandle) => idb("readwrite", (s) => s.put(h, KEY));
-
 export type FolderPick = { handle: DirHandle } | { cancelled: true } | { unsupported: true };
 
-/**
- * Must be called from a click. Uses the remembered landing spot if we still have permission,
- * otherwise opens the picker in Downloads (where Chrome allows any sub-folder, e.g. "Orbit").
- */
-export async function pickFolderTarget(fresh = false): Promise<FolderPick> {
+/** Must be called from a click. Opens the folder picker; the received folder is created inside the pick. */
+export async function pickFolderTarget(): Promise<FolderPick> {
   const w = window as PickerWindow;
   if (!w.showDirectoryPicker) return { unsupported: true };
-  if (!fresh) {
-    const saved = await savedLanding();
-    if (saved?.queryPermission) {
-      let perm = await saved.queryPermission({ mode: "readwrite" }).catch(() => "denied" as PermissionState);
-      if (perm === "prompt") perm = await saved.requestPermission!({ mode: "readwrite" }).catch(() => "denied" as PermissionState);
-      if (perm === "granted") return { handle: saved };
-    }
-  }
   try {
-    const handle = await w.showDirectoryPicker({ mode: "readwrite", id: "orbit-landing", startIn: "downloads" });
-    rememberLanding(handle);
-    return { handle };
+    return { handle: await w.showDirectoryPicker({ mode: "readwrite", id: "orbit-receive" }) };
   } catch {
     return { cancelled: true };
   }

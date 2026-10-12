@@ -5,7 +5,7 @@ import {
   deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, ownerKey, timeAgo, type Orb, type OwnerView,
 } from "@/lib/client";
 import { MAX_FILE_BYTES } from "@/lib/limits";
-import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, forgetLanding, isLinkText, packFolder, pickFolderTarget, savedLanding, textToFile, type DirHandle, type Folder } from "@/lib/bundle";
+import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, isLinkText, packFolder, pickFolderTarget, textToFile, type DirHandle, type Folder } from "@/lib/bundle";
 import { launch, pickSaveTarget, receive, UnlockError, type Stage } from "@/lib/transfer";
 
 // Screen point the card zooms out of (the tapped sphere / button). Set right before opening.
@@ -324,11 +324,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
   const isLink = orb.mime === LINK_MIME;
   const isFolder = orb.mime === FOLDER_MIME;
   const [saved, setSaved] = useState<{ folder: string; files: number; asZip: boolean; where?: string } | null>(null);
-  const [spot, setSpot] = useState<string | null>(null); // remembered landing folder name
   const [needSpot, setNeedSpot] = useState(false);
-  useEffect(() => {
-    if (isFolder) savedLanding().then((h) => setSpot(h?.name ?? null));
-  }, [isFolder]);
   const inline = (isLink || orb.mime.startsWith("text/")) && orb.size <= INLINE_MAX;
   const [report, setReport] = useState<"idle" | "arm" | "sent">("idle");
 
@@ -354,21 +350,18 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     }).then(onViewed).catch(() => {});
   }, [orb.id, onViewed]);
 
-  const go = async (mode?: { zip?: boolean; repick?: boolean }) => {
+  const go = async (mode?: { zip?: boolean }) => {
     if (!code || busy) return;
     // pickers must open inside the click gesture, before anything is unlocked or counted
     const target = inline || isFolder ? Promise.resolve(null) : pickSaveTarget(orb);
     let folderTarget: DirHandle | null = null;
     if (isFolder && !mode?.zip && canWriteFolders()) {
-      const pick = await pickFolderTarget(mode?.repick);
+      const pick = await pickFolderTarget();
       if ("cancelled" in pick) {
         setNeedSpot(true);
         return;
       }
-      if ("handle" in pick) {
-        folderTarget = pick.handle;
-        setSpot(pick.handle.name);
-      }
+      if ("handle" in pick) folderTarget = pick.handle;
     }
     setNeedSpot(false);
     setBusy(true);
@@ -480,20 +473,18 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
             <div className="grow" />
             {isFolder && needSpot ? (
               <div className="spot-help">
-                <b>Pick where folders land</b>
-                <span>Browsers can&apos;t write straight into Downloads itself. In the picker: open <b>Downloads → New folder</b>, name it <b>Orbit</b>, then <b>Select</b>. Next time it saves there in one click.</span>
+                <b>Pick another folder</b>
+                <span>Chrome locks <b>Downloads</b>, <b>Desktop</b> and <b>Documents</b> themselves for every website. Choose any folder inside them, or anywhere else, and the folder is saved there as-is.</span>
                 <div className="row-btns">
                   <button className="ghost-btn" onClick={() => go({ zip: true })}>Get .zip instead</button>
-                  <button className="cta" onClick={() => go({ repick: true })}>Choose location</button>
+                  <button className="cta" onClick={() => go()}>Choose folder</button>
                 </div>
               </div>
             ) : isFolder ? (
               <p className="note">
                 {!canWriteFolders()
                   ? "This browser can't write folders, so it arrives as a .zip (Chrome or Edge on a computer saves a real folder)."
-                  : spot
-                    ? <>Saves as a folder inside <b>{spot}/</b> · <button className="inline-link" onClick={() => { forgetLanding(); setSpot(null); }}>change</button></>
-                    : "You'll pick a landing folder once (e.g. Downloads/Orbit); the folder is rebuilt there with every subfolder."}
+                  : "Choose any folder and it lands there as-is: same name, every subfolder, no zip."}
               </p>
             ) : null}
             <button className="cta" disabled={!code || needSpot} onClick={() => go()}>{isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : isFolder ? "Decrypt + save folder ↓" : "Decrypt + download ↓"}</button>
