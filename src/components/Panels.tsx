@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import QRCode from "qrcode";
 import {
-  dropOwnerKey, ext, formatBytes, formatClock, ownerKey, timeAgo, type Orb, type OwnerView,
+  deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, ownerKey, timeAgo, type Orb, type OwnerView,
 } from "@/lib/client";
 import { launch, pickSaveTarget, receive, UnlockError, type Stage } from "@/lib/transfer";
 
@@ -242,7 +242,7 @@ export function SendPanel(props: { files: File[]; onClose: () => void; onLaunche
 
 /* ----------------------------- RECEIVE ----------------------------- */
 
-export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; onClose: () => void; onDownloaded: () => void }) {
+export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; onClose: () => void; onDownloaded: () => void; onViewed: () => void }) {
   const { orb, now, watchers, onClose } = props;
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -254,6 +254,15 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
   const left = new Date(orb.expiresAt).getTime() - now;
 
   useEffect(() => () => abort.current?.abort(), []);
+
+  const { onViewed } = props;
+  useEffect(() => {
+    fetch(`/api/transfers/${orb.id}/view`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deviceId: deviceId(), device: deviceLabel() }),
+    }).then(onViewed).catch(() => {});
+  }, [orb.id, onViewed]);
 
   const go = () => {
     if (!code || busy) return;
@@ -406,6 +415,10 @@ export function OwnerPanel(props: { id: string; now: number; watchers: number; p
               <span className="wide">{watchers}</span>
             </div>
             <div className="stat">
+              <div><span className="mono">Opened by</span><p className="note">Devices that tapped it</p></div>
+              <span className={`wide${data.views ? "" : " faint"}`}>{data.views}</span>
+            </div>
+            <div className="stat">
               <div><span className="mono">Downloads</span><p className="note">{data.maxDownloads ? `Burns after ${data.maxDownloads}` : "No limit set"}</p></div>
               <span className="wide">{data.downloads}{data.maxDownloads ? <span style={{ color: "#333" }}>/{data.maxDownloads}</span> : null}</span>
             </div>
@@ -423,9 +436,9 @@ export function OwnerPanel(props: { id: string; now: number; watchers: number; p
             <div className="log" style={{ marginTop: 8 }}>
               {data.events.length === 0 && <div><i style={{ background: "#333" }} /><span className="dim">Waiting for the first receiver…</span><time /></div>}
               {data.events.map((e, i) => (
-                <div key={i} className={e.kind === "fail" ? "fail" : ""}>
+                <div key={i} className={e.kind === "fail" ? "fail" : e.kind === "view" ? "view" : ""}>
                   <i />
-                  <span>{e.device || "Unknown device"} · {e.kind === "fail" ? "wrong passcode" : "downloaded"}</span>
+                  <span>{e.device || "Unknown device"} · {e.kind === "fail" ? "wrong passcode" : e.kind === "view" ? "opened it" : "downloaded"}</span>
                   <time>{timeAgo(e.at, now)}</time>
                 </div>
               ))}

@@ -191,6 +191,11 @@ export default function Void() {
   const watchers = useCallback((id: string) => presence.filter((p) => p.viewing === id).length, [presence]);
   const nearbyCount = alive.filter((o) => o.netHash === net).length;
 
+  const onViewed = useCallback(() => {
+    refresh();
+    broadcast();
+  }, [refresh, broadcast]);
+
   const open = (o: Orb) => setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id });
   const unlockOrb = panel?.kind === "unlock" ? orbs.find((o) => o.id === panel.id) ?? extra : null;
 
@@ -339,6 +344,7 @@ export default function Void() {
             refresh();
             broadcast();
           }}
+          onViewed={onViewed}
         />
       )}
       {panel?.kind === "owner" && (

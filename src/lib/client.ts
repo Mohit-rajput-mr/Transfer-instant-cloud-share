@@ -14,13 +14,14 @@ export interface Orb {
   maxDownloads: number | null;
   downloads: number;
   devices: number;
+  views: number;
   createdAt: string;
   expiresAt: string;
 }
 
 export interface OwnerView extends Orb {
   failed: number;
-  events: { kind: "download" | "fail"; device: string; deviceId: string; at: string }[];
+  events: { kind: "download" | "fail" | "view"; device: string; deviceId: string; at: string }[];
 }
 
 const safe = <T,>(fn: () => T, fallback: T): T => {

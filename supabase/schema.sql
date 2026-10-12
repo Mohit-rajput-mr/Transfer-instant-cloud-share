@@ -67,6 +67,7 @@ language sql stable security definer set search_path = '' as $$
     'salt', t.salt, 'iterations', t.iterations, 'hue', t.hue, 'status', t.status,
     'netHash', t.net_hash, 'maxDownloads', t.max_downloads, 'downloads', t.downloads,
     'devices', (select count(distinct e.device_id) from public.transfer_events e where e.transfer_id = t.id and e.kind = 'download'),
+    'views', (select count(distinct e.device_id) from public.transfer_events e where e.transfer_id = t.id and e.kind = 'view'),
     'createdAt', t.created_at, 'expiresAt', t.expires_at)
 $$;
 
@@ -133,6 +134,16 @@ begin
     'fileName', t.file_name, 'mime', t.mime, 'size', t.size);
 end $$;
 
+create or replace function public.orbit_view(p_secret text, p_id text, p_device text, p_label text) returns void
+language plpgsql security definer set search_path = '' as $$
+begin
+  perform private.check(p_secret);
+  if exists (select 1 from public.transfers where id = p_id and expires_at > now())
+     and not exists (select 1 from public.transfer_events where transfer_id = p_id and kind = 'view' and device_id = p_device) then
+    insert into public.transfer_events (transfer_id, kind, device_id, device_label) values (p_id, 'view', p_device, p_label);
+  end if;
+end $$;
+
 create or replace function public.orbit_owner(p_secret text, p_id text, p_owner_hash text) returns jsonb
 language plpgsql security definer set search_path = '' as $$
 declare t public.transfers;
@@ -167,10 +178,10 @@ end $$;
 revoke all on function private.check(text), private.pub(public.transfers) from public, anon, authenticated;
 revoke execute on function public.orbit_create(text,jsonb), public.orbit_finalize(text,text,text,text), public.orbit_list(text),
   public.orbit_get(text,text), public.orbit_unlock(text,text,text,text,text), public.orbit_owner(text,text,text),
-  public.orbit_delete(text,text,text), public.orbit_reap(text) from public, authenticated;
+  public.orbit_delete(text,text,text), public.orbit_reap(text), public.orbit_view(text,text,text,text) from public, authenticated;
 grant execute on function public.orbit_create(text,jsonb), public.orbit_finalize(text,text,text,text), public.orbit_list(text),
   public.orbit_get(text,text), public.orbit_unlock(text,text,text,text,text), public.orbit_owner(text,text,text),
-  public.orbit_delete(text,text,text), public.orbit_reap(text) to anon;
+  public.orbit_delete(text,text,text), public.orbit_reap(text), public.orbit_view(text,text,text,text) to anon;
 
 -- Optional: true 30-min auto-delete. Calls the app's reaper every 5 minutes.
 -- Replace <APP_URL> and <ORBIT_SECRET> then run:
