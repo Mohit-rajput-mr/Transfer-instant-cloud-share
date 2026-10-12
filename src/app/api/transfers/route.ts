@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateClientTokenFromReadWriteToken } from "@vercel/blob/client";
+import { MAX_FILE_BYTES } from "@/lib/limits";
 import { clean, isB64, isHex, netHash, newId, randomHex, reap, rpc, sha256 } from "@/lib/server";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,6 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ items, net: netHash(req), now: Date.now() }, { headers: { "Cache-Control": "no-store" } });
 }
 
-const MAX_BYTES = 5 * 1024 ** 4; // Vercel Blob hard limit (5TB)
 
 export async function POST(req: NextRequest) {
   const b = await req.json().catch(() => null);
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   const chunkSize = Number(b.chunkSize);
   const iterations = Number(b.iterations);
   const maxDownloads = b.maxDownloads == null ? null : Number(b.maxDownloads);
-  if (!Number.isSafeInteger(size) || size < 0 || size > MAX_BYTES) return bad("size");
+  if (!Number.isSafeInteger(size) || size < 0 || size > MAX_FILE_BYTES) return NextResponse.json({ error: "File is larger than 2 GB" }, { status: 413 });
   if (!Number.isSafeInteger(chunkSize) || chunkSize < 1 << 20 || chunkSize > 64 << 20) return bad("chunk");
   if (!Number.isSafeInteger(iterations) || iterations < 100_000 || iterations > 2_000_000) return bad("iterations");
   if (maxDownloads !== null && (!Number.isSafeInteger(maxDownloads) || maxDownloads < 1 || maxDownloads > 999)) return bad("max");
@@ -36,7 +36,8 @@ export async function POST(req: NextRequest) {
   const chunks = Math.max(1, Math.ceil(size / chunkSize));
   const encryptedSize = size + chunks * 16;
 
-  await rpc("orbit_create", {
+  try {
+    await rpc("orbit_create", {
     p: {
       id, name, fileName, mime, size, pathname, chunkSize, iterations,
       salt: b.salt, nonce: b.nonce,
@@ -45,7 +46,12 @@ export async function POST(req: NextRequest) {
       maxDownloads: maxDownloads ?? "",
       hue: Math.floor(Math.random() * 360),
     },
-  });
+    });
+  } catch (e) {
+    if (String(e).includes("rate_limited"))
+      return NextResponse.json({ error: "Too many uploads from your network. Try again in an hour." }, { status: 429 });
+    throw e;
+  }
 
   const token = await generateClientTokenFromReadWriteToken({
     pathname,

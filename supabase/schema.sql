@@ -75,6 +75,9 @@ create or replace function public.orbit_create(p_secret text, p jsonb) returns v
 language plpgsql security definer set search_path = '' as $$
 begin
   perform private.check(p_secret);
+  if (select count(*) from public.transfers where net_hash = p->>'netHash' and created_at > now() - interval '1 hour') >= 30 then
+    raise exception 'rate_limited' using errcode = 'P0429';
+  end if;
   insert into public.transfers (id, name, file_name, mime, size, blob_pathname, salt, iterations, nonce, chunk_size,
     auth_hash, owner_hash, net_hash, sender_device, max_downloads, hue)
   values (p->>'id', p->>'name', p->>'fileName', coalesce(p->>'mime','application/octet-stream'), (p->>'size')::bigint,
@@ -144,6 +147,24 @@ begin
   end if;
 end $$;
 
+create or replace function public.orbit_report(p_secret text, p_id text, p_device text, p_label text) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+declare n int;
+begin
+  perform private.check(p_secret);
+  if not exists (select 1 from public.transfers where id = p_id and expires_at > now()) then
+    return jsonb_build_object('ok', false);
+  end if;
+  if not exists (select 1 from public.transfer_events where transfer_id = p_id and kind = 'report' and device_id = p_device) then
+    insert into public.transfer_events (transfer_id, kind, device_id, device_label) values (p_id, 'report', p_device, p_label);
+  end if;
+  select count(distinct device_id) into n from public.transfer_events where transfer_id = p_id and kind = 'report';
+  if n >= 3 then
+    update public.transfers set expires_at = now() where id = p_id;
+  end if;
+  return jsonb_build_object('ok', true, 'reports', n, 'removed', n >= 3);
+end $$;
+
 create or replace function public.orbit_owner(p_secret text, p_id text, p_owner_hash text) returns jsonb
 language plpgsql security definer set search_path = '' as $$
 declare t public.transfers;
@@ -178,10 +199,10 @@ end $$;
 revoke all on function private.check(text), private.pub(public.transfers) from public, anon, authenticated;
 revoke execute on function public.orbit_create(text,jsonb), public.orbit_finalize(text,text,text,text), public.orbit_list(text),
   public.orbit_get(text,text), public.orbit_unlock(text,text,text,text,text), public.orbit_owner(text,text,text),
-  public.orbit_delete(text,text,text), public.orbit_reap(text), public.orbit_view(text,text,text,text) from public, authenticated;
+  public.orbit_delete(text,text,text), public.orbit_reap(text), public.orbit_view(text,text,text,text), public.orbit_report(text,text,text,text) from public, authenticated;
 grant execute on function public.orbit_create(text,jsonb), public.orbit_finalize(text,text,text,text), public.orbit_list(text),
   public.orbit_get(text,text), public.orbit_unlock(text,text,text,text,text), public.orbit_owner(text,text,text),
-  public.orbit_delete(text,text,text), public.orbit_reap(text), public.orbit_view(text,text,text,text) to anon;
+  public.orbit_delete(text,text,text), public.orbit_reap(text), public.orbit_view(text,text,text,text), public.orbit_report(text,text,text,text) to anon;
 
 -- Optional: true 30-min auto-delete. Calls the app's reaper every 5 minutes.
 -- Replace <APP_URL> and <ORBIT_SECRET> then run:

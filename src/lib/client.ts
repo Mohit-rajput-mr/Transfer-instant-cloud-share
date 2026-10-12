@@ -21,7 +21,7 @@ export interface Orb {
 
 export interface OwnerView extends Orb {
   failed: number;
-  events: { kind: "download" | "fail" | "view"; device: string; deviceId: string; at: string }[];
+  events: { kind: "download" | "fail" | "view" | "report"; device: string; deviceId: string; at: string }[];
 }
 
 const safe = <T,>(fn: () => T, fallback: T): T => {

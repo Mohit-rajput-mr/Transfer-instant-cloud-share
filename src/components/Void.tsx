@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import Starfield from "./Starfield";
 import OrbView, { layout } from "./OrbView";
 import { OwnerPanel, SendPanel, UnlockPanel, setCardOrigin } from "./Panels";
@@ -370,6 +371,10 @@ export default function Void() {
               <span className="wide n">{i + 1}</span>
             </div>
           ))}
+          <div className="legal">
+            <span>Files are end-to-end encrypted. Max 2 GB each. 30 uploads per network per hour.</span>
+            <span><Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · Abuse? Open the object and tap ⚑ Report</span>
+          </div>
         </section>
       </main>
 

@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import {
   deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, ownerKey, timeAgo, type Orb, type OwnerView,
 } from "@/lib/client";
+import { MAX_FILE_BYTES } from "@/lib/limits";
 import { launch, pickSaveTarget, receive, UnlockError, type Stage } from "@/lib/transfer";
 
 // Screen point the card zooms out of (the tapped sphere / button). Set right before opening.
@@ -158,8 +159,9 @@ export function SendPanel(props: { files: File[]; onClose: () => void; onLaunche
 
   useEffect(() => () => abort.current?.abort(), []);
 
+  const tooBig = files.find((f) => f.size > MAX_FILE_BYTES);
   const go = async () => {
-    if (code.length < 4 || busy) return;
+    if (code.length < 4 || busy || tooBig) return;
     setBusy(true);
     setErr(null);
     abort.current = new AbortController();
@@ -256,8 +258,9 @@ export function SendPanel(props: { files: File[]; onClose: () => void; onLaunche
               </div>
             </div>
             {err && <p className="err">{err}</p>}
+            {tooBig && <p className="err">{tooBig.name} is over the 2 GB limit</p>}
             <div className="grow" />
-            <button className="cta" disabled={code.length < 4} onClick={go}>{code.length > 0 && code.length < 4 ? "Min 4 characters" : "Launch ↗"}</button>
+            <button className="cta" disabled={code.length < 4 || !!tooBig} onClick={go}>{code.length > 0 && code.length < 4 ? "Min 4 characters" : "Launch ↗"}</button>
           </>
         )}
       </div>
@@ -277,8 +280,20 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
   const [landed, setLanded] = useState(false);
   const abort = useRef<AbortController | null>(null);
   const left = new Date(orb.expiresAt).getTime() - now;
+  const [report, setReport] = useState<"idle" | "arm" | "sent">("idle");
 
   useEffect(() => () => abort.current?.abort(), []);
+
+  const sendReport = () => {
+    if (report === "idle") return setReport("arm");
+    if (report !== "arm") return;
+    setReport("sent");
+    fetch(`/api/transfers/${orb.id}/report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deviceId: deviceId(), device: deviceLabel() }),
+    }).then(() => props.onDownloaded()).catch(() => {});
+  };
 
   const { onViewed } = props;
   useEffect(() => {
@@ -335,6 +350,9 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
           <div><span className="mono">Downloads</span><b>{orb.downloads}{orb.maxDownloads ? ` / ${orb.maxDownloads}` : ""}</b></div>
           <div><span className="mono">Live now</span><b>{watchers}</b></div>
         </div>
+        <button className={`report mono${report === "arm" ? " arm" : ""}`} onClick={sendReport} disabled={report === "sent"}>
+          {report === "sent" ? "Reported · thank you" : report === "arm" ? "Tap again to report abuse" : "⚑ Report"}
+        </button>
       </div>
       <div className="col">
         {landed ? (
@@ -470,9 +488,9 @@ export function OwnerPanel(props: { id: string; now: number; watchers: number; p
             <div className="log">
               {data.events.length === 0 && <div><i style={{ background: "#333" }} /><span className="dim">Waiting for the first receiver…</span><time /></div>}
               {data.events.map((e, i) => (
-                <div key={i} className={e.kind === "fail" ? "fail" : e.kind === "view" ? "view" : ""}>
+                <div key={i} className={e.kind === "fail" || e.kind === "report" ? "fail" : e.kind === "view" ? "view" : ""}>
                   <i />
-                  <span>{e.device || "Unknown"} · {e.kind === "fail" ? "wrong code" : e.kind === "view" ? "opened" : "downloaded"}</span>
+                  <span>{e.device || "Unknown"} · {e.kind === "fail" ? "wrong code" : e.kind === "view" ? "opened" : e.kind === "report" ? "reported it" : "downloaded"}</span>
                   <time>{timeAgo(e.at, now)}</time>
                 </div>
               ))}
