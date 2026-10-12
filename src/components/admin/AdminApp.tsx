@@ -131,8 +131,8 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
     <div className="hq">
       <header className="hq-top">
         <Link href="/" className="brand">
-          <svg className="brand-mark" viewBox="0 0 64 64" aria-hidden><circle cx="32" cy="32" r="10" fill="#fff" /><ellipse cx="32" cy="32" rx="27" ry="9" fill="none" stroke="#fff" strokeWidth="3" transform="rotate(-24 32 32)" /></svg>
-          <span className="brand-name">ORBIT</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="brand-logo" src="/logo.svg" alt="ORBIT" width={103} height={24} />
           <span className="brand-by">Mission HQ</span>
         </Link>
         <span className="live"><span className="dot" /><b>{n(data?.online)}</b> online now</span>

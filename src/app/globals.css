@@ -40,6 +40,7 @@ a { color: inherit; }
 .top-row + .top-row { height: 30px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand-mark { width: 22px; height: 22px; }
+.brand-logo { height: 24px; width: auto; display: block; user-select: none; -webkit-user-drag: none; cursor: pointer; }
 .brand-name { font-family: var(--display); font-weight: 900; font-variation-settings: "wdth" 125; font-size: 15px; letter-spacing: -0.02em; }
 .brand-by { color: var(--dim); font-size: 11px; }
 .nav { display: flex; gap: 22px; }
