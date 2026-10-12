@@ -15,6 +15,7 @@ export interface Orb {
   downloads: number;
   devices: number;
   views: number;
+  watchers?: number;
   createdAt: string;
   expiresAt: string;
 }
@@ -41,6 +42,13 @@ export function deviceId() {
     }
     return id;
   }, "anon-" + Math.random().toString(36).slice(2));
+}
+
+export function deviceInfo() {
+  const ua = navigator.userAgent;
+  const [browser, os] = deviceLabel().split(" · ");
+  const form = /iPad|Tablet/.test(ua) ? "tablet" : /Mobi|Android|iPhone/.test(ua) ? "mobile" : "desktop";
+  return { label: `${browser} · ${os}`, browser, os, form };
 }
 
 export function deviceLabel() {

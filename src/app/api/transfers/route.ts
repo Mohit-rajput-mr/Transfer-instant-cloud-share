@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateClientTokenFromReadWriteToken } from "@vercel/blob/client";
 import { MAX_FILE_BYTES } from "@/lib/limits";
-import { clean, isB64, isHex, netHash, newId, randomHex, reap, rpc, sha256 } from "@/lib/server";
+import { clean, geo, isB64, isHex, netHash, newId, randomHex, reap, rpc, sha256 } from "@/lib/server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
+// Same answer for everyone, so the CDN serves it: database load stays ~1 query/second
+// per region no matter how many people are watching the void.
+export async function GET() {
   await reap();
-  const items = await rpc<unknown[]>("orbit_list", {});
-  return NextResponse.json({ items, net: netHash(req), now: Date.now() }, { headers: { "Cache-Control": "no-store" } });
+  const r = await rpc<{ items: unknown[]; online: number }>("orbit_list2", {});
+  return NextResponse.json(
+    { ...r, now: Date.now() },
+    { headers: { "Cache-Control": "public, max-age=0, s-maxage=1, stale-while-revalidate=5" } },
+  );
 }
 
 
@@ -45,6 +50,7 @@ export async function POST(req: NextRequest) {
       netHash: netHash(req), device: clean(b.device, 60),
       maxDownloads: maxDownloads ?? "",
       hue: Math.floor(Math.random() * 360),
+      ...geo(req),
     },
     });
   } catch (e) {

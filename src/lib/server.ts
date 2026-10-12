@@ -42,6 +42,31 @@ export function netHash(req: NextRequest) {
   return sha256(`${SECRET}:net:${ip}`).slice(0, 12);
 }
 
+export interface Geo {
+  country: string;
+  region: string;
+  city: string;
+  lat: string;
+  lon: string;
+}
+
+// Coarse location from Vercel's edge headers. Coordinates rounded to ~1 km; raw IPs are never stored.
+export function geo(req: NextRequest): Geo {
+  const h = (k: string) => req.headers.get(k) ?? "";
+  const num = (v: string) => (v && Number.isFinite(Number(v)) ? String(Math.round(Number(v) * 100) / 100) : "");
+  let city = h("x-vercel-ip-city");
+  try {
+    city = decodeURIComponent(city);
+  } catch {}
+  return {
+    country: clean(h("x-vercel-ip-country"), 2),
+    region: clean(h("x-vercel-ip-country-region"), 8),
+    city: clean(city, 60),
+    lat: num(h("x-vercel-ip-latitude")),
+    lon: num(h("x-vercel-ip-longitude")),
+  };
+}
+
 export async function removeBlobs(urls: (string | null | undefined)[]) {
   const list = urls.filter((u): u is string => !!u);
   if (!list.length) return;

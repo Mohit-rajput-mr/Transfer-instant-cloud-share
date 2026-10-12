@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { clean, isHex, rpc, sha256, validId } from "@/lib/server";
+import { clean, geo, isHex, rpc, sha256, validId } from "@/lib/server";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -10,6 +10,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     p_auth_hash: sha256(b.auth),
     p_device: clean(b.deviceId, 40),
     p_label: clean(b.device, 60),
+    p_geo: geo(req),
   });
   return NextResponse.json(r, { status: r?.ok ? 200 : 403 });
 }

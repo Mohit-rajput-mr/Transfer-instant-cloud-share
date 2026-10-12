@@ -4,8 +4,9 @@ import Link from "next/link";
 import Starfield from "./Starfield";
 import OrbView, { layout } from "./OrbView";
 import { OwnerPanel, SendPanel, UnlockPanel, setCardOrigin } from "./Panels";
-import { deviceId, deviceLabel, ownerKey, type Orb } from "@/lib/client";
-import { supabase, type Presence, type RealtimeChannel } from "@/lib/realtime";
+import { useRouter } from "next/navigation";
+import { deviceId, deviceInfo, ownerKey, type Orb } from "@/lib/client";
+import { supabase, type RealtimeChannel } from "@/lib/realtime";
 
 type Panel =
   | { kind: "send"; files: File[] }
@@ -22,7 +23,7 @@ export default function Void() {
   const [panel, setPanel] = useState<Panel>(null);
   const [scope, setScope] = useState<"all" | "near">("all");
   const [dragging, setDragging] = useState(false);
-  const [presence, setPresence] = useState<Presence[]>([]);
+  const [online, setOnline] = useState(1);
   const [pulse, setPulse] = useState(0);
   const [toasts, setToasts] = useState<{ id: number; text: string }[]>([]);
   const [extra, setExtra] = useState<Orb | null>(null);
@@ -37,19 +38,47 @@ export default function Void() {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4000);
   }, []);
 
-  const refresh = useCallback(async () => {
-    const r = await fetch("/api/transfers", { cache: "no-store" }).catch(() => null);
-    if (!r?.ok) return;
-    const d = (await r.json()) as { items: Orb[]; net: string; now: number };
-    setNet(d.net);
-    setSkew(d.now - Date.now());
-    setOrbs(d.items);
-    setLoaded(true);
-    if (known.current) {
-      for (const o of d.items) if (!known.current.has(o.id) && !ownerKey(o.id)) toast(`New object in orbit: ${o.name}`);
+  // Coalesced fetch: at most one request in flight; bursts of triggers collapse into one follow-up.
+  const inflight = useRef<Promise<void> | null>(null);
+  const again = useRef(false);
+  const refresh = useCallback((): Promise<void> => {
+    if (inflight.current) {
+      again.current = true;
+      return inflight.current;
     }
-    known.current = new Set(d.items.map((o) => o.id));
+    const run = (async () => {
+      const r = await fetch("/api/transfers").catch(() => null);
+      if (!r?.ok) return;
+      const d = (await r.json()) as { items: Orb[]; online: number; now: number };
+      setSkew(d.now - Date.now());
+      setOrbs(d.items);
+      setOnline(Math.max(1, d.online));
+      setLoaded(true);
+      if (known.current) {
+        for (const o of d.items) if (!known.current.has(o.id) && !ownerKey(o.id)) toast(`New object in orbit: ${o.name}`);
+      }
+      known.current = new Set(d.items.map((o) => o.id));
+    })().finally(() => {
+      inflight.current = null;
+      if (again.current) {
+        again.current = false;
+        refresh();
+      }
+    });
+    inflight.current = run;
+    return run;
   }, [toast]);
+
+  // Realtime pulses fan out to every open tab at once; random jitter spreads the refetches
+  // so a million tabs don't hit the edge in the same millisecond.
+  const pulseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleRefresh = useCallback(() => {
+    if (pulseTimer.current) return;
+    pulseTimer.current = setTimeout(() => {
+      pulseTimer.current = null;
+      refresh();
+    }, 150 + Math.random() * 900);
+  }, [refresh]);
 
   const broadcast = useCallback(() => {
     channel.current?.send({ type: "broadcast", event: "pulse", payload: { at: Date.now() } });
@@ -76,43 +105,62 @@ export default function Void() {
     };
   }, [refresh]);
 
-  // what this device is looking at, broadcast via presence
-  const viewing = panel?.kind === "unlock" ? panel.id : panel?.kind === "owner" ? `owner:${panel.id}` : null;
-  const presenceRef = useRef<Presence>({ device: "", viewing: null, net: null, at: 0 });
-  presenceRef.current = { ...presenceRef.current, viewing, net };
-  const track = useCallback(() => {
-    if (!presenceRef.current.device) presenceRef.current.device = deviceLabel();
-    channel.current?.track({ ...presenceRef.current, at: Date.now() });
+  // Heartbeat: tells the server this device is here and what it is looking at.
+  const viewing = panel?.kind === "unlock" ? panel.id : null;
+  const viewingRef = useRef<string | null>(null);
+  viewingRef.current = viewing;
+  const sendPulse = useCallback(() => {
+    if (document.visibilityState !== "visible") return Promise.resolve();
+    return fetch("/api/pulse", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deviceId: deviceId(), viewing: viewingRef.current, ...deviceInfo() }),
+      keepalive: true,
+    })
+      .then((r) => r.json())
+      .then((d: { net?: string }) => d.net && setNet(d.net))
+      .catch(() => {});
   }, []);
 
-  // realtime: presence (who is here / who is looking at what) + pulses (something changed)
   useEffect(() => {
-    const ch = supabase.channel("orbit-void", { config: { presence: { key: deviceId() }, broadcast: { self: false } } });
-    ch.on("presence", { event: "sync" }, () => {
-      const state = ch.presenceState<Presence>();
-      setPresence(Object.values(state).map((list) => list[list.length - 1]));
-    });
+    sendPulse();
+    const t = setInterval(sendPulse, 25_000);
+    const onVis = () => document.visibilityState === "visible" && sendPulse();
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [sendPulse]);
+
+  // realtime broadcast only (no presence): constant cost per message, scales with Supabase's fan-out
+  useEffect(() => {
+    const ch = supabase.channel("orbit-void", { config: { broadcast: { self: false } } });
     ch.on("broadcast", { event: "pulse" }, () => {
-      refresh();
+      scheduleRefresh();
       setPulse((p) => p + 1);
     });
     ch.subscribe((status) => {
-      if (status === "SUBSCRIBED") {
-        channel.current = ch;
-        track();
-      }
+      if (status === "SUBSCRIBED") channel.current = ch;
     });
     return () => {
       channel.current = null;
       supabase.removeChannel(ch);
     };
-  }, [refresh, track]);
+  }, [scheduleRefresh]);
 
+  // opening / closing an object updates live-viewer counts everywhere right away
+  const firstView = useRef(true);
   useEffect(() => {
-    track();
-    const t = setInterval(track, 25_000);
-    return () => clearInterval(t);
-  }, [viewing, net, track]);
+    if (firstView.current) {
+      firstView.current = false;
+      return;
+    }
+    sendPulse().then(() => {
+      refresh();
+      broadcast();
+    });
+  }, [viewing, sendPulse, refresh, broadcast]);
 
   // auto-refresh stale tabs after a new deploy (never while a card is open)
   const version = useRef<string | null>(null);
@@ -217,7 +265,14 @@ export default function Void() {
     () => alive.filter((o) => scope === "all" || o.netHash === net || !!ownerKey(o.id)),
     [alive, scope, net],
   );
-  const positions = useMemo(() => layout(shown), [shown]);
+  // The void can only hold so many spheres; keep yours, then nearby, then the newest.
+  const MAX_ORBS = 40;
+  const visible = useMemo(() => {
+    if (shown.length <= MAX_ORBS) return shown;
+    const rank = (o: Orb) => (ownerKey(o.id) ? 2 : 0) + (o.netHash === net ? 1 : 0);
+    return [...shown].sort((a, b) => rank(b) - rank(a) || b.createdAt.localeCompare(a.createdAt)).slice(0, MAX_ORBS);
+  }, [shown, net]);
+  const positions = useMemo(() => layout(visible), [visible]);
 
   // arrival + burn-up choreography
   const [arriving, setArriving] = useState<Set<string>>(new Set());
@@ -225,11 +280,11 @@ export default function Void() {
   const prev = useRef<{ ids: Set<string>; orbs: Map<string, Orb>; pos: Map<string, { x: number; y: number }> } | null>(null);
   useEffect(() => {
     if (!loaded) return;
-    const ids = new Set(shown.map((o) => o.id));
+    const ids = new Set(visible.map((o) => o.id));
     const aliveIds = new Set(alive.map((o) => o.id));
     const p = prev.current;
     if (p) {
-      const fresh = shown.filter((o) => !p.ids.has(o.id)).map((o) => o.id);
+      const fresh = visible.filter((o) => !p.ids.has(o.id)).map((o) => o.id);
       if (fresh.length) {
         setArriving((a) => new Set([...a, ...fresh]));
         setTimeout(() => setArriving((a) => new Set([...a].filter((id) => !fresh.includes(id)))), 2600);
@@ -241,15 +296,27 @@ export default function Void() {
         setTimeout(() => setGhosts((list) => list.filter((x) => !gone.includes(x.orb.id))), 1700);
       }
     }
-    prev.current = { ids, orbs: new Map(shown.map((o) => [o.id, o])), pos: new Map(positions) };
-  }, [shown, alive, positions, loaded]);
-  const watchers = useCallback((id: string) => presence.filter((p) => p.viewing === id).length, [presence]);
+    prev.current = { ids, orbs: new Map(visible.map((o) => [o.id, o])), pos: new Map(positions) };
+  }, [visible, alive, positions, loaded]);
+  const watchers = useCallback((id: string) => orbs.find((o) => o.id === id)?.watchers ?? 0, [orbs]);
   const nearbyCount = alive.filter((o) => o.netHash === net).length;
 
   const onViewed = useCallback(() => {
     refresh();
     broadcast();
   }, [refresh, broadcast]);
+
+  // 10 quick taps on the logo open mission HQ
+  const router = useRouter();
+  const taps = useRef<number[]>([]);
+  const tapLogo = () => {
+    const t = performance.now();
+    taps.current = [...taps.current.filter((x) => t - x < 4000), t];
+    if (taps.current.length >= 10) {
+      taps.current = [];
+      router.push("/admin");
+    }
+  };
 
   const open = (o: Orb) => setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id });
   const unlockOrb = panel?.kind === "unlock" ? orbs.find((o) => o.id === panel.id) ?? extra : null;
@@ -260,7 +327,7 @@ export default function Void() {
 
       <header className="top">
         <div className="top-row">
-          <div className="brand">
+          <div className="brand" onClick={tapLogo} role="presentation">
             <svg className="brand-mark" viewBox="0 0 64 64" aria-hidden>
               <circle cx="32" cy="32" r="10" fill="#fff" />
               <ellipse cx="32" cy="32" rx="27" ry="9" fill="none" stroke="#fff" strokeWidth="3" transform="rotate(-24 32 32)" />
@@ -274,7 +341,7 @@ export default function Void() {
             <button onClick={() => fileInput.current?.click()}>Launch</button>
           </nav>
           <div className="top-right">
-            <span className="live"><span className="dot" /><b>{Math.max(1, presence.length)}</b> {presence.length > 1 ? "devices" : "device"} in orbit</span>
+            <span className="live"><span className="dot" /><b>{online}</b> {online > 1 ? "devices" : "device"} in orbit</span>
             <button className="pill" onClick={() => fileInput.current?.click()}>Send</button>
           </div>
         </div>
@@ -311,7 +378,7 @@ export default function Void() {
             </div>
           )}
 
-          {shown.map((o) => (
+          {visible.map((o) => (
             <OrbView
               key={o.id}
               orb={o}
