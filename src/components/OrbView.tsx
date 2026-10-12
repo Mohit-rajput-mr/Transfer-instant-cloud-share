@@ -20,23 +20,27 @@ const SLOTS: [number, number][] = [
   [80, 82], [40, 46], [60, 46], [8, 34], [92, 30], [50, 84], [30, 24], [70, 22], [12, 84],
 ];
 
+// Slots stick to an object for its whole life, so nothing jumps when a neighbour burns up.
+const sticky = new Map<string, number>();
+
 export function layout(orbs: Orb[]) {
-  const taken = new Set<number>();
+  const live = new Set(orbs.map((o) => o.id));
+  for (const id of sticky.keys()) if (!live.has(id)) sticky.delete(id);
+  const taken = new Set<number>(sticky.values());
   const out = new Map<string, { x: number; y: number }>();
   const sorted = [...orbs].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   for (const o of sorted) {
     const h = hash(o.id);
-    let slot = -1;
-    for (let k = 0; k < SLOTS.length; k++) {
-      const s = (k === 0 ? (taken.size === 0 ? 0 : h % SLOTS.length) : (h + k) % SLOTS.length);
-      if (!taken.has(s)) {
-        slot = s;
-        break;
-      }
+    let slot = sticky.get(o.id) ?? -1;
+    for (let k = 0; slot < 0 && k < SLOTS.length; k++) {
+      const s = k === 0 ? (taken.size === 0 ? 0 : h % SLOTS.length) : (h + k) % SLOTS.length;
+      if (!taken.has(s)) slot = s;
     }
+    if (slot >= 0) sticky.set(o.id, slot);
     let x: number, y: number;
     if (slot >= 0) {
       taken.add(slot);
+      sticky.set(o.id, slot);
       [x, y] = SLOTS[slot];
       x += ((h >> 4) % 7) - 3;
       y += ((h >> 9) % 7) - 3;
@@ -60,8 +64,9 @@ export default function OrbView(props: {
   nearby: boolean;
   watchers: number;
   onOpen: () => void;
+  phase?: "arriving" | "burning";
 }) {
-  const { orb, pos, now, mine, nearby, watchers, onOpen } = props;
+  const { orb, pos, now, mine, nearby, watchers, onOpen, phase } = props;
   const h = hash(orb.id);
   const left = new Date(orb.expiresAt).getTime() - now;
   const frac = Math.max(0, Math.min(1, left / LIFETIME_MS));
@@ -165,7 +170,7 @@ export default function OrbView(props: {
   } as CSSProperties;
 
   return (
-    <div className="orb-anchor" ref={anchor} style={{ ...style, transform: `translate(${off.x}px, ${off.y}px)` }}>
+    <div className={`orb-anchor${phase ? ` ${phase}` : ""}`} ref={anchor} style={{ ...style, transform: `translate(${off.x}px, ${off.y}px)` }}>
     <button
       className={`orb${mine ? " mine" : ""}${dying ? " dying" : ""}${sealed ? " sealed" : ""}`}
       onPointerDown={onPointerDown}
@@ -196,6 +201,19 @@ export default function OrbView(props: {
           <span title="Opened by"><svg viewBox="0 0 16 16" aria-hidden><path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" strokeWidth="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>{orb.views ?? 0}</span>
           <span title="Downloads">↓{orb.downloads}</span>
         </span>
+        {phase === "arriving" && <><span className="shock" /><span className="shock s2" /><span className="trail" /></>}
+        {phase === "burning" && (
+          <>
+            <span className="flash" />
+            {Array.from({ length: 18 }, (_, i) => (
+              <span
+                key={i}
+                className="ember"
+                style={{ "--a": `${(360 / 18) * i + (h % 20)}deg`, "--d": `${50 + ((h >> (i % 16)) % 70)}px`, "--t": `${0.9 + ((h >> i) % 5) / 10}s` } as CSSProperties}
+              />
+            ))}
+          </>
+        )}
         {Array.from({ length: Math.min(watchers, 8) }, (_, i) => (
           <span
             key={i}

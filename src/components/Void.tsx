@@ -217,6 +217,31 @@ export default function Void() {
     [alive, scope, net],
   );
   const positions = useMemo(() => layout(shown), [shown]);
+
+  // arrival + burn-up choreography
+  const [arriving, setArriving] = useState<Set<string>>(new Set());
+  const [ghosts, setGhosts] = useState<{ orb: Orb; pos: { x: number; y: number }; mine: boolean }[]>([]);
+  const prev = useRef<{ ids: Set<string>; orbs: Map<string, Orb>; pos: Map<string, { x: number; y: number }> } | null>(null);
+  useEffect(() => {
+    if (!loaded) return;
+    const ids = new Set(shown.map((o) => o.id));
+    const aliveIds = new Set(alive.map((o) => o.id));
+    const p = prev.current;
+    if (p) {
+      const fresh = shown.filter((o) => !p.ids.has(o.id)).map((o) => o.id);
+      if (fresh.length) {
+        setArriving((a) => new Set([...a, ...fresh]));
+        setTimeout(() => setArriving((a) => new Set([...a].filter((id) => !fresh.includes(id)))), 2600);
+      }
+      const gone = [...p.ids].filter((id) => !ids.has(id) && !aliveIds.has(id));
+      if (gone.length) {
+        const g = gone.map((id) => ({ orb: p.orbs.get(id)!, pos: p.pos.get(id)!, mine: !!ownerKey(id) })).filter((x) => x.orb && x.pos);
+        setGhosts((list) => [...list, ...g]);
+        setTimeout(() => setGhosts((list) => list.filter((x) => !gone.includes(x.orb.id))), 1700);
+      }
+    }
+    prev.current = { ids, orbs: new Map(shown.map((o) => [o.id, o])), pos: new Map(positions) };
+  }, [shown, alive, positions, loaded]);
   const watchers = useCallback((id: string) => presence.filter((p) => p.viewing === id).length, [presence]);
   const nearbyCount = alive.filter((o) => o.netHash === net).length;
 
@@ -295,6 +320,20 @@ export default function Void() {
               nearby={!!net && o.netHash === net}
               watchers={watchers(o.id)}
               onOpen={() => open(o)}
+              phase={arriving.has(o.id) ? "arriving" : undefined}
+            />
+          ))}
+          {ghosts.map((g) => (
+            <OrbView
+              key={`ghost-${g.orb.id}`}
+              orb={g.orb}
+              pos={g.pos}
+              now={serverNow}
+              mine={g.mine}
+              nearby={false}
+              watchers={0}
+              onOpen={() => {}}
+              phase="burning"
             />
           ))}
         </section>
