@@ -113,6 +113,35 @@ export default function Void() {
     return () => clearInterval(t);
   }, [viewing, net, track]);
 
+  // auto-refresh stale tabs after a new deploy (never while a card is open)
+  const version = useRef<string | null>(null);
+  const stale = useRef(false);
+  const panelOpen = useRef(false);
+  panelOpen.current = panel !== null;
+  useEffect(() => {
+    const check = async () => {
+      const r = await fetch("/api/version", { cache: "no-store" }).catch(() => null);
+      const v = r?.ok ? ((await r.json()) as { v: string }).v : null;
+      if (!v) return;
+      if (version.current === null) version.current = v;
+      else if (v !== version.current) {
+        stale.current = true;
+        if (!panelOpen.current) window.location.reload();
+      }
+    };
+    check();
+    const t = setInterval(check, 60_000);
+    const onVis = () => document.visibilityState === "visible" && check();
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, []);
+  useEffect(() => {
+    if (!panel && stale.current) window.location.reload();
+  }, [panel]);
+
   // sync ?o= with open object
   useEffect(() => {
     const url = new URL(window.location.href);
