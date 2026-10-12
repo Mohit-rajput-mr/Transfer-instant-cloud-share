@@ -132,7 +132,7 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
       <header className="hq-top">
         <Link href="/" className="brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="brand-logo" src="/logo.svg" alt="ORBIT" width={103} height={24} />
+          <img className="brand-logo" src="/logo.svg" alt="ORBITRANSFER" width={180} height={24} />
           <span className="brand-by">Mission HQ</span>
         </Link>
         <span className="live"><span className="dot" /><b>{n(data?.online)}</b> online now</span>

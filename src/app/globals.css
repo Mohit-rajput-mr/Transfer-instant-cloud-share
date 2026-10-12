@@ -381,7 +381,7 @@ a { color: inherit; }
 .doc .back { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #aaa; }
 .made { position: fixed; right: 18px; bottom: 14px; z-index: 35; font-size: 11px; color: #9a9a9a; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.6); padding: 5px 11px; border-radius: 999px; border: 1px solid #1a1a1a; backdrop-filter: blur(6px); }
 .made b { color: #fff; font-weight: 500; }
-.heart { color: var(--danger); display: inline-block; animation: beat 1.3s ease-in-out infinite; }
+.heart { color: #fff; display: inline-block; width: 11px; height: 10px; flex: none; transform-origin: 50% 60%; animation: beat 1.3s ease-in-out infinite; }
 @keyframes beat { 0%, 60%, 100% { transform: scale(1); } 15% { transform: scale(1.25); } 30% { transform: scale(1); } 45% { transform: scale(1.18); } }
 
 .toast { position: fixed; left: 50%; top: 84px; transform: translateX(-50%); z-index: 35; display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; }

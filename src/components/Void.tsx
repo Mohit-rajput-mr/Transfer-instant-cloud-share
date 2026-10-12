@@ -363,7 +363,7 @@ export default function Void() {
         <div className="top-row">
           <div className="brand" onClick={tapLogo} role="presentation">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="brand-logo" src="/logo.svg" alt="ORBIT" width={103} height={24} draggable={false} />
+            <img className="brand-logo" src="/logo.svg" alt="ORBITRANSFER" width={180} height={24} draggable={false} />
             <span className="brand-by">Instant transfer</span>
           </div>
           <nav className="nav">
@@ -583,7 +583,7 @@ export default function Void() {
         </>
       )}
 
-      <div className="made">made with <span className="heart">♥</span> by <b>Mohit</b></div>
+      <div className="made">made with <svg className="heart" viewBox="0 0 10 9" aria-label="love" role="img"><path d="M1 0H4L5 1L6 0H9L10 1V4.2L5 9L0 4.2V1Z" fill="currentColor" /><rect x="6.6" y="1.6" width="1.4" height="1.4" fill="#000" opacity="0.55" /></svg> by <b>Mohit</b></div>
     </>
   );
 }
