@@ -5,8 +5,9 @@ import {
   type DownloadSink,
 } from "./crypto";
 import { deviceId, deviceLabel, setOwnerKey, type Orb } from "./client";
+import { FOLDER_MIME, directoryOutput, folderSink, zipOutput, type Manifest, type pickFolderTarget } from "./bundle";
 
-export type Stage = "deriving" | "encrypting" | "uploading" | "finalizing" | "decrypting" | "done";
+export type Stage = "packing" | "deriving" | "encrypting" | "uploading" | "finalizing" | "decrypting" | "done";
 
 const PARALLEL = 3;
 
@@ -142,7 +143,11 @@ export async function receive(opts: {
   target: Promise<SaveHandle | null>;
   onProgress: (stage: Stage, fraction: number) => void;
   signal?: AbortSignal;
-}) {
+  /** text and links: return the decrypted text instead of saving a file */
+  inline?: boolean;
+  /** folders: where to rebuild them (null → zip fallback) */
+  folderTarget?: ReturnType<typeof pickFolderTarget>;
+}): Promise<string | { folder: string; files: number; asZip: boolean } | void> {
   const { orb, passcode, onProgress, signal } = opts;
   onProgress("deriving", 0);
   const { key, auth } = await deriveKeys(passcode, fromB64(orb.salt), orb.iterations);
@@ -155,10 +160,17 @@ export async function receive(opts: {
   const r = await res.json().catch(() => ({ ok: false, reason: "gone" }));
   if (!r.ok) throw new UnlockError(r.reason, r.left);
 
-  const handle = await opts.target;
   let sink: DownloadSink;
   let mem: ReturnType<typeof memorySink> | null = null;
-  if (handle) {
+  let folderInfo: { folder: string; files: number; asZip: boolean } | null = null;
+  const handle = r.mime === FOLDER_MIME ? null : await opts.target;
+  if (r.mime === FOLDER_MIME) {
+    const dir = (await opts.folderTarget) ?? null;
+    sink = folderSink(
+      (m: Manifest) => (dir ? directoryOutput(dir, m.name) : zipOutput(m.name)),
+      (m) => (folderInfo = { folder: m.name, files: m.files.length, asZip: !dir }),
+    );
+  } else if (handle) {
     const w = await handle.createWritable();
     sink = { write: (c) => w.write(c as BufferSource), close: () => w.close(), abort: () => w.abort() };
   } else {
@@ -177,6 +189,14 @@ export async function receive(opts: {
     throw e;
   }
 
+  if (folderInfo) {
+    onProgress("done", 1);
+    return folderInfo;
+  }
+  if (mem && opts.inline) {
+    onProgress("done", 1);
+    return await mem.blob(r.mime).text();
+  }
   if (mem) {
     const href = URL.createObjectURL(mem.blob(r.mime));
     const a = document.createElement("a");

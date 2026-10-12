@@ -1,10 +1,11 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import QRCode from "qrcode";
 import {
   deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, ownerKey, timeAgo, type Orb, type OwnerView,
 } from "@/lib/client";
 import { MAX_FILE_BYTES } from "@/lib/limits";
+import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, isLinkText, packFolder, pickFolderTarget, textToFile, type Folder } from "@/lib/bundle";
 import { launch, pickSaveTarget, receive, UnlockError, type Stage } from "@/lib/transfer";
 
 // Screen point the card zooms out of (the tapped sphere / button). Set right before opening.
@@ -57,6 +58,7 @@ function BackBtn() {
 }
 
 const STAGE_LABEL: Record<Stage, string> = {
+  packing: "Packing folder on this device",
   deriving: "Forging key from passcode",
   encrypting: "Encrypting in your browser",
   uploading: "Encrypting + beaming into orbit",
@@ -142,11 +144,16 @@ export function ShareBlock({ id }: { id: string }) {
 
 /* ------------------------------ SEND ------------------------------ */
 
-export function SendPanel(props: { files: File[]; onClose: () => void; onLaunched: (orb: Orb) => void; onOpenOwner: (id: string) => void }) {
-  const { files, onClose, onLaunched } = props;
+export function SendPanel(props: { files: File[]; folder?: Folder | null; onClose: () => void; onLaunched: (orb: Orb) => void; onOpenOwner: (id: string) => void }) {
+  const { folder, onClose, onLaunched } = props;
+  // a folder travels as one object (no zipping: its files are streamed as-is behind a small manifest)
+  const files = useMemo(() => (folder ? [packFolder(folder)] : props.files), [folder, props.files]);
   const single = files.length === 1;
-  const total = files.reduce((a, f) => a + f.size, 0);
-  const [name, setName] = useState(single ? files[0].name.replace(/\.[^.]+$/, "").slice(0, 60) : "");
+  const total = folder ? folder.entries.reduce((a, e) => a + e.file.size, 0) : files.reduce((a, f) => a + f.size, 0);
+  const isLink = single && files[0].type === LINK_MIME;
+  const [name, setName] = useState(
+    folder ? folder.name.slice(0, 60) : single ? files[0].name.replace(/\.[^.]+$/, "").slice(0, 60) : "",
+  );
   const [code, setCode] = useState("");
   const [max, setMax] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -159,7 +166,7 @@ export function SendPanel(props: { files: File[]; onClose: () => void; onLaunche
 
   useEffect(() => () => abort.current?.abort(), []);
 
-  const tooBig = files.find((f) => f.size > MAX_FILE_BYTES);
+  const tooBig = folder ? (total > MAX_FILE_BYTES ? { name: `${folder.name} folder` } : undefined) : files.find((f) => f.size > MAX_FILE_BYTES);
   const go = async () => {
     if (code.length < 4 || busy || tooBig) return;
     setBusy(true);
@@ -167,9 +174,10 @@ export function SendPanel(props: { files: File[]; onClose: () => void; onLaunche
     abort.current = new AbortController();
     const launched: Orb[] = [];
     try {
-      for (let i = 0; i < files.length; i++) {
+      const queue = files;
+      for (let i = 0; i < queue.length; i++) {
         setIndex(i);
-        const f = files[i];
+        const f = queue[i];
         const orb = await launch({
           file: f,
           name: single ? name.trim() || f.name : f.name.replace(/\.[^.]+$/, "").slice(0, 60),
@@ -219,12 +227,14 @@ export function SendPanel(props: { files: File[]; onClose: () => void; onLaunche
     <Drawer label="New object" onClose={() => (busy ? abort.current?.abort() : onClose())}>
       <div className="col">
         <div>
-          <span className="mono dim">{single ? files[0].type || "file" : `${files.length} files`} · {formatBytes(total)}</span>
-          <div className="wide d-title">{single ? ext(files[0].name) : `${files.length}×`}</div>
-          <p className="note ellip">{single ? files[0].name : "Each file becomes its own object, one passcode."}</p>
+          <span className="mono dim">
+            {folder ? `folder · ${folder.entries.length} files` : isLink ? "link" : single ? files[0].type || "file" : `${files.length} files`} · {formatBytes(total)}
+          </span>
+          <div className="wide d-title">{folder ? "Folder" : isLink ? "Link" : single ? ext(files[0].name) : `${files.length}×`}</div>
+          <p className="note ellip">{folder ? `${folder.name}/ — arrives as a real folder, structure intact` : single ? files[0].name : "Each file becomes its own object, one passcode."}</p>
         </div>
         {busy ? (
-          <Progress stage={stage} frac={frac} extra={files.length > 1 ? `${index + 1} / ${files.length}` : formatBytes(files[0].size * frac)} />
+          <Progress stage={stage} frac={frac} extra={files.length > 1 ? `${index + 1} / ${files.length}` : formatBytes(total * frac)} />
         ) : single ? (
           <div className="field">
             <label><span className="mono">Name in orbit</span><span className="mono dim">{name.length}/60</span></label>
@@ -268,6 +278,35 @@ export function SendPanel(props: { files: File[]; onClose: () => void; onLaunche
   );
 }
 
+/* ---------------------------- TEXT / LINK ---------------------------- */
+
+export function ComposePanel(props: { onClose: () => void; onReady: (file: File) => void }) {
+  const [text, setText] = useState("");
+  const link = isLinkText(text);
+  const ok = text.trim().length > 0 && text.length <= 200_000;
+  return (
+    <Drawer label="Beam text or a link" onClose={props.onClose}>
+      <div className="col">
+        <span className="mono dim">{link ? "link detected" : text ? `${text.length.toLocaleString()} characters` : "anything you'd copy-paste"}</span>
+        <div className="wide d-title">{link ? "Link" : "Note"}</div>
+        <p className="note">Paste a URL, a code, an address, a message. It is encrypted like any file; the receiver can open or copy it instantly. Nothing is downloaded.</p>
+      </div>
+      <div className="col">
+        <textarea
+          className="compose"
+          autoFocus
+          value={text}
+          maxLength={200_000}
+          placeholder="https://… or any text"
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => (e.metaKey || e.ctrlKey) && e.key === "Enter" && ok && props.onReady(textToFile(text))}
+        />
+        <button className="cta" disabled={!ok} onClick={() => props.onReady(textToFile(text))}>Continue →</button>
+      </div>
+    </Drawer>
+  );
+}
+
 /* ----------------------------- RECEIVE ----------------------------- */
 
 export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; onClose: () => void; onDownloaded: () => void; onViewed: () => void }) {
@@ -278,8 +317,14 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
   const [frac, setFrac] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const [landed, setLanded] = useState(false);
+  const [text, setText] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const abort = useRef<AbortController | null>(null);
   const left = new Date(orb.expiresAt).getTime() - now;
+  const isLink = orb.mime === LINK_MIME;
+  const isFolder = orb.mime === FOLDER_MIME;
+  const [saved, setSaved] = useState<{ folder: string; files: number; asZip: boolean } | null>(null);
+  const inline = (isLink || orb.mime.startsWith("text/")) && orb.size <= INLINE_MAX;
   const [report, setReport] = useState<"idle" | "arm" | "sent">("idle");
 
   useEffect(() => () => abort.current?.abort(), []);
@@ -306,18 +351,22 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
 
   const go = () => {
     if (!code || busy) return;
-    const target = pickSaveTarget(orb); // must run inside the click gesture
+    // pickers must open inside the click gesture
+    const target = inline || isFolder ? Promise.resolve(null) : pickSaveTarget(orb);
+    const folderTarget = isFolder ? pickFolderTarget() : undefined;
     setBusy(true);
     setErr(null);
     abort.current = new AbortController();
     receive({
-      orb, passcode: code, target, signal: abort.current.signal,
+      orb, passcode: code, target, folderTarget, signal: abort.current.signal, inline,
       onProgress: (s, p) => {
         setStage(s);
         setFrac(p);
       },
     })
-      .then(() => {
+      .then((t) => {
+        if (typeof t === "string") setText(t);
+        else if (t) setSaved(t);
         setLanded(true);
         props.onDownloaded();
       })
@@ -355,7 +404,43 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
         </button>
       </div>
       <div className="col">
-        {landed ? (
+        {landed && text !== null ? (
+          <>
+            <span className="mono dim">{isLink ? "Decrypted link" : "Decrypted note"}</span>
+            {isLink ? (
+              <a className="link-out" href={text} target="_blank" rel="noopener noreferrer nofollow">{text}</a>
+            ) : (
+              <pre className="note-out">{text}</pre>
+            )}
+            <div className="grow" />
+            <div className="row-btns">
+              <button
+                className="ghost-btn"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(text);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1500);
+                  } catch {}
+                }}
+              >
+                {copied ? "Copied ✓" : "Copy"}
+              </button>
+              {isLink && <a className="cta" href={text} target="_blank" rel="noopener noreferrer nofollow">Open link ↗</a>}
+            </div>
+          </>
+        ) : landed && saved ? (
+          <>
+            <div className="wide d-title">Landed ✓</div>
+            <p className="note">
+              {saved.asZip
+                ? <>Your browser can&apos;t write folders, so <b>{saved.folder}</b> ({saved.files} files) was saved as <b>{saved.folder}.zip</b>.</>
+                : <>Folder <b>{saved.folder}/</b> rebuilt with all {saved.files} files, exactly as it was sent.</>}
+            </p>
+            <div className="grow" />
+            <BackBtn />
+          </>
+        ) : landed ? (
           <>
             <div className="wide d-title">Landed ✓</div>
             <p className="note">Decrypted on this device and saved as <b>{orb.fileName}</b>.</p>
@@ -376,7 +461,8 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
             {err && <p className="err">{err}</p>}
             <p className="note">Decrypted locally. The passcode never leaves this device.</p>
             <div className="grow" />
-            <button className="cta" disabled={!code} onClick={go}>Decrypt + download ↓</button>
+            {isFolder && <p className="note">{canWriteFolders() ? "You'll pick where to save it; the folder is rebuilt there with every subfolder." : "This browser can't write folders, so it will arrive as a .zip (use Chrome or Edge on a computer for a real folder)."}</p>}
+            <button className="cta" disabled={!code} onClick={go}>{isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : isFolder ? "Decrypt + save folder ↓" : "Decrypt + download ↓"}</button>
           </>
         )}
       </div>

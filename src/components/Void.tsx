@@ -3,13 +3,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Starfield from "./Starfield";
 import OrbView, { assignHues, layout } from "./OrbView";
-import { OwnerPanel, SendPanel, UnlockPanel, setCardOrigin } from "./Panels";
+import { ComposePanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin } from "./Panels";
+import { folderFromInput, fromDrop, textToFile, type Folder } from "@/lib/bundle";
 import { useRouter } from "next/navigation";
 import { deviceId, deviceInfo, ownerKey, type Orb } from "@/lib/client";
 import { supabase, type RealtimeChannel } from "@/lib/realtime";
 
 type Panel =
-  | { kind: "send"; files: File[] }
+  | { kind: "send"; files: File[]; folder?: Folder | null }
+  | { kind: "compose" }
   | { kind: "unlock"; id: string }
   | { kind: "owner"; id: string }
   | null;
@@ -30,6 +32,8 @@ export default function Void() {
   const channel = useRef<RealtimeChannel | null>(null);
   const known = useRef<Set<string> | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const folderInput = useRef<HTMLInputElement>(null);
+  const [menu, setMenu] = useState(false);
   const me = useRef<string>("");
 
   const toast = useCallback((text: string) => {
@@ -194,7 +198,7 @@ export default function Void() {
   // sync ?o= with open object
   useEffect(() => {
     const url = new URL(window.location.href);
-    const id = panel && panel.kind !== "send" ? panel.id : null;
+    const id = panel && (panel.kind === "unlock" || panel.kind === "owner") ? panel.id : null;
     if (id) url.searchParams.set("o", id);
     else url.searchParams.delete("o");
     window.history.replaceState(null, "", url);
@@ -234,8 +238,14 @@ export default function Void() {
       e.preventDefault();
       depth = 0;
       setDragging(false);
-      const files = Array.from(e.dataTransfer?.files ?? []);
-      if (files.length) setPanel({ kind: "send", files });
+      if (!e.dataTransfer) return;
+      // folders keep their structure; plain files stay files
+      fromDrop(e.dataTransfer)
+        .then(({ files, folder }) => {
+          if (folder?.entries.length) setPanel({ kind: "send", files: [], folder });
+          else if (files.length) setPanel({ kind: "send", files });
+        })
+        .catch(() => {});
     };
     const paste = (e: ClipboardEvent) => {
       const el = document.activeElement;
@@ -243,7 +253,7 @@ export default function Void() {
       const files = Array.from(e.clipboardData?.files ?? []);
       if (files.length) return setPanel({ kind: "send", files });
       const text = e.clipboardData?.getData("text");
-      if (text) setPanel({ kind: "send", files: [new File([text], "note.txt", { type: "text/plain" })] });
+      if (text?.trim()) setPanel({ kind: "send", files: [textToFile(text)] });
     };
     window.addEventListener("dragenter", enter);
     window.addEventListener("dragover", over);
@@ -319,6 +329,19 @@ export default function Void() {
     }
   };
 
+  const pickFiles = () => {
+    setMenu(false);
+    fileInput.current?.click();
+  };
+  const pickFolder = () => {
+    setMenu(false);
+    folderInput.current?.click();
+  };
+  const compose = () => {
+    setMenu(false);
+    setPanel({ kind: "compose" });
+  };
+
   const open = (o: Orb) => setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id });
   const unlockOrb = panel?.kind === "unlock" ? orbs.find((o) => o.id === panel.id) ?? extra : null;
 
@@ -339,11 +362,11 @@ export default function Void() {
           <nav className="nav">
             <a href="#void">Void</a>
             <a href="#how">How it works</a>
-            <button onClick={() => fileInput.current?.click()}>Launch</button>
+            <button onClick={() => setMenu(true)}>Launch</button>
           </nav>
           <div className="top-right">
             <span className="live"><span className="dot" /><b>{online}</b> {online > 1 ? "devices" : "device"} in orbit</span>
-            <button className="pill" onClick={() => fileInput.current?.click()}>Send</button>
+            <button className="pill" onClick={() => setMenu(true)}>Send</button>
           </div>
         </div>
         <div className="top-row">
@@ -374,8 +397,12 @@ export default function Void() {
 
           {loaded && shown.length === 0 && (
             <div className="empty">
-              <p className="mono">{scope === "near" ? "Nothing from your network yet" : "The void is empty. Drop a file anywhere"}<span className="cursor" /></p>
-              <button className="pill empty-btn" onClick={() => fileInput.current?.click()}>Choose file</button>
+              <p className="mono">{scope === "near" ? "Nothing from your network yet" : "The void is empty. Drop files, folders or text anywhere"}<span className="cursor" /></p>
+              <div className="empty-actions">
+                <button className="big-pick" onClick={pickFiles}><span className="bp-ico">⬆</span><b>Files</b><small>photos, videos, docs, anything</small></button>
+                <button className="big-pick" onClick={pickFolder}><span className="bp-ico">▣</span><b>Folder</b><small>arrives as a real folder</small></button>
+                <button className="big-pick" onClick={compose}><span className="bp-ico">↗</span><b>Text / link</b><small>opens instantly on the other side</small></button>
+              </div>
             </div>
           )}
 
@@ -424,7 +451,7 @@ export default function Void() {
               <h4>Works between</h4>
               <ul><li>Chrome, Safari, Edge, Firefox</li><li>Phone to laptop</li><li>Office PC to home</li><li>Any size, any format</li></ul>
             </div>
-            <button className="lnk" onClick={() => fileInput.current?.click()}>Launch something into orbit</button>
+            <button className="lnk" onClick={() => setMenu(true)}>Launch something into orbit</button>
           </div>
           <p className="how-sub">The four phases</p>
           <div className="table-head"><span>Phase</span><span>Codename</span><span>What happens</span><span style={{ textAlign: "right" }}>Step</span></div>
@@ -460,14 +487,30 @@ export default function Void() {
         }}
       />
 
+      <input
+        ref={folderInput}
+        type="file"
+        hidden
+        {...({ webkitdirectory: "", directory: "" } as Record<string, string>)}
+        onChange={(e) => {
+          const folder = folderFromInput(Array.from(e.target.files ?? []));
+          if (folder?.entries.length) setPanel({ kind: "send", files: [], folder });
+          e.target.value = "";
+        }}
+      />
+
       <div className={`dropzone${dragging ? " on" : ""}`} aria-hidden>
         <div className="frame" />
         <div className="wide">Release<br />to launch</div>
       </div>
 
+      {panel?.kind === "compose" && (
+        <ComposePanel onClose={() => setPanel(null)} onReady={(file) => setPanel({ kind: "send", files: [file] })} />
+      )}
       {panel?.kind === "send" && (
         <SendPanel
           files={panel.files}
+          folder={panel.folder}
           onClose={() => setPanel(null)}
           onLaunched={() => {
             refresh();
@@ -516,13 +559,25 @@ export default function Void() {
           onClick={(e) => {
             const r = e.currentTarget.getBoundingClientRect();
             setCardOrigin(r.left + r.width / 2, r.top + r.height / 2);
-            fileInput.current?.click();
+            setMenu((m) => !m);
           }}
-          aria-label="Send a file"
+          aria-label="Send something"
+          aria-expanded={menu}
         >
           <span className="ico">↑</span>
-          <span>Send<small>or drop anywhere</small></span>
+          <span>Send<small>files · folders · links</small></span>
         </button>
+      )}
+
+      {menu && !panel && (
+        <>
+          <div className="menu-scrim" onClick={() => setMenu(false)} />
+          <div className="send-menu" role="menu">
+            <button role="menuitem" onClick={pickFiles}><span>⬆</span><b>Files</b><small>photos · videos · docs · anything</small></button>
+            <button role="menuitem" onClick={pickFolder}><span>▣</span><b>Folder</b><small>whole folder, structure intact</small></button>
+            <button role="menuitem" onClick={compose}><span>↗</span><b>Text or link</b><small>opens instantly on the other side</small></button>
+          </div>
+        </>
       )}
 
       <div className="made">made with <span className="heart">♥</span> by <b>Mohit</b></div>
