@@ -9,25 +9,33 @@ interface Dot {
   lat: number;
   lon: number;
   n: number;
+  city?: string | null;
+  cc?: string | null;
   kind: "visitor" | "upload" | "download" | "live";
 }
 
-const COLORS: Record<Dot["kind"], string> = {
-  visitor: "rgba(255,255,255,0.75)",
-  upload: "#59b8ff",
-  download: "#ffa045",
-  live: "#3dff8c",
+const LABEL: Record<Dot["kind"], [string, string]> = {
+  visitor: ["device", "devices"],
+  upload: ["upload", "uploads"],
+  download: ["download", "downloads"],
+  live: ["online now", "online now"],
 };
+
+// Markers are plain DOM nodes pinned to lat/lng, so they keep the same pixel size at any zoom
+// and sit exactly on their coordinate instead of growing like 3D geometry.
+function marker(d: object) {
+  const p = d as Dot;
+  const el = document.createElement("div");
+  el.className = `gdot ${p.kind}`;
+  const where = [p.city, p.cc].filter(Boolean).join(", ") || `${p.lat.toFixed(2)}, ${p.lon.toFixed(2)}`;
+  el.dataset.tip = `${p.n} ${LABEL[p.kind][p.n === 1 ? 0 : 1]} · ${where} · ${p.lat.toFixed(2)}, ${p.lon.toFixed(2)}`;
+  return el;
+}
 
 export default function Earth({ data, layers, spin }: { data: Overview | null; layers: Set<Layer>; spin: boolean }) {
   const ref = useRef<GlobeMethods | undefined>(undefined);
   const box = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
-  const [countries, setCountries] = useState<object[]>([]);
-
-  useEffect(() => {
-    fetch("/globe/countries.json").then((r) => r.json()).then((g) => setCountries(g.features)).catch(() => {});
-  }, []);
 
   useEffect(() => {
     const el = box.current;
@@ -46,11 +54,23 @@ export default function Earth({ data, layers, spin }: { data: Overview | null; l
     c.enableDamping = true;
     c.minDistance = 120;
     c.maxDistance = 600;
-  }, [spin, countries]);
+  }, [spin]);
 
+  // open centred on the action: newest live user, else the busiest visitor spot
+  const centred = useRef(false);
   useEffect(() => {
-    ref.current?.pointOfView({ lat: 20, lng: 60, altitude: 2.3 }, 0);
-  }, []);
+    if (!ref.current) return;
+    if (!data) {
+      ref.current.pointOfView({ lat: 20, lng: 20, altitude: 2.3 }, 0);
+      return;
+    }
+    if (centred.current) return;
+    const focus = data.live[0] ?? data.visitors[0];
+    if (focus) {
+      centred.current = true;
+      ref.current.pointOfView({ lat: focus.lat, lng: focus.lon, altitude: 1.9 }, 1600);
+    }
+  }, [data]);
 
   const dots = useMemo<Dot[]>(() => {
     if (!data) return [];
@@ -64,7 +84,6 @@ export default function Earth({ data, layers, spin }: { data: Overview | null; l
     return out;
   }, [data, layers]);
 
-  const rings = useMemo(() => (data && layers.has("live") ? data.live : []), [data, layers]);
   const arcs = useMemo(() => (data && layers.has("routes") ? data.arcs : []), [data, layers]);
 
   return (
@@ -78,29 +97,12 @@ export default function Earth({ data, layers, spin }: { data: Overview | null; l
         showAtmosphere
         atmosphereColor="#7fb4ff"
         atmosphereAltitude={0.16}
-        hexPolygonsData={countries}
-        hexPolygonResolution={3}
-        hexPolygonMargin={0.62}
-        hexPolygonUseDots
-        hexPolygonColor={() => "rgba(255,255,255,0.28)"}
-        pointsData={dots}
-        pointLat={(d) => (d as Dot).lat}
-        pointLng={(d) => (d as Dot).lon}
-        pointColor={(d) => COLORS[(d as Dot).kind]}
-        pointAltitude={(d) => 0.01 + Math.min(0.25, Math.log2((d as Dot).n + 1) * 0.03)}
-        pointRadius={(d) => ((d as Dot).kind === "live" ? 0.45 : 0.28)}
-        pointsMerge={false}
-        pointLabel={(d) => {
-          const p = d as Dot;
-          return `<div class="globe-tip"><b>${p.n}</b> ${p.kind === "visitor" ? "device" + (p.n > 1 ? "s" : "") : p.kind === "live" ? "online now" : p.kind + (p.n > 1 ? "s" : "")}<br/><span>${p.lat.toFixed(1)}, ${p.lon.toFixed(1)}</span></div>`;
-        }}
-        ringsData={rings}
-        ringLat={(d) => (d as Dot).lat}
-        ringLng={(d) => (d as Dot).lon}
-        ringColor={() => (t: number) => `rgba(61,255,140,${1 - t})`}
-        ringMaxRadius={4}
-        ringPropagationSpeed={2.2}
-        ringRepeatPeriod={1100}
+        htmlElementsData={dots}
+        htmlLat={(d) => (d as Dot).lat}
+        htmlLng={(d) => (d as Dot).lon}
+        htmlAltitude={0.005}
+        htmlElement={marker}
+        htmlTransitionDuration={0}
         arcsData={arcs}
         arcStartLat={(d) => (d as Overview["arcs"][number]).a}
         arcStartLng={(d) => (d as Overview["arcs"][number]).b}

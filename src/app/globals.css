@@ -493,3 +493,11 @@ a { color: inherit; }
   .hq-side { border-left: 0; border-top: 1px solid var(--line); }
   .hq-clock { display: none; }
 }
+.gdot { position: relative; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; pointer-events: auto; cursor: pointer; box-shadow: 0 0 0 1px rgba(0,0,0,0.6); }
+.gdot.visitor { background: #fff; }
+.gdot.upload { background: #59b8ff; }
+.gdot.download { background: #ffa045; }
+.gdot.live { width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; background: #3dff8c; z-index: 2; }
+.gdot.live::after { content: ""; position: absolute; inset: -1px; border-radius: 50%; border: 1.5px solid #3dff8c; animation: gpulse 1.6s ease-out infinite; }
+@keyframes gpulse { from { transform: scale(1); opacity: 0.9; } to { transform: scale(4); opacity: 0; } }
+.gdot:hover::before { content: attr(data-tip); position: absolute; left: 12px; top: -8px; white-space: nowrap; background: rgba(10,10,10,0.9); border: 1px solid #333; border-radius: 8px; padding: 4px 8px; font: 10.5px var(--mono); color: #eee; z-index: 5; }

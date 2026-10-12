@@ -36,6 +36,8 @@ export interface Pt {
   lat: number;
   lon: number;
   n: number;
+  city?: string | null;
+  cc?: string | null;
 }
 
 export interface AdminTransfer {
