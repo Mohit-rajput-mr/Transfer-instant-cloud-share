@@ -53,6 +53,30 @@ export function layout(orbs: Orb[]) {
   return out;
 }
 
+// Every sphere gets its own colour. Start from the hue the server picked, then walk the
+// golden angle (137.5°) until it is at least MIN_GAP away from every colour on screen.
+// Assignments stick for the object's lifetime so colours never shuffle.
+const hues = new Map<string, number>();
+const MIN_GAP = 24;
+const gap = (a: number, b: number) => {
+  const d = Math.abs(a - b) % 360;
+  return Math.min(d, 360 - d);
+};
+export function assignHues(orbs: Orb[]) {
+  const live = new Set(orbs.map((o) => o.id));
+  for (const id of hues.keys()) if (!live.has(id)) hues.delete(id);
+  const sorted = [...orbs].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  for (const o of sorted) {
+    if (hues.has(o.id)) continue;
+    const used = [...hues.values()];
+    let h = ((o.hue % 360) + 360) % 360;
+    const need = Math.min(MIN_GAP, 360 / Math.max(1, used.length + 1) / 1.5);
+    for (let k = 0; k < 64 && used.some((u) => gap(u, h) < need); k++) h = (h + 137.508) % 360;
+    hues.set(o.id, Math.round(h));
+  }
+  return hues;
+}
+
 // Where the user has thrown each orb, kept across re-renders (this device only).
 const offsets = new Map<string, { x: number; y: number }>();
 
@@ -65,6 +89,7 @@ export default function OrbView(props: {
   watchers: number;
   onOpen: () => void;
   phase?: "arriving" | "burning";
+  hue?: number;
 }) {
   const { orb, pos, now, mine, nearby, watchers, onOpen, phase } = props;
   const h = hash(orb.id);
@@ -162,7 +187,7 @@ export default function OrbView(props: {
     "--x": `${pos.x}%`,
     "--y": `${pos.y}%`,
     "--s": `${size}px`,
-    "--hue": orb.hue,
+    "--hue": props.hue ?? orb.hue,
     "--dur": `${14 + (h % 9)}s`,
     "--delay": `-${h % 12}s`,
     "--dx": `${10 + (h % 18)}px`,

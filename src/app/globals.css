@@ -79,7 +79,7 @@ a { color: inherit; }
 .orb-anchor.dragging .orb { cursor: grabbing; }
 .orb-anchor.dragging .orb .orb-body { transform: scale(1.14) rotate(var(--tilt)); }
 .orb-anchor.flung .orb .orb-body { transform: scale(1.06) rotate(var(--tilt)); }
-.orb-anchor.dragging .sphere { box-shadow: 0 0 calc(var(--s) * 0.7) rgba(255,255,255,0.28), inset -8px -10px 24px rgba(0,0,0,0.9); }
+.orb-anchor.dragging .sphere { box-shadow: 0 0 calc(var(--s) * 0.8) var(--glow), 0 0 calc(var(--s) * 0.15) hsl(var(--hue) 90% 75% / 0.9), inset -10px -12px 26px rgba(0,0,0,0.55); }
 .orb {
   position: absolute; left: 0; top: 0; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none;
   display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -99,24 +99,37 @@ a { color: inherit; }
 .orb { --k: 1; }
 .orb-body { position: relative; width: calc(var(--s) * var(--k)); height: calc(var(--s) * var(--k)); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .orb:hover .orb-body, .orb:focus-visible .orb-body { transform: scale(1.08); }
+/* Metallic sphere: specular hotspot, a bright mid-tone body in the orb's own hue,
+   a reflected-light rim on the shadow side and a coloured halo so it never sinks into the black. */
 .sphere {
   position: absolute; inset: 14%; border-radius: 50%;
+  --c1: hsl(var(--hue) 85% 72%);
+  --c2: hsl(var(--hue) 70% 48%);
+  --c3: hsl(var(--hue) 75% 22%);
+  --glow: hsl(var(--hue) 90% 62% / 0.45);
   background:
-    radial-gradient(circle at 32% 28%, rgba(255,255,255,0.95), rgba(255,255,255,0.18) 22%, transparent 48%),
-    radial-gradient(circle at 50% 50%, hsl(var(--hue) 12% 22%), #050505 72%);
-  box-shadow: 0 0 calc(var(--s) * 0.35) rgba(255,255,255,0.08), inset -8px -10px 24px rgba(0,0,0,0.9);
+    radial-gradient(circle at 32% 26%, rgba(255,255,255,0.98), rgba(255,255,255,0.55) 9%, transparent 30%),
+    radial-gradient(circle at 70% 82%, hsl(var(--hue) 95% 75% / 0.55), transparent 38%),
+    conic-gradient(from 200deg at 50% 50%, transparent 0deg, rgba(255,255,255,0.18) 40deg, transparent 90deg, transparent 230deg, rgba(255,255,255,0.12) 270deg, transparent 320deg),
+    radial-gradient(circle at 40% 36%, var(--c1), var(--c2) 42%, var(--c3) 78%, #050505 100%);
+  box-shadow:
+    0 0 calc(var(--s) * 0.32) var(--glow),
+    0 0 calc(var(--s) * 0.08) hsl(var(--hue) 90% 70% / 0.6),
+    inset 0 0 0 1px hsl(var(--hue) 90% 80% / 0.35),
+    inset -10px -12px 26px rgba(0,0,0,0.55),
+    inset 6px 8px 18px rgba(255,255,255,0.15);
 }
-.orb.mine .sphere { box-shadow: 0 0 calc(var(--s) * 0.45) rgba(255,255,255,0.18), inset -8px -10px 24px rgba(0,0,0,0.9); }
+.orb.mine .sphere { box-shadow: 0 0 calc(var(--s) * 0.5) var(--glow), 0 0 calc(var(--s) * 0.1) hsl(var(--hue) 90% 75% / 0.8), inset 0 0 0 1px hsl(var(--hue) 90% 85% / 0.5), inset -10px -12px 26px rgba(0,0,0,0.55), inset 6px 8px 18px rgba(255,255,255,0.15); }
 .orb.dying .sphere { animation: dying 0.9s ease-in-out infinite; }
-@keyframes dying { 50% { box-shadow: 0 0 calc(var(--s) * 0.5) rgba(255,59,48,0.45), inset -8px -10px 24px rgba(0,0,0,0.9); } }
-.orb.sealed .sphere { filter: grayscale(1) brightness(0.45); }
-.ext { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-weight: 900; font-variation-settings: "wdth" 125; font-size: calc(var(--s) * var(--k) * 0.14); color: #fff; mix-blend-mode: difference; letter-spacing: 0.02em; }
+@keyframes dying { 50% { box-shadow: 0 0 calc(var(--s) * 0.6) rgba(255,59,48,0.6), inset -10px -12px 26px rgba(0,0,0,0.55); } }
+.orb.sealed .sphere { filter: grayscale(0.85) brightness(0.6); }
+.ext { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-weight: 900; font-variation-settings: "wdth" 125; font-size: calc(var(--s) * var(--k) * 0.14); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.55), 0 0 10px hsl(var(--hue) 80% 25% / 0.7); letter-spacing: 0.02em; }
 .ring { position: absolute; inset: 0; transform: rotate(-90deg); overflow: visible; }
 .ring circle { fill: none; stroke-width: 1; }
-.ring .track { stroke: #1f1f1f; }
-.ring .life { stroke: #e6e6e6; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+.ring .track { stroke: hsl(var(--hue) 40% 20% / 0.6); }
+.ring .life { stroke: hsl(var(--hue) 80% 82%); stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
 .orb.dying .ring .life { stroke: var(--danger); }
-.halo { position: absolute; inset: -6%; border-radius: 50%; border: 1px dashed #262626; animation: spin 40s linear infinite; }
+.halo { position: absolute; inset: -6%; border-radius: 50%; border: 1px dashed hsl(var(--hue) 50% 40% / 0.45); animation: spin 40s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .sat { position: absolute; inset: calc(var(--r) * -1); animation: spin var(--t) linear infinite; animation-delay: var(--d); pointer-events: none; }
 .sat::after { content: ""; position: absolute; top: 0; left: 50%; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--live); box-shadow: 0 0 10px var(--live); }

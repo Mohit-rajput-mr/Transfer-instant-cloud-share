@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Starfield from "./Starfield";
-import OrbView, { layout } from "./OrbView";
+import OrbView, { assignHues, layout } from "./OrbView";
 import { OwnerPanel, SendPanel, UnlockPanel, setCardOrigin } from "./Panels";
 import { useRouter } from "next/navigation";
 import { deviceId, deviceInfo, ownerKey, type Orb } from "@/lib/client";
@@ -273,11 +273,12 @@ export default function Void() {
     return [...shown].sort((a, b) => rank(b) - rank(a) || b.createdAt.localeCompare(a.createdAt)).slice(0, MAX_ORBS);
   }, [shown, net]);
   const positions = useMemo(() => layout(visible), [visible]);
+  const colors = useMemo(() => new Map(assignHues(visible)), [visible]);
 
   // arrival + burn-up choreography
   const [arriving, setArriving] = useState<Set<string>>(new Set());
-  const [ghosts, setGhosts] = useState<{ orb: Orb; pos: { x: number; y: number }; mine: boolean }[]>([]);
-  const prev = useRef<{ ids: Set<string>; orbs: Map<string, Orb>; pos: Map<string, { x: number; y: number }> } | null>(null);
+  const [ghosts, setGhosts] = useState<{ orb: Orb; pos: { x: number; y: number }; mine: boolean; hue?: number }[]>([]);
+  const prev = useRef<{ ids: Set<string>; orbs: Map<string, Orb>; pos: Map<string, { x: number; y: number }>; hue: Map<string, number> } | null>(null);
   useEffect(() => {
     if (!loaded) return;
     const ids = new Set(visible.map((o) => o.id));
@@ -291,13 +292,13 @@ export default function Void() {
       }
       const gone = [...p.ids].filter((id) => !ids.has(id) && !aliveIds.has(id));
       if (gone.length) {
-        const g = gone.map((id) => ({ orb: p.orbs.get(id)!, pos: p.pos.get(id)!, mine: !!ownerKey(id) })).filter((x) => x.orb && x.pos);
+        const g = gone.map((id) => ({ orb: p.orbs.get(id)!, pos: p.pos.get(id)!, mine: !!ownerKey(id), hue: p.hue.get(id) })).filter((x) => x.orb && x.pos);
         setGhosts((list) => [...list, ...g]);
         setTimeout(() => setGhosts((list) => list.filter((x) => !gone.includes(x.orb.id))), 1700);
       }
     }
-    prev.current = { ids, orbs: new Map(visible.map((o) => [o.id, o])), pos: new Map(positions) };
-  }, [visible, alive, positions, loaded]);
+    prev.current = { ids, orbs: new Map(visible.map((o) => [o.id, o])), pos: new Map(positions), hue: colors };
+  }, [visible, alive, positions, colors, loaded]);
   const watchers = useCallback((id: string) => orbs.find((o) => o.id === id)?.watchers ?? 0, [orbs]);
   const nearbyCount = alive.filter((o) => o.netHash === net).length;
 
@@ -389,6 +390,7 @@ export default function Void() {
               watchers={watchers(o.id)}
               onOpen={() => open(o)}
               phase={arriving.has(o.id) ? "arriving" : undefined}
+              hue={colors.get(o.id)}
             />
           ))}
           {ghosts.map((g) => (
@@ -402,6 +404,7 @@ export default function Void() {
               watchers={0}
               onOpen={() => {}}
               phase="burning"
+              hue={g.hue}
             />
           ))}
         </section>
