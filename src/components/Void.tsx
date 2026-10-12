@@ -361,6 +361,13 @@ export default function Void() {
         {toasts.map((t) => <div key={t.id}>{t.text}</div>)}
       </div>
 
+      {!panel && (
+        <button className="send-fab" onClick={() => fileInput.current?.click()} aria-label="Send a file">
+          <span className="ico">↑</span>
+          <span>Send<small>or drop anywhere</small></span>
+        </button>
+      )}
+
       <div className="made">made with <span className="heart">♥</span> by <b>Mohit</b></div>
     </>
   );
