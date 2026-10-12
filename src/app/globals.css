@@ -444,7 +444,7 @@ a { color: inherit; }
 .hq-layers .chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); }
 .hq-layers .chip.on { background: #fff; }
 .hq-layers .chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 1px rgba(128,128,128,0.6); }
-.hq-hint { position: absolute; right: 22px; bottom: 26px; color: #555; font-size: 9.5px; text-align: right; line-height: 1.6; }
+.hq-hint { position: absolute; right: 22px; top: 18px; color: #555; font-size: 9.5px; text-align: right; line-height: 1.6; }
 .hq-hint span { color: #444; text-transform: none; }
 .hq-side { overflow-y: auto; border-left: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 14px; background: rgba(0,0,0,0.35); }
 .hq-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -502,3 +502,12 @@ a { color: inherit; }
 .gdot.live::after { content: ""; position: absolute; inset: -1px; border-radius: 50%; border: 1.5px solid #3dff8c; animation: gpulse 1.6s ease-out infinite; }
 @keyframes gpulse { from { transform: scale(1); opacity: 0.9; } to { transform: scale(4); opacity: 0; } }
 .gdot:hover::before { content: attr(data-tip); position: absolute; left: 12px; top: -8px; white-space: nowrap; background: rgba(10,10,10,0.9); border: 1px solid #333; border-radius: 8px; padding: 4px 8px; font: 10.5px var(--mono); color: #eee; z-index: 5; }
+
+.earth.maplibregl-map { position: absolute; inset: 0; background: #000; }
+.globe-pop .maplibregl-popup-content { background: rgba(10,10,10,0.92); border: 1px solid #333; border-radius: 10px; padding: 6px 10px; font: 11px var(--mono); color: #eee; box-shadow: none; }
+.globe-pop .maplibregl-popup-content span { color: #888; }
+.globe-pop .maplibregl-popup-tip { display: none; }
+.hq .maplibregl-ctrl-attrib { background: rgba(0,0,0,0.5) !important; color: #777; font-size: 10px; }
+.hq .maplibregl-ctrl-attrib a { color: #999; }
+.hq .maplibregl-ctrl-attrib-button { filter: invert(1); }
+.gdot.live { margin: 0; }
