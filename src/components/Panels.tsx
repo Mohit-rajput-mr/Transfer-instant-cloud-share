@@ -41,7 +41,7 @@ export function Drawer({ label, onClose, children }: { label: string; onClose: (
   return (
     <CloseCtx.Provider value={close}>
       <div className={`scrim${closing ? " out" : ""}`} onClick={close} />
-      <aside className={`drawer${closing ? " out" : ""}`} style={vars} role="dialog" aria-label={label}>
+      <aside className={`drawer lg${closing ? " out" : ""}`} style={vars} role="dialog" aria-label={label}>
         <div className="drawer-head">
           <span className="mono dim">{label}</span>
           <button className="x" onClick={close} aria-label="Close">×</button>
@@ -54,7 +54,7 @@ export function Drawer({ label, onClose, children }: { label: string; onClose: (
 
 function BackBtn() {
   const close = useCloseCard();
-  return <button className="ghost-btn" onClick={close}>Back to the void</button>;
+  return <button className="ghost-btn lg-press" onClick={close}>Back to the void</button>;
 }
 
 const STAGE_LABEL: Record<Stage, string> = {
@@ -212,7 +212,7 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
           )}
           {err && <p className="err">{err}</p>}
           <div className="grow" />
-          <button className="cta" onClick={() => props.onOpenOwner(done[0].id)}>Mission control →</button>
+          <button className="cta lg-press" onClick={() => props.onOpenOwner(done[0].id)}>Mission control →</button>
         </div>
         <div className="col">
           <ShareBlock id={done[0].id} />
@@ -254,7 +254,7 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
         {busy ? (
           <>
             <div className="grow" />
-            <button className="ghost-btn" onClick={() => abort.current?.abort()}>Abort launch</button>
+            <button className="ghost-btn lg-press" onClick={() => abort.current?.abort()}>Abort launch</button>
           </>
         ) : (
           <>
@@ -263,14 +263,14 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
               <label><span className="mono">Burn after downloads</span><span className="mono dim">{max ? `${max} max` : "unlimited"}</span></label>
               <div className="chips">
                 {[null, 1, 2, 3, 5, 10].map((m) => (
-                  <button key={String(m)} className={`chip${max === m ? " on" : ""}`} onClick={() => setMax(m)}>{m ?? "∞"}</button>
+                  <button key={String(m)} className={`chip lg-press${max === m ? " on" : ""}`} onClick={() => setMax(m)}>{m ?? "∞"}</button>
                 ))}
               </div>
             </div>
             {err && <p className="err">{err}</p>}
             {tooBig && <p className="err">{tooBig.name} is over the 2 GB limit</p>}
             <div className="grow" />
-            <button className="cta" disabled={code.length < 4 || !!tooBig} onClick={go}>{code.length > 0 && code.length < 4 ? "Min 4 characters" : "Launch ↗"}</button>
+            <button className="cta lg-press" disabled={code.length < 4 || !!tooBig} onClick={go}>{code.length > 0 && code.length < 4 ? "Min 4 characters" : "Launch ↗"}</button>
           </>
         )}
       </div>
@@ -301,7 +301,7 @@ export function ComposePanel(props: { onClose: () => void; onReady: (file: File)
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => (e.metaKey || e.ctrlKey) && e.key === "Enter" && ok && props.onReady(textToFile(text))}
         />
-        <button className="cta" disabled={!ok} onClick={() => props.onReady(textToFile(text))}>Continue →</button>
+        <button className="cta lg-press" disabled={!ok} onClick={() => props.onReady(textToFile(text))}>Continue →</button>
       </div>
     </Drawer>
   );
@@ -425,7 +425,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
             <div className="grow" />
             <div className="row-btns">
               <button
-                className="ghost-btn"
+                className="ghost-btn lg-press"
                 onClick={async () => {
                   try {
                     await navigator.clipboard.writeText(text);
@@ -436,7 +436,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
               >
                 {copied ? "Copied ✓" : "Copy"}
               </button>
-              {isLink && <a className="cta" href={text} target="_blank" rel="noopener noreferrer nofollow">Open link ↗</a>}
+              {isLink && <a className="cta lg-press" href={text} target="_blank" rel="noopener noreferrer nofollow">Open link ↗</a>}
             </div>
           </>
         ) : landed && saved ? (
@@ -463,7 +463,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
           <>
             <Progress stage={stage} frac={frac} extra={formatBytes(orb.size * frac)} />
             <div className="grow" />
-            <button className="ghost-btn" onClick={() => abort.current?.abort()}>Abort</button>
+            <button className="ghost-btn lg-press" onClick={() => abort.current?.abort()}>Abort</button>
           </>
         ) : (
           <>
@@ -476,8 +476,8 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
                 <b>Pick another folder</b>
                 <span>Chrome locks <b>Downloads</b>, <b>Desktop</b> and <b>Documents</b> themselves for every website. Choose any folder inside them, or anywhere else, and the folder is saved there as-is.</span>
                 <div className="row-btns">
-                  <button className="ghost-btn" onClick={() => go({ zip: true })}>Get .zip instead</button>
-                  <button className="cta" onClick={() => go()}>Choose folder</button>
+                  <button className="ghost-btn lg-press" onClick={() => go({ zip: true })}>Get .zip instead</button>
+                  <button className="cta lg-press" onClick={() => go()}>Choose folder</button>
                 </div>
               </div>
             ) : isFolder ? (
@@ -487,7 +487,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
                   : "Choose any folder and it lands there as-is: same name, every subfolder, no zip."}
               </p>
             ) : null}
-            <button className="cta" disabled={!code || needSpot} onClick={() => go()}>{isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : isFolder ? "Decrypt + save folder ↓" : "Decrypt + download ↓"}</button>
+            <button className="cta lg-press" disabled={!code || needSpot} onClick={() => go()}>{isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : isFolder ? "Decrypt + save folder ↓" : "Decrypt + download ↓"}</button>
           </>
         )}
       </div>

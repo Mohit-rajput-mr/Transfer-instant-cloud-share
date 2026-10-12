@@ -221,7 +221,7 @@ export default function OrbView(props: {
           <circle className="life" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - frac)} />
         </svg>
         <span className="ext">{ext(orb.fileName)}</span>
-        <span className={`bubble${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
+        <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
           <span title="Live now"><i className="b-live" />{watchers}</span>
           <span title="Opened by"><svg viewBox="0 0 16 16" aria-hidden><path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" strokeWidth="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>{orb.views ?? 0}</span>
           <span title="Downloads">↓{orb.downloads}</span>

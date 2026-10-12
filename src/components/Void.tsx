@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Starfield from "./Starfield";
+import Uploader from "./Uploader";
+import LiquidGlass from "./LiquidGlass";
 import OrbView, { assignHues, layout } from "./OrbView";
 import { ComposePanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin } from "./Panels";
 import { folderFromInput, fromDrop, textToFile, type Folder } from "@/lib/bundle";
@@ -34,6 +36,13 @@ export default function Void() {
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
   const [menu, setMenu] = useState(false);
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const on = () => setCompact(window.scrollY > 40);
+    on();
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, []);
   const me = useRef<string>("");
 
   const toast = useCallback((text: string) => {
@@ -348,8 +357,9 @@ export default function Void() {
   return (
     <>
       <Starfield />
+      <LiquidGlass />
 
-      <header className="top">
+      <header className={`top lg${compact ? " compact" : ""}`}>
         <div className="top-row">
           <div className="brand" onClick={tapLogo} role="presentation">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -363,7 +373,7 @@ export default function Void() {
           </nav>
           <div className="top-right">
             <span className="live"><span className="dot" /><b>{online}</b> {online > 1 ? "devices" : "device"} in orbit</span>
-            <button className="pill" onClick={() => setMenu(true)}>Send</button>
+            <button className="pill lg-press" onClick={() => setMenu(true)}>Send</button>
           </div>
         </div>
         <div className="top-row">
@@ -395,11 +405,7 @@ export default function Void() {
           {loaded && shown.length === 0 && (
             <div className="empty">
               <p className="mono">{scope === "near" ? "Nothing from your network yet" : "The void is empty. Drop files, folders or text anywhere"}<span className="cursor" /></p>
-              <div className="empty-actions">
-                <button className="big-pick" onClick={pickFiles}><span className="bp-ico">⬆</span><b>Files</b><small>photos, videos, docs, anything</small></button>
-                <button className="big-pick" onClick={pickFolder}><span className="bp-ico">▣</span><b>Folder</b><small>arrives as a real folder</small></button>
-                <button className="big-pick" onClick={compose}><span className="bp-ico">↗</span><b>Text / link</b><small>opens instantly on the other side</small></button>
-              </div>
+              <Uploader onFiles={pickFiles} onFolder={pickFolder} onText={compose} />
             </div>
           )}
 
@@ -552,7 +558,7 @@ export default function Void() {
 
       {!panel && (
         <button
-          className="send-fab"
+          className={`send-fab lg lg-press${menu ? " open" : ""}`}
           onClick={(e) => {
             const r = e.currentTarget.getBoundingClientRect();
             setCardOrigin(r.left + r.width / 2, r.top + r.height / 2);
@@ -569,10 +575,10 @@ export default function Void() {
       {menu && !panel && (
         <>
           <div className="menu-scrim" onClick={() => setMenu(false)} />
-          <div className="send-menu" role="menu">
-            <button role="menuitem" onClick={pickFiles}><span>⬆</span><b>Files</b><small>photos · videos · docs · anything</small></button>
-            <button role="menuitem" onClick={pickFolder}><span>▣</span><b>Folder</b><small>whole folder, structure intact</small></button>
-            <button role="menuitem" onClick={compose}><span>↗</span><b>Text or link</b><small>opens instantly on the other side</small></button>
+          <div className="send-menu lg" role="menu">
+            <button role="menuitem" className="lg-press" style={{ "--i": 0 } as React.CSSProperties} onClick={pickFiles}><span>⬆</span><b>Files</b><small>photos · videos · docs · anything</small></button>
+            <button role="menuitem" className="lg-press" style={{ "--i": 1 } as React.CSSProperties} onClick={pickFolder}><span>▣</span><b>Folder</b><small>whole folder, structure intact</small></button>
+            <button role="menuitem" className="lg-press" style={{ "--i": 2 } as React.CSSProperties} onClick={compose}><span>↗</span><b>Text or link</b><small>opens instantly on the other side</small></button>
           </div>
         </>
       )}
