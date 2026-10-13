@@ -2,9 +2,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Starfield from "./Starfield";
-import Uploader from "./Uploader";
+import Uploader, { Icon } from "./Uploader";
 import LiquidGlass from "./LiquidGlass";
-import OrbView, { assignHues, layout } from "./OrbView";
+import OrbView, { ORB_CAP, assignHues, layout, type VoidMode } from "./OrbView";
 import { ComposePanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin } from "./Panels";
 import { folderFromInput, fromDrop, textToFile, type Folder } from "@/lib/bundle";
 import { useRouter } from "next/navigation";
@@ -36,12 +36,59 @@ export default function Void() {
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
   const [menu, setMenu] = useState(false);
+  const [menuOut, setMenuOut] = useState(false);
+  const menuTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // the menu flows back into the button before it unmounts
+  const closeMenu = useCallback(() => {
+    setMenuOut(true);
+    if (menuTimer.current) clearTimeout(menuTimer.current);
+    menuTimer.current = setTimeout(() => {
+      setMenu(false);
+      setMenuOut(false);
+    }, 200);
+  }, []);
+  const openMenu = useCallback(() => {
+    if (menuTimer.current) clearTimeout(menuTimer.current);
+    setMenuOut(false);
+    setMenu(true);
+  }, []);
+  useEffect(() => () => {
+    if (menuTimer.current) clearTimeout(menuTimer.current);
+  }, []);
   const [compact, setCompact] = useState(false);
   useEffect(() => {
-    const on = () => setCompact(window.scrollY > 40);
+    let raf = 0;
+    const on = () => {
+      raf = 0;
+      setCompact(window.scrollY > 40);
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(on);
+    };
     on();
-    window.addEventListener("scroll", on, { passive: true });
-    return () => window.removeEventListener("scroll", on);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+  // Layout mode follows the screen: wide sky, tall phone, or a phone on its side.
+  const [mode, setMode] = useState<VoidMode>("desk");
+  const [touch, setTouch] = useState(false);
+  useEffect(() => {
+    const phone = window.matchMedia("(max-width: 720px)");
+    const short = window.matchMedia("(max-height: 520px) and (orientation: landscape)");
+    const tall = window.matchMedia("(min-width: 721px) and (max-width: 1100px) and (orientation: portrait)");
+    const coarse = window.matchMedia("(pointer: coarse)");
+    const qs = [phone, short, tall, coarse];
+    const on = () => {
+      // a small phone on its side matches both; the landscape layout (later in the CSS) wins there too
+      setMode(short.matches ? "short" : phone.matches ? "phone" : tall.matches ? "tall" : "desk");
+      setTouch(coarse.matches);
+    };
+    on();
+    qs.forEach((q) => q.addEventListener("change", on));
+    return () => qs.forEach((q) => q.removeEventListener("change", on));
   }, []);
   const me = useRef<string>("");
 
@@ -213,6 +260,10 @@ export default function Void() {
     window.history.replaceState(null, "", url);
   }, [panel]);
 
+  // The open card's object, kept after it leaves the list (expired, or destroyed by the sender right after
+  // "downloaded"): the card, and a phone's decrypted, still-unsaved file in it, stay until the user closes it.
+  const keptUnlock = useRef<Orb | null>(null);
+
   // fetch an object opened by link that is not in the list yet
   const openId = panel?.kind === "unlock" ? panel.id : null;
   useEffect(() => {
@@ -221,6 +272,7 @@ export default function Void() {
       .then(async (r) => {
         if (r.ok) return setExtra(await r.json());
         setExtra(null);
+        if (keptUnlock.current?.id === openId) return; // gone while its card is open: only an unknown link closes
         setPanel(null);
         toast("That object already burned up");
       })
@@ -279,19 +331,25 @@ export default function Void() {
   }, []);
 
   const serverNow = now + skew;
-  const alive = useMemo(() => orbs.filter((o) => new Date(o.expiresAt).getTime() > serverNow), [orbs, serverNow]);
+  // Membership only changes when something launches or expires, not on every clock tick, so the
+  // layout / colour / choreography work below runs on change instead of every second.
+  const aliveKey = useMemo(() => orbs.filter((o) => new Date(o.expiresAt).getTime() > serverNow).map((o) => o.id).join(","), [orbs, serverNow]);
+  const alive = useMemo(() => {
+    const ids = new Set(aliveKey.split(","));
+    return orbs.filter((o) => ids.has(o.id));
+  }, [orbs, aliveKey]);
   const shown = useMemo(
     () => alive.filter((o) => scope === "all" || o.netHash === net || !!ownerKey(o.id)),
     [alive, scope, net],
   );
-  // The void can only hold so many spheres; keep yours, then nearby, then the newest.
-  const MAX_ORBS = 40;
+  // The void can only hold so many spheres (fewer on a phone); keep yours, then nearby, then the newest.
+  const cap = ORB_CAP[mode];
   const visible = useMemo(() => {
-    if (shown.length <= MAX_ORBS) return shown;
+    if (shown.length <= cap) return shown;
     const rank = (o: Orb) => (ownerKey(o.id) ? 2 : 0) + (o.netHash === net ? 1 : 0);
-    return [...shown].sort((a, b) => rank(b) - rank(a) || b.createdAt.localeCompare(a.createdAt)).slice(0, MAX_ORBS);
-  }, [shown, net]);
-  const positions = useMemo(() => layout(visible), [visible]);
+    return [...shown].sort((a, b) => rank(b) - rank(a) || b.createdAt.localeCompare(a.createdAt)).slice(0, cap);
+  }, [shown, net, cap]);
+  const positions = useMemo(() => layout(visible, mode), [visible, mode]);
   const colors = useMemo(() => new Map(assignHues(visible)), [visible]);
 
   // arrival + burn-up choreography
@@ -339,20 +397,30 @@ export default function Void() {
   };
 
   const pickFiles = () => {
-    setMenu(false);
+    if (menu) closeMenu();
     fileInput.current?.click();
   };
   const pickFolder = () => {
-    setMenu(false);
+    if (menu) closeMenu();
     folderInput.current?.click();
   };
   const compose = () => {
     setMenu(false);
+    setMenuOut(false);
     setPanel({ kind: "compose" });
   };
 
-  const open = (o: Orb) => setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id });
-  const unlockOrb = panel?.kind === "unlock" ? orbs.find((o) => o.id === panel.id) ?? extra : null;
+  const open = useCallback((o: Orb) => setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id }), []);
+  const noop = useCallback(() => {}, []);
+  const listedUnlock = panel?.kind === "unlock" ? orbs.find((o) => o.id === panel.id) ?? extra : null;
+  if (listedUnlock) keptUnlock.current = listedUnlock;
+  else if (panel?.kind !== "unlock") keptUnlock.current = null;
+  const unlockOrb = listedUnlock ?? (panel?.kind === "unlock" && keptUnlock.current?.id === panel.id ? keptUnlock.current : null);
+  // Phones stack the spheres in rows (see layout()); the void is as tall as its rows, including a
+  // sphere that is still burning up in the last one.
+  const flow = mode !== "desk" && (visible.length > 0 || ghosts.length > 0);
+  const lastRow = flow ? Math.max(0, ...[...positions.values()].map((p) => p.y)) : 0;
+  const rows = flow ? Math.max(lastRow + 1, ...ghosts.map((g) => Math.min(g.pos.y + 1, lastRow + 3))) : 1;
 
   return (
     <>
@@ -369,11 +437,11 @@ export default function Void() {
           <nav className="nav">
             <a href="#void">Void</a>
             <a href="#how">How it works</a>
-            <button onClick={() => setMenu(true)}>Launch</button>
+            <button onClick={openMenu}>Launch</button>
           </nav>
           <div className="top-right">
-            <span className="live"><span className="dot" /><b>{online}</b> {online > 1 ? "devices" : "device"} in orbit</span>
-            <button className="pill lg-press" onClick={() => setMenu(true)}>Send</button>
+            <span className="live" aria-label={`${online} ${online > 1 ? "devices" : "device"} in orbit`}><span className="dot" /><b>{online}</b><span className="live-txt">{online > 1 ? "devices" : "device"} in orbit</span></span>
+            <button className="pill lg-press" onClick={openMenu}>Send</button>
           </div>
         </div>
         <div className="top-row">
@@ -388,8 +456,12 @@ export default function Void() {
         </div>
       </header>
 
-      <main>
-        <section className="void" id="void">
+      <main className={menu && !menuOut ? "menu-open" : undefined}>
+        <section
+          className={`void${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
+          id="void"
+          style={flow ? ({ "--n": rows } as React.CSSProperties) : undefined}
+        >
           <div className="ghost-type" aria-hidden>
             <span className="wide">Drop</span>
             <span className="wide">Lock</span>
@@ -404,21 +476,30 @@ export default function Void() {
 
           {loaded && shown.length === 0 && (
             <div className="empty">
-              <p className="mono">{scope === "near" ? "Nothing from your network yet" : "The void is empty. Drop files, folders or text anywhere"}<span className="cursor" /></p>
-              <Uploader onFiles={pickFiles} onFolder={pickFolder} onText={compose} />
+              <p className="mono">
+                {scope === "near" ? "Nothing from your network yet" : (
+                  <>
+                    <span className="on-fine">The void is empty. Drop files, folders or text anywhere</span>
+                    <span className="on-touch">The void is empty. Tap upload to launch photos, videos, files or text</span>
+                  </>
+                )}
+                <span className="cursor" />
+              </p>
+              <Uploader onFiles={pickFiles} onFolder={pickFolder} onText={compose} folderSub={touch ? "a folder, or many files at once" : undefined} />
             </div>
           )}
 
-          {visible.map((o) => (
+          {visible.map((o, i) => (
             <OrbView
               key={o.id}
               orb={o}
+              index={i}
               pos={positions.get(o.id)!}
               now={serverNow}
               mine={!!ownerKey(o.id)}
               nearby={!!net && o.netHash === net}
               watchers={watchers(o.id)}
-              onOpen={() => open(o)}
+              onOpen={open}
               phase={arriving.has(o.id) ? "arriving" : undefined}
               hue={colors.get(o.id)}
             />
@@ -432,7 +513,7 @@ export default function Void() {
               mine={g.mine}
               nearby={false}
               watchers={0}
-              onOpen={() => {}}
+              onOpen={noop}
               phase="burning"
               hue={g.hue}
             />
@@ -443,7 +524,7 @@ export default function Void() {
           <div className="how-top"><span>Protocol</span><span>Objects in orbit right now</span></div>
           <div className="how-hero">
             <span className="wide">Orbit</span>
-            <span className="wide count">{alive.length}</span>
+            <span className="wide count num">{alive.length}</span>
           </div>
           <div className="how-cols">
             <div>
@@ -454,7 +535,7 @@ export default function Void() {
               <h4>Works between</h4>
               <ul><li>Chrome, Safari, Edge, Firefox</li><li>Phone to laptop</li><li>Office PC to home</li><li>Any size, any format</li></ul>
             </div>
-            <button className="lnk" onClick={() => setMenu(true)}>Launch something into orbit</button>
+            <button className="lnk" onClick={openMenu}>Launch something into orbit</button>
           </div>
           <p className="how-sub">The four phases</p>
           <div className="table-head"><span>Phase</span><span>Codename</span><span>What happens</span><span style={{ textAlign: "right" }}>Step</span></div>
@@ -494,10 +575,14 @@ export default function Void() {
         ref={folderInput}
         type="file"
         hidden
+        multiple
         {...({ webkitdirectory: "", directory: "" } as Record<string, string>)}
         onChange={(e) => {
-          const folder = folderFromInput(Array.from(e.target.files ?? []));
+          const files = Array.from(e.target.files ?? []);
+          const folder = folderFromInput(files);
           if (folder?.entries.length) setPanel({ kind: "send", files: [], folder });
+          // phones ignore webkitdirectory and hand back plain picks: send those as files instead of nothing
+          else if (files.length) setPanel({ kind: "send", files });
           e.target.value = "";
         }}
       />
@@ -558,27 +643,28 @@ export default function Void() {
 
       {!panel && (
         <button
-          className={`send-fab lg lg-press${menu ? " open" : ""}`}
+          className={`send-fab lg lg-press${menu && !menuOut ? " open" : ""}${compact && !menu ? " mini" : ""}`}
           onClick={(e) => {
             const r = e.currentTarget.getBoundingClientRect();
             setCardOrigin(r.left + r.width / 2, r.top + r.height / 2);
-            setMenu((m) => !m);
+            if (menu && !menuOut) closeMenu();
+            else openMenu();
           }}
-          aria-label="Send something"
-          aria-expanded={menu}
+          aria-label={menu && !menuOut ? "Close send menu" : "Send something"}
+          aria-expanded={menu && !menuOut}
         >
-          <span className="ico">↑</span>
-          <span>Send<small>files · folders · links</small></span>
+          <span className="ico"><span className="i-up">{Icon.up}</span><span className="i-x">{Icon.close}</span></span>
+          <span className="fab-label">Send<small>files · folders · links</small></span>
         </button>
       )}
 
       {menu && !panel && (
         <>
-          <div className="menu-scrim" onClick={() => setMenu(false)} />
-          <div className="send-menu lg" role="menu">
-            <button role="menuitem" className="lg-press" style={{ "--i": 0 } as React.CSSProperties} onClick={pickFiles}><span>⬆</span><b>Files</b><small>photos · videos · docs · anything</small></button>
-            <button role="menuitem" className="lg-press" style={{ "--i": 1 } as React.CSSProperties} onClick={pickFolder}><span>▣</span><b>Folder</b><small>whole folder, structure intact</small></button>
-            <button role="menuitem" className="lg-press" style={{ "--i": 2 } as React.CSSProperties} onClick={compose}><span>↗</span><b>Text or link</b><small>opens instantly on the other side</small></button>
+          <div className={`menu-scrim${menuOut ? " out" : ""}`} onClick={closeMenu} />
+          <div className={`send-menu lg${menuOut ? " out" : ""}`} role="menu">
+            <button role="menuitem" className="lg-press" style={{ "--i": 0 } as React.CSSProperties} onClick={pickFiles}><span>{Icon.file}</span><b>Files</b><small>photos · videos · docs · anything</small></button>
+            <button role="menuitem" className="lg-press" style={{ "--i": 1 } as React.CSSProperties} onClick={pickFolder}><span>{Icon.folder}</span><b>Folder</b><small>{touch ? "a folder, or many files at once" : "whole folder, structure intact"}</small></button>
+            <button role="menuitem" className="lg-press" style={{ "--i": 2 } as React.CSSProperties} onClick={compose}><span>{Icon.link}</span><b>Text or link</b><small>opens instantly on the other side</small></button>
           </div>
         </>
       )}

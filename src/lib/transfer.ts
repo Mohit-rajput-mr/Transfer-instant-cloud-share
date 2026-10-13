@@ -6,6 +6,7 @@ import {
 } from "./crypto";
 import { deviceId, deviceLabel, setOwnerKey, type Orb } from "./client";
 import { FOLDER_MIME, directoryOutput, folderSink, zipOutput, type DirHandle, type Manifest } from "./bundle";
+import { autoDownload, safeMime, saveName } from "./save";
 
 export type Stage = "packing" | "deriving" | "encrypting" | "uploading" | "finalizing" | "decrypting" | "done";
 
@@ -111,21 +112,26 @@ export class UnlockError extends Error {
   }
 }
 
-const memorySink = (): DownloadSink & { blob(mime: string): Blob } => {
-  const parts: BlobPart[] = [];
+const memorySink = () => {
+  let parts: BlobPart[] = [];
   return {
-    async write(c) {
+    async write(c: Uint8Array) {
       parts.push(c as BlobPart);
     },
     async close() {},
     async abort() {
-      parts.length = 0;
+      parts = [];
     },
-    blob: (mime) => new Blob(parts, { type: mime }),
+    /** Builds the File once and drops the chunks, so only one copy stays in memory (matters on phones). */
+    take(name: string, type: string) {
+      const f = new File(parts, name, { type });
+      parts = [];
+      return f;
+    },
   };
 };
 
-type SaveHandle = { createWritable(): Promise<{ write(d: BufferSource): Promise<void>; close(): Promise<void>; abort(): Promise<void> }> };
+type SaveHandle = { name: string; createWritable(): Promise<{ write(d: BufferSource): Promise<void>; close(): Promise<void>; abort(): Promise<void> }> };
 type PickerWindow = Window & { showSaveFilePicker?: (o: { suggestedName: string }) => Promise<SaveHandle> };
 
 const BIG = 512 * 1024 * 1024;
@@ -134,8 +140,19 @@ const BIG = 512 * 1024 * 1024;
 export function pickSaveTarget(orb: Orb): Promise<SaveHandle | null> {
   const w = window as PickerWindow;
   if (orb.size < BIG || !w.showSaveFilePicker) return Promise.resolve(null);
-  return w.showSaveFilePicker({ suggestedName: orb.fileName }).catch(() => null);
+  return w.showSaveFilePicker({ suggestedName: saveName(orb.fileName, safeMime(orb.mime, orb.fileName)) }).catch(() => null);
 }
+
+export type Received =
+  /** text and links, shown in the card */
+  | { kind: "text"; text: string }
+  /** written through the save picker (big files); name = what the user called it */
+  | { kind: "picked"; name: string }
+  /** a file (or a folder as .zip). held: nothing saved yet, the user picks where (phones/tablets).
+   *  !held: already handed to the browser's downloads (desktop) */
+  | { kind: "file"; file: File; held: boolean; folder?: { name: string; files: number } }
+  /** folder rebuilt inside a directory the user picked */
+  | { kind: "dir"; folder: string; files: number; where: string };
 
 export async function receive(opts: {
   orb: Orb;
@@ -147,7 +164,9 @@ export async function receive(opts: {
   inline?: boolean;
   /** folders: where to rebuild them (null → zip fallback) */
   folderTarget?: DirHandle | null;
-}): Promise<string | { folder: string; files: number; asZip: boolean; where?: string } | void> {
+  /** phones/tablets: never auto-download; hand the File back so the user picks where it goes */
+  hold?: boolean;
+}): Promise<Received> {
   const { orb, passcode, onProgress, signal } = opts;
   onProgress("deriving", 0);
   const { key, auth } = await deriveKeys(passcode, fromB64(orb.salt), orb.iterations);
@@ -162,13 +181,14 @@ export async function receive(opts: {
 
   let sink: DownloadSink;
   let mem: ReturnType<typeof memorySink> | null = null;
-  let folderInfo: { folder: string; files: number; asZip: boolean; where?: string } | null = null;
+  // set from callbacks, so kept on an object (TS does not narrow a callback-assigned `let`)
+  const got: { manifest?: Manifest; zip?: File } = {};
+  const dir = opts.folderTarget ?? null;
   const handle = r.mime === FOLDER_MIME ? null : await opts.target;
   if (r.mime === FOLDER_MIME) {
-    const dir = opts.folderTarget ?? null;
     sink = folderSink(
-      (m: Manifest) => (dir ? directoryOutput(dir, m.name) : zipOutput(m.name)),
-      (m) => (folderInfo = { folder: m.name, files: m.files.length, asZip: !dir, where: dir?.name }),
+      (m: Manifest) => (dir ? directoryOutput(dir, m.name) : zipOutput(m.name, (z) => (got.zip = z))),
+      (m) => (got.manifest = m),
     );
   } else if (handle) {
     const w = await handle.createWritable();
@@ -189,23 +209,21 @@ export async function receive(opts: {
     throw e;
   }
 
-  if (folderInfo) {
-    onProgress("done", 1);
-    return folderInfo;
-  }
-  if (mem && opts.inline) {
-    onProgress("done", 1);
-    return await mem.blob(r.mime).text();
-  }
-  if (mem) {
-    const href = URL.createObjectURL(mem.blob(r.mime));
-    const a = document.createElement("a");
-    a.href = href;
-    a.download = r.fileName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(href), 60_000);
-  }
   onProgress("done", 1);
+  const hold = !!opts.hold;
+  if (got.manifest) {
+    const { name, files } = got.manifest;
+    if (dir) return { kind: "dir", folder: name, files: files.length, where: dir.name };
+    if (!got.zip) throw new Error("The folder arrived incomplete");
+    if (!hold) autoDownload(got.zip);
+    return { kind: "file", file: got.zip, held: hold, folder: { name, files: files.length } };
+  }
+  if (handle) return { kind: "picked", name: handle.name };
+  if (!mem) throw new Error("Nothing was received");
+  if (opts.inline) return { kind: "text", text: await mem.take("note.txt", "text/plain").text() };
+  // never the sender's raw type: an html/svg blob: URL would run their script on our origin
+  const type = safeMime(r.mime, r.fileName);
+  const file = mem.take(saveName(r.fileName, type), type);
+  if (!hold) autoDownload(file);
+  return { kind: "file", file, held: hold };
 }

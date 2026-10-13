@@ -1,0 +1,146 @@
+/* =====================================================================
+   RECEIVE · "where should it go?"
+   Phones/tablets hold the decrypted file and the user picks the place
+   (share sheet → Photos / Files, system save picker, or a plain Download).
+   Desktop says exactly where it landed.
+   ===================================================================== */
+
+/* ---------- left: what arrived ---------- */
+.save-media { gap: 10px; }
+.save-hero {
+  --h: var(--hue, 210);
+  position: relative; width: 100%; height: 160px; height: clamp(116px, 24svh, 168px); flex-shrink: 0;
+  display: grid; place-items: center; overflow: hidden; isolation: isolate;
+  border-radius: 14px; border: 1px solid rgba(255,255,255,0.14);
+  background:
+    radial-gradient(90% 120% at 50% 110%, hsl(var(--h) 60% 50% / 0.18), transparent 60%),
+    radial-gradient(120% 90% at 20% 0%, rgba(255,255,255,0.10), transparent 55%),
+    rgba(0,0,0,0.42);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 14px 34px rgba(0,0,0,0.38);
+  animation: save-hero-in 0.75s 0.1s cubic-bezier(0.2, 1.2, 0.35, 1) both;
+}
+/* never upscaled; rounded itself so iOS clips the video layer too */
+.save-hero img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; display: block; border-radius: 4px;
+  animation: save-fade 0.5s 0.25s ease-out both; }
+.save-hero video { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; border-radius: 13px; }
+.save-hero.media { background: rgba(0,0,0,0.6); }
+
+/* no preview: the sphere that just landed, in its own colour */
+.save-orb {
+  width: 88px; height: 88px; border-radius: 50%; display: grid; place-items: center; position: relative;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255,255,255,0.85), rgba(255,255,255,0.18) 16%, transparent 38%),
+    radial-gradient(circle at 70% 82%, hsl(var(--h) 70% 72% / 0.45), transparent 36%),
+    radial-gradient(circle at 40% 36%, hsl(var(--h) 62% 70%), hsl(var(--h) 50% 44%) 44%, hsl(var(--h) 55% 20%) 80%, #070707 100%);
+  box-shadow: inset 0 0 0 1px hsl(var(--h) 60% 80% / 0.3), inset -10px -12px 26px rgba(0,0,0,0.5), 0 0 46px hsl(var(--h) 70% 60% / 0.25);
+  animation: save-float 4.8s ease-in-out infinite alternate;
+}
+.save-orb::after { content: ""; position: absolute; inset: -9px; border-radius: 50%; border: 1px dashed hsl(var(--h) 50% 60% / 0.35); animation: save-spin 36s linear infinite; }
+.save-orb .wide { font-size: 17px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.6); letter-spacing: 0.02em; line-height: 1; }
+.save-kind { position: absolute; left: 0; right: 0; bottom: 10px; text-align: center; color: rgba(255,255,255,0.55); font-size: 9px; }
+
+.save-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; min-width: 0; }
+.save-meta .ellip { color: #d6d6d6; min-width: 0; }
+.save-meta .dim { flex-shrink: 0; }
+.drawer .save-media audio { width: 100%; height: 40px; border-radius: 999px; }
+
+/* ---------- right: where it goes ---------- */
+.save-ready { gap: 10px; }
+.save-ready > * { animation: save-rise 0.55s cubic-bezier(0.2, 0.9, 0.25, 1) both; }
+.save-ready > :nth-child(1) { animation-delay: 0.22s; }
+.save-ready > :nth-child(2) { animation-delay: 0.28s; }
+.save-ready > :nth-child(3) { animation-delay: 0.34s; }
+.save-ready > :nth-child(n + 4) { animation-delay: 0.4s; }
+.save-head { display: flex; flex-direction: column; gap: 2px; }
+.save-title { animation: save-pop 0.6s cubic-bezier(0.2, 1.35, 0.35, 1) both; transform-origin: 0 60%; }
+.save-check { display: inline-block; width: 0.7em; height: 0.7em; margin-left: 0.16em; vertical-align: -0.02em; overflow: visible; }
+.save-check path { fill: none; stroke: currentColor; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 30; stroke-dashoffset: 30; animation: save-draw 0.5s 0.25s cubic-bezier(0.65, 0, 0.35, 1) forwards; }
+.save-ready .note { margin: 0; }
+
+.save-status { display: flex; align-items: center; gap: 8px; color: #e8e8e8; font-size: 10px; line-height: 1.4; animation: save-nudge 0.45s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+.save-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; background: #ffcf5a; box-shadow: 0 0 10px #ffcf5a; }
+.save-status.err { color: var(--danger, #ff3b30); }
+.save-status.err::before { background: var(--danger, #ff3b30); box-shadow: 0 0 10px var(--danger, #ff3b30); }
+.save-status.calm { color: var(--dim, #8a8a8a); }
+.save-status.calm::before { background: #666; box-shadow: none; }
+
+.save-acts { display: flex; flex-direction: column; gap: 8px; position: relative; }
+.save-acts > .row-btns { grid-template-columns: 1fr 1fr; }
+.save-acts .cta { position: relative; overflow: hidden; }
+/* one slow liquid glint across the primary so the eye finds it */
+.save-acts .cta.lead::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background: linear-gradient(105deg, transparent 36%, hsl(var(--hue, 210) 90% 62% / 0.32) 50%, transparent 64%);
+  background-size: 260% 100%; background-position: 130% 0; animation: save-glint 1.6s 0.9s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.save-where { font-size: 9.5px; line-height: 1.5; letter-spacing: 0.04em; color: rgba(255,255,255,0.58); text-align: center; overflow-wrap: anywhere; }
+.save-where b { color: #eee; font-weight: 500; }
+.save-hint { color: rgba(255,255,255,0.58); font-size: 9.5px; line-height: 1.5; }
+
+/* anchors dressed as the button they replace (download links) */
+.drawer a.cta, .drawer a.ghost-btn {
+  display: flex; align-items: center; justify-content: center; text-decoration: none; text-align: center;
+  -webkit-touch-callout: none; /* iOS long-press would preview/open the blob: URL */
+}
+.drawer a.cta { color: #000; }
+.drawer a.ghost-btn { color: inherit; }
+.save-acts .cta, .save-acts .ghost-btn, .save-acts a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.save-acts button:disabled { opacity: 0.45; cursor: progress; }
+.save-acts .cta:disabled { opacity: 0.6; }
+
+/* desktop "landed" */
+.save-shortcut { display: inline-flex; align-items: center; gap: 8px; color: var(--dim, #8a8a8a); }
+.save-shortcut kbd { font: inherit; color: #eee; padding: 2px 7px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.06); letter-spacing: 0.04em; }
+
+/* tablets keep the landscape card: let the right column scroll instead of clipping, and the preview fill its side */
+.drawer-body:has(> .save-ready) { overflow-x: hidden; overscroll-behavior: contain; }
+@media (min-width: 721px) {
+  .drawer-body:has(> .save-ready) { overflow-y: auto; }
+  .save-media .save-hero { flex: 1 1 auto; height: auto; min-height: 120px; }
+}
+
+/* bottom sheet (phones, short landscape): the save buttons never scroll out of the card,
+   and stay clear of the home indicator */
+@media (max-width: 720px), (max-height: 520px) {
+  /* sticky offsets count from the body's content edge, whose bottom padding already clears the home indicator;
+     anything above 0 would lift the buttons into the text even when nothing scrolls */
+  .save-acts { position: sticky; bottom: 0; z-index: 3; isolation: isolate; }
+  /* scrim band behind the stuck buttons, down to the sheet's bottom edge (the body's padding: 18px + safe area,
+     so it never adds scrollable overflow and leaves no lighter strip under it) */
+  .save-acts::before {
+    content: ""; position: absolute; z-index: -1; left: -18px; right: -18px; top: -10px; bottom: calc(-18px - var(--safe-b, 0px)); pointer-events: none;
+    background: linear-gradient(to bottom, rgba(10,10,10,0), rgba(10,10,10,0.86) 10px, rgba(8,8,8,0.94));
+  }
+}
+/* phones: big touch targets */
+@media (max-width: 720px) {
+  .save-acts .cta { height: 50px; font-size: 13.5px; }
+  .save-acts .ghost-btn { height: 44px; font-size: 12.5px; }
+  .save-acts > .row-btns .cta { height: 44px; }
+  .save-ready .note { font-size: 12px; }
+  .save-hero { border-radius: 14px; }
+}
+@media (max-width: 360px) {
+  .save-acts > .row-btns { grid-template-columns: 1fr; }
+  .save-orb { width: 76px; height: 76px; }
+}
+/* 280px (Galaxy Fold): a long lead label wraps inside the pill instead of touching its edges */
+@media (max-width: 300px) {
+  .save-acts .cta { height: auto; min-height: 50px; padding: 8px 18px; line-height: 1.1; font-size: 12.5px; letter-spacing: 0; }
+}
+
+@keyframes save-hero-in { from { opacity: 0; transform: scale(0.92) translateY(6px); filter: blur(10px); } }
+@keyframes save-fade { from { opacity: 0; transform: scale(1.03); } }
+@keyframes save-rise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes save-pop { 0% { opacity: 0; transform: scale(0.86); filter: blur(6px); } 60% { opacity: 1; transform: scale(1.035); filter: blur(0); } 100% { transform: none; } }
+@keyframes save-draw { to { stroke-dashoffset: 0; } }
+@keyframes save-float { from { transform: translateY(-4px) rotate(-2deg); } to { transform: translateY(5px) rotate(2deg); } }
+@keyframes save-spin { to { transform: rotate(360deg); } }
+@keyframes save-glint { to { background-position: -40% 0; } }
+@keyframes save-nudge { 0% { opacity: 0; transform: translateX(-6px); } 40% { opacity: 1; transform: translateX(4px); } 70% { transform: translateX(-2px); } 100% { transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .save-hero, .save-hero img, .save-orb, .save-orb::after, .save-ready > *, .save-title, .save-status, .save-acts .cta.lead::after { animation: none !important; }
+  .save-check path { animation: none; stroke-dashoffset: 0; }
+}

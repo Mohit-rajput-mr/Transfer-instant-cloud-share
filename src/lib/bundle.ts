@@ -136,8 +136,9 @@ export function directoryOutput(parent: DirHandle, name: string): FolderOutput {
   };
 }
 
-// Fallback: stream the files into a stored zip and save that.
-export function zipOutput(name: string): FolderOutput {
+// Fallback: stream the files into a stored zip. The caller decides how it is saved
+// (auto-download on desktop; on phones the user picks where it goes).
+export function zipOutput(name: string, done: (zip: File) => void): FolderOutput {
   const parts: Uint8Array[] = [];
   const zip = new Zip((err, chunk) => {
     if (!err) parts.push(chunk);
@@ -158,17 +159,13 @@ export function zipOutput(name: string): FolderOutput {
       entry = null;
     },
     async finish() {
-      zip.end();
-      const href = URL.createObjectURL(new Blob(parts as BlobPart[], { type: "application/zip" }));
-      const a = document.createElement("a");
-      a.href = href;
-      a.download = `${root}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(href), 60_000);
+      zip.end(); // fflate flushes the central directory synchronously into parts
+      done(new File(parts as BlobPart[], `${root}.zip`, { type: "application/zip" }));
+      parts.length = 0; // the File owns the bytes now
     },
-    async abort() {},
+    async abort() {
+      parts.length = 0;
+    },
   };
 }
 

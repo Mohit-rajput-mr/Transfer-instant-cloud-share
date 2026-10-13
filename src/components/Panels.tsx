@@ -6,7 +6,9 @@ import {
 } from "@/lib/client";
 import { MAX_FILE_BYTES } from "@/lib/limits";
 import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, isLinkText, packFolder, pickFolderTarget, textToFile, type DirHandle, type Folder } from "@/lib/bundle";
-import { launch, pickSaveTarget, receive, UnlockError, type Stage } from "@/lib/transfer";
+import { launch, pickSaveTarget, receive, UnlockError, type Received, type Stage } from "@/lib/transfer";
+import { canPickSave, canShareFile, deviceNoun, downloadWhere, downloadsShortcut, pickAndWrite, saveEnv, shareFile } from "@/lib/save";
+import "@/app/save.css";
 
 // Screen point the card zooms out of (the tapped sphere / button). Set right before opening.
 let origin: { x: number; y: number } | null = null;
@@ -17,7 +19,25 @@ export const setCardOrigin = (x: number, y: number) => {
 const CloseCtx = createContext<() => void>(() => {});
 export const useCloseCard = () => useContext(CloseCtx);
 
-export function Drawer({ label, onClose, children }: { label: string; onClose: () => void; children: ReactNode }) {
+// Phones and short landscape screens get an iOS-style bottom sheet; everything else the centred card.
+const SHEET_MQ = "(max-width: 720px), (max-height: 520px)";
+const isSheet = () => typeof window !== "undefined" && window.matchMedia(SHEET_MQ).matches;
+/** Autofocus only with a mouse: on a phone the keyboard would jump up mid-animation and cover the card. */
+const finePointer = () => typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches;
+/** Haptic tick through the Liquid Glass runtime (Android vibrate, iOS switch trick; no-op elsewhere). */
+const tick = (detail: "light" | "success" | "warn" = "light") => {
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("orbit:haptic", { detail }));
+};
+
+type SheetDrag = { y0: number; dy: number; off: number; v: number; ly: number; lt: number; raf: number };
+
+/**
+ * The glass card. Desktop: zooms out of the tapped sphere into the centre. Phones: a bottom sheet
+ * that slides up, rides on top of the keyboard, and can be dragged down to dismiss (grabber or, when
+ * the content is scrolled to the top, anywhere on it). `locked` keeps stray swipes / scrim taps from
+ * closing it mid-operation; × and Escape always work.
+ */
+export function Drawer({ label, onClose, children, locked = false }: { label: string; onClose: () => void; children: ReactNode; locked?: boolean }) {
   const [closing, setClosing] = useState(false);
   const [from] = useState(() => {
     const o = origin;
@@ -25,23 +45,266 @@ export function Drawer({ label, onClose, children }: { label: string; onClose: (
     if (!o || typeof window === "undefined") return { x: 0, y: 40 };
     return { x: o.x - window.innerWidth / 2, y: o.y - window.innerHeight / 2 };
   });
+  const sheet = useRef<HTMLElement>(null);
   const closingRef = useRef(false);
+  const doneRef = useRef(false);
+  const gen = useRef(0);
+  const mounted = useRef(true);
+  const lockedRef = useRef(locked);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    lockedRef.current = locked;
+    onCloseRef.current = onClose;
+  }, [locked, onClose]);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  // after the exit animation: hand over to the parent (which normally unmounts the card)
+  const finish = useCallback((g: number) => {
+    if (g !== gen.current || doneRef.current) return;
+    doneRef.current = true;
+    onCloseRef.current();
+    // the parent kept the card (it only cancelled something): bring it back instead of leaving an invisible overlay
+    setTimeout(() => {
+      if (!mounted.current || g !== gen.current) return;
+      gen.current++;
+      closingRef.current = false;
+      doneRef.current = false;
+      if (sheet.current) {
+        sheet.current.style.animation = "";
+        sheet.current.style.removeProperty("--drag");
+      }
+      document.documentElement.classList.add("card-open");
+      setClosing(false);
+    }, 80);
+  }, []);
   const close = useCallback(() => {
     if (closingRef.current) return;
     closingRef.current = true;
+    const g = ++gen.current;
+    // a drag that sprang back (or a vetoed swipe) leaves `animation: none` inline, which would mask the
+    // exit animation: the card would sit there frozen until the fallback timer, then vanish
+    const el = sheet.current;
+    if (el && el.style.animationName === "none") {
+      el.style.removeProperty("--drag");
+      el.style.animation = isSheet() ? "sheet-out var(--dur-2) var(--ease-in) both" : "unpop 0.3s var(--ease-in) both";
+    }
+    document.documentElement.classList.remove("card-open"); // the page springs back while the card leaves
     setClosing(true);
-    setTimeout(onClose, 320);
-  }, [onClose]);
+    setTimeout(() => finish(g), 560); // fallback if animationend never arrives
+  }, [finish]);
+  const onAnimEnd = (e: React.AnimationEvent<HTMLElement>) => {
+    if (e.target !== e.currentTarget || !closingRef.current) return;
+    if (e.animationName === "unpop" || e.animationName === "sheet-out") finish(gen.current);
+  };
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [close]);
+
+  // Page behind: scroll-locked + receding. Keyboard: the sheet follows the visual viewport.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--sy", `${Math.round(window.scrollY)}px`); // recede around what is on screen
+    root.classList.add("card-open");
+    const el = sheet.current;
+    const vv = window.visualViewport;
+    let raf = 0;
+    const sync = () => {
+      raf = 0;
+      if (!el) return;
+      if (!vv || !isSheet() || vv.scale > 1.01) {
+        el.style.removeProperty("--kb");
+        el.style.removeProperty("--vvh");
+        el.classList.remove("kb");
+        return;
+      }
+      const kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+      el.style.setProperty("--kb", `${kb}px`);
+      el.style.setProperty("--vvh", `${Math.round(vv.height)}px`);
+      el.classList.toggle("kb", kb > 80);
+    };
+    const on = () => {
+      if (!raf) raf = requestAnimationFrame(sync);
+    };
+    sync();
+    vv?.addEventListener("resize", on);
+    vv?.addEventListener("scroll", on);
+    window.addEventListener("resize", on);
+    return () => {
+      cancelAnimationFrame(raf);
+      vv?.removeEventListener("resize", on);
+      vv?.removeEventListener("scroll", on);
+      window.removeEventListener("resize", on);
+      root.classList.remove("card-open");
+    };
+  }, []);
+
+  // Swipe down to dismiss (sheet mode only).
+  useEffect(() => {
+    const el = sheet.current;
+    const head = el?.querySelector<HTMLElement>(".drawer-head");
+    const body = el?.querySelector<HTMLElement>(".drawer-body");
+    if (!el || !head || !body) return;
+    let d: SheetDrag | null = null;
+    let settle: ReturnType<typeof setTimeout> | null = null;
+
+    const currentY = () => {
+      const t = getComputedStyle(el).transform;
+      if (!t || t === "none") return 0;
+      try {
+        return new DOMMatrixReadOnly(t).m42;
+      } catch {
+        return 0;
+      }
+    };
+    const start = (y: number) => {
+      if (closingRef.current || !isSheet()) return false;
+      if (settle) clearTimeout(settle);
+      const base = currentY(); // pick it up where it is, even mid-entrance
+      el.style.animation = "none";
+      el.style.transition = "none";
+      el.style.transform = `translate3d(0, ${base}px, 0)`;
+      d = { y0: y - base, dy: base, off: base, v: 0, ly: y, lt: performance.now(), raf: 0 };
+      el.classList.add("dragging");
+      return true;
+    };
+    const move = (y: number) => {
+      if (!d) return;
+      const g = d;
+      const t = performance.now();
+      g.v = g.v * 0.4 + ((y - g.ly) / Math.max(1, t - g.lt)) * 0.6;
+      g.ly = y;
+      g.lt = t;
+      g.dy = y - g.y0;
+      g.off = g.dy < 0 ? -Math.sqrt(-g.dy) * 3 : g.dy; // pulling up resists like rubber
+      if (!g.raf) g.raf = requestAnimationFrame(() => {
+        g.raf = 0;
+        if (d === g) el.style.transform = `translate3d(0, ${g.off}px, 0)`;
+      });
+    };
+    // a programmatic tap on × so whatever guards that button (an unsaved file) can veto the swipe too
+    const requestClose = () => {
+      const x = head.querySelector<HTMLButtonElement>(".x");
+      if (x) x.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+      else close();
+      return closingRef.current;
+    };
+    const end = () => {
+      const g = d;
+      d = null;
+      if (!g) return;
+      cancelAnimationFrame(g.raf);
+      el.classList.remove("dragging");
+      const far = g.dy > Math.min(170, el.offsetHeight * 0.3) || (g.v > 0.45 && g.dy > 28);
+      if (far && !lockedRef.current) {
+        el.style.setProperty("--drag", `${Math.max(0, g.off)}px`);
+        el.style.transition = "";
+        el.style.transform = "";
+        el.style.animation = "sheet-out var(--dur-2) var(--ease-in) both";
+        if (requestClose()) {
+          tick();
+          return;
+        }
+        el.style.animation = "none";
+        el.style.removeProperty("--drag");
+        el.style.transform = `translate3d(0, ${g.off}px, 0)`;
+        void el.offsetWidth;
+      }
+      // not far enough (or vetoed): spring back into place
+      el.style.transition = "transform 0.5s var(--spring-soft)";
+      el.style.transform = "translate3d(0, 0, 0)";
+      settle = setTimeout(() => {
+        el.style.transition = "";
+        el.style.transform = "";
+      }, 520);
+    };
+
+    // grabber / header: any pointer
+    const headDown = (e: PointerEvent) => {
+      if ((e.target as Element).closest("button") || (e.pointerType === "mouse" && e.button !== 0)) return;
+      if (!start(e.clientY)) return;
+      const id = e.pointerId;
+      const mv = (ev: PointerEvent) => ev.pointerId === id && move(ev.clientY);
+      const up = (ev: PointerEvent) => {
+        if (ev.pointerId !== id) return;
+        window.removeEventListener("pointermove", mv);
+        window.removeEventListener("pointerup", up);
+        window.removeEventListener("pointercancel", up);
+        end();
+      };
+      window.addEventListener("pointermove", mv);
+      window.addEventListener("pointerup", up);
+      window.addEventListener("pointercancel", up);
+    };
+
+    // content: a downward pull while it is scrolled to the top moves the whole sheet (like iOS)
+    let sx = 0, sy = 0, mode: "idle" | "drag" | "pass" = "pass";
+    const scrolledInside = (t: Element | null) => {
+      for (let n = t as HTMLElement | null; n && n !== body; n = n.parentElement) {
+        if (n.scrollTop > 0 && n.scrollHeight > n.clientHeight + 1) return true;
+      }
+      return false;
+    };
+    const ts = (e: TouchEvent) => {
+      const t = e.target as Element;
+      mode = e.touches.length === 1 && isSheet() && !closingRef.current && !t.closest("input, textarea, select, video, audio, [data-noswipe]") ? "idle" : "pass";
+      sx = e.touches[0]?.clientX ?? 0;
+      sy = e.touches[0]?.clientY ?? 0;
+    };
+    const tm = (e: TouchEvent) => {
+      if (mode === "pass") return;
+      const p = e.touches[0];
+      if (!p) return;
+      if (mode === "idle") {
+        const dx = p.clientX - sx, dy = p.clientY - sy;
+        const pulling = dy > 0 && dy >= Math.abs(dx) && body.scrollTop <= 0 && !scrolledInside(e.target as Element);
+        if (!pulling) {
+          if (Math.abs(dx) > 4 || Math.abs(dy) > 4) mode = "pass";
+          return;
+        }
+        if (e.cancelable) e.preventDefault(); // no rubber-band of the content: the sheet moves instead
+        if (dy < 8) return;
+        if (!start(sy)) {
+          mode = "pass";
+          return;
+        }
+        mode = "drag";
+      }
+      if (e.cancelable) e.preventDefault();
+      move(p.clientY);
+    };
+    const te = () => {
+      if (mode === "drag") end();
+      mode = "pass";
+    };
+
+    head.addEventListener("pointerdown", headDown);
+    body.addEventListener("touchstart", ts, { passive: true });
+    body.addEventListener("touchmove", tm, { passive: false });
+    body.addEventListener("touchend", te);
+    body.addEventListener("touchcancel", te);
+    return () => {
+      if (settle) clearTimeout(settle);
+      head.removeEventListener("pointerdown", headDown);
+      body.removeEventListener("touchstart", ts);
+      body.removeEventListener("touchmove", tm);
+      body.removeEventListener("touchend", te);
+      body.removeEventListener("touchcancel", te);
+    };
+  }, [close]);
+
   const vars = { "--fx": `${from.x}px`, "--fy": `${from.y}px` } as CSSProperties;
   return (
     <CloseCtx.Provider value={close}>
-      <div className={`scrim${closing ? " out" : ""}`} onClick={close} />
-      <aside className={`drawer lg${closing ? " out" : ""}`} style={vars} role="dialog" aria-label={label}>
+      <div className={`scrim${closing ? " out" : ""}`} onClick={() => !lockedRef.current && close()} />
+      <aside ref={sheet} className={`drawer lg${closing ? " out" : ""}`} style={vars} role="dialog" aria-modal="true" aria-label={label} onAnimationEnd={onAnimEnd}>
         <div className="drawer-head">
           <span className="mono dim">{label}</span>
           <button className="x" onClick={close} aria-label="Close">×</button>
@@ -67,11 +330,85 @@ const STAGE_LABEL: Record<Stage, string> = {
   done: "Done",
 };
 
+/** Coalesces a fast stream of progress callbacks into at most one render per frame. */
+function useFrameProgress() {
+  const [stage, setStage] = useState<Stage>("deriving");
+  const [frac, setFrac] = useState(0);
+  const next = useRef<{ s: Stage; p: number } | null>(null);
+  const raf = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(raf.current), []);
+  const report = useCallback((s: Stage, p: number) => {
+    next.current = { s, p };
+    if (raf.current) return;
+    raf.current = requestAnimationFrame(() => {
+      raf.current = 0;
+      const n = next.current;
+      if (!n) return;
+      setStage(n.s);
+      setFrac(n.p);
+    });
+  }, []);
+  return [stage, frac, report] as const;
+}
+
+/**
+ * Progress that never stalls or jumps: reports can arrive in big steps (decrypt reports once per
+ * 8 MB chunk), so between them the bar keeps gliding at the measured rate, never past ~85% of the
+ * next expected step and never backwards. Painted straight onto the DOM once per frame (transform +
+ * a text node), so a transfer doesn't re-render React 60 times a second.
+ */
 function Progress({ stage, frac, extra }: { stage: Stage; frac: number; extra?: string }) {
+  const num = useRef<HTMLSpanElement>(null);
+  const bar = useRef<HTMLElement>(null);
+  const st = useRef({ cur: 0, stage, hist: [] as { t: number; f: number }[] });
+  // nothing measurable yet (key derivation, the first chunk): a sweep instead of a frozen 0%
+  const indet = frac <= 0.001 && stage !== "done";
+  const moving = (stage === "uploading" || stage === "decrypting" || stage === "encrypting") && frac < 1;
+
+  useEffect(() => {
+    const s = st.current;
+    const now = performance.now();
+    const h = s.hist;
+    // a new stage, or the next file of a batch: measure the rate afresh
+    if (s.stage !== stage || (h.length && frac < h[h.length - 1].f)) {
+      h.length = 0;
+      if (frac < s.cur) s.cur = frac;
+    }
+    s.stage = stage;
+    h.push({ t: now, f: frac });
+    if (h.length > 5) h.shift();
+  }, [frac, stage]);
+
+  useEffect(() => {
+    let raf = 0;
+    const paint = () => {
+      raf = 0;
+      const s = st.current, h = s.hist;
+      let goal = frac;
+      if (moving && h.length >= 2) {
+        const a = h[0], b = h[h.length - 1];
+        const per = (b.f - a.f) / (h.length - 1); // typical jump between two reports
+        const rate = (b.f - a.f) / Math.max(1, b.t - a.t); // progress per ms
+        goal = Math.min(0.995, frac + Math.min(per * 0.85, rate * (performance.now() - b.t)));
+      }
+      const d = goal - s.cur;
+      if (d > 0) s.cur = d < 0.0005 ? goal : s.cur + d * (moving ? 0.14 : 0.22);
+      if (bar.current) bar.current.style.transform = `scaleX(${s.cur})`;
+      const t = num.current?.firstChild;
+      if (t) t.nodeValue = String(Math.min(100, Math.floor(s.cur * 100 + 1e-6)));
+      if (moving || goal - s.cur > 0.0005) raf = requestAnimationFrame(paint);
+    };
+    raf = requestAnimationFrame(paint);
+    return () => cancelAnimationFrame(raf);
+  }, [frac, moving]);
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div className="wide big-num">{Math.floor(frac * 100)}<span className="pct">%</span></div>
-      <div className="progress"><i style={{ transform: `scaleX(${frac})` }} /></div>
+    <div className="progress-wrap">
+      <div className="wide big-num"><span ref={num}>0</span><span className="pct">%</span></div>
+      <div className="progress" role="progressbar" aria-label={STAGE_LABEL[stage]} aria-valuemin={0} aria-valuemax={100} aria-valuenow={indet ? undefined : Math.round(frac * 100)}>
+        <i ref={bar} />
+        {indet && <b className="sweep" />}
+      </div>
       <div className="stage mono"><span>{STAGE_LABEL[stage]}</span><span>{extra}</span></div>
     </div>
   );
@@ -79,6 +416,9 @@ function Progress({ stage, frac, extra }: { stage: Stage; frac: number; extra?: 
 
 function PasscodeInput(props: { value: string; onChange: (v: string) => void; onEnter?: () => void; autoFocus?: boolean; generate?: boolean }) {
   const [show, setShow] = useState(true);
+  // mask with CSS where possible: type=password makes iOS offer Keychain / "Save Password?" for a one-off code
+  const [cssMask] = useState(() => typeof CSS !== "undefined" && !!CSS.supports?.("-webkit-text-security", "disc"));
+  const [focusNow] = useState(() => !!props.autoFocus && finePointer());
   const gen = () => {
     const words = ["NOVA", "ORBIT", "LUNA", "COMET", "VEGA", "ATLAS", "ORION", "PULSAR", "QUASAR", "TITAN", "IO", "MARS"];
     const r = crypto.getRandomValues(new Uint32Array(2));
@@ -88,23 +428,32 @@ function PasscodeInput(props: { value: string; onChange: (v: string) => void; on
     <div className="field">
       <label>
         <span className="mono">Passcode</span>
-        <span style={{ display: "flex", gap: 12 }}>
+        <span style={{ display: "flex", gap: 14 }}>
           {props.generate && <button className="mono dim" onClick={gen} type="button">Generate</button>}
           <button className="mono dim" onClick={() => setShow((s) => !s)} type="button">{show ? "Hide" : "Show"}</button>
         </span>
       </label>
       <input
-        className="line-input code-input"
-        type={show ? "text" : "password"}
+        className={`line-input code-input${!show && cssMask ? " masked" : ""}`}
+        type={show || cssMask ? "text" : "password"}
         value={props.value}
-        autoFocus={props.autoFocus}
+        autoFocus={focusNow}
         autoComplete="off"
+        autoCorrect="off"
         autoCapitalize="off"
         spellCheck={false}
+        inputMode="text"
+        enterKeyHint="go"
+        data-1p-ignore=""
+        data-lpignore="true"
         placeholder="••••"
         maxLength={64}
         onChange={(e) => props.onChange(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && props.onEnter?.()}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter") return;
+          e.currentTarget.blur(); // drop the keyboard so the progress is visible
+          props.onEnter?.();
+        }}
       />
     </div>
   );
@@ -123,6 +472,7 @@ export function ShareBlock({ id }: { id: string }) {
   const link = typeof window !== "undefined" ? `${window.location.origin}/?o=${id}` : "";
   const qr = useQR(link);
   const [copied, setCopied] = useState(false);
+  const [canShare] = useState(() => typeof navigator !== "undefined" && typeof navigator.share === "function");
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(link);
@@ -130,13 +480,21 @@ export function ShareBlock({ id }: { id: string }) {
       setTimeout(() => setCopied(false), 1500);
     } catch {}
   };
+  // phones: straight into the share sheet (Messages, AirDrop, WhatsApp …)
+  const share = () => {
+    navigator.share({ title: "ORBIT", text: `Object ${id} is in orbit for 30 minutes`, url: link }).catch(() => {});
+  };
   return (
     <div className="share-mini">
+      {/* eslint-disable-next-line @next/next/no-img-element -- a generated data: URL, nothing to optimise */}
       {qr ? <img src={qr} alt="QR code to this object" /> : <div className="qr-ph" />}
       <div className="share-side">
         <span className="mono dim">Orbit code</span>
         <div className="wide share-code">{id}</div>
-        <button className={`pill${copied ? " solid" : ""}`} onClick={copy}>{copied ? "Copied" : "Copy link"}</button>
+        <div className="share-btns">
+          <button className={`pill lg-press${copied ? " solid" : ""}`} onClick={copy}>{copied ? "Copied ✓" : "Copy link"}</button>
+          {canShare && <button className="pill lg-press" onClick={share}>Share ↗</button>}
+        </div>
       </div>
     </div>
   );
@@ -157,13 +515,13 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
   const [code, setCode] = useState("");
   const [max, setMax] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
-  const [stage, setStage] = useState<Stage>("deriving");
-  const [frac, setFrac] = useState(0);
+  const [stage, frac, report] = useFrameProgress();
   const [index, setIndex] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState<Orb[]>([]);
   const abort = useRef<AbortController | null>(null);
 
+  // closing the card (×, Escape, swipe) mid-launch aborts it
   useEffect(() => () => abort.current?.abort(), []);
 
   const tooBig = folder ? (total > MAX_FILE_BYTES ? { name: `${folder.name} folder` } : undefined) : files.find((f) => f.size > MAX_FILE_BYTES);
@@ -184,17 +542,18 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
           passcode: code,
           maxDownloads: max,
           signal: abort.current.signal,
-          onProgress: (s, p) => {
-            setStage(s);
-            setFrac(p);
-          },
+          onProgress: report,
         });
         launched.push(orb);
         onLaunched(orb);
       }
       setDone(launched);
+      tick("success");
     } catch (e) {
-      if (!abort.current.signal.aborted) setErr(e instanceof Error ? e.message : "Launch failed");
+      if (!abort.current.signal.aborted) {
+        setErr(e instanceof Error ? e.message : "Launch failed");
+        tick("warn");
+      }
       if (launched.length) setDone(launched);
     } finally {
       setBusy(false);
@@ -205,6 +564,10 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
     return (
       <Drawer label="Launched" onClose={onClose}>
         <div className="col">
+          <svg className="ok-check" viewBox="0 0 52 52" aria-hidden>
+            <circle cx="26" cy="26" r="24" pathLength={1} />
+            <path d="M15.5 27l7 7 14-15" pathLength={1} />
+          </svg>
           <div className="wide d-title">In orbit.</div>
           <p className="note">{done.length > 1 ? `${done.length} objects float` : "It floats"} in the void for 30 minutes. Encrypted on this device. <b>Share the passcode separately.</b></p>
           {done.length > 1 && (
@@ -224,7 +587,7 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
   }
 
   return (
-    <Drawer label="New object" onClose={() => (busy ? abort.current?.abort() : onClose())}>
+    <Drawer label="New object" onClose={onClose} locked={busy}>
       <div className="col">
         <div>
           <span className="mono dim">
@@ -238,7 +601,20 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
         ) : single ? (
           <div className="field">
             <label><span className="mono">Name in orbit</span><span className="mono dim">{name.length}/60</span></label>
-            <input className="line-input" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Give it a name" />
+            <input
+              className="line-input"
+              value={name}
+              maxLength={60}
+              enterKeyHint="next"
+              autoComplete="off"
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                e.currentTarget.closest(".drawer")?.querySelector<HTMLInputElement>(".code-input")?.focus();
+              }}
+              placeholder="Give it a name"
+            />
           </div>
         ) : (
           <div className="files">
@@ -261,9 +637,9 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
             <PasscodeInput value={code} onChange={setCode} onEnter={go} autoFocus generate />
             <div className="field">
               <label><span className="mono">Burn after downloads</span><span className="mono dim">{max ? `${max} max` : "unlimited"}</span></label>
-              <div className="chips">
+              <div className="chips" role="radiogroup" aria-label="Burn after downloads">
                 {[null, 1, 2, 3, 5, 10].map((m) => (
-                  <button key={String(m)} className={`chip lg-press${max === m ? " on" : ""}`} onClick={() => setMax(m)}>{m ?? "∞"}</button>
+                  <button key={String(m)} role="radio" aria-checked={max === m} className={`chip lg-press${max === m ? " on" : ""}`} onClick={() => setMax(m)}>{m ?? "∞"}</button>
                 ))}
               </div>
             </div>
@@ -282,6 +658,7 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
 
 export function ComposePanel(props: { onClose: () => void; onReady: (file: File) => void }) {
   const [text, setText] = useState("");
+  const [focusNow] = useState(finePointer);
   const link = isLinkText(text);
   const ok = text.trim().length > 0 && text.length <= 200_000;
   return (
@@ -294,10 +671,13 @@ export function ComposePanel(props: { onClose: () => void; onReady: (file: File)
       <div className="col">
         <textarea
           className="compose"
-          autoFocus
+          autoFocus={focusNow}
           value={text}
           maxLength={200_000}
           placeholder="https://… or any text"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => (e.metaKey || e.ctrlKey) && e.key === "Enter" && ok && props.onReady(textToFile(text))}
         />
@@ -309,26 +689,194 @@ export function ComposePanel(props: { onClose: () => void; onReady: (file: File)
 
 /* ----------------------------- RECEIVE ----------------------------- */
 
+type SaveAct = "share" | "pick" | "download";
+type SaveOp = "idle" | "sharing" | "picking" | "cancelled" | "failed";
+type SaveDone = "shared" | "picked" | "downloaded";
+const IMAGE_PREVIEW_MAX = 30 * 1024 * 1024;
+const previewOf = (f: File) =>
+  f.type.startsWith("image/") && f.size <= IMAGE_PREVIEW_MAX ? "image" : f.type.startsWith("video/") ? "video" : f.type.startsWith("audio/") ? "audio" : null;
+const kindOf = (f: File) =>
+  /^image\//.test(f.type) ? "Image" : /^video\//.test(f.type) ? "Video" : /^audio\//.test(f.type) ? "Audio" : /^text\//.test(f.type) ? "Text"
+    : f.type === "application/pdf" ? "Document" : /zip|compressed|rar|7z/.test(f.type) ? "Archive" : ext(f.name) === "FILE" ? "No preview" : "File";
+const nFiles = (n: number) => `${n} file${n === 1 ? "" : "s"}`;
+const errName = (e: unknown) => (e as { name?: string } | null)?.name;
+
 export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; onClose: () => void; onDownloaded: () => void; onViewed: () => void }) {
   const { orb, now, watchers, onClose } = props;
+  const [env] = useState(saveEnv);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [stage, setStage] = useState<Stage>("deriving");
   const [frac, setFrac] = useState(0);
   const [err, setErr] = useState<string | null>(null);
-  const [landed, setLanded] = useState(false);
-  const [text, setText] = useState<string | null>(null);
+  const [got, setGot] = useState<Received | null>(null);
   const [copied, setCopied] = useState(false);
   const abort = useRef<AbortController | null>(null);
   const left = new Date(orb.expiresAt).getTime() - now;
   const isLink = orb.mime === LINK_MIME;
   const isFolder = orb.mime === FOLDER_MIME;
-  const [saved, setSaved] = useState<{ folder: string; files: number; asZip: boolean; where?: string } | null>(null);
   const [needSpot, setNeedSpot] = useState(false);
   const inline = (isLink || orb.mime.startsWith("text/")) && orb.size <= INLINE_MAX;
   const [report, setReport] = useState<"idle" | "arm" | "sent">("idle");
+  const [wrong, setWrong] = useState(0);
+
+  // ---- the received file: phones hold it until the user picks where it goes ----
+  const file = got?.kind === "file" ? got.file : null;
+  const folder = got?.kind === "file" ? got.folder : undefined;
+  const held = got?.kind === "file" && got.held;
+  const [op, setOp] = useState<SaveOp>("idle");
+  const [done, setDone] = useState<SaveDone | null>(null);
+  const [pickedName, setPickedName] = useState("");
+  const [shareOk, setShareOk] = useState(false);
+  const [pickOk, setPickOk] = useState(false);
+  const [url, setUrl] = useState<string | null>(null);
+  const [broken, setBroken] = useState(false);
+  const [closeArm, setCloseArm] = useState(false);
+  const lock = useRef<SaveAct | null>(null);
+  const card = useRef<HTMLDivElement>(null);
+  const saved = done !== null;
+  // in-app browsers often drop a blob download silently: there the guard stays until the user leaves on purpose
+  const unsaved = held && (!saved || (done === "downloaded" && env.inApp));
+  const preview = file && !broken ? previewOf(file) : null;
 
   useEffect(() => () => abort.current?.abort(), []);
+
+  // wrong passcode: the field comes back selected, so the next keystroke replaces it (no deleting it char by char)
+  useEffect(() => {
+    if (!wrong) return;
+    const input = card.current?.querySelector<HTMLInputElement>(".code-input");
+    input?.focus({ preventScroll: true });
+    input?.select();
+  }, [wrong]);
+
+  // One object URL per received file (preview + Download link), revoked when the card goes away.
+  // Never revoke right after a tap: iOS reads the blob only after its own "Download?" prompt is confirmed.
+  useEffect(() => {
+    if (!file) return;
+    const u = URL.createObjectURL(file);
+    setUrl(u);
+    return () => {
+      URL.revokeObjectURL(u);
+      setUrl(null);
+    };
+  }, [file]);
+
+  // the result replaces the form: bring the preview into view (the keyboard may have scrolled the card)
+  useEffect(() => {
+    if (got) card.current?.closest(".drawer-body")?.scrollTo({ top: 0 });
+  }, [got]);
+
+  // Android Chrome sometimes never settles share(): release the lock once the page is back in front.
+  useEffect(() => {
+    const back = () => {
+      if (document.visibilityState !== "visible" || lock.current !== "share") return;
+      setTimeout(() => {
+        if (lock.current !== "share") return;
+        lock.current = null;
+        setOp((s) => (s === "sharing" ? "idle" : s));
+      }, 1500);
+    };
+    document.addEventListener("visibilitychange", back);
+    return () => document.removeEventListener("visibilitychange", back);
+  }, []);
+
+  // Unsaved file in memory (and maybe the last allowed download): a stray ×, scrim tap or Escape must not throw it away.
+  // The first attempt is held back (capture phase, before the card's own handlers) and asks for a second one.
+  useEffect(() => {
+    if (!unsaved || closeArm) return;
+    const drawer = card.current?.closest(".drawer");
+    if (!drawer) return;
+    const hold = (e: Event) => {
+      e.stopPropagation();
+      e.preventDefault();
+      setCloseArm(true);
+    };
+    const onClick = (e: MouseEvent) => {
+      const t = e.target;
+      if (!(t instanceof Element)) return;
+      if (t.classList.contains("scrim") || (drawer.contains(t) && t.closest(".drawer-head .x"))) hold(e);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") hold(e);
+    };
+    window.addEventListener("click", onClick, true);
+    window.addEventListener("keydown", onKey, true);
+    return () => {
+      window.removeEventListener("click", onClick, true);
+      window.removeEventListener("keydown", onKey, true);
+    };
+  }, [unsaved, closeArm]);
+
+  useEffect(() => {
+    if (!closeArm) return;
+    const t = setTimeout(() => setCloseArm(false), 3500);
+    return () => clearTimeout(t);
+  }, [closeArm]);
+
+  // closing the tab with an unsaved file: Android/desktop ask "Leave site?" (iOS ignores it)
+  useEffect(() => {
+    if (!unsaved) return;
+    const h = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", h);
+    return () => window.removeEventListener("beforeunload", h);
+  }, [unsaved]);
+
+  // Both call the platform API synchronously inside the tap (no await before it: transient activation).
+  const doShare = () => {
+    if (!file || lock.current) return;
+    lock.current = "share";
+    setOp("sharing");
+    shareFile(file)
+      .then(() => {
+        setDone("shared");
+        setOp("idle");
+      })
+      .catch((e: unknown) => {
+        const n = errName(e);
+        if (n === "AbortError") setOp("cancelled");
+        else if (n === "InvalidStateError") setOp("idle"); // a sheet was still closing: just tap again
+        else {
+          setShareOk(false); // NotAllowedError / TypeError / DataError: this browser will not share it, Download takes over
+          setOp("failed");
+        }
+      })
+      .finally(() => {
+        if (lock.current === "share") lock.current = null;
+      });
+  };
+  const doPick = () => {
+    if (!file || lock.current) return;
+    lock.current = "pick";
+    setOp("picking");
+    pickAndWrite(file)
+      .then((name) => {
+        setPickedName(name);
+        setDone("picked");
+        setOp("idle");
+      })
+      .catch((e: unknown) => {
+        if (errName(e) === "AbortError") setOp("cancelled");
+        else {
+          setPickOk(false);
+          setOp("failed");
+        }
+      })
+      .finally(() => {
+        lock.current = null;
+      });
+  };
+  const doDownload = (e: { preventDefault(): void }) => {
+    if (!url || lock.current) return e.preventDefault(); // double tap = two "Download?" prompts on iOS
+    lock.current = "download";
+    setTimeout(() => {
+      if (lock.current === "download") lock.current = null;
+    }, 1200);
+    setDone("downloaded");
+    setOp("idle");
+  };
 
   const sendReport = () => {
     if (report === "idle") return setReport("arm");
@@ -368,16 +916,21 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     setErr(null);
     abort.current = new AbortController();
     receive({
-      orb, passcode: code, target, folderTarget, signal: abort.current.signal, inline,
+      orb, passcode: code, target, folderTarget, signal: abort.current.signal, inline, hold: env.mobile,
       onProgress: (s, p) => {
         setStage(s);
         setFrac(p);
       },
     })
-      .then((t) => {
-        if (typeof t === "string") setText(t);
-        else if (t) setSaved(t);
-        setLanded(true);
+      .then((res) => {
+        if (res.kind === "file") {
+          setShareOk(res.held && canShareFile(res.file, env));
+          setPickOk(res.held && canPickSave(env));
+        }
+        setBroken(false);
+        setOp("idle");
+        setDone(null);
+        setGot(res);
         props.onDownloaded();
       })
       .catch((e) => {
@@ -390,107 +943,249 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
               : "This object already burned up",
           );
           if (e.reason !== "wrong") props.onDownloaded();
+          else {
+            tick("warn");
+            setWrong((n) => n + 1);
+          }
         } else setErr(e instanceof Error ? e.message : "Something went wrong");
       })
       .finally(() => setBusy(false));
   };
 
+  // ---- copy + actions for the held file ----
+  const where = downloadWhere(env);
+  const shortcut = downloadsShortcut(env);
+  const dev = deviceNoun(env);
+  const media = file ? /^(image|video)\//.test(file.type) : false;
+  const order: SaveAct[] = [...(!env.ios && pickOk ? (["pick"] as const) : []), ...(shareOk ? (["share"] as const) : []), "download"];
+  const working = op === "sharing" || op === "picking";
+  const label = (a: SaveAct, role: "lead" | "alt" | "again") =>
+    a === "share" && op === "sharing" ? "Opening…"
+      : a === "pick" && op === "picking" ? "Saving…"
+      : role === "again" ? "Save again"
+      : a === "pick" ? "Choose where to save…"
+      : a === "share" ? (env.ios ? (media ? "Save to Photos or Files" : "Save to Files…") : role === "lead" ? "Save or share…" : "Share to an app…")
+      : role === "lead" ? "Download ↓" : "Download";
+  const action = (a: SaveAct, role: "lead" | "alt" | "again") => {
+    const cls = `${role === "lead" ? "cta lead" : "ghost-btn"} lg-press`;
+    if (a === "download")
+      return (
+        <a key={a} className={cls} href={url ?? undefined} download={file?.name} onClick={doDownload} aria-disabled={!url}>
+          {label(a, role)}
+        </a>
+      );
+    return (
+      <button key={a} type="button" className={cls} disabled={working} onClick={a === "share" ? doShare : doPick}>
+        {label(a, role)}
+      </button>
+    );
+  };
+  const readyNote = !file ? null
+    : order[0] === "share" && env.ios
+      ? media
+        ? <>Decrypted on this {dev}. Tap <b>Save</b>, then <b>Save Image</b> / <b>Save Video</b> to put it in Photos, or <b>Save to Files</b> to pick a folder.</>
+        : <>Decrypted on this {dev}. Tap <b>Save</b>, then <b>Save to Files</b> and pick a folder or iCloud Drive.</>
+      : order[0] === "pick"
+        ? <>Decrypted on this {dev}. Nothing is saved yet: choose a folder (Downloads, Pictures, Drive…) and it goes there.</>
+        : order[0] === "share"
+          ? <>Decrypted on this {dev}. Nothing is saved yet: pick where it goes (Files, Drive, Photos or any app).</>
+          : <>Decrypted on this {dev}. Tap <b>Download</b> and it goes to <b>{where}</b>.</>;
+  const doneNote =
+    done === "picked" ? <>Saved as <b>{pickedName}</b> in the folder you chose.</>
+      : done === "shared"
+        ? env.ios
+          ? media ? <>It&apos;s where you picked: <b>Photos</b> (Save Image / Save Video) or the <b>Files</b> folder you chose.</> : <>It&apos;s in the <b>Files</b> folder you picked.</>
+          : <>Handed to the app you picked.</>
+      : <>It&apos;s in <b>{where}</b>.{env.ios && media ? <> To add it to Photos: open it in Files, tap Share, then Save Image / Save Video.</> : null}</>;
+  const hueVar = { "--hue": orb.hue } as CSSProperties;
+
   return (
-    <Drawer label="Incoming object" onClose={() => (busy ? abort.current?.abort() : onClose())}>
-      <div className="col">
-        <div>
-          <span className="mono dim ellip">{orb.fileName}</span>
-          <div className="wide d-title">{orb.name}</div>
-        </div>
-        <div className="grow" />
-        <div className="kv">
-          <div><span className="mono">Size</span><b>{formatBytes(orb.size)}</b></div>
-          <div><span className="mono">Burns in</span><b>{formatClock(left)}</b></div>
-          <div><span className="mono">Downloads</span><b>{orb.downloads}{orb.maxDownloads ? ` / ${orb.maxDownloads}` : ""}</b></div>
-          <div><span className="mono">Live now</span><b>{watchers}</b></div>
-        </div>
-        <button className={`report mono${report === "arm" ? " arm" : ""}`} onClick={sendReport} disabled={report === "sent"}>
-          {report === "sent" ? "Reported · thank you" : report === "arm" ? "Tap again to report abuse" : "⚑ Report"}
-        </button>
-      </div>
-      <div className="col">
-        {landed && text !== null ? (
-          <>
-            <span className="mono dim">{isLink ? "Decrypted link" : "Decrypted note"}</span>
-            {isLink ? (
-              <a className="link-out" href={text} target="_blank" rel="noopener noreferrer nofollow">{text}</a>
+    <Drawer label={held ? (saved ? "Saved on this device" : "Ready to save") : "Incoming object"} locked={busy || op === "picking"} onClose={() => {
+      abort.current?.abort();
+      onClose();
+    }}>
+      {held && file ? (
+        <div className="col save-media" key="media" style={hueVar}>
+          <div className={`save-hero${preview === "image" || preview === "video" ? " media" : ""}`}>
+            {preview === "image" && url ? (
+              // eslint-disable-next-line @next/next/no-img-element -- local blob: preview, nothing to optimise
+              <img src={url} alt={file.name} decoding="async" draggable={false} onError={() => setBroken(true)} />
+            ) : preview === "video" && url ? (
+              <video src={`${url}#t=0.001`} muted playsInline controls preload="metadata" onError={() => setBroken(true)} />
             ) : (
-              <pre className="note-out">{text}</pre>
+              <>
+                <div className="save-orb"><span className="wide">{folder ? "ZIP" : ext(file.name)}</span></div>
+                <span className="save-kind mono">{folder ? `Folder · ${nFiles(folder.files)}` : kindOf(file)}</span>
+              </>
             )}
-            <div className="grow" />
-            <div className="row-btns">
-              <button
-                className="ghost-btn lg-press"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(text);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 1500);
-                  } catch {}
-                }}
-              >
-                {copied ? "Copied ✓" : "Copy"}
-              </button>
-              {isLink && <a className="cta lg-press" href={text} target="_blank" rel="noopener noreferrer nofollow">Open link ↗</a>}
+          </div>
+          {preview === "audio" && url && <audio src={url} controls preload="metadata" />}
+          <div className="save-meta">
+            <span className="mono ellip">{file.name}</span>
+            <span className="mono dim">{formatBytes(file.size)}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="col" key="info">
+          <div>
+            <span className="mono dim ellip">{orb.fileName}</span>
+            <div className="wide d-title">{orb.name}</div>
+          </div>
+          <div className="grow" />
+          <div className="kv">
+            <div><span className="mono">Size</span><b>{formatBytes(orb.size)}</b></div>
+            <div><span className="mono">Burns in</span><b>{formatClock(left)}</b></div>
+            <div><span className="mono">Downloads</span><b>{orb.downloads}{orb.maxDownloads ? ` / ${orb.maxDownloads}` : ""}</b></div>
+            <div><span className="mono">Live now</span><b>{watchers}</b></div>
+          </div>
+          <button className={`report mono${report === "arm" ? " arm" : ""}`} onClick={sendReport} disabled={report === "sent"}>
+            {report === "sent" ? "Reported · thank you" : report === "arm" ? "Tap again to report abuse" : "⚑ Report"}
+          </button>
+        </div>
+      )}
+      {got?.kind === "text" ? (
+        <div className="col" key="text" ref={card}>
+          <span className="mono dim">{isLink ? "Decrypted link" : "Decrypted note"}</span>
+          {isLink ? (
+            <a className="link-out" href={got.text} target="_blank" rel="noopener noreferrer nofollow">{got.text}</a>
+          ) : (
+            <pre className="note-out">{got.text}</pre>
+          )}
+          <div className="grow" />
+          <div className="row-btns">
+            <button
+              className="ghost-btn lg-press"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(got.text);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1500);
+                } catch {}
+              }}
+            >
+              {copied ? "Copied ✓" : "Copy"}
+            </button>
+            {isLink && <a className="cta lg-press" href={got.text} target="_blank" rel="noopener noreferrer nofollow">Open link ↗</a>}
+          </div>
+        </div>
+      ) : held && file ? (
+        <div className="col save-ready" key="ready" ref={card} style={hueVar}>
+          <div className="save-head">
+            <span className="mono dim">{saved ? `On this ${dev}` : `Decrypted · not saved yet`}</span>
+            <div className="wide d-title save-title" key={saved ? "saved" : "ready"}>
+              {saved ? "Saved" : "Ready"}
+              {saved && <svg className="save-check" viewBox="0 0 24 24" aria-hidden><path d="M3.5 12.5l5.5 5.5L20.5 6" /></svg>}
             </div>
-          </>
-        ) : landed && saved ? (
-          <>
-            <div className="wide d-title">Landed ✓</div>
-            <p className="note">
-              {saved.asZip
-                ? <>Your browser can&apos;t write folders, so <b>{saved.folder}</b> ({saved.files} files) was saved as <b>{saved.folder}.zip</b>.</>
-                : <>Folder <b>{saved.folder}/</b> saved inside <b>{saved.where}/</b> with all {saved.files} files and subfolders, exactly as sent.</>}
-            </p>
-            <div className="grow" />
-            <BackBtn />
-          </>
-        ) : landed ? (
-          <>
-            <div className="wide d-title">Landed ✓</div>
-            <p className="note">Decrypted on this device and saved as <b>{orb.fileName}</b>.</p>
-            <div className="grow" />
-            <BackBtn />
-          </>
-        ) : orb.status === "sealed" && !busy ? (
-          <div className="sealed-msg mono">{err ? `${err} · ` : ""}Sealed: the sender&apos;s download limit was reached. It will burn up shortly.</div>
-        ) : busy ? (
-          <>
-            <Progress stage={stage} frac={frac} extra={formatBytes(orb.size * frac)} />
-            <div className="grow" />
-            <button className="ghost-btn lg-press" onClick={() => abort.current?.abort()}>Abort</button>
-          </>
-        ) : (
-          <>
-            <PasscodeInput value={code} onChange={setCode} onEnter={() => go()} autoFocus />
-            {err && <p className="err">{err}</p>}
-            <p className="note">Decrypted locally. The passcode never leaves this device.</p>
-            <div className="grow" />
-            {isFolder && needSpot ? (
-              <div className="spot-help">
-                <b>Pick another folder</b>
-                <span>Chrome locks <b>Downloads</b>, <b>Desktop</b> and <b>Documents</b> themselves for every website. Choose any folder inside them, or anywhere else, and the folder is saved there as-is.</span>
-                <div className="row-btns">
-                  <button className="ghost-btn lg-press" onClick={() => go({ zip: true })}>Get .zip instead</button>
-                  <button className="cta lg-press" onClick={() => go()}>Choose folder</button>
-                </div>
+          </div>
+          <p className="note">
+            {saved ? doneNote : readyNote}
+            {folder && !saved ? <> It&apos;s the folder <b>{folder.name}</b> ({nFiles(folder.files)}) as one .zip; tap it in Files to unpack.</> : null}
+          </p>
+          {closeArm ? (
+            <p className="save-status err mono" key="arm">Not saved yet · tap × again to discard it</p>
+          ) : op === "failed" ? (
+            <p className="save-status err mono" key="failed">That didn&apos;t work in this browser · use Download</p>
+          ) : op === "cancelled" && !saved ? (
+            <p className="save-status mono" key="cancelled">Not saved yet · tap {order[0] === "download" ? "Download" : "Save"} to choose where</p>
+          ) : env.inApp && !saved ? (
+            <p className="save-status calm mono" key="inapp">In-app browser? If nothing saves, open this page in Safari or Chrome.</p>
+          ) : null}
+          <div className="grow" />
+          <div className="save-acts">
+            {saved ? (
+              <div className="row-btns">
+                {action(order[0], "again")}
+                <BackBtn />
               </div>
-            ) : isFolder ? (
+            ) : (
+              <>
+                {action(order[0], "lead")}
+                {order.length === 2 && action(order[1], "alt")}
+                {order.length > 2 && <div className="row-btns">{order.slice(1).map((a) => action(a, "alt"))}</div>}
+              </>
+            )}
+            {order[0] !== "download" && !saved && <p className="save-where mono">Download → <b>{where}</b></p>}
+          </div>
+        </div>
+      ) : got ? (
+        <div className="col" key="landed" ref={card}>
+          <div className="wide d-title save-title">
+            Landed<svg className="save-check" viewBox="0 0 24 24" aria-hidden><path d="M3.5 12.5l5.5 5.5L20.5 6" /></svg>
+          </div>
+          <p className="note">
+            {got.kind === "dir"
+              ? <>Folder <b>{got.folder}/</b> saved inside <b>{got.where}/</b> with all {got.files} files and subfolders, exactly as sent.</>
+              : got.kind === "picked"
+                ? <>Decrypted on this device and saved as <b>{got.name}</b> where you chose.</>
+                : folder
+                  ? <>Your browser can&apos;t write folders, so <b>{folder.name}</b> ({nFiles(folder.files)}) was saved as <b>{file?.name}</b> to <b>{where}</b>.</>
+                  : <>Decrypted on this device and saved to <b>{where}</b> as <b>{file?.name}</b>.</>}
+          </p>
+          {got.kind === "file" && shortcut && <span className="save-shortcut mono">Open downloads <kbd>{shortcut}</kbd></span>}
+          <div className="grow" />
+          {got.kind === "file" && file ? (
+            <div className="row-btns even">
+              <a className="ghost-btn lg-press" href={url ?? undefined} download={file.name}>Download again</a>
+              <BackBtn />
+            </div>
+          ) : (
+            <BackBtn />
+          )}
+        </div>
+      ) : (
+        <div className="col" key="form" ref={card}>
+          {orb.status === "sealed" && !busy ? (
+            <div className="sealed-msg mono">{err ? `${err} · ` : ""}Sealed: the sender&apos;s download limit was reached. It will burn up shortly.</div>
+          ) : busy ? (
+            <>
+              <Progress stage={stage} frac={frac} extra={formatBytes(orb.size * frac)} />
+              <div className="grow" />
+              <button className="ghost-btn lg-press" onClick={() => abort.current?.abort()}>Abort</button>
+            </>
+          ) : (
+            <>
+              <PasscodeInput value={code} onChange={setCode} onEnter={() => go()} autoFocus />
+              {err && <p className="err">{err}</p>}
               <p className="note">
-                {!canWriteFolders()
-                  ? "This browser can't write folders, so it arrives as a .zip (Chrome or Edge on a computer saves a real folder)."
-                  : "Choose any folder and it lands there as-is: same name, every subfolder, no zip."}
+                Decrypted locally. The passcode never leaves this device.
+                {env.mobile && !inline && !(isFolder && canWriteFolders()) ? " After decrypting, you choose where to save it." : ""}
               </p>
-            ) : null}
-            <button className="cta lg-press" disabled={!code || needSpot} onClick={() => go()}>{isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : isFolder ? "Decrypt + save folder ↓" : "Decrypt + download ↓"}</button>
-          </>
-        )}
-      </div>
+              {env.inApp && (
+                <div className="spot-help">
+                  <b>Open in your browser</b>
+                  <span>This app&apos;s built-in browser often can&apos;t save files, and every unlock counts as a download. Tap ⋯ and choose <b>Open in Safari</b> / <b>Open in Chrome</b> first.</span>
+                </div>
+              )}
+              <div className="grow" />
+              {isFolder && needSpot ? (
+                <div className="spot-help">
+                  <b>Pick another folder</b>
+                  <span>
+                    {env.android
+                      ? <>Android won&apos;t let websites use the <b>Download</b> folder itself. Pick or create a folder inside it, or anywhere else.</>
+                      : <>Chrome locks <b>Downloads</b>, <b>Desktop</b> and <b>Documents</b> themselves for every website. Choose any folder inside them, or anywhere else, and the folder is saved there as-is.</>}
+                  </span>
+                  <div className="row-btns">
+                    <button className="ghost-btn lg-press" onClick={() => go({ zip: true })}>Get .zip instead</button>
+                    <button className="cta lg-press" onClick={() => go()}>Choose folder</button>
+                  </div>
+                </div>
+              ) : isFolder ? (
+                <p className="note">
+                  {!canWriteFolders()
+                    ? env.mobile
+                      ? "It arrives as one .zip, and you choose where to save it."
+                      : "This browser can't write folders, so it arrives as a .zip (Chrome or Edge on a computer saves a real folder)."
+                    : "Choose any folder and it lands there as-is: same name, every subfolder, no zip."}
+                </p>
+              ) : null}
+              <button className="cta lg-press" disabled={!code || needSpot} onClick={() => go()}>
+                {isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : env.mobile && !(isFolder && canWriteFolders()) ? "Decrypt →" : isFolder ? "Decrypt + save folder ↓" : "Decrypt + download ↓"}
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </Drawer>
   );
 }
@@ -532,7 +1227,10 @@ export function OwnerPanel(props: { id: string; now: number; watchers: number; p
   }, [arm]);
 
   const destroy = async () => {
-    if (!arm) return setArm(true);
+    if (!arm) {
+      tick("warn");
+      return setArm(true);
+    }
     setDeleting(true);
     const key = ownerKey(id) ?? "";
     const r = await fetch(`/api/transfers/${id}`, { method: "DELETE", headers: { "x-owner": key } }).catch(() => null);
