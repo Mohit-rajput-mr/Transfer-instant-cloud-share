@@ -715,10 +715,10 @@ export default function Void() {
       {menu && !panel && (
         <>
           <div className={`menu-scrim${menuOut ? " out" : ""}`} onClick={closeMenu} />
-          <div className={`send-menu lg${menuOut ? " out" : ""}`} role="menu">
-            <button role="menuitem" className="lg-press" style={{ "--i": 0 } as React.CSSProperties} onClick={pickFiles}><span>{Icon.file}</span><b>Files</b><small>photos · videos · docs · anything</small></button>
-            <button role="menuitem" className="lg-press" style={{ "--i": 1 } as React.CSSProperties} onClick={pickFolder}><span>{Icon.folder}</span><b>Folder</b><small>{touch ? "a folder, or many files at once" : "whole folder, structure intact"}</small></button>
-            <button role="menuitem" className="lg-press" style={{ "--i": 2 } as React.CSSProperties} onClick={compose}><span>{Icon.link}</span><b>Text or link</b><small>opens instantly on the other side</small></button>
+          <div className={`send-menu bubbles${menuOut ? " out" : ""}`} role="menu">
+            <button role="menuitem" className="bubble-btn lg lg-press" style={{ "--i": 0 } as React.CSSProperties} onClick={pickFiles}><span>{Icon.file}</span><b>Files</b><small>photos · videos · docs · anything</small></button>
+            <button role="menuitem" className="bubble-btn lg lg-press" style={{ "--i": 1 } as React.CSSProperties} onClick={pickFolder}><span>{Icon.folder}</span><b>Folder</b><small>{touch ? "a folder, or many files at once" : "whole folder, structure intact"}</small></button>
+            <button role="menuitem" className="bubble-btn lg lg-press" style={{ "--i": 2 } as React.CSSProperties} onClick={compose}><span>{Icon.link}</span><b>Text or link</b><small>opens instantly on the other side</small></button>
           </div>
         </>
       )}

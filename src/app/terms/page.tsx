@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Terms · ORBIT" };
+export const metadata: Metadata = { title: "Terms · ORBITRANSFER" };
 
 export default function Terms() {
   return (

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Privacy · ORBIT" };
+export const metadata: Metadata = { title: "Privacy · ORBITRANSFER" };
 
 export default function Privacy() {
   return (

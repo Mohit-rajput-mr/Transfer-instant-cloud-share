@@ -1,15 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Inter, JetBrains_Mono } from "next/font/google";
+import { Chakra_Petch, Orbitron, Share_Tech_Mono } from "next/font/google";
 import "./globals.css";
 
-const display = Archivo({ subsets: ["latin"], axes: ["wdth"], variable: "--font-display", display: "swap" });
-const sans = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
-const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
+// boxy, squared-off type to match the ORBITRANSFER wordmark
+const display = Orbitron({ subsets: ["latin"], variable: "--font-display", display: "swap" });
+const sans = Chakra_Petch({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-sans", display: "swap" });
+const mono = Share_Tech_Mono({ subsets: ["latin"], weight: "400", variable: "--font-mono", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "ORBIT — drop. lock. beam. burn.",
+  title: "ORBITRANSFER — drop. lock. beam. burn.",
   description: "Instant, end-to-end encrypted file transfer between any two browsers. No login. Objects float for 30 minutes, then burn up.",
-  appleWebApp: { capable: true, title: "ORBIT", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "ORBITRANSFER", statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false, email: false, address: false },
 };
 

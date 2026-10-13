@@ -1138,3 +1138,39 @@ html.lg-refract :is(.top, .drawer, .send-menu, .up-pill, .up-card, .send-fab).lg
   .dock { left: auto; width: min(320px, 46vw); bottom: calc(12px + var(--safe-b)); }
 }
 @media (prefers-reduced-motion: reduce) { .dock-item, .dock-more, .dock-dot.live { animation: none; } }
+
+/* ---------- Send menu: three separate glass bubbles that pop out of the Send button ---------- */
+.send-menu.bubbles {
+  background: none; border: 0; box-shadow: none; padding: 0; gap: 10px;
+  -webkit-backdrop-filter: none; backdrop-filter: none; animation: none; overflow: visible;
+}
+.send-menu.bubbles .bubble-btn {
+  border-radius: 999px; padding: 10px 22px 10px 10px; min-height: 64px;
+  background: linear-gradient(180deg, rgba(58,58,62,0.92), rgba(18,18,20,0.94));
+  border: 1px solid rgba(255,255,255,0.22);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.25);
+  transform-origin: 30px 100%;
+  /* the bubble nearest the Send button leaves first, the top one last */
+  animation: bubble-pop 0.62s var(--spring) both;
+  animation-delay: calc((2 - var(--i)) * 70ms);
+}
+.send-menu.bubbles.out .bubble-btn { animation: bubble-in 0.24s var(--ease-in) both; animation-delay: calc(var(--i) * 30ms); }
+@keyframes bubble-pop {
+  0% { opacity: 0; transform: translate(-10px, calc((3 - var(--i)) * 74px)) scale(0.18); }
+  35% { opacity: 1; }
+  60% { transform: translate(0, -6px) scale(1.04, 0.96); }
+  80% { transform: translate(0, 2px) scale(0.985, 1.02); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes bubble-in { to { opacity: 0; transform: translate(-10px, calc((3 - var(--i)) * 60px)) scale(0.2); } }
+@media (hover: hover) { .send-menu.bubbles .bubble-btn:hover { background: linear-gradient(180deg, rgba(78,78,82,0.95), rgba(28,28,30,0.95)); } }
+
+/* ---------- Send button: solid white ---------- */
+.send-fab, .send-fab.lg { background: #fff; color: #000; }
+.send-fab.lg small, .send-fab small { color: #555; }
+.send-fab.lg::after { opacity: 0.35; }
+
+/* ---------- boxy type (Orbitron / Chakra Petch / Share Tech Mono) ---------- */
+.wide { letter-spacing: 0; }
+.mono { letter-spacing: 0.08em; }
+@media (prefers-reduced-motion: reduce) { .send-menu.bubbles .bubble-btn { animation: none; } }
