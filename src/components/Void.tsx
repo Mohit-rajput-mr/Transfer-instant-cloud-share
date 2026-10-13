@@ -4,7 +4,7 @@ import Link from "next/link";
 import Starfield from "./Starfield";
 import Uploader, { Icon } from "./Uploader";
 import LiquidGlass from "./LiquidGlass";
-import OrbView, { ORB_CAP, assignHues, inheritSlot, layout, type VoidMode } from "./OrbView";
+import OrbView, { ORB_CAP, inheritSlot, pickHue, layout, type VoidMode } from "./OrbView";
 import { ComposePanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin, type LaunchJob } from "./Panels";
 import LaunchDock, { isPending, pendingId, pendingOrb, type Launch } from "./LaunchDock";
 import { launch, type Stage } from "@/lib/transfer";
@@ -22,6 +22,8 @@ type Panel =
 
 export default function Void() {
   const [orbs, setOrbs] = useState<Orb[]>([]);
+  const orbsRef = useRef(orbs);
+  orbsRef.current = orbs;
   const [loaded, setLoaded] = useState(false);
   const [net, setNet] = useState<string | null>(null);
   const [skew, setSkew] = useState(0);
@@ -170,12 +172,12 @@ export default function Void() {
   const startLaunch = useCallback((job: LaunchJob) => {
     const key = Math.random().toString(36).slice(2, 10);
     const l: Launch = {
-      key, name: job.name, size: job.file.size, files: job.files, hue: Math.floor(Math.random() * 360),
+      key, name: job.name, size: job.file.size, files: job.files, hue: pickHue(orbsRef.current.map((o) => o.hue)),
       createdAt: new Date(Date.now() + skew).toISOString(), stage: "deriving", frac: 0, abort: new AbortController(), open: false,
     };
     setLaunches((ls) => [...ls, l]);
     setPanel(null);
-    launch({ file: job.file, name: job.name, passcode: job.passcode, maxDownloads: job.maxDownloads, signal: l.abort.signal, onProgress: (st, f) => report(key, st, f) })
+    launch({ file: job.file, name: job.name, passcode: job.passcode, maxDownloads: job.maxDownloads, hue: l.hue, signal: l.abort.signal, onProgress: (st, f) => report(key, st, f) })
       .then((orb) => {
         const from = pendingId(key);
         inheritSlot(from, orb.id);
@@ -405,7 +407,8 @@ export default function Void() {
     return [...shown].sort((a, b) => rank(b) - rank(a) || b.createdAt.localeCompare(a.createdAt)).slice(0, cap);
   }, [shown, net, cap]);
   const positions = useMemo(() => layout(visible, mode), [visible, mode]);
-  const colors = useMemo(() => new Map(assignHues(visible)), [visible]);
+  // a ball is the same colour on every device: the hue stored with it, never a local re-shuffle
+  const colors = useMemo(() => new Map(visible.map((o) => [o.id, ((o.hue % 360) + 360) % 360])), [visible]);
 
   // arrival + burn-up choreography
   const [arriving, setArriving] = useState<Set<string>>(new Set());

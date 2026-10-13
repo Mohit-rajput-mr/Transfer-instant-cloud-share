@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
       authHash: sha256(b.auth), ownerHash: sha256(b.owner),
       netHash: netHash(req), device: clean(b.device, 60),
       maxDownloads: maxDownloads ?? "",
-      hue: Math.floor(Math.random() * 360),
+      // the sender picks the colour (spread away from what's already floating); every device draws exactly this hue
+      hue: Number.isInteger(b.hue) && b.hue >= 0 && b.hue < 360 ? b.hue : Math.floor(Math.random() * 360),
       ...geo(req),
     },
     });

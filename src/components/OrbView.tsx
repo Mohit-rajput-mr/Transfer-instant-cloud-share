@@ -133,6 +133,21 @@ const gap = (a: number, b: number) => {
   const d = Math.abs(a - b) % 360;
   return Math.min(d, 360 - d);
 };
+/** A colour for a new ball, as far as possible from the ones already floating (golden-angle candidates). */
+export function pickHue(taken: number[]): number {
+  const start = Math.floor(Math.random() * 360);
+  let best = start, bestGap = -1;
+  for (let k = 0; k < 24; k++) {
+    const h = Math.round((start + k * 137.508) % 360);
+    const g = taken.length ? Math.min(...taken.map((u) => gap(u, h))) : 360;
+    if (g > bestGap) {
+      bestGap = g;
+      best = h;
+    }
+  }
+  return best;
+}
+
 export function assignHues(orbs: Orb[]) {
   const live = new Set(orbs.map((o) => o.id));
   for (const id of hues.keys()) if (!live.has(id)) hues.delete(id);

@@ -17,6 +17,7 @@ export async function launch(opts: {
   name: string;
   passcode: string;
   maxDownloads: number | null;
+  hue?: number;
   onProgress: (stage: Stage, fraction: number) => void;
   signal?: AbortSignal;
 }): Promise<Orb> {
@@ -33,7 +34,7 @@ export async function launch(opts: {
     body: JSON.stringify({
       name, fileName: file.name || "file", mime: file.type || "application/octet-stream", size: file.size,
       chunkSize: CHUNK, iterations: ITERATIONS, salt: toB64(salt), nonce: toB64(nonce), auth, owner,
-      maxDownloads, device: deviceLabel(),
+      maxDownloads, device: deviceLabel(), hue: opts.hue,
     }),
     signal,
   });
