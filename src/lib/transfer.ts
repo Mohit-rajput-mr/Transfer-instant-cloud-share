@@ -10,7 +10,7 @@ import { autoDownload, safeMime, saveName } from "./save";
 
 export type Stage = "packing" | "deriving" | "encrypting" | "uploading" | "finalizing" | "decrypting" | "done";
 
-const PARALLEL = 3;
+const PARALLEL = 6;
 
 export async function launch(opts: {
   file: File;
@@ -143,6 +143,8 @@ export function pickSaveTarget(orb: Orb): Promise<SaveHandle | null> {
   return w.showSaveFilePicker({ suggestedName: saveName(orb.fileName, safeMime(orb.mime, orb.fileName)) }).catch(() => null);
 }
 
+const KEEP_PARTS_MAX = 400 * 1024 * 1024;
+
 export type Received =
   /** text and links, shown in the card */
   | { kind: "text"; text: string }
@@ -150,7 +152,7 @@ export type Received =
   | { kind: "picked"; name: string }
   /** a file (or a folder as .zip). held: nothing saved yet, the user picks where (phones/tablets).
    *  !held: already handed to the browser's downloads (desktop) */
-  | { kind: "file"; file: File; held: boolean; folder?: { name: string; files: number } }
+  | { kind: "file"; file: File; held: boolean; folder?: { name: string; files: number }; parts?: File[] }
   /** folder rebuilt inside a directory the user picked */
   | { kind: "dir"; folder: string; files: number; where: string };
 
@@ -182,12 +184,16 @@ export async function receive(opts: {
   let sink: DownloadSink;
   let mem: ReturnType<typeof memorySink> | null = null;
   // set from callbacks, so kept on an object (TS does not narrow a callback-assigned `let`)
-  const got: { manifest?: Manifest; zip?: File } = {};
+  const got: { manifest?: Manifest; zip?: File; parts?: File[] } = {};
+  // phones, multi-file balls: also keep each file, so the share sheet can save them all (photos → Photos)
+  const keepParts = r.size <= KEEP_PARTS_MAX;
   const dir = opts.folderTarget ?? null;
   const handle = r.mime === FOLDER_MIME ? null : await opts.target;
   if (r.mime === FOLDER_MIME) {
     sink = folderSink(
-      (m: Manifest) => (dir ? directoryOutput(dir, m.name) : zipOutput(m.name, (z) => (got.zip = z))),
+      (m: Manifest) =>
+        dir ? directoryOutput(dir, m.name)
+          : zipOutput(m.name, (z) => (got.zip = z), keepParts && m.loose ? (f) => (got.parts ??= []).push(f) : undefined),
       (m) => (got.manifest = m),
     );
   } else if (handle) {
@@ -215,8 +221,12 @@ export async function receive(opts: {
     const { name, files } = got.manifest;
     if (dir) return { kind: "dir", folder: name, files: files.length, where: dir.name };
     if (!got.zip) throw new Error("The folder arrived incomplete");
-    if (!hold) autoDownload(got.zip);
-    return { kind: "file", file: got.zip, held: hold, folder: { name, files: files.length } };
+    if (!hold) {
+      // several picked files: each lands in Downloads on its own (no zip); the browser asks once to allow it
+      if (got.manifest.loose && got.parts?.length) got.parts.forEach((f, i) => setTimeout(() => autoDownload(f), i * 250));
+      else autoDownload(got.zip);
+    }
+    return { kind: "file", file: got.zip, held: hold, folder: { name, files: files.length }, parts: got.parts };
   }
   if (handle) return { kind: "picked", name: handle.name };
   if (!mem) throw new Error("Nothing was received");

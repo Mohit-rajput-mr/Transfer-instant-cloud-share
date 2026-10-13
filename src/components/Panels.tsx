@@ -1,13 +1,13 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import QRCode from "qrcode";
 import {
   deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, ownerKey, timeAgo, type Orb, type OwnerView,
 } from "@/lib/client";
 import { MAX_FILE_BYTES } from "@/lib/limits";
-import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, isLinkText, packFolder, pickFolderTarget, textToFile, type DirHandle, type Folder } from "@/lib/bundle";
-import { launch, pickSaveTarget, receive, UnlockError, type Received, type Stage } from "@/lib/transfer";
-import { canPickSave, canShareFile, deviceNoun, downloadWhere, downloadsShortcut, pickAndWrite, saveEnv, shareFile } from "@/lib/save";
+import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, filesBundle, isLoose, isLinkText, packFolder, pickFolderTarget, textToFile, type DirHandle, type Folder } from "@/lib/bundle";
+import { pickSaveTarget, receive, UnlockError, type Received, type Stage } from "@/lib/transfer";
+import { autoDownload, canPickSave, canShareFile, canShareFiles, deviceNoun, downloadWhere, downloadsShortcut, pickAndWrite, saveEnv, shareFile } from "@/lib/save";
 import "@/app/save.css";
 
 // Screen point the card zooms out of (the tapped sphere / button). Set right before opening.
@@ -330,27 +330,6 @@ const STAGE_LABEL: Record<Stage, string> = {
   done: "Done",
 };
 
-/** Coalesces a fast stream of progress callbacks into at most one render per frame. */
-function useFrameProgress() {
-  const [stage, setStage] = useState<Stage>("deriving");
-  const [frac, setFrac] = useState(0);
-  const next = useRef<{ s: Stage; p: number } | null>(null);
-  const raf = useRef(0);
-  useEffect(() => () => cancelAnimationFrame(raf.current), []);
-  const report = useCallback((s: Stage, p: number) => {
-    next.current = { s, p };
-    if (raf.current) return;
-    raf.current = requestAnimationFrame(() => {
-      raf.current = 0;
-      const n = next.current;
-      if (!n) return;
-      setStage(n.s);
-      setFrac(n.p);
-    });
-  }, []);
-  return [stage, frac, report] as const;
-}
-
 /**
  * Progress that never stalls or jumps: reports can arrive in big steps (decrypt reports once per
  * 8 MB chunk), so between them the bar keeps gliding at the measured rate, never past ~85% of the
@@ -502,123 +481,64 @@ export function ShareBlock({ id }: { id: string }) {
 
 /* ------------------------------ SEND ------------------------------ */
 
-export function SendPanel(props: { files: File[]; folder?: Folder | null; onClose: () => void; onLaunched: (orb: Orb) => void; onOpenOwner: (id: string) => void }) {
-  const { folder, onClose, onLaunched } = props;
-  // a folder travels as one object (no zipping: its files are streamed as-is behind a small manifest)
-  const files = useMemo(() => (folder ? [packFolder(folder)] : props.files), [folder, props.files]);
-  const single = files.length === 1;
-  const total = folder ? folder.entries.reduce((a, e) => a + e.file.size, 0) : files.reduce((a, f) => a + f.size, 0);
-  const isLink = single && files[0].type === LINK_MIME;
+export type LaunchJob = { file: File; name: string; files: number; passcode: string; maxDownloads: number | null };
+
+export function SendPanel(props: { files: File[]; folder?: Folder | null; onClose: () => void; onLaunch: (job: LaunchJob) => void }) {
+  const { folder, onClose } = props;
+  const many = !folder && props.files.length > 1;
+  const single = !folder && !many;
+  const first = props.files[0];
+  const count = folder ? folder.entries.length : props.files.length;
+  const total = folder ? folder.entries.reduce((a, e) => a + e.file.size, 0) : props.files.reduce((a, f) => a + f.size, 0);
+  const isLink = single && first?.type === LINK_MIME;
   const [name, setName] = useState(
-    folder ? folder.name.slice(0, 60) : single ? files[0].name.replace(/\.[^.]+$/, "").slice(0, 60) : "",
+    folder ? folder.name.slice(0, 60) : single ? first.name.replace(/\.[^.]+$/, "").slice(0, 60) : `${count} files`,
   );
   const [code, setCode] = useState("");
   const [max, setMax] = useState<number | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [stage, frac, report] = useFrameProgress();
-  const [index, setIndex] = useState(0);
-  const [err, setErr] = useState<string | null>(null);
-  const [done, setDone] = useState<Orb[]>([]);
-  const abort = useRef<AbortController | null>(null);
 
-  // closing the card (×, Escape, swipe) mid-launch aborts it
-  useEffect(() => () => abort.current?.abort(), []);
-
-  const tooBig = folder ? (total > MAX_FILE_BYTES ? { name: `${folder.name} folder` } : undefined) : files.find((f) => f.size > MAX_FILE_BYTES);
-  const go = async () => {
-    if (code.length < 4 || busy || tooBig) return;
-    setBusy(true);
-    setErr(null);
-    abort.current = new AbortController();
-    const launched: Orb[] = [];
-    try {
-      const queue = files;
-      for (let i = 0; i < queue.length; i++) {
-        setIndex(i);
-        const f = queue[i];
-        const orb = await launch({
-          file: f,
-          name: single ? name.trim() || f.name : f.name.replace(/\.[^.]+$/, "").slice(0, 60),
-          passcode: code,
-          maxDownloads: max,
-          signal: abort.current.signal,
-          onProgress: report,
-        });
-        launched.push(orb);
-        onLaunched(orb);
-      }
-      setDone(launched);
-      tick("success");
-    } catch (e) {
-      if (!abort.current.signal.aborted) {
-        setErr(e instanceof Error ? e.message : "Launch failed");
-        tick("warn");
-      }
-      if (launched.length) setDone(launched);
-    } finally {
-      setBusy(false);
-    }
+  const tooBig = total > MAX_FILE_BYTES;
+  const go = () => {
+    if (code.length < 4 || tooBig) return;
+    const label = name.trim() || (folder ? folder.name : single ? first.name : `${count} files`);
+    // several files travel as ONE ball (no zipping: streamed as-is behind a small manifest)
+    const file = folder ? packFolder(folder) : many ? packFolder(filesBundle(label.slice(0, 60), props.files), true) : first;
+    tick("success");
+    props.onLaunch({ file, name: label.slice(0, 60), files: count, passcode: code, maxDownloads: max });
   };
 
-  if (done.length) {
-    return (
-      <Drawer label="Launched" onClose={onClose}>
-        <div className="col">
-          <svg className="ok-check" viewBox="0 0 52 52" aria-hidden>
-            <circle cx="26" cy="26" r="24" pathLength={1} />
-            <path d="M15.5 27l7 7 14-15" pathLength={1} />
-          </svg>
-          <div className="wide d-title">In orbit.</div>
-          <p className="note">{done.length > 1 ? `${done.length} objects float` : "It floats"} in the void for 30 minutes. Encrypted on this device. <b>Share the passcode separately.</b></p>
-          {done.length > 1 && (
-            <div className="files">{done.map((o) => <div key={o.id}><span>{o.name}</span><span className="mono dim">{o.id}</span></div>)}</div>
-          )}
-          {err && <p className="err">{err}</p>}
-          <div className="grow" />
-          <button className="cta lg-press" onClick={() => props.onOpenOwner(done[0].id)}>Mission control →</button>
-        </div>
-        <div className="col">
-          <ShareBlock id={done[0].id} />
-          <div className="grow" />
-          <BackBtn />
-        </div>
-      </Drawer>
-    );
-  }
-
   return (
-    <Drawer label="New object" onClose={onClose} locked={busy}>
+    <Drawer label="New object" onClose={onClose}>
       <div className="col">
         <div>
           <span className="mono dim">
-            {folder ? `folder · ${folder.entries.length} files` : isLink ? "link" : single ? files[0].type || "file" : `${files.length} files`} · {formatBytes(total)}
+            {folder ? `folder · ${count} files` : isLink ? "link" : single ? first.type || "file" : `${count} files · one ball`} · {formatBytes(total)}
           </span>
-          <div className="wide d-title">{folder ? "Folder" : isLink ? "Link" : single ? ext(files[0].name) : `${files.length}×`}</div>
-          <p className="note ellip">{folder ? `${folder.name}/ — arrives as a real folder, structure intact` : single ? files[0].name : "Each file becomes its own object, one passcode."}</p>
+          <div className="wide d-title">{folder ? "Folder" : isLink ? "Link" : single ? ext(first.name) : `${count}×`}</div>
+          <p className="note ellip">
+            {folder ? `${folder.name}/ — arrives as a real folder, structure intact` : single ? first.name : "All of them in one ball. One tap downloads them all."}
+          </p>
         </div>
-        {busy ? (
-          <Progress stage={stage} frac={frac} extra={files.length > 1 ? `${index + 1} / ${files.length}` : formatBytes(total * frac)} />
-        ) : single ? (
-          <div className="field">
-            <label><span className="mono">Name in orbit</span><span className="mono dim">{name.length}/60</span></label>
-            <input
-              className="line-input"
-              value={name}
-              maxLength={60}
-              enterKeyHint="next"
-              autoComplete="off"
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key !== "Enter") return;
-                e.preventDefault();
-                e.currentTarget.closest(".drawer")?.querySelector<HTMLInputElement>(".code-input")?.focus();
-              }}
-              placeholder="Give it a name"
-            />
-          </div>
-        ) : (
+        <div className="field">
+          <label><span className="mono">Name in orbit</span><span className="mono dim">{name.length}/60</span></label>
+          <input
+            className="line-input"
+            value={name}
+            maxLength={60}
+            enterKeyHint="next"
+            autoComplete="off"
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              e.currentTarget.closest(".drawer")?.querySelector<HTMLInputElement>(".code-input")?.focus();
+            }}
+            placeholder="Give it a name"
+          />
+        </div>
+        {many && (
           <div className="files">
-            {files.map((f, i) => (
+            {props.files.map((f, i) => (
               <div key={i}><span>{f.name}</span><span className="mono dim">{formatBytes(f.size)}</span></div>
             ))}
           </div>
@@ -627,28 +547,18 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
         <p className="mono dim">30 min lifetime · AES-256-GCM on device</p>
       </div>
       <div className="col">
-        {busy ? (
-          <>
-            <div className="grow" />
-            <button className="ghost-btn lg-press" onClick={() => abort.current?.abort()}>Abort launch</button>
-          </>
-        ) : (
-          <>
-            <PasscodeInput value={code} onChange={setCode} onEnter={go} autoFocus generate />
-            <div className="field">
-              <label><span className="mono">Burn after downloads</span><span className="mono dim">{max ? `${max} max` : "unlimited"}</span></label>
-              <div className="chips" role="radiogroup" aria-label="Burn after downloads">
-                {[null, 1, 2, 3, 5, 10].map((m) => (
-                  <button key={String(m)} role="radio" aria-checked={max === m} className={`chip lg-press${max === m ? " on" : ""}`} onClick={() => setMax(m)}>{m ?? "∞"}</button>
-                ))}
-              </div>
-            </div>
-            {err && <p className="err">{err}</p>}
-            {tooBig && <p className="err">{tooBig.name} is over the 2 GB limit</p>}
-            <div className="grow" />
-            <button className="cta lg-press" disabled={code.length < 4 || !!tooBig} onClick={go}>{code.length > 0 && code.length < 4 ? "Min 4 characters" : "Launch ↗"}</button>
-          </>
-        )}
+        <PasscodeInput value={code} onChange={setCode} onEnter={go} autoFocus generate />
+        <div className="field">
+          <label><span className="mono">Burn after downloads</span><span className="mono dim">{max ? `${max} max` : "unlimited"}</span></label>
+          <div className="chips" role="radiogroup" aria-label="Burn after downloads">
+            {[null, 1, 2, 3, 5, 10].map((m) => (
+              <button key={String(m)} role="radio" aria-checked={max === m} className={`chip lg-press${max === m ? " on" : ""}`} onClick={() => setMax(m)}>{m ?? "∞"}</button>
+            ))}
+          </div>
+        </div>
+        {tooBig && <p className="err">{folder ? `The ${folder.name} folder is` : many ? "Together these files are" : `${first.name} is`} over the 2 GB limit</p>}
+        <div className="grow" />
+        <button className="cta lg-press" disabled={code.length < 4 || tooBig} onClick={go}>{code.length > 0 && code.length < 4 ? "Min 4 characters" : "Launch ↗"}</button>
       </div>
     </Drawer>
   );
@@ -715,6 +625,8 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
   const left = new Date(orb.expiresAt).getTime() - now;
   const isLink = orb.mime === LINK_MIME;
   const isFolder = orb.mime === FOLDER_MIME;
+  const loose = isFolder && isLoose(orb.fileName); // several picked files in one ball
+  const asDir = isFolder && !loose; // a real folder: rebuilt on disk where the browser can
   const [needSpot, setNeedSpot] = useState(false);
   const inline = (isLink || orb.mime.startsWith("text/")) && orb.size <= INLINE_MAX;
   const [report, setReport] = useState<"idle" | "arm" | "sent">("idle");
@@ -724,6 +636,8 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
   const file = got?.kind === "file" ? got.file : null;
   const folder = got?.kind === "file" ? got.folder : undefined;
   const held = got?.kind === "file" && got.held;
+  const [shareParts, setShareParts] = useState(false);
+  const parts = got?.kind === "file" && shareParts ? got.parts ?? null : null;
   const [op, setOp] = useState<SaveOp>("idle");
   const [done, setDone] = useState<SaveDone | null>(null);
   const [pickedName, setPickedName] = useState("");
@@ -829,7 +743,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     if (!file || lock.current) return;
     lock.current = "share";
     setOp("sharing");
-    shareFile(file)
+    shareFile(parts ?? file)
       .then(() => {
         setDone("shared");
         setOp("idle");
@@ -903,7 +817,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     // pickers must open inside the click gesture, before anything is unlocked or counted
     const target = inline || isFolder ? Promise.resolve(null) : pickSaveTarget(orb);
     let folderTarget: DirHandle | null = null;
-    if (isFolder && !mode?.zip && canWriteFolders()) {
+    if (asDir && !mode?.zip && canWriteFolders()) {
       const pick = await pickFolderTarget();
       if ("cancelled" in pick) {
         setNeedSpot(true);
@@ -924,7 +838,9 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     })
       .then((res) => {
         if (res.kind === "file") {
-          setShareOk(res.held && canShareFile(res.file, env));
+          const many = !!res.parts?.length && res.held && canShareFiles(res.parts, env);
+          setShareParts(many);
+          setShareOk(res.held && (many || canShareFile(res.file, env)));
           setPickOk(res.held && canPickSave(env));
         }
         setBroken(false);
@@ -956,7 +872,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
   const where = downloadWhere(env);
   const shortcut = downloadsShortcut(env);
   const dev = deviceNoun(env);
-  const media = file ? /^(image|video)\//.test(file.type) : false;
+  const media = parts ? parts.every((f) => /^(image|video)\//.test(f.type)) : file ? /^(image|video)\//.test(file.type) : false;
   const order: SaveAct[] = [...(!env.ios && pickOk ? (["pick"] as const) : []), ...(shareOk ? (["share"] as const) : []), "download"];
   const working = op === "sharing" || op === "picking";
   const label = (a: SaveAct, role: "lead" | "alt" | "again") =>
@@ -964,6 +880,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
       : a === "pick" && op === "picking" ? "Saving…"
       : role === "again" ? "Save again"
       : a === "pick" ? "Choose where to save…"
+      : a === "share" && parts ? (env.ios ? (media ? `Save all ${parts.length} to Photos or Files` : `Save all ${parts.length} to Files…`) : `Save all ${parts.length}…`)
       : a === "share" ? (env.ios ? (media ? "Save to Photos or Files" : "Save to Files…") : role === "lead" ? "Save or share…" : "Share to an app…")
       : role === "lead" ? "Download ↓" : "Download";
   const action = (a: SaveAct, role: "lead" | "alt" | "again") => {
@@ -1014,14 +931,14 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
               <video src={`${url}#t=0.001`} muted playsInline controls preload="metadata" onError={() => setBroken(true)} />
             ) : (
               <>
-                <div className="save-orb"><span className="wide">{folder ? "ZIP" : ext(file.name)}</span></div>
-                <span className="save-kind mono">{folder ? `Folder · ${nFiles(folder.files)}` : kindOf(file)}</span>
+                <div className="save-orb"><span className="wide">{folder ? (loose ? `${folder.files}×` : "ZIP") : ext(file.name)}</span></div>
+                <span className="save-kind mono">{folder ? (loose ? nFiles(folder.files) : `Folder · ${nFiles(folder.files)}`) : kindOf(file)}</span>
               </>
             )}
           </div>
           {preview === "audio" && url && <audio src={url} controls preload="metadata" />}
           <div className="save-meta">
-            <span className="mono ellip">{file.name}</span>
+            <span className="mono ellip">{parts && folder ? folder.name : file.name}</span>
             <span className="mono dim">{formatBytes(file.size)}</span>
           </div>
         </div>
@@ -1079,7 +996,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
           </div>
           <p className="note">
             {saved ? doneNote : readyNote}
-            {folder && !saved ? <> It&apos;s the folder <b>{folder.name}</b> ({nFiles(folder.files)}) as one .zip; tap it in Files to unpack.</> : null}
+            {folder && !saved ? parts ? <> All {nFiles(parts.length)} go in one go.</> : <> It&apos;s {loose ? "" : "the folder "}<b>{folder.name}</b> ({nFiles(folder.files)}) as one .zip; tap it in Files to unpack.</> : null}
           </p>
           {closeArm ? (
             <p className="save-status err mono" key="arm">Not saved yet · tap × again to discard it</p>
@@ -1117,6 +1034,8 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
               ? <>Folder <b>{got.folder}/</b> saved inside <b>{got.where}/</b> with all {got.files} files and subfolders, exactly as sent.</>
               : got.kind === "picked"
                 ? <>Decrypted on this device and saved as <b>{got.name}</b> where you chose.</>
+                : folder && got.kind === "file" && got.parts?.length && loose
+                  ? <>All <b>{nFiles(got.parts.length)}</b> from <b>{folder.name}</b> saved to <b>{where}</b>, each as its own file.</>
                 : folder
                   ? <>Your browser can&apos;t write folders, so <b>{folder.name}</b> ({nFiles(folder.files)}) was saved as <b>{file?.name}</b> to <b>{where}</b>.</>
                   : <>Decrypted on this device and saved to <b>{where}</b> as <b>{file?.name}</b>.</>}
@@ -1125,7 +1044,11 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
           <div className="grow" />
           {got.kind === "file" && file ? (
             <div className="row-btns even">
-              <a className="ghost-btn lg-press" href={url ?? undefined} download={file.name}>Download again</a>
+              {loose && got.kind === "file" && got.parts?.length ? (
+                <button type="button" className="ghost-btn lg-press" onClick={() => got.parts!.forEach((f, i) => setTimeout(() => autoDownload(f), i * 250))}>Download all again</button>
+              ) : (
+                <a className="ghost-btn lg-press" href={url ?? undefined} download={file.name}>Download again</a>
+              )}
               <BackBtn />
             </div>
           ) : (
@@ -1148,7 +1071,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
               {err && <p className="err">{err}</p>}
               <p className="note">
                 Decrypted locally. The passcode never leaves this device.
-                {env.mobile && !inline && !(isFolder && canWriteFolders()) ? " After decrypting, you choose where to save it." : ""}
+                {env.mobile && !inline && !(asDir && canWriteFolders()) ? " After decrypting, you choose where to save it." : ""}
               </p>
               {env.inApp && (
                 <div className="spot-help">
@@ -1157,7 +1080,9 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
                 </div>
               )}
               <div className="grow" />
-              {isFolder && needSpot ? (
+              {loose ? (
+                <p className="note">{env.mobile ? "Every file in this ball arrives together; then you choose where they go." : "Every file in this ball downloads at once, straight into your Downloads. If the browser asks, allow multiple downloads."}</p>
+              ) : asDir && needSpot ? (
                 <div className="spot-help">
                   <b>Pick another folder</b>
                   <span>
@@ -1170,7 +1095,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
                     <button className="cta lg-press" onClick={() => go()}>Choose folder</button>
                   </div>
                 </div>
-              ) : isFolder ? (
+              ) : asDir ? (
                 <p className="note">
                   {!canWriteFolders()
                     ? env.mobile
@@ -1180,7 +1105,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
                 </p>
               ) : null}
               <button className="cta lg-press" disabled={!code || needSpot} onClick={() => go()}>
-                {isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : env.mobile && !(isFolder && canWriteFolders()) ? "Decrypt →" : isFolder ? "Decrypt + save folder ↓" : "Decrypt + download ↓"}
+                {isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : env.mobile && !(asDir && canWriteFolders()) ? "Decrypt →" : loose ? "Decrypt + download all ↓" : isFolder ? "Decrypt + save folder ↓" : "Decrypt + download ↓"}
               </button>
             </>
           )}

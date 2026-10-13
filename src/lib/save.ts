@@ -140,10 +140,22 @@ export const canPickSave = (env: SaveEnv) =>
   typeof window !== "undefined" && !env.ios && !env.inApp && typeof (window as PickerWindow).showSaveFilePicker === "function";
 
 /** Opens the OS share sheet with the file alone. Call synchronously inside the tap (needs transient activation). */
-export function shareFile(file: File): Promise<void> {
+/** Several files in one share sheet (iOS: "Save N Images" / Save to Files). */
+export function canShareFiles(files: File[], env: SaveEnv): boolean {
+  if (!files.length || !files.every((f) => canShareFile(f, env))) return false;
+  try {
+    if (!navigator.canShare({ files })) return false;
+  } catch {
+    return false;
+  }
+  const total = files.reduce((a, f) => a + f.size, 0);
+  return env.chromium ? total <= CR_SHARE_MAX : env.ios ? total <= IOS_SHARE_MAX : true;
+}
+
+export function shareFile(file: File | File[]): Promise<void> {
   try {
     // files only: a title/text rides along as an extra item (iOS "Save to Files" then also writes a .txt)
-    return navigator.share({ files: [file] });
+    return navigator.share({ files: Array.isArray(file) ? file : [file] });
   } catch (e) {
     return Promise.reject(e);
   }

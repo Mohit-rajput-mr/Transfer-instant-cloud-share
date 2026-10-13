@@ -151,6 +151,16 @@ export function assignHues(orbs: Orb[]) {
 // Where the user has thrown each orb, kept across re-renders (this device only).
 const offsets = new Map<string, { x: number; y: number }>();
 
+/** The real sphere takes over the stand-in's place (slot + drag offset), so a launch never jumps. */
+export function inheritSlot(from: string, to: string) {
+  const slot = sticky.get(from);
+  if (slot !== undefined) sticky.set(to, slot);
+  const off = offsets.get(from);
+  if (off) offsets.set(to, off);
+  const hue = hues.get(from);
+  if (hue !== undefined) hues.set(to, hue);
+}
+
 type Drag = {
   id: number; touch: boolean; sx: number; sy: number; ox: number; oy: number;
   armed: boolean; // picked up (shows as lifted)

@@ -4,8 +4,10 @@ import Link from "next/link";
 import Starfield from "./Starfield";
 import Uploader, { Icon } from "./Uploader";
 import LiquidGlass from "./LiquidGlass";
-import OrbView, { ORB_CAP, assignHues, layout, type VoidMode } from "./OrbView";
-import { ComposePanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin } from "./Panels";
+import OrbView, { ORB_CAP, assignHues, inheritSlot, layout, type VoidMode } from "./OrbView";
+import { ComposePanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin, type LaunchJob } from "./Panels";
+import LaunchDock, { isPending, pendingId, pendingOrb, type Launch } from "./LaunchDock";
+import { launch, type Stage } from "@/lib/transfer";
 import { folderFromInput, fromDrop, textToFile, type Folder } from "@/lib/bundle";
 import { useRouter } from "next/navigation";
 import { deviceId, deviceInfo, ownerKey, type Orb } from "@/lib/client";
@@ -25,6 +27,9 @@ export default function Void() {
   const [skew, setSkew] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [panel, setPanel] = useState<Panel>(null);
+  const [launches, setLaunches] = useState<Launch[]>([]);
+  // ids handed over from a stand-in sphere to its real one: no burn-up, no second entrance
+  const swapped = useRef(new Set<string>());
   const [scope, setScope] = useState<"all" | "near">("all");
   const [dragging, setDragging] = useState(false);
   const [online, setOnline] = useState(1);
@@ -98,6 +103,7 @@ export default function Void() {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4000);
   }, []);
 
+  const recent = useRef(new Map<string, Orb>());
   // Coalesced fetch: at most one request in flight; bursts of triggers collapse into one follow-up.
   const inflight = useRef<Promise<void> | null>(null);
   const again = useRef(false);
@@ -111,7 +117,10 @@ export default function Void() {
       if (!r?.ok) return;
       const d = (await r.json()) as { items: Orb[]; online: number; now: number };
       setSkew(d.now - Date.now());
-      setOrbs(d.items);
+      // a launch that just landed stays put even if this list was cached a moment before it
+      const ids = new Set(d.items.map((o) => o.id));
+      const keep = [...recent.current.values()].filter((o) => !ids.has(o.id));
+      setOrbs(keep.length ? [...d.items, ...keep] : d.items);
       setOnline(Math.max(1, d.online));
       setLoaded(true);
       if (known.current) {
@@ -143,6 +152,50 @@ export default function Void() {
   const broadcast = useCallback(() => {
     channel.current?.send({ type: "broadcast", event: "pulse", payload: { at: Date.now() } });
   }, []);
+
+  // ---- launches: the card closes on Launch, the ball is in the void at once, a small dock tracks it ----
+  const [prog, setProg] = useState<Record<string, { stage: Stage; frac: number }>>({});
+  const progQ = useRef<Record<string, { stage: Stage; frac: number }>>({});
+  const progT = useRef(0);
+  const report = useCallback((key: string, stage: Stage, frac: number) => {
+    progQ.current[key] = { stage, frac };
+    if (progT.current) return;
+    progT.current = window.setTimeout(() => {
+      progT.current = 0;
+      const q = progQ.current;
+      progQ.current = {};
+      setProg((p) => ({ ...p, ...q }));
+    }, 120);
+  }, []);
+  const startLaunch = useCallback((job: LaunchJob) => {
+    const key = Math.random().toString(36).slice(2, 10);
+    const l: Launch = {
+      key, name: job.name, size: job.file.size, files: job.files, hue: Math.floor(Math.random() * 360),
+      createdAt: new Date(Date.now() + skew).toISOString(), stage: "deriving", frac: 0, abort: new AbortController(), open: false,
+    };
+    setLaunches((ls) => [...ls, l]);
+    setPanel(null);
+    launch({ file: job.file, name: job.name, passcode: job.passcode, maxDownloads: job.maxDownloads, signal: l.abort.signal, onProgress: (st, f) => report(key, st, f) })
+      .then((orb) => {
+        const from = pendingId(key);
+        inheritSlot(from, orb.id);
+        swapped.current.add(from).add(orb.id);
+        setTimeout(() => (swapped.current.delete(from), swapped.current.delete(orb.id)), 5000);
+        recent.current.set(orb.id, orb);
+        setTimeout(() => recent.current.delete(orb.id), 20_000);
+        setOrbs((list) => (list.some((o) => o.id === orb.id) ? list : [...list, orb]));
+        setLaunches((ls) => ls.map((x) => (x.key === key ? { ...x, orb } : x)));
+        refresh();
+        broadcast();
+      })
+      .catch((e: unknown) => {
+        if (l.abort.signal.aborted) return setLaunches((ls) => ls.filter((x) => x.key !== key));
+        setLaunches((ls) => ls.map((x) => (x.key === key ? { ...x, err: e instanceof Error ? e.message : "Launch failed" } : x)));
+      });
+    // refresh/broadcast/report are stable; skew only nudges the stand-in's clock
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [skew]);
+  const dockLaunches = useMemo(() => launches.map((l) => (prog[l.key] && !l.orb ? { ...l, ...prog[l.key] } : l)), [launches, prog]);
 
   // clock
   useEffect(() => {
@@ -338,15 +391,17 @@ export default function Void() {
     const ids = new Set(aliveKey.split(","));
     return orbs.filter((o) => ids.has(o.id));
   }, [orbs, aliveKey]);
+  // launches in flight already float as stand-in spheres; the real one takes their place on landing
+  const pending = useMemo(() => launches.filter((l) => !l.orb && !l.err).map(pendingOrb), [launches]);
   const shown = useMemo(
-    () => alive.filter((o) => scope === "all" || o.netHash === net || !!ownerKey(o.id)),
-    [alive, scope, net],
+    () => [...alive.filter((o) => scope === "all" || o.netHash === net || !!ownerKey(o.id)), ...pending],
+    [alive, scope, net, pending],
   );
   // The void can only hold so many spheres (fewer on a phone); keep yours, then nearby, then the newest.
   const cap = ORB_CAP[mode];
   const visible = useMemo(() => {
     if (shown.length <= cap) return shown;
-    const rank = (o: Orb) => (ownerKey(o.id) ? 2 : 0) + (o.netHash === net ? 1 : 0);
+    const rank = (o: Orb) => (ownerKey(o.id) || isPending(o.id) ? 2 : 0) + (o.netHash === net ? 1 : 0);
     return [...shown].sort((a, b) => rank(b) - rank(a) || b.createdAt.localeCompare(a.createdAt)).slice(0, cap);
   }, [shown, net, cap]);
   const positions = useMemo(() => layout(visible, mode), [visible, mode]);
@@ -362,12 +417,12 @@ export default function Void() {
     const aliveIds = new Set(alive.map((o) => o.id));
     const p = prev.current;
     if (p) {
-      const fresh = visible.filter((o) => !p.ids.has(o.id)).map((o) => o.id);
+      const fresh = visible.filter((o) => !p.ids.has(o.id) && !swapped.current.has(o.id)).map((o) => o.id);
       if (fresh.length) {
         setArriving((a) => new Set([...a, ...fresh]));
         setTimeout(() => setArriving((a) => new Set([...a].filter((id) => !fresh.includes(id)))), 2600);
       }
-      const gone = [...p.ids].filter((id) => !ids.has(id) && !aliveIds.has(id));
+      const gone = [...p.ids].filter((id) => !ids.has(id) && !aliveIds.has(id) && !swapped.current.has(id));
       if (gone.length) {
         const g = gone.map((id) => ({ orb: p.orbs.get(id)!, pos: p.pos.get(id)!, mine: !!ownerKey(id), hue: p.hue.get(id) })).filter((x) => x.orb && x.pos);
         setGhosts((list) => [...list, ...g]);
@@ -410,7 +465,10 @@ export default function Void() {
     setPanel({ kind: "compose" });
   };
 
-  const open = useCallback((o: Orb) => setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id }), []);
+  const open = useCallback((o: Orb) => {
+    if (isPending(o.id)) return setLaunches((ls) => ls.map((l) => (pendingId(l.key) === o.id ? { ...l, open: true } : l)));
+    setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id });
+  }, []);
   const noop = useCallback(() => {}, []);
   const listedUnlock = panel?.kind === "unlock" ? orbs.find((o) => o.id === panel.id) ?? extra : null;
   if (listedUnlock) keptUnlock.current = listedUnlock;
@@ -496,7 +554,7 @@ export default function Void() {
               index={i}
               pos={positions.get(o.id)!}
               now={serverNow}
-              mine={!!ownerKey(o.id)}
+              mine={!!ownerKey(o.id) || isPending(o.id)}
               nearby={!!net && o.netHash === net}
               watchers={watchers(o.id)}
               onOpen={open}
@@ -600,11 +658,7 @@ export default function Void() {
           files={panel.files}
           folder={panel.folder}
           onClose={() => setPanel(null)}
-          onLaunched={() => {
-            refresh();
-            broadcast();
-          }}
-          onOpenOwner={(id) => setPanel({ kind: "owner", id })}
+          onLaunch={startLaunch}
         />
       )}
       {panel?.kind === "unlock" && unlockOrb && (
@@ -669,7 +723,13 @@ export default function Void() {
         </>
       )}
 
-      <div className="made">made with <svg className="heart" viewBox="0 0 10 9" aria-label="love" role="img"><path d="M1 0H4L5 1L6 0H9L10 1V4.2L5 9L0 4.2V1Z" fill="currentColor" /><rect x="6.6" y="1.6" width="1.4" height="1.4" fill="#000" opacity="0.55" /></svg> by <b>Mohit</b></div>
+      <LaunchDock
+        launches={dockLaunches}
+        onToggle={(key) => setLaunches((ls) => ls.map((l) => (l.key === key ? { ...l, open: !l.open } : l)))}
+        onDismiss={(key) => setLaunches((ls) => ls.filter((l) => l.key !== key))}
+        onOpenOwner={(id) => setPanel({ kind: "owner", id })}
+      />
+      <div className={`made${launches.length ? " docked" : ""}`}>made with <svg className="heart" viewBox="0 0 10 9" aria-label="love" role="img"><path d="M1 0H4L5 1L6 0H9L10 1V4.2L5 9L0 4.2V1Z" fill="currentColor" /><rect x="6.6" y="1.6" width="1.4" height="1.4" fill="#000" opacity="0.55" /></svg> by <b>Mohit</b></div>
     </>
   );
 }

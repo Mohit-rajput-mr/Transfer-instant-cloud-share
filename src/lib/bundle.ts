@@ -1,5 +1,6 @@
 "use client";
 import { Zip, ZipPassThrough } from "fflate";
+import { safeMime, saveName } from "./save";
 
 export interface Entry {
   path: string;
@@ -44,17 +45,37 @@ const MAGIC = new TextEncoder().encode("OBD1");
 export interface Manifest {
   name: string;
   files: { path: string; size: number; mtime: number }[];
+  /** a hand-picked set of files (not a folder): the receiver gets them all at once */
+  loose?: boolean;
 }
 
-export function packFolder(folder: Folder): File {
+// File name suffix that marks a multi-file ball before it is decrypted.
+export const LOOSE_EXT = ".files";
+export const isLoose = (fileName: string) => fileName.endsWith(LOOSE_EXT);
+
+/** Many picked files → one ball. Duplicate names get " (2)", " (3)"… */
+export function filesBundle(name: string, files: File[]): Folder {
+  const seen = new Map<string, number>();
+  const entries = files.map((file) => {
+    const base = file.name || "file";
+    const n = (seen.get(base) ?? 0) + 1;
+    seen.set(base, n);
+    const path = n === 1 ? base : base.replace(/(\.[^.]*)?$/, (x) => ` (${n})${x}`);
+    return { path, file };
+  });
+  return { name, entries };
+}
+
+export function packFolder(folder: Folder, loose = false): File {
   const manifest: Manifest = {
     name: folder.name,
     files: folder.entries.map((e) => ({ path: e.path, size: e.file.size, mtime: e.file.lastModified })),
+    ...(loose ? { loose: true } : {}),
   };
   const json = new TextEncoder().encode(JSON.stringify(manifest));
   const len = new Uint8Array(4);
   new DataView(len.buffer).setUint32(0, json.length);
-  return new File([MAGIC, len, json, ...folder.entries.map((e) => e.file)] as BlobPart[], `${folder.name}.folder`, { type: FOLDER_MIME });
+  return new File([MAGIC, len, json, ...folder.entries.map((e) => e.file)] as BlobPart[], `${folder.name}${loose ? LOOSE_EXT : ".folder"}`, { type: FOLDER_MIME });
 }
 
 /** Where the unpacked files go: a real directory, or a zip for browsers that cannot write folders. */
@@ -138,8 +159,9 @@ export function directoryOutput(parent: DirHandle, name: string): FolderOutput {
 
 // Fallback: stream the files into a stored zip. The caller decides how it is saved
 // (auto-download on desktop; on phones the user picks where it goes).
-export function zipOutput(name: string, done: (zip: File) => void): FolderOutput {
+export function zipOutput(name: string, done: (zip: File) => void, keep?: (file: File) => void): FolderOutput {
   const parts: Uint8Array[] = [];
+  let cur: { path: string; mtime: number; chunks: Uint8Array[] } | null = null;
   const zip = new Zip((err, chunk) => {
     if (!err) parts.push(chunk);
   });
@@ -150,13 +172,21 @@ export function zipOutput(name: string, done: (zip: File) => void): FolderOutput
       entry = new ZipPassThrough(`${root}/${path}`);
       entry.mtime = mtime || Date.now();
       zip.add(entry);
+      if (keep) cur = { path, mtime: mtime || Date.now(), chunks: [] };
     },
     async data(bytes) {
       entry!.push(bytes);
+      cur?.chunks.push(bytes);
     },
     async close() {
       entry?.push(new Uint8Array(0), true);
       entry = null;
+      if (keep && cur) {
+        const base = cur.path.split("/").pop() || "file";
+        const type = safeMime("", base);
+        keep(new File(cur.chunks as BlobPart[], saveName(base, type), { type, lastModified: cur.mtime }));
+      }
+      cur = null;
     },
     async finish() {
       zip.end(); // fflate flushes the central directory synchronously into parts
