@@ -13,6 +13,25 @@ import { useRouter } from "next/navigation";
 import { deviceId, deviceInfo, ownerKey, type Orb } from "@/lib/client";
 import { supabase, type RealtimeChannel } from "@/lib/realtime";
 
+/** Someone else's launch, announced over realtime the moment they press Launch (before it has landed). */
+type Incoming = { key: string; name: string; size: number; files: number; hue: number; createdAt: string; net: string | null; frac: number; seen: number };
+const incomingId = (k: string) => `in-${k}`;
+const isIncoming = (id: string) => id.startsWith("in-");
+// a launch that stops announcing itself (tab closed, network gone) fades out after this
+const INCOMING_TTL = 20_000;
+const INCOMING_MAX = 8;
+const validKey = (k: unknown): k is string => typeof k === "string" && /^[a-z0-9]{1,16}$/.test(k);
+const num = (v: unknown, lo: number, hi: number, d: number) => (typeof v === "number" && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d);
+
+function incomingOrb(i: Incoming): Orb {
+  return {
+    id: incomingId(i.key), name: i.name, fileName: i.name, mime: "application/octet-stream", size: i.size,
+    salt: "", iterations: 0, hue: i.hue, status: "ready", netHash: i.net, maxDownloads: null,
+    downloads: 0, devices: 0, views: 0, createdAt: i.createdAt,
+    expiresAt: new Date(new Date(i.createdAt).getTime() + 30 * 60_000).toISOString(),
+  };
+}
+
 type Panel =
   | { kind: "send"; files: File[]; folder?: Folder | null }
   | { kind: "compose" }
@@ -26,13 +45,22 @@ export default function Void() {
   orbsRef.current = orbs;
   const [loaded, setLoaded] = useState(false);
   const [net, setNet] = useState<string | null>(null);
+  const netRef = useRef(net);
+  netRef.current = net;
   const [skew, setSkew] = useState(0);
+  const skewRef = useRef(skew);
+  skewRef.current = skew;
+  const [incoming, setIncoming] = useState<Record<string, Incoming>>({});
+  // incoming launch the user tapped: it opens by itself the moment it lands
+  const waitFor = useRef<string | null>(null);
+  const landedKeys = useRef(new Set<string>());
+  const toasted = useRef(new Set<string>());
   const [now, setNow] = useState(() => Date.now());
   const [panel, setPanel] = useState<Panel>(null);
   const [launches, setLaunches] = useState<Launch[]>([]);
   // ids handed over from a stand-in sphere to its real one: no burn-up, no second entrance
   const swapped = useRef(new Set<string>());
-  const [scope, setScope] = useState<"all" | "near">("all");
+  const [scope, setScope] = useState<"all" | "near" | "mine">("all");
   const [dragging, setDragging] = useState(false);
   const [online, setOnline] = useState(1);
   const [pulse, setPulse] = useState(0);
@@ -154,6 +182,9 @@ export default function Void() {
   const broadcast = useCallback(() => {
     channel.current?.send({ type: "broadcast", event: "pulse", payload: { at: Date.now() } });
   }, []);
+  const beam = useCallback((event: "launch" | "landed" | "gone", payload: Record<string, unknown>) => {
+    channel.current?.send({ type: "broadcast", event, payload });
+  }, []);
 
   // ---- launches: the card closes on Launch, the ball is in the void at once, a small dock tracks it ----
   const [prog, setProg] = useState<Record<string, { stage: Stage; frac: number }>>({});
@@ -177,8 +208,25 @@ export default function Void() {
     };
     setLaunches((ls) => [...ls, l]);
     setPanel(null);
-    launch({ file: job.file, name: job.name, passcode: job.passcode, maxDownloads: job.maxDownloads, hue: l.hue, signal: l.abort.signal, onProgress: (st, f) => report(key, st, f) })
+    // Every other open tab sees the ball right now, and watches it fill up, instead of after the upload.
+    const info = { k: key, name: l.name, size: l.size, files: l.files, hue: l.hue, at: l.createdAt };
+    let frac = 0;
+    let beamed = 0;
+    const announce = () => {
+      beamed = Date.now();
+      beam("launch", { ...info, net: netRef.current, f: frac });
+    };
+    announce();
+    const keepAlive = setInterval(announce, 4000);
+    const onProgress = (st: Stage, f: number) => {
+      report(key, st, f);
+      frac = st === "uploading" ? f : st === "finalizing" || st === "done" ? 1 : 0;
+      if (Date.now() - beamed > 500) announce();
+    };
+    launch({ file: job.file, name: job.name, passcode: job.passcode, maxDownloads: job.maxDownloads, hue: l.hue, signal: l.abort.signal, onProgress })
       .then((orb) => {
+        clearInterval(keepAlive);
+        beam("landed", { k: key, id: orb.id });
         const from = pendingId(key);
         inheritSlot(from, orb.id);
         swapped.current.add(from).add(orb.id);
@@ -191,6 +239,8 @@ export default function Void() {
         broadcast();
       })
       .catch((e: unknown) => {
+        clearInterval(keepAlive);
+        beam("gone", { k: key });
         if (l.abort.signal.aborted) return setLaunches((ls) => ls.filter((x) => x.key !== key));
         setLaunches((ls) => ls.map((x) => (x.key === key ? { ...x, err: e instanceof Error ? e.message : "Launch failed" } : x)));
       });
@@ -248,6 +298,105 @@ export default function Void() {
     };
   }, [sendPulse]);
 
+  const dropIncoming = useCallback((k: string) => {
+    setIncoming((m) => {
+      if (!m[k]) return m;
+      const next = { ...m };
+      delete next[k];
+      return next;
+    });
+  }, []);
+
+  // Someone pressed Launch somewhere: their ball floats here at once and fills up as it uploads.
+  const onLaunchBeam = useCallback((p: Record<string, unknown>) => {
+    const k = p?.k;
+    if (!validKey(k) || landedKeys.current.has(k)) return;
+    const name = (typeof p.name === "string" ? p.name.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 60) : "") || "untitled";
+    const serverNow = Date.now() + skewRef.current;
+    const at = typeof p.at === "string" ? Date.parse(p.at) : NaN;
+    const createdAt = new Date(Number.isFinite(at) && Math.abs(at - serverNow) < 120_000 ? at : serverNow).toISOString();
+    const net = typeof p.net === "string" && /^[0-9a-f]{12}$/.test(p.net) ? p.net : null;
+    const item: Incoming = {
+      key: k, name, createdAt, net,
+      size: Math.round(num(p.size, 0, 4 * 1024 ** 3, 0)),
+      files: Math.round(num(p.files, 1, 100_000, 1)),
+      hue: Math.round(num(p.hue, 0, 359, 0)),
+      frac: num(p.f, 0, 1, 0),
+      seen: Date.now(),
+    };
+    setIncoming((m) => (!m[k] && Object.keys(m).length >= INCOMING_MAX ? m : { ...m, [k]: m[k] ? { ...item, createdAt: m[k].createdAt } : item }));
+    if (!toasted.current.has(k)) {
+      toasted.current.add(k);
+      setTimeout(() => toasted.current.delete(k), 120_000);
+      toast(`Incoming: ${name}`);
+    }
+  }, [toast]);
+
+  // It landed: fetch the real object straight from the server (not the cached list) and swap it in place.
+  const onLandedBeam = useCallback(async (p: Record<string, unknown>) => {
+    const k = p?.k;
+    const id = p?.id;
+    if (!validKey(k) || typeof id !== "string" || !/^[a-z0-9]{4,12}$/.test(id)) return;
+    landedKeys.current.add(k);
+    setTimeout(() => landedKeys.current.delete(k), 60_000);
+    let orb: Orb | null = null;
+    for (let a = 0; a < 3 && !orb; a++) {
+      if (a) await new Promise((r) => setTimeout(r, 500 * a));
+      const r = await fetch(`/api/transfers/${id}`).catch(() => null);
+      if (r?.ok) orb = (await r.json().catch(() => null)) as Orb | null;
+      else if (r?.status === 404) break;
+    }
+    const from = incomingId(k);
+    if (orb) {
+      const got = orb;
+      inheritSlot(from, got.id);
+      swapped.current.add(from).add(got.id);
+      setTimeout(() => (swapped.current.delete(from), swapped.current.delete(got.id)), 5000);
+      recent.current.set(got.id, got);
+      setTimeout(() => recent.current.delete(got.id), 20_000);
+      known.current?.add(got.id);
+      setOrbs((list) => (list.some((o) => o.id === got.id) ? list : [...list, got]));
+    }
+    dropIncoming(k);
+    if (waitFor.current === k) {
+      waitFor.current = null;
+      if (orb) {
+        const got = orb;
+        setPanel((cur) => cur ?? { kind: "unlock", id: got.id });
+      }
+    }
+    if (!orb) refresh();
+  }, [dropIncoming, refresh]);
+
+  const onGoneBeam = useCallback((p: Record<string, unknown>) => {
+    const k = p?.k;
+    if (!validKey(k)) return;
+    dropIncoming(k);
+    if (waitFor.current === k) {
+      waitFor.current = null;
+      toast("That launch was cancelled");
+    }
+  }, [dropIncoming, toast]);
+
+  // a launch whose sender went quiet (closed the tab mid-upload) does not float forever
+  useEffect(() => {
+    const t = setInterval(() => {
+      const cut = Date.now() - INCOMING_TTL;
+      setIncoming((m) => {
+        const stale = Object.values(m).filter((i) => i.seen < cut).map((i) => i.key);
+        if (!stale.length) return m;
+        const next = { ...m };
+        for (const k of stale) delete next[k];
+        if (waitFor.current && stale.includes(waitFor.current)) waitFor.current = null;
+        return next;
+      });
+    }, 3000);
+    return () => clearInterval(t);
+  }, []);
+
+  const beams = useRef({ launch: onLaunchBeam, landed: onLandedBeam, gone: onGoneBeam });
+  beams.current = { launch: onLaunchBeam, landed: onLandedBeam, gone: onGoneBeam };
+
   // realtime broadcast only (no presence): constant cost per message, scales with Supabase's fan-out
   useEffect(() => {
     const ch = supabase.channel("orbit-void", { config: { broadcast: { self: false } } });
@@ -255,6 +404,9 @@ export default function Void() {
       scheduleRefresh();
       setPulse((p) => p + 1);
     });
+    ch.on("broadcast", { event: "launch" }, ({ payload }) => beams.current.launch(payload ?? {}));
+    ch.on("broadcast", { event: "landed" }, ({ payload }) => void beams.current.landed(payload ?? {}));
+    ch.on("broadcast", { event: "gone" }, ({ payload }) => beams.current.gone(payload ?? {}));
     ch.subscribe((status) => {
       if (status === "SUBSCRIBED") channel.current = ch;
     });
@@ -395,10 +547,29 @@ export default function Void() {
   }, [orbs, aliveKey]);
   // launches in flight already float as stand-in spheres; the real one takes their place on landing
   const pending = useMemo(() => launches.filter((l) => !l.orb && !l.err).map(pendingOrb), [launches]);
+  // other people's launches still on their way up
+  const arrivingOrbs = useMemo(() => Object.values(incoming).map(incomingOrb), [incoming]);
   const shown = useMemo(
-    () => [...alive.filter((o) => scope === "all" || o.netHash === net || !!ownerKey(o.id)), ...pending],
-    [alive, scope, net, pending],
+    () => [
+      ...alive.filter((o) => scope === "all" || (scope === "near" ? o.netHash === net || !!ownerKey(o.id) : !!ownerKey(o.id))),
+      ...pending,
+      ...(scope === "mine" ? [] : arrivingOrbs.filter((o) => scope === "all" || (!!net && o.netHash === net))),
+    ],
+    [alive, scope, net, pending, arrivingOrbs],
   );
+  // Your balls are numbered 1..N in launch order, on the ball and on its dock row, so you can count yours at a glance.
+  const badges = useMemo(() => {
+    const launchedAt = new Map(launches.filter((l) => l.orb).map((l) => [l.orb!.id, l.createdAt]));
+    const at = (o: Orb) => launchedAt.get(o.id) ?? o.createdAt;
+    const mine = [...alive.filter((o) => !!ownerKey(o.id)), ...pending].sort((a, b) => at(a).localeCompare(at(b)));
+    return new Map(mine.map((o, i) => [o.id, i + 1]));
+  }, [alive, pending, launches]);
+  const upFrac = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const l of dockLaunches) if (!l.orb && !l.err) m.set(pendingId(l.key), l.stage === "uploading" ? l.frac : l.stage === "finalizing" ? 1 : 0);
+    for (const i of Object.values(incoming)) m.set(incomingId(i.key), i.frac);
+    return m;
+  }, [dockLaunches, incoming]);
   // The void can only hold so many spheres (fewer on a phone); keep yours, then nearby, then the newest.
   const cap = ORB_CAP[mode];
   const visible = useMemo(() => {
@@ -436,6 +607,10 @@ export default function Void() {
   }, [visible, alive, positions, colors, loaded]);
   const watchers = useCallback((id: string) => orbs.find((o) => o.id === id)?.watchers ?? 0, [orbs]);
   const nearbyCount = alive.filter((o) => o.netHash === net).length;
+  const mineCount = badges.size;
+  useEffect(() => {
+    if (scope === "mine" && !mineCount) setScope("all");
+  }, [scope, mineCount]);
 
   const onViewed = useCallback(() => {
     refresh();
@@ -469,9 +644,13 @@ export default function Void() {
   };
 
   const open = useCallback((o: Orb) => {
+    if (isIncoming(o.id)) {
+      waitFor.current = o.id.slice(3);
+      return toast(`${o.name} is still launching. It opens here the moment it lands`);
+    }
     if (isPending(o.id)) return setLaunches((ls) => ls.map((l) => (pendingId(l.key) === o.id ? { ...l, open: true } : l)));
     setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id });
-  }, []);
+  }, [toast]);
   const noop = useCallback(() => {}, []);
   const listedUnlock = panel?.kind === "unlock" ? orbs.find((o) => o.id === panel.id) ?? extra : null;
   if (listedUnlock) keptUnlock.current = listedUnlock;
@@ -513,6 +692,11 @@ export default function Void() {
           <div className="toggle" role="tablist" aria-label="Scope">
             <button className={scope === "all" ? "on" : ""} onClick={() => setScope("all")}>All</button>
             <button className={scope === "near" ? "on" : ""} onClick={() => setScope("near")}>Nearby{nearbyCount ? ` ${nearbyCount}` : ""}</button>
+            {mineCount > 0 && (
+              <button className={`mine-tab${scope === "mine" ? " on" : ""}`} onClick={() => setScope(scope === "mine" ? "all" : "mine")} aria-label={`Show only your ${mineCount} ${mineCount > 1 ? "objects" : "object"}`}>
+                Mine <b>{mineCount}</b>
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -563,6 +747,9 @@ export default function Void() {
               onOpen={open}
               phase={arriving.has(o.id) ? "arriving" : undefined}
               hue={colors.get(o.id)}
+              launching={upFrac.get(o.id)}
+              incoming={isIncoming(o.id)}
+              badge={badges.get(o.id)}
             />
           ))}
           {ghosts.map((g) => (
@@ -728,6 +915,7 @@ export default function Void() {
 
       <LaunchDock
         launches={dockLaunches}
+        badges={badges}
         onToggle={(key) => setLaunches((ls) => ls.map((l) => (l.key === key ? { ...l, open: !l.open } : l)))}
         onDismiss={(key) => setLaunches((ls) => ls.filter((l) => l.key !== key))}
         onOpenOwner={(id) => setPanel({ kind: "owner", id })}

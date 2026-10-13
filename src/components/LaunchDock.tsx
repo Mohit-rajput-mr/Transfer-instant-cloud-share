@@ -57,6 +57,8 @@ const STAGE: Partial<Record<Stage, string>> = {
 
 export default function LaunchDock(props: {
   launches: Launch[];
+  /** your balls' numbers (same as on the ball), keyed by object id */
+  badges: Map<string, number>;
   onToggle: (key: string) => void;
   onDismiss: (key: string) => void;
   onOpenOwner: (id: string) => void;
@@ -72,8 +74,10 @@ export default function LaunchDock(props: {
   );
 }
 
-function DockItem({ l, onToggle, onDismiss, onOpenOwner }: { l: Launch } & Omit<Parameters<typeof LaunchDock>[0], "launches">) {
+function DockItem({ l, badges, onToggle, onDismiss, onOpenOwner }: { l: Launch } & Omit<Parameters<typeof LaunchDock>[0], "launches">) {
   const [copied, setCopied] = useState(false);
+  const n = badges.get(l.orb ? l.orb.id : pendingId(l.key));
+  const dot = (live?: boolean) => <i className={`dock-dot${live ? " live" : ""}`}>{n ?? ""}</i>;
   const hue = { "--hue": l.hue } as CSSProperties;
   const pct = Math.round(Math.max(0, Math.min(1, l.frac)) * 100);
 
@@ -89,7 +93,7 @@ function DockItem({ l, onToggle, onDismiss, onOpenOwner }: { l: Launch } & Omit<
   if (l.err)
     return (
       <div className="dock-item lg err" style={hue}>
-        <i className="dock-dot" />
+        {dot()}
         <div className="dock-main">
           <b className="ellip">{l.name}</b>
           <span className="mono">{l.err}</span>
@@ -101,7 +105,7 @@ function DockItem({ l, onToggle, onDismiss, onOpenOwner }: { l: Launch } & Omit<
   if (!l.orb)
     return (
       <div className="dock-item lg" style={hue}>
-        <i className="dock-dot live" />
+        {dot(true)}
         <div className="dock-main">
           <b className="ellip">{l.name}</b>
           <span className="mono">{STAGE[l.stage] ?? "Launching"} · {l.stage === "uploading" ? `${pct}%` : formatBytes(l.size)}{l.files > 1 ? ` · ${l.files} files` : ""}</span>
@@ -114,7 +118,7 @@ function DockItem({ l, onToggle, onDismiss, onOpenOwner }: { l: Launch } & Omit<
   return (
     <div className={`dock-item lg done${l.open ? " open" : ""}`} style={hue}>
       <div className="dock-row">
-        <i className="dock-dot" />
+        {dot()}
         <div className="dock-main">
           <b className="ellip">{l.name}</b>
           <span className="mono">In orbit · <span className="dock-code">{l.orb.id}</span></span>

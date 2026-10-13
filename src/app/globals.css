@@ -1174,3 +1174,25 @@ html.lg-refract :is(.top, .drawer, .send-menu, .up-pill, .up-card, .send-fab).lg
 .sub-left span, .toggle button { font-family: var(--font-chip), var(--sans); font-weight: 500; text-transform: uppercase; letter-spacing: 0.14em; font-size: 10.5px; }
 .sub-left { gap: 22px; }
 @media (prefers-reduced-motion: reduce) { .send-menu.bubbles .bubble-btn { animation: none; } }
+
+/* ---------------- Yours at a glance: numbered, ringed, filterable ---------------- */
+/* a bold white dashed ring turning the other way round your own spheres only */
+.claim { position: absolute; inset: -12%; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.92); animation: spin 22s linear infinite reverse; pointer-events: none; }
+/* the number: same as on its row in the launch dock */
+.mine-no {
+  position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none;
+  min-width: max(20px, calc(var(--s) * var(--k) * 0.26)); height: max(20px, calc(var(--s) * var(--k) * 0.26)); padding: 0 5px;
+  display: grid; place-items: center; border-radius: 999px; background: #fff; color: #000;
+  font-family: var(--display); font-weight: 900; font-variation-settings: "wdth" 125; font-variant-numeric: tabular-nums;
+  font-size: max(11px, calc(var(--s) * var(--k) * 0.15)); line-height: 1;
+  box-shadow: 0 0 0 2px hsl(var(--hue) 60% 50%), 0 6px 16px rgba(0,0,0,0.6);
+}
+.dock-dot { display: grid; place-items: center; font-family: var(--display); font-weight: 900; font-size: 11px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.7); font-variant-numeric: tabular-nums; font-style: normal; }
+.toggle .mine-tab b { font-weight: 700; }
+.toggle .mine-tab:not(.on) { color: #fff; }
+
+/* still uploading: the ring fills with the upload, the halo spins fast */
+.orb.launching .ring .life { stroke: #fff; stroke-width: 2; transition: stroke-dashoffset 0.4s linear; }
+.orb.launching .halo { border-color: hsl(var(--hue) 80% 80% / 0.75); animation-duration: 2.4s; }
+.tag.in { border-color: hsl(var(--hue) 55% 45%); color: hsl(var(--hue) 80% 82%); }
+@media (prefers-reduced-motion: reduce) { .claim { animation: none; } }

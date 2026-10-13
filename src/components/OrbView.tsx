@@ -200,8 +200,15 @@ export default function OrbView(props: {
   phase?: "arriving" | "burning";
   hue?: number;
   index?: number;
+  /** still on its way up (0..1): the ring shows the upload instead of the lifetime */
+  launching?: number;
+  /** someone else's launch, seen live before it has landed */
+  incoming?: boolean;
+  /** yours: its number, the same one the launch dock shows */
+  badge?: number;
 }) {
-  const { orb, pos, now, mine, nearby, watchers, onOpen, phase } = props;
+  const { orb, pos, now, mine, nearby, watchers, onOpen, phase, launching, incoming, badge } = props;
+  const up = launching !== undefined;
   const h = hash(orb.id);
   const left = new Date(orb.expiresAt).getTime() - now;
   const frac = Math.max(0, Math.min(1, left / LIFETIME_MS));
@@ -396,7 +403,7 @@ export default function OrbView(props: {
     <div className={`orb-anchor${phase ? ` ${phase}` : ""}`} ref={anchor} style={{ ...style, transform: `translate(${off.x}px, ${off.y}px)` }}>
     <button
       ref={button}
-      className={`orb${mine ? " mine" : ""}${dying ? " dying" : ""}${sealed ? " sealed" : ""}`}
+      className={`orb${mine ? " mine" : ""}${up ? " launching" : ""}${dying && !up ? " dying" : ""}${sealed ? " sealed" : ""}`}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -409,21 +416,23 @@ export default function OrbView(props: {
         }
         open(e.currentTarget);
       }}
-      aria-label={`Open ${orb.name}`}
+      aria-label={`${up ? "Launching" : "Open"} ${orb.name}${mine ? `, yours${badge ? ` number ${badge}` : ""}` : ""}`}
     >
       <div className="orb-body">
         <div className="halo" />
+        {mine && <span className="claim" />}
         <div className="sphere" />
         <svg className="ring" viewBox="0 0 100 100">
           <circle className="track" cx="50" cy="50" r={R} />
-          <circle className="life" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - frac)} />
+          <circle className="life" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - (up ? Math.max(0.03, launching) : frac))} />
         </svg>
-        <span className="ext">{ext(orb.fileName)}</span>
-        <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
+        <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : ext(orb.fileName)}</span>
+        {mine && badge ? <span className="mine-no" aria-hidden>{badge}</span> : null}
+        {!up && <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
           <span title="Live now"><i className="b-live" />{watchers}</span>
           <span title="Opened by"><svg viewBox="0 0 16 16" aria-hidden><path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" strokeWidth="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>{orb.views ?? 0}</span>
           <span title="Downloads">↓{orb.downloads}</span>
-        </span>
+        </span>}
         {phase === "arriving" && <span className="shock" />}
         {phase === "burning" && (
           <>
@@ -448,13 +457,14 @@ export default function OrbView(props: {
       <div className="orb-label wide">{orb.name}</div>
       <div className="orb-meta mono">
         <span>{formatBytes(orb.size)}</span>
-        <span>{formatClock(left)}</span>
+        {up ? <span>↑ {Math.round(launching * 100)}%</span> : <span>{formatClock(left)}</span>}
         {orb.maxDownloads ? <span>max {orb.maxDownloads}</span> : null}
       </div>
-      {(mine || nearby || sealed) && (
+      {(mine || nearby || sealed || incoming) && (
         <div className="tags">
-          {mine && <span className="tag me">YOURS</span>}
-          {nearby && !mine && <span className="tag near">NEARBY</span>}
+          {mine && <span className="tag me">{badge ? `YOURS · #${badge}` : "YOURS"}</span>}
+          {incoming && <span className="tag in">INCOMING</span>}
+          {nearby && !mine && !incoming && <span className="tag near">NEARBY</span>}
           {sealed && <span className="tag dead">SEALED</span>}
         </div>
       )}
