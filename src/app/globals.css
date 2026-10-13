@@ -1356,3 +1356,39 @@ html.lg-refract :is(.top, .drawer, .send-menu, .up-pill, .up-card, .send-fab).lg
   .room-top { margin-top: calc(168px + var(--safe-t)); }
 }
 .open-badge b, .open-badge .mono { white-space: nowrap; }
+
+/* ---------------- Space room v2: one glass card (the Folder-card material, lighter); people outside, objects inside ---------------- */
+.void.in-space { --band-t: calc(290px + var(--safe-t)); --band-b: 120px; }
+.room-glass {
+  inset: calc(190px + var(--safe-t)) 28px 36px; border-radius: 40px;
+  background: linear-gradient(180deg, rgba(120,120,128,0.30), rgba(44,44,48,0.34));
+  border: 1px solid rgba(255,255,255,0.22);
+  box-shadow: 0 24px 70px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -1px 0 rgba(255,255,255,0.06);
+  -webkit-backdrop-filter: blur(10px) saturate(140%); backdrop-filter: blur(10px) saturate(140%);
+}
+.room-glass .c { display: none; }
+.room-top { top: calc(104px + var(--safe-t)); width: calc(100% - 56px); }
+.room-crew { gap: 10px; }
+@media (max-width: 720px) {
+  .void.in-space.flow { --flow-min: calc(340px + var(--safe-t)); }
+  .void.in-space { min-height: calc(var(--vh-s) + 40px); }
+  .room-top { margin-top: calc(162px + var(--safe-t)); }
+  .room-glass { inset: calc(290px + var(--safe-t)) 10px 16px; border-radius: 30px; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .room-top { margin-top: calc(70px + var(--safe-t)); }
+  .room-glass { inset: calc(150px + var(--safe-t)) 10px 10px; }
+  .void.in-space.flow { --flow-min: calc(190px + var(--safe-t)); }
+}
+/* keep every sphere (with its ring and stats bubble) fully inside the glass card */
+.void.in-space:not(.flow) .orb-anchor { left: clamp(calc(170px + var(--safe-l)), var(--x), calc(100% - 210px - var(--safe-r))); }
+@media (max-width: 720px) {
+  .room-top { margin-top: calc(118px + var(--safe-t)); }
+  .room-glass { inset: calc(262px + var(--safe-t)) 10px 16px; }
+  .void.in-space.flow { --flow-min: calc(380px + var(--safe-t)); }
+}
+@media (max-width: 720px) {
+  .room-glass { inset: calc(330px + var(--safe-t)) 10px 16px; }
+  .void.in-space.flow { --flow-min: calc(436px + var(--safe-t)); }
+  .void.in-space { min-height: calc(var(--vh-s) + 120px); }
+}
