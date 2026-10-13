@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Chakra_Petch, Orbitron, Share_Tech_Mono } from "next/font/google";
+import { Archivo, Chakra_Petch, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-// boxy, squared-off type to match the ORBITRANSFER wordmark
-const display = Orbitron({ subsets: ["latin"], variable: "--font-display", display: "swap" });
-const sans = Chakra_Petch({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-sans", display: "swap" });
-const mono = Share_Tech_Mono({ subsets: ["latin"], weight: "400", variable: "--font-mono", display: "swap" });
+const display = Archivo({ subsets: ["latin"], axes: ["wdth"], variable: "--font-display", display: "swap" });
+const sans = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
+// only for the small header chips (No login · End-to-end encrypted · All / Nearby)
+const chip = Chakra_Petch({ subsets: ["latin"], weight: "500", variable: "--font-chip", display: "swap" });
 
 export const metadata: Metadata = {
   title: "ORBITRANSFER — drop. lock. beam. burn.",
@@ -29,7 +30,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable} ${chip.variable}`}>
       <body>{children}</body>
     </html>
   );

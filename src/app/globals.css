@@ -221,13 +221,13 @@ button:focus-visible, a:focus-visible { outline: 2px solid rgba(255,255,255,0.8)
 @keyframes bubble-in { from { opacity: 0; transform: scale(0.3) translate(-20px, 20px); } }
 .log .view i { background: #666; }
 .log .view { color: #9a9a9a; }
-/* ---- warp-in: a new upload streaks in like a comet, then sends out a shockwave ---- */
-.orb-anchor.arriving .orb { animation: drift var(--dur) ease-in-out var(--delay) infinite alternate, warp-in 1.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+/* ---- a new object pops into place right where it will float ---- */
+.orb-anchor.arriving .orb { animation: drift var(--dur) ease-in-out var(--delay) infinite alternate, warp-in 0.7s var(--spring) both; }
 @keyframes warp-in {
-  0% { opacity: 0; translate: 46vw -52vh; scale: 0.04; }
-  55% { opacity: 1; }
-  78% { translate: 0 0; scale: 1.12; }
-  100% { translate: 0 0; scale: 1; }
+  0% { opacity: 0; scale: 0.2; }
+  45% { opacity: 1; scale: 1.12; }
+  70% { scale: 0.96; }
+  100% { scale: 1; }
 }
 .trail { position: absolute; left: 50%; top: 50%; width: 46vw; height: 2px; border-radius: 2px; transform-origin: 0 50%; rotate: -48deg; pointer-events: none;
   background: linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0)); box-shadow: 0 0 3px rgba(255,255,255,0.35);
@@ -1170,7 +1170,7 @@ html.lg-refract :is(.top, .drawer, .send-menu, .up-pill, .up-card, .send-fab).lg
 .send-fab.lg small, .send-fab small { color: #555; }
 .send-fab.lg::after { opacity: 0.35; }
 
-/* ---------- boxy type (Orbitron / Chakra Petch / Share Tech Mono) ---------- */
-.wide { letter-spacing: 0; }
-.mono { letter-spacing: 0.08em; }
+/* ---------- header chips: flat, spaced, squared-off type ---------- */
+.sub-left span, .toggle button { font-family: var(--font-chip), var(--sans); font-weight: 500; text-transform: uppercase; letter-spacing: 0.14em; font-size: 10.5px; }
+.sub-left { gap: 22px; }
 @media (prefers-reduced-motion: reduce) { .send-menu.bubbles .bubble-btn { animation: none; } }

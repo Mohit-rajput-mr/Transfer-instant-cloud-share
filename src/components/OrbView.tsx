@@ -409,7 +409,7 @@ export default function OrbView(props: {
           <span title="Opened by"><svg viewBox="0 0 16 16" aria-hidden><path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" strokeWidth="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>{orb.views ?? 0}</span>
           <span title="Downloads">↓{orb.downloads}</span>
         </span>
-        {phase === "arriving" && <><span className="shock" /><span className="shock s2" /><span className="trail" /></>}
+        {phase === "arriving" && <span className="shock" />}
         {phase === "burning" && (
           <>
             <span className="flash" />
