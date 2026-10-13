@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateClientTokenFromReadWriteToken } from "@vercel/blob/client";
 import { MAX_FILE_BYTES } from "@/lib/limits";
 import { clean, geo, isB64, isHex, netHash, newId, randomHex, reap, rpc, sha256 } from "@/lib/server";
+import { member, tagName, untag } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
 
@@ -9,9 +10,11 @@ export const dynamic = "force-dynamic";
 // per region no matter how many people are watching the void.
 export async function GET() {
   await reap();
-  const r = await rpc<{ items: unknown[]; online: number }>("orbit_list2", {});
+  const r = await rpc<{ items: { name?: unknown }[]; online: number }>("orbit_list2", {});
+  // objects inside a space never show in the public void
+  const items = (r.items ?? []).map(untag).filter((o) => !o.space);
   return NextResponse.json(
-    { ...r, now: Date.now() },
+    { ...r, items, now: Date.now() },
     { headers: { "Cache-Control": "public, max-age=0, s-maxage=1, stale-while-revalidate=5" } },
   );
 }
@@ -32,7 +35,12 @@ export async function POST(req: NextRequest) {
   if (!isB64(b.salt) || !isB64(b.nonce)) return bad("crypto");
   if (!isHex(b.auth, 64) || !isHex(b.owner, 64)) return bad("keys");
 
-  const name = clean(b.name, 60) || "untitled";
+  let name = clean(b.name, 60) || "untitled";
+  if (b.space != null) {
+    const me = await member(b.space, b.deviceId, b.spaceToken);
+    if (!me) return NextResponse.json({ error: "You are no longer in this space" }, { status: 403 });
+    name = tagName(me.slug, me.handle, name);
+  }
   const fileName = clean(b.fileName, 180) || "file";
   const mime = clean(b.mime, 120) || "application/octet-stream";
 

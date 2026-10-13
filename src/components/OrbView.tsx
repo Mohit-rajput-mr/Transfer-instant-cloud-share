@@ -456,6 +456,7 @@ export default function OrbView(props: {
       </div>
       <div className="orb-label wide">{orb.name}</div>
       <div className="orb-meta mono">
+        {orb.by ? <span className="orb-by">{orb.by}</span> : null}
         <span>{formatBytes(orb.size)}</span>
         {up ? <span>↑ {Math.round(launching * 100)}%</span> : <span>{formatClock(left)}</span>}
         {orb.maxDownloads ? <span>max {orb.maxDownloads}</span> : null}

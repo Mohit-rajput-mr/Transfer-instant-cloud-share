@@ -12,9 +12,11 @@ import { folderFromInput, fromDrop, textToFile, type Folder } from "@/lib/bundle
 import { useRouter } from "next/navigation";
 import { deviceId, deviceInfo, ownerKey, type Orb } from "@/lib/client";
 import { supabase, type RealtimeChannel } from "@/lib/realtime";
+import SpacePanel from "./Spaces";
+import { forget, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceSession } from "@/lib/space";
 
 /** Someone else's launch, announced over realtime the moment they press Launch (before it has landed). */
-type Incoming = { key: string; name: string; size: number; files: number; hue: number; createdAt: string; net: string | null; frac: number; seen: number };
+type Incoming = { key: string; by: string | null; name: string; size: number; files: number; hue: number; createdAt: string; net: string | null; frac: number; seen: number };
 const incomingId = (k: string) => `in-${k}`;
 const isIncoming = (id: string) => id.startsWith("in-");
 // a launch that stops announcing itself (tab closed, network gone) fades out after this
@@ -26,7 +28,7 @@ const num = (v: unknown, lo: number, hi: number, d: number) => (typeof v === "nu
 function incomingOrb(i: Incoming): Orb {
   return {
     id: incomingId(i.key), name: i.name, fileName: i.name, mime: "application/octet-stream", size: i.size,
-    salt: "", iterations: 0, hue: i.hue, status: "ready", netHash: i.net, maxDownloads: null,
+    salt: "", iterations: 0, hue: i.hue, status: "ready", netHash: i.net, maxDownloads: null, by: i.by,
     downloads: 0, devices: 0, views: 0, createdAt: i.createdAt,
     expiresAt: new Date(new Date(i.createdAt).getTime() + 30 * 60_000).toISOString(),
   };
@@ -37,6 +39,7 @@ type Panel =
   | { kind: "compose" }
   | { kind: "unlock"; id: string }
   | { kind: "owner"; id: string }
+  | { kind: "space"; start?: string }
   | null;
 
 export default function Void() {
@@ -51,6 +54,10 @@ export default function Void() {
   const skewRef = useRef(skew);
   skewRef.current = skew;
   const [incoming, setIncoming] = useState<Record<string, Incoming>>({});
+  // the space this device is in (null = the public void); restored from IndexedDB before the first load
+  const [space, setSpace] = useState<SpaceSession | null>(null);
+  const spaceRef = useRef<SpaceSession | null>(null);
+  const [spaceReady, setSpaceReady] = useState(false);
   // incoming launch the user tapped: it opens by itself the moment it lands
   const waitFor = useRef<string | null>(null);
   const landedKeys = useRef(new Set<string>());
@@ -134,6 +141,7 @@ export default function Void() {
   }, []);
 
   const recent = useRef(new Map<string, Orb>());
+  const removedRef = useRef<(sp: SpaceSession) => void>(() => {});
   // Coalesced fetch: at most one request in flight; bursts of triggers collapse into one follow-up.
   const inflight = useRef<Promise<void> | null>(null);
   const again = useRef(false);
@@ -143,7 +151,10 @@ export default function Void() {
       return inflight.current;
     }
     const run = (async () => {
-      const r = await fetch("/api/transfers").catch(() => null);
+      const sp = spaceRef.current;
+      const r = await fetch(sp ? `/api/spaces/${sp.slug}/transfers` : "/api/transfers", sp ? { headers: spaceHeaders(), cache: "no-store" } : undefined).catch(() => null);
+      if (spaceRef.current !== sp) return; // switched while this was in flight
+      if (sp && r?.status === 403) return removedRef.current(sp);
       if (!r?.ok) return;
       const d = (await r.json()) as { items: Orb[]; online: number; now: number };
       setSkew(d.now - Date.now());
@@ -214,7 +225,7 @@ export default function Void() {
     let beamed = 0;
     const announce = () => {
       beamed = Date.now();
-      beam("launch", { ...info, net: netRef.current, f: frac });
+      beam("launch", { ...info, net: netRef.current, f: frac, by: spaceRef.current?.handle ?? null });
     };
     announce();
     const keepAlive = setInterval(announce, 4000);
@@ -257,6 +268,7 @@ export default function Void() {
 
   // initial load, polling fallback, deep link
   useEffect(() => {
+    if (!spaceReady) return;
     me.current = deviceId();
     refresh();
     const t = setInterval(refresh, 15_000);
@@ -268,7 +280,48 @@ export default function Void() {
       clearInterval(t);
       document.removeEventListener("visibilitychange", onVis);
     };
+  }, [refresh, spaceReady]);
+
+  // back into the space this device was last in (no setup twice), and ?space= invite links
+  useEffect(() => {
+    (async () => {
+      const slug = await lastSpace().catch(() => null);
+      const s = slug ? (await savedSpaces().catch(() => [])).find((x) => x.slug === slug) ?? null : null;
+      if (s) {
+        setActiveSpace(s);
+        spaceRef.current = s;
+        setSpace(s);
+      }
+      setSpaceReady(true);
+      const inv = new URLSearchParams(window.location.search).get("space");
+      if (inv && /^[a-z0-9-]{1,32}$/.test(inv) && inv !== s?.slug) setPanel({ kind: "space", start: inv });
+    })();
+  }, []);
+
+  const switchSpace = useCallback((s: SpaceSession | null) => {
+    setActiveSpace(s);
+    spaceRef.current = s;
+    setSpace(s);
+    setCurrent(s ? s.slug : null);
+    setOrbs([]);
+    setIncoming({});
+    recent.current.clear();
+    known.current = null;
+    setScope("all");
+    setLoaded(false);
+    refresh();
   }, [refresh]);
+  const enterSpace = useCallback((s: SpaceSession) => {
+    remember(s);
+    switchSpace(s);
+    setPanel(null);
+    toast(`You are in ${s.title}`);
+  }, [switchSpace, toast]);
+  removedRef.current = (sp) => {
+    forget(sp.slug);
+    switchSpace(null);
+    toast(`You were removed from ${sp.title}`);
+  };
 
   // Heartbeat: tells the server this device is here and what it is looking at.
   const viewing = panel?.kind === "unlock" ? panel.id : null;
@@ -316,8 +369,9 @@ export default function Void() {
     const at = typeof p.at === "string" ? Date.parse(p.at) : NaN;
     const createdAt = new Date(Number.isFinite(at) && Math.abs(at - serverNow) < 120_000 ? at : serverNow).toISOString();
     const net = typeof p.net === "string" && /^[0-9a-f]{12}$/.test(p.net) ? p.net : null;
+    const by = typeof p.by === "string" ? p.by.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 24) || null : null;
     const item: Incoming = {
-      key: k, name, createdAt, net,
+      key: k, by, name, createdAt, net,
       size: Math.round(num(p.size, 0, 4 * 1024 ** 3, 0)),
       files: Math.round(num(p.files, 1, 100_000, 1)),
       hue: Math.round(num(p.hue, 0, 359, 0)),
@@ -342,7 +396,7 @@ export default function Void() {
     let orb: Orb | null = null;
     for (let a = 0; a < 3 && !orb; a++) {
       if (a) await new Promise((r) => setTimeout(r, 500 * a));
-      const r = await fetch(`/api/transfers/${id}`).catch(() => null);
+      const r = await fetch(`/api/transfers/${id}`, { headers: spaceHeaders() }).catch(() => null);
       if (r?.ok) orb = (await r.json().catch(() => null)) as Orb | null;
       else if (r?.status === 404) break;
     }
@@ -397,9 +451,10 @@ export default function Void() {
   const beams = useRef({ launch: onLaunchBeam, landed: onLandedBeam, gone: onGoneBeam });
   beams.current = { launch: onLaunchBeam, landed: onLandedBeam, gone: onGoneBeam };
 
+  const chanName = space ? `orbit-s-${space.chan}` : "orbit-void";
   // realtime broadcast only (no presence): constant cost per message, scales with Supabase's fan-out
   useEffect(() => {
-    const ch = supabase.channel("orbit-void", { config: { broadcast: { self: false } } });
+    const ch = supabase.channel(chanName, { config: { broadcast: { self: false } } });
     ch.on("broadcast", { event: "pulse" }, () => {
       scheduleRefresh();
       setPulse((p) => p + 1);
@@ -414,7 +469,7 @@ export default function Void() {
       channel.current = null;
       supabase.removeChannel(ch);
     };
-  }, [scheduleRefresh]);
+  }, [scheduleRefresh, chanName]);
 
   // opening / closing an object updates live-viewer counts everywhere right away
   const firstView = useRef(true);
@@ -475,7 +530,7 @@ export default function Void() {
   const openId = panel?.kind === "unlock" ? panel.id : null;
   useEffect(() => {
     if (!openId || orbs.some((o) => o.id === openId)) return setExtra(null);
-    fetch(`/api/transfers/${openId}`)
+    fetch(`/api/transfers/${openId}`, { headers: spaceHeaders() })
       .then(async (r) => {
         if (r.ok) return setExtra(await r.json());
         setExtra(null);
@@ -680,7 +735,10 @@ export default function Void() {
             <button onClick={openMenu}>Launch</button>
           </nav>
           <div className="top-right">
-            <span className="live" aria-label={`${online} ${online > 1 ? "devices" : "device"} in orbit`}><span className="dot" /><b>{online}</b><span className="live-txt">{online > 1 ? "devices" : "device"} in orbit</span></span>
+            <span className="live" aria-label={`${online} ${online > 1 ? "devices" : "device"} in orbit`}><span className="dot" /><b>{online}</b><span className="live-txt">{space ? "in this space" : online > 1 ? "devices in orbit" : "device in orbit"}</span></span>
+            <button className={`pill lg-press space-chip${space ? " in" : ""}`} onClick={() => setPanel({ kind: "space" })} aria-label={space ? `Space: ${space.title}` : "Spaces"}>
+              {space ? <><i className="space-dot" />{space.title}</> : "Spaces"}
+            </button>
             <button className="pill lg-press" onClick={openMenu}>Send</button>
           </div>
         </div>
@@ -691,7 +749,7 @@ export default function Void() {
           <span />
           <div className="toggle" role="tablist" aria-label="Scope">
             <button className={scope === "all" ? "on" : ""} onClick={() => setScope("all")}>All</button>
-            <button className={scope === "near" ? "on" : ""} onClick={() => setScope("near")}>Nearby{nearbyCount ? ` ${nearbyCount}` : ""}</button>
+            {!space && <button className={scope === "near" ? "on" : ""} onClick={() => setScope("near")}>Nearby{nearbyCount ? ` ${nearbyCount}` : ""}</button>}
             {mineCount > 0 && (
               <button className={`mine-tab${scope === "mine" ? " on" : ""}`} onClick={() => setScope(scope === "mine" ? "all" : "mine")} aria-label={`Show only your ${mineCount} ${mineCount > 1 ? "objects" : "object"}`}>
                 Mine <b>{mineCount}</b>
@@ -722,7 +780,7 @@ export default function Void() {
           {loaded && shown.length === 0 && (
             <div className="empty">
               <p className="mono">
-                {scope === "near" ? "Nothing from your network yet" : (
+                {space ? `${space.title} is empty. Launch something: only people in this space see it` : scope === "near" ? "Nothing from your network yet" : (
                   <>
                     <span className="on-fine">The void is empty. Drop files, folders or text anywhere</span>
                     <span className="on-touch">The void is empty. Tap upload to launch photos, videos, files or text</span>
@@ -842,6 +900,20 @@ export default function Void() {
 
       {panel?.kind === "compose" && (
         <ComposePanel onClose={() => setPanel(null)} onReady={(file) => setPanel({ kind: "send", files: [file] })} />
+      )}
+      {panel?.kind === "space" && (
+        <SpacePanel
+          current={space}
+          start={panel.start}
+          onEnter={enterSpace}
+          onLeave={() => {
+            switchSpace(null);
+            setPanel(null);
+            toast("Back in the public void");
+          }}
+          onClose={() => setPanel(null)}
+          toast={toast}
+        />
       )}
       {panel?.kind === "send" && (
         <SendPanel

@@ -16,6 +16,9 @@ export interface Orb {
   devices: number;
   views: number;
   watchers?: number;
+  /** inside a space: who launched it (their name in the space) */
+  by?: string | null;
+  space?: string | null;
   createdAt: string;
   expiresAt: string;
 }

@@ -4,9 +4,10 @@ import {
   CHUNK, ITERATIONS, chunkCount, deriveKeys, encryptChunk, fromB64, randomBytes, streamDecrypt, toB64, toHex,
   type DownloadSink,
 } from "./crypto";
-import { deviceId, deviceLabel, setOwnerKey, type Orb } from "./client";
+import { deviceLabel, setOwnerKey, type Orb } from "./client";
 import { FOLDER_MIME, directoryOutput, folderSink, zipOutput, type DirHandle, type Manifest } from "./bundle";
 import { autoDownload, safeMime, saveName } from "./save";
+import { spaceBody } from "./space";
 
 export type Stage = "packing" | "deriving" | "encrypting" | "uploading" | "finalizing" | "decrypting" | "done";
 
@@ -34,7 +35,7 @@ export async function launch(opts: {
     body: JSON.stringify({
       name, fileName: file.name || "file", mime: file.type || "application/octet-stream", size: file.size,
       chunkSize: CHUNK, iterations: ITERATIONS, salt: toB64(salt), nonce: toB64(nonce), auth, owner,
-      maxDownloads, device: deviceLabel(), hue: opts.hue,
+      maxDownloads, device: deviceLabel(), hue: opts.hue, ...spaceBody(),
     }),
     signal,
   });
@@ -169,7 +170,7 @@ export async function unlockOrb(orb: Orb, passcode: string, signal?: AbortSignal
   const res = await fetch(`/api/transfers/${orb.id}/unlock`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ auth, deviceId: deviceId(), device: deviceLabel() }),
+    body: JSON.stringify({ auth, device: deviceLabel(), ...spaceBody() }),
     signal,
   });
   const r = await res.json().catch(() => ({ ok: false, reason: "gone" }));
