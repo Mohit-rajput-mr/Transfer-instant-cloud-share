@@ -144,3 +144,8 @@
   .save-hero, .save-hero img, .save-orb, .save-orb::after, .save-ready > *, .save-title, .save-status, .save-acts .cta.lead::after { animation: none !important; }
   .save-check path { animation: none; stroke-dashoffset: 0; }
 }
+
+/* passcode verified, waiting for the user to pick a folder / save location */
+.verified { display: flex; align-items: center; gap: 10px; }
+.verified .save-check { width: 26px; height: 26px; flex: none; }
+.verified b { font-size: 22px; line-height: 1; }

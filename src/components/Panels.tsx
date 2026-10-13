@@ -6,7 +6,7 @@ import {
 } from "@/lib/client";
 import { MAX_FILE_BYTES } from "@/lib/limits";
 import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, filesBundle, isLoose, isLinkText, packFolder, pickFolderTarget, textToFile, type DirHandle, type Folder } from "@/lib/bundle";
-import { pickSaveTarget, receive, UnlockError, type Received, type Stage } from "@/lib/transfer";
+import { needsSavePicker, pickSaveTarget, receive, unlockOrb, UnlockError, type Unlocked, type Received, type Stage } from "@/lib/transfer";
 import { autoDownload, canPickSave, canShareFile, canShareFiles, deviceNoun, downloadWhere, downloadsShortcut, pickAndWrite, saveEnv, shareFile } from "@/lib/save";
 import "@/app/save.css";
 
@@ -628,6 +628,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
   const loose = isFolder && isLoose(orb.fileName); // several picked files in one ball
   const asDir = isFolder && !loose; // a real folder: rebuilt on disk where the browser can
   const [needSpot, setNeedSpot] = useState(false);
+  const [verified, setVerified] = useState<Unlocked | null>(null);
   const inline = (isLink || orb.mime.startsWith("text/")) && orb.size <= INLINE_MAX;
   const [report, setReport] = useState<"idle" | "arm" | "sent">("idle");
   const [wrong, setWrong] = useState(0);
@@ -812,25 +813,67 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     }).then(onViewed).catch(() => {});
   }, [orb.id, onViewed]);
 
-  const go = async (mode?: { zip?: boolean }) => {
+  const fail = (e: unknown) => {
+    if (abort.current?.signal.aborted) return;
+    if (e instanceof UnlockError) {
+      setErr(
+        e.reason === "wrong" ? `Wrong passcode · ${e.left ?? 0} tries left`
+          : e.reason === "locked" ? "Locked: too many wrong attempts"
+          : e.reason === "sealed" ? "Sealed: download limit reached"
+          : "This object already burned up",
+      );
+      if (e.reason !== "wrong") props.onDownloaded();
+      else {
+        tick("warn");
+        setWrong((n) => n + 1);
+      }
+    } else setErr(e instanceof Error ? e.message : "Something went wrong");
+  };
+
+  // Step 1: the passcode is checked with the server FIRST. Nothing is picked or saved until it's right.
+  const go = async () => {
     if (!code || busy) return;
-    // pickers must open inside the click gesture, before anything is unlocked or counted
-    const target = inline || isFolder ? Promise.resolve(null) : pickSaveTarget(orb);
+    setErr(null);
+    setNeedSpot(false);
+    setBusy(true);
+    setStage("deriving");
+    setFrac(0);
+    abort.current = new AbortController();
+    let un: Unlocked;
+    try {
+      un = await unlockOrb(orb, code, abort.current.signal);
+    } catch (e) {
+      fail(e);
+      setBusy(false);
+      return;
+    }
+    setBusy(false);
+    tick("success");
+    // a folder or a big file needs a "where?" picker, which browsers only open on a fresh tap
+    if ((asDir && canWriteFolders()) || (!inline && !isFolder && needsSavePicker(orb))) return setVerified(un);
+    run(un, Promise.resolve(null), null);
+  };
+
+  // Step 2 (folders / big files): the passcode is already verified; this tap opens the picker.
+  const choose = async (mode?: { zip?: boolean }) => {
+    if (!verified || busy) return;
     let folderTarget: DirHandle | null = null;
+    let target: ReturnType<typeof pickSaveTarget> = Promise.resolve(null);
     if (asDir && !mode?.zip && canWriteFolders()) {
       const pick = await pickFolderTarget();
-      if ("cancelled" in pick) {
-        setNeedSpot(true);
-        return;
-      }
+      if ("cancelled" in pick) return setNeedSpot(true);
       if ("handle" in pick) folderTarget = pick.handle;
-    }
+    } else if (!isFolder && !inline) target = pickSaveTarget(orb);
     setNeedSpot(false);
+    run(verified, target, folderTarget);
+  };
+
+  const run = (un: Unlocked, target: ReturnType<typeof pickSaveTarget>, folderTarget: DirHandle | null) => {
     setBusy(true);
     setErr(null);
     abort.current = new AbortController();
     receive({
-      orb, passcode: code, target, folderTarget, signal: abort.current.signal, inline, hold: env.mobile,
+      orb, unlocked: un, target, folderTarget, signal: abort.current.signal, inline, hold: env.mobile,
       onProgress: (s, p) => {
         setStage(s);
         setFrac(p);
@@ -846,25 +889,11 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
         setBroken(false);
         setOp("idle");
         setDone(null);
+        setVerified(null);
         setGot(res);
         props.onDownloaded();
       })
-      .catch((e) => {
-        if (abort.current?.signal.aborted) return;
-        if (e instanceof UnlockError) {
-          setErr(
-            e.reason === "wrong" ? `Wrong passcode · ${e.left ?? 0} tries left`
-              : e.reason === "locked" ? "Locked: too many wrong attempts"
-              : e.reason === "sealed" ? "Sealed: download limit reached"
-              : "This object already burned up",
-          );
-          if (e.reason !== "wrong") props.onDownloaded();
-          else {
-            tick("warn");
-            setWrong((n) => n + 1);
-          }
-        } else setErr(e instanceof Error ? e.message : "Something went wrong");
-      })
+      .catch(fail)
       .finally(() => setBusy(false));
   };
 
@@ -1065,6 +1094,34 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
               <div className="grow" />
               <button className="ghost-btn lg-press" onClick={() => abort.current?.abort()}>Abort</button>
             </>
+          ) : verified ? (
+            <>
+              <div className="verified">
+                <svg className="save-check" viewBox="0 0 24 24" aria-hidden><path d="M3.5 12.5l5.5 5.5L20.5 6" /></svg>
+                <b className="wide">Passcode correct</b>
+              </div>
+              <p className="note">
+                {asDir ? "Now choose a folder. It lands there as-is: same name, every subfolder, no zip." : "Now choose where to save it."}
+              </p>
+              {err && <p className="err">{err}</p>}
+              <div className="grow" />
+              {asDir && needSpot ? (
+                <div className="spot-help">
+                  <b>Pick another folder</b>
+                  <span>
+                    {env.android
+                      ? <>Android won&apos;t let websites use the <b>Download</b> folder itself. Pick or create a folder inside it, or anywhere else.</>
+                      : <>Chrome locks <b>Downloads</b>, <b>Desktop</b> and <b>Documents</b> themselves for every website. Choose any folder inside them, or anywhere else, and the folder is saved there as-is.</>}
+                  </span>
+                  <div className="row-btns">
+                    <button className="ghost-btn lg-press" onClick={() => choose({ zip: true })}>Get .zip instead</button>
+                    <button className="cta lg-press" onClick={() => choose()}>Choose folder</button>
+                  </div>
+                </div>
+              ) : (
+                <button className="cta lg-press" onClick={() => choose()}>{asDir ? "Choose folder + save ↓" : "Choose where to save ↓"}</button>
+              )}
+            </>
           ) : (
             <>
               <PasscodeInput value={code} onChange={setCode} onEnter={() => go()} autoFocus />
@@ -1082,30 +1139,17 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
               <div className="grow" />
               {loose ? (
                 <p className="note">{env.mobile ? "Every file in this ball arrives together; then you choose where they go." : "Every file in this ball downloads at once, straight into your Downloads. If the browser asks, allow multiple downloads."}</p>
-              ) : asDir && needSpot ? (
-                <div className="spot-help">
-                  <b>Pick another folder</b>
-                  <span>
-                    {env.android
-                      ? <>Android won&apos;t let websites use the <b>Download</b> folder itself. Pick or create a folder inside it, or anywhere else.</>
-                      : <>Chrome locks <b>Downloads</b>, <b>Desktop</b> and <b>Documents</b> themselves for every website. Choose any folder inside them, or anywhere else, and the folder is saved there as-is.</>}
-                  </span>
-                  <div className="row-btns">
-                    <button className="ghost-btn lg-press" onClick={() => go({ zip: true })}>Get .zip instead</button>
-                    <button className="cta lg-press" onClick={() => go()}>Choose folder</button>
-                  </div>
-                </div>
               ) : asDir ? (
                 <p className="note">
                   {!canWriteFolders()
                     ? env.mobile
                       ? "It arrives as one .zip, and you choose where to save it."
                       : "This browser can't write folders, so it arrives as a .zip (Chrome or Edge on a computer saves a real folder)."
-                    : "Choose any folder and it lands there as-is: same name, every subfolder, no zip."}
+                    : "First the passcode is checked; then you choose the folder it lands in."}
                 </p>
               ) : null}
-              <button className="cta lg-press" disabled={!code || needSpot} onClick={() => go()}>
-                {isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : env.mobile && !(asDir && canWriteFolders()) ? "Decrypt →" : loose ? "Decrypt + download all ↓" : isFolder ? "Decrypt + save folder ↓" : "Decrypt + download ↓"}
+              <button className="cta lg-press" disabled={!code} onClick={() => go()}>
+                {isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : env.mobile && !(asDir && canWriteFolders()) ? "Decrypt →" : loose ? "Decrypt + download all ↓" : isFolder ? "Unlock folder →" : needsSavePicker(orb) ? "Unlock →" : "Decrypt + download ↓"}
               </button>
             </>
           )}

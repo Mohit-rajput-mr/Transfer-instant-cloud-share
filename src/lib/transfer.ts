@@ -137,6 +137,9 @@ type PickerWindow = Window & { showSaveFilePicker?: (o: { suggestedName: string 
 
 const BIG = 512 * 1024 * 1024;
 
+/** True when this file will go through the browser's "Save as…" picker (big files, desktop Chromium). */
+export const needsSavePicker = (orb: Orb) => orb.size >= BIG && typeof window !== "undefined" && !!(window as PickerWindow).showSaveFilePicker;
+
 // Call synchronously inside the click handler so the browser still sees the user gesture.
 export function pickSaveTarget(orb: Orb): Promise<SaveHandle | null> {
   const w = window as PickerWindow;
@@ -157,9 +160,27 @@ export type Received =
   /** folder rebuilt inside a directory the user picked */
   | { kind: "dir"; folder: string; files: number; where: string };
 
+type UnlockReply = { url: string; nonce: string; size: number; chunkSize: number; fileName: string; mime: string };
+/** Checked passcode: the key plus where the ciphertext lives. Nothing is saved or picked before this succeeds. */
+export type Unlocked = { key: Awaited<ReturnType<typeof deriveKeys>>["key"]; r: UnlockReply };
+
+export async function unlockOrb(orb: Orb, passcode: string, signal?: AbortSignal): Promise<Unlocked> {
+  const { key, auth } = await deriveKeys(passcode, fromB64(orb.salt), orb.iterations);
+  const res = await fetch(`/api/transfers/${orb.id}/unlock`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ auth, deviceId: deviceId(), device: deviceLabel() }),
+    signal,
+  });
+  const r = await res.json().catch(() => ({ ok: false, reason: "gone" }));
+  if (!r.ok) throw new UnlockError(r.reason, r.left);
+  return { key, r };
+}
+
 export async function receive(opts: {
   orb: Orb;
-  passcode: string;
+  /** already-verified passcode (see unlockOrb) */
+  unlocked: Unlocked;
   target: Promise<SaveHandle | null>;
   onProgress: (stage: Stage, fraction: number) => void;
   signal?: AbortSignal;
@@ -170,17 +191,8 @@ export async function receive(opts: {
   /** phones/tablets: never auto-download; hand the File back so the user picks where it goes */
   hold?: boolean;
 }): Promise<Received> {
-  const { orb, passcode, onProgress, signal } = opts;
-  onProgress("deriving", 0);
-  const { key, auth } = await deriveKeys(passcode, fromB64(orb.salt), orb.iterations);
-  const res = await fetch(`/api/transfers/${orb.id}/unlock`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ auth, deviceId: deviceId(), device: deviceLabel() }),
-    signal,
-  });
-  const r = await res.json().catch(() => ({ ok: false, reason: "gone" }));
-  if (!r.ok) throw new UnlockError(r.reason, r.left);
+  const { onProgress, signal } = opts;
+  const { key, r } = opts.unlocked;
 
   let sink: DownloadSink;
   let mem: ReturnType<typeof memorySink> | null = null;
