@@ -23,7 +23,7 @@ export const slugify = (s: string) =>
   s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32);
 export const validSlug = (s: unknown): s is string => typeof s === "string" && /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/.test(s);
 export const cleanHandle = (s: unknown) =>
-  typeof s === "string" ? s.replace(/[\u0000-\u001f\u007f⟪⟫|/]/g, "").replace(/\s+/g, " ").trim().slice(0, 24) : "";
+  typeof s === "string" ? s.replace(/[\u0000-\u001f\u007f⟪⟫|/;=]/g, "").replace(/\s+/g, " ").trim().slice(0, 24) : "";
 
 export const devHash = (deviceId: string) => hmac(`dev:${deviceId}`).toString("hex").slice(0, 16);
 export const tokenFor = (slug: string, dh: string) => hmac(`tok:${slug}:${dh}`).toString("base64url").slice(0, 32);
@@ -161,10 +161,51 @@ export async function search(q: string) {
 }
 
 // ---- tags on transfer names ----
-const TAG = /^⟪([a-z0-9-]{1,32})\|([^⟫]{0,24})⟫/;
-export const tagName = (slug: string, handle: string, name: string) => `⟪${slug}|${handle}⟫${name}`;
-export function untag<T extends { name?: unknown }>(o: T): T & { space: string | null; by: string | null } {
-  const m = typeof o.name === "string" ? TAG.exec(o.name) : null;
-  if (!m) return { ...o, space: null, by: null };
-  return { ...o, name: (o.name as string).slice(m[0].length), space: m[1], by: m[2] || null };
+// Extra facts about an object ride in its stored name: ⟪s=slug;b=handle;t=10;o=1⟫name
+//   s: space, b: launched by (name in the space), t: lifetime in minutes (< 30), o: open (no passcode)
+// The old space-only form ⟪slug|handle⟫ is still read.
+export interface Tags { space?: string; by?: string; life?: number; open?: boolean }
+const OLD = /^⟪([a-z0-9-]{1,32})\|([^⟫]{0,24})⟫/;
+const NEW = /^⟪((?:[sbto]=[^;⟫]*;?)*)⟫/;
+export const LIFE_MIN = 30;
+export const LIVES = [5, 10, 15, 20, 25, 30];
+
+export function tagName(name: string, t: Tags) {
+  const parts: string[] = [];
+  if (t.space) parts.push(`s=${t.space}`);
+  if (t.space && t.by) parts.push(`b=${t.by}`);
+  if (t.life && t.life < LIFE_MIN) parts.push(`t=${t.life}`);
+  if (t.open) parts.push("o=1");
+  return parts.length ? `⟪${parts.join(";")}⟫${name}` : name;
+}
+
+export type Untagged<T> = T & { space: string | null; by: string | null; life: number; open: boolean };
+export function untag<T extends { name?: unknown; expiresAt?: unknown }>(o: T): Untagged<T> {
+  const name = typeof o.name === "string" ? o.name : "";
+  const old = OLD.exec(name);
+  if (old) return { ...o, name: name.slice(old[0].length), space: old[1], by: old[2] || null, life: LIFE_MIN, open: false };
+  const m = NEW.exec(name);
+  if (!m) return { ...o, space: null, by: null, life: LIFE_MIN, open: false };
+  const kv = Object.fromEntries(m[1].split(";").filter(Boolean).map((x) => [x[0], x.slice(2)]));
+  const life = LIVES.includes(Number(kv.t)) ? Number(kv.t) : LIFE_MIN;
+  const out = { ...o, name: name.slice(m[0].length), space: kv.s || null, by: kv.b || null, life, open: kv.o === "1" };
+  // a shorter life burns earlier than the database's 30 minutes: the server hides it and refuses it from then on
+  if (life < LIFE_MIN && typeof o.expiresAt === "string") {
+    const t = Date.parse(o.expiresAt);
+    if (Number.isFinite(t)) out.expiresAt = new Date(t - (LIFE_MIN - life) * 60_000).toISOString();
+  }
+  return out;
+}
+export const burnedUp = (o: { expiresAt?: unknown }) => typeof o.expiresAt === "string" && Date.parse(o.expiresAt) <= Date.now();
+
+/** Every space with its people (admin HQ). */
+export async function allSpaces(limit = 200) {
+  const slugs = (await listAll("sp/x/")).map((p) => p.slice(5)).slice(0, limit);
+  const out = await Promise.all(
+    slugs.map(async (slug) => {
+      const [meta, r] = await Promise.all([getMeta(slug), roster(slug)]);
+      return meta ? { slug, title: meta.title, priv: meta.priv, at: meta.at, members: r.members.map((m) => m.handle), kicked: r.kicked.size } : null;
+    }),
+  );
+  return out.filter((x): x is NonNullable<typeof x> => !!x).sort((a, b) => b.at - a.at);
 }

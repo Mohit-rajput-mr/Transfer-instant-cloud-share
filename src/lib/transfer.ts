@@ -11,13 +11,20 @@ import { spaceBody } from "./space";
 
 export type Stage = "packing" | "deriving" | "encrypting" | "uploading" | "finalizing" | "decrypting" | "done";
 
-const PARALLEL = 6;
+const PARALLEL = 8;
+
+/** Open objects (no passcode) are still encrypted, with this well-known code: the server stays blind to the
+ *  content, and anyone who opens the object can decrypt it without typing anything. */
+export const OPEN_PASS = "orbit:open";
 
 export async function launch(opts: {
   file: File;
   name: string;
   passcode: string;
   maxDownloads: number | null;
+  /** minutes until it burns (5..30) */
+  life?: number;
+  open?: boolean;
   hue?: number;
   onProgress: (stage: Stage, fraction: number) => void;
   signal?: AbortSignal;
@@ -27,15 +34,17 @@ export async function launch(opts: {
   const salt = randomBytes(16);
   const nonce = randomBytes(8);
   const owner = toHex(randomBytes(32));
-  const { key, auth } = await deriveKeys(passcode, salt, ITERATIONS);
+  // open objects have nothing to stretch against guessing: the lightest setting the server accepts launches faster
+  const iterations = opts.open ? 100_000 : ITERATIONS;
+  const { key, auth } = await deriveKeys(opts.open ? OPEN_PASS : passcode, salt, iterations);
 
   const res = await fetch("/api/transfers", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       name, fileName: file.name || "file", mime: file.type || "application/octet-stream", size: file.size,
-      chunkSize: CHUNK, iterations: ITERATIONS, salt: toB64(salt), nonce: toB64(nonce), auth, owner,
-      maxDownloads, device: deviceLabel(), hue: opts.hue, ...spaceBody(),
+      chunkSize: CHUNK, iterations, salt: toB64(salt), nonce: toB64(nonce), auth, owner,
+      maxDownloads, device: deviceLabel(), hue: opts.hue, life: opts.life ?? 30, open: !!opts.open, ...spaceBody(),
     }),
     signal,
   });
@@ -166,7 +175,7 @@ type UnlockReply = { url: string; nonce: string; size: number; chunkSize: number
 export type Unlocked = { key: Awaited<ReturnType<typeof deriveKeys>>["key"]; r: UnlockReply };
 
 export async function unlockOrb(orb: Orb, passcode: string, signal?: AbortSignal): Promise<Unlocked> {
-  const { key, auth } = await deriveKeys(passcode, fromB64(orb.salt), orb.iterations);
+  const { key, auth } = await deriveKeys(orb.open ? OPEN_PASS : passcode, fromB64(orb.salt), orb.iterations);
   const res = await fetch(`/api/transfers/${orb.id}/unlock`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateClientTokenFromReadWriteToken } from "@vercel/blob/client";
 import { MAX_FILE_BYTES } from "@/lib/limits";
 import { clean, geo, isB64, isHex, netHash, newId, randomHex, reap, rpc, sha256 } from "@/lib/server";
-import { member, tagName, untag } from "@/lib/spaces";
+import { LIVES, burnedUp, member, tagName, untag } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
 
@@ -10,9 +10,9 @@ export const dynamic = "force-dynamic";
 // per region no matter how many people are watching the void.
 export async function GET() {
   await reap();
-  const r = await rpc<{ items: { name?: unknown }[]; online: number }>("orbit_list2", {});
-  // objects inside a space never show in the public void
-  const items = (r.items ?? []).map(untag).filter((o) => !o.space);
+  const r = await rpc<{ items: { name?: unknown; expiresAt?: unknown }[]; online: number }>("orbit_list2", {});
+  // objects inside a space never show in the public void; short-lived ones leave on time
+  const items = (r.items ?? []).map(untag).filter((o) => !o.space && !burnedUp(o));
   return NextResponse.json(
     { ...r, items, now: Date.now() },
     { headers: { "Cache-Control": "public, max-age=0, s-maxage=1, stale-while-revalidate=5" } },
@@ -35,12 +35,16 @@ export async function POST(req: NextRequest) {
   if (!isB64(b.salt) || !isB64(b.nonce)) return bad("crypto");
   if (!isHex(b.auth, 64) || !isHex(b.owner, 64)) return bad("keys");
 
-  let name = clean(b.name, 60) || "untitled";
+  let name = (clean(b.name, 60) || "untitled").replace(/^⟪/, "(");
+  const life = LIVES.includes(Number(b.life)) ? Number(b.life) : 30;
+  const tags = { life, open: b.open === true } as Parameters<typeof tagName>[1];
   if (b.space != null) {
     const me = await member(b.space, b.deviceId, b.spaceToken);
     if (!me) return NextResponse.json({ error: "You are no longer in this space" }, { status: 403 });
-    name = tagName(me.slug, me.handle, name);
+    tags.space = me.slug;
+    tags.by = me.handle;
   }
+  name = tagName(name, tags);
   const fileName = clean(b.fileName, 180) || "file";
   const mime = clean(b.mime, 120) || "application/octet-stream";
 

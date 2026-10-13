@@ -1,8 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { Drawer } from "./Panels";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
-  createSpace, enterSpace, joinSpace, kickMember, savedHandle, savedSpaces, searchSpaces,
+  createSpace, joinSpace, savedHandle, savedSpaces, searchSpaces,
   type SpaceHit, type SpaceInfo, type SpaceSession,
 } from "@/lib/space";
 
@@ -12,105 +11,91 @@ const Lock = () => (
     <path d="M4 5.2V3.8a2 2 0 0 1 4 0v1.4" fill="none" stroke="currentColor" strokeWidth="1.3" />
   </svg>
 );
+const Arrow = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M5 12h13" /><path d="M13 6l6 6-6 6" />
+  </svg>
+);
+const hueOf = (s: string) => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+  return h;
+};
+const initials = (s: string) => s.trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
+
+/** A liquid-glass card that pops out in the centre of the screen (phones too: never a bottom sheet). */
+export function Pop(props: { label: string; onClose: () => void; children: ReactNode; className?: string; small?: boolean }) {
+  const [out, setOut] = useState(false);
+  const { onClose } = props;
+  const close = useCallback(() => {
+    setOut(true);
+    setTimeout(onClose, 220);
+  }, [onClose]);
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => e.key === "Escape" && close();
+    window.addEventListener("keydown", k);
+    document.documentElement.classList.add("card-open");
+    return () => {
+      window.removeEventListener("keydown", k);
+      document.documentElement.classList.remove("card-open");
+    };
+  }, [close]);
+  return (
+    <>
+      <div className={`scrim pop-scrim${out ? " out" : ""}`} onClick={close} />
+      <div className={`pop lg${props.small ? " small" : ""}${out ? " out" : ""} ${props.className ?? ""}`} role="dialog" aria-modal="true" aria-label={props.label}>
+        <div className="pop-head">
+          <span className="mono dim">{props.label}</span>
+          <button className="x" onClick={close} aria-label="Close">×</button>
+        </div>
+        <div className="pop-body">{props.children}</div>
+      </div>
+    </>
+  );
+}
+
+type Tab = "here" | "browse" | "create";
 
 /**
- * Spaces in one card: your name, one box that both finds and creates, your saved spaces (one tap),
- * and, when you are in one, who else is there (the creator can remove people).
+ * Spaces, split into three clear tabs: the space you are in, browsing every space, and making one.
+ * Joining someone else's asks only what it needs, in a small bubble: your name (and the passcode if private).
  */
 export default function SpacePanel(props: {
   current: SpaceSession | null;
+  info: SpaceInfo | null;
   start?: string;
   onEnter: (s: SpaceSession) => void;
   onLeave: () => void;
   onClose: () => void;
   toast: (t: string) => void;
 }) {
-  const { current } = props;
-  const [handle, setHandle] = useState("");
+  const { current, info } = props;
+  const [tab, setTab] = useState<Tab>(props.start ? "browse" : current ? "here" : "browse");
   const [q, setQ] = useState(props.start ?? "");
-  const [hits, setHits] = useState<SpaceHit[]>([]);
+  const [hits, setHits] = useState<SpaceHit[] | null>(null);
   const [saved, setSaved] = useState<SpaceSession[]>([]);
-  // the row waiting for a passcode (a private space), or "new" for create-private
-  const [askPass, setAskPass] = useState<string | null>(null);
-  const [pass, setPass] = useState("");
-  const [priv, setPriv] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
-  const [info, setInfo] = useState<SpaceInfo | null>(null);
-  const handleRef = useRef<HTMLInputElement>(null);
+  const [handle, setHandle] = useState("");
+  const [joining, setJoining] = useState<SpaceHit | null>(null);
 
   useEffect(() => {
-    savedHandle().then((h) => setHandle((cur) => cur || h));
+    savedHandle().then((h) => setHandle((c) => c || h));
     savedSpaces().then(setSaved);
   }, []);
 
   useEffect(() => {
-    if (!current) return setInfo(null);
-    enterSpace(current).then(setInfo).catch(() => {});
-  }, [current]);
-
-  // search as you type (debounced)
-  useEffect(() => {
+    if (tab !== "browse") return;
     let live = true;
-    const t = setTimeout(() => searchSpaces(q.trim()).then((h) => live && setHits(h)).catch(() => {}), q ? 180 : 0);
+    const t = setTimeout(() => searchSpaces(q.trim()).then((h) => live && setHits(h)).catch(() => live && setHits([])), q ? 160 : 0);
     return () => {
       live = false;
       clearTimeout(t);
     };
-  }, [q]);
-
-  const needName = () => {
-    if (handle.trim()) return false;
-    setErr("First, your name in the space");
-    handleRef.current?.focus();
-    return true;
-  };
-
-  const run = async (fn: () => Promise<SpaceSession>) => {
-    setBusy(true);
-    setErr("");
-    try {
-      const s = await fn();
-      props.onEnter(s);
-    } catch (e) {
-      const x = e as Error & { needPass?: boolean };
-      setErr(x.message);
-    } finally {
-      setBusy(false);
-    }
-  };
+  }, [q, tab]);
 
   const pick = (h: SpaceHit) => {
-    if (needName()) return;
     const mine = saved.find((s) => s.slug === h.slug);
-    if (mine) return props.onEnter(mine); // already a member: straight in
-    if (h.priv && askPass !== h.slug) {
-      setAskPass(h.slug);
-      setPass("");
-      setErr("");
-      return;
-    }
-    run(() => joinSpace(h.slug, handle.trim(), h.priv ? pass : undefined));
-  };
-
-  const create = () => {
-    if (needName()) return;
-    if (priv && pass.length < 4) {
-      setAskPass("new");
-      return setErr("Private spaces need a passcode (4+ characters)");
-    }
-    run(() => createSpace(q.trim(), handle.trim(), priv, pass));
-  };
-
-  const kick = async (id: string, who: string) => {
-    if (!current) return;
-    try {
-      await kickMember(current, id);
-      props.toast(`${who} was removed`);
-      setInfo(await enterSpace(current));
-    } catch (e) {
-      setErr((e as Error).message);
-    }
+    if (mine) return props.onEnter(mine); // already in it: straight back in
+    setJoining(h);
   };
 
   const copyInvite = async () => {
@@ -121,144 +106,226 @@ export default function SpacePanel(props: {
     } catch {}
   };
 
-  const query = q.trim();
-  const exact = hits.some((h) => h.slug === query.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""));
-  const others = saved.filter((s) => s.slug !== current?.slug && (!query || s.title.toLowerCase().includes(query.toLowerCase())));
-  const found = hits.filter((h) => h.slug !== current?.slug && !others.some((s) => s.slug === h.slug));
+  const list = hits ?? [];
+  const savedHere = saved.filter((s) => s.slug !== current?.slug && (!q || s.title.toLowerCase().includes(q.trim().toLowerCase())));
+  const others = list.filter((h) => h.slug !== current?.slug && !savedHere.some((s) => s.slug === h.slug));
 
   return (
-    <Drawer label="Spaces" onClose={props.onClose}>
-      <div className="col">
-        {current ? (
-          <>
-            <div>
-              <span className="mono dim">{current.priv ? "private space" : "space"} · {info ? `${info.members.length} in it` : "…"}</span>
-              <div className="wide d-title">{current.title}</div>
-              <p className="note">Only people in this space see what is launched here. You are <b>{current.handle}</b>.</p>
-            </div>
-            {info && (
-              <div className="files sp-members">
-                {info.members.map((m) => (
-                  <div key={m.id}>
-                    <span>{m.handle}{m.you ? " · you" : ""}</span>
-                    {info.owner && !m.you ? (
-                      <button className="mono sp-kick" onClick={() => kick(m.id, m.handle)}>Remove</button>
-                    ) : (
-                      <span className="mono dim">{m.you && info.owner ? "creator" : ""}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="grow" />
-            <div className="sp-row">
-              <button className="pill lg-press" onClick={copyInvite}>Copy invite link</button>
-            </div>
-            <button className="ghost-btn lg-press" onClick={props.onLeave}>Back to the public void</button>
-          </>
-        ) : (
-          <>
-            <div>
-              <span className="mono dim">you are in</span>
-              <div className="wide d-title">Public void</div>
-              <p className="note">A space is your own void: only people in it see its objects. Make one, or find one and step in.</p>
-            </div>
-            <div className="grow" />
-          </>
-        )}
+    <Pop label="Spaces" onClose={props.onClose} className="spaces-pop">
+      <div className="seg sp-tabs" role="tablist">
+        {current && <button role="tab" aria-selected={tab === "here"} className={tab === "here" ? "on" : ""} onClick={() => setTab("here")}>This space</button>}
+        <button role="tab" aria-selected={tab === "browse"} className={tab === "browse" ? "on" : ""} onClick={() => setTab("browse")}>Browse</button>
+        <button role="tab" aria-selected={tab === "create"} className={tab === "create" ? "on" : ""} onClick={() => setTab("create")}>Create</button>
       </div>
 
-      <div className="col">
-        <div className="field">
-          <label><span className="mono">Your name in spaces</span><span className="mono dim">{handle.length}/24</span></label>
-          <input
-            ref={handleRef}
-            className="line-input"
-            value={handle}
-            maxLength={24}
-            autoComplete="off"
-            placeholder="How others see your objects"
-            onChange={(e) => setHandle(e.target.value)}
-          />
+      {tab === "here" && current && (
+        <div className="sp-pane" key="here">
+          <div className="sp-hero">
+            <span className="mono dim">{current.priv ? "Private space" : "Open space"} · you are <b>{current.handle}</b></span>
+            <div className="wide sp-title">{current.title}{current.priv && <Lock />}</div>
+            <span className="mono dim">{info ? `${info.members.length} ${info.members.length === 1 ? "member" : "members"}` : "…"}{info?.owner ? " · you created it" : ""}</span>
+          </div>
+          <p className="note">Only people in this space see what is launched here. Everyone in it floats as a bubble at the top of the glass{info?.owner ? "; tap one to remove them" : ""}.</p>
+          <div className="sp-acts">
+            <button className="ghost-btn lg-press" onClick={copyInvite}>Copy invite link</button>
+            <button className="cta lg-press" onClick={props.onLeave}>Back to the public void</button>
+          </div>
         </div>
-        <div className="field">
-          <label><span className="mono">Find or create a space</span></label>
-          <input
-            className="line-input"
-            value={q}
-            maxLength={32}
-            autoComplete="off"
-            enterKeyHint="go"
-            placeholder="Search by name"
-            onChange={(e) => {
-              setQ(e.target.value);
-              setAskPass(null);
-              setErr("");
-            }}
-            onKeyDown={(e) => {
-              if (e.key !== "Enter") return;
-              if (found[0] && (exact || !query)) pick(found[0]);
-              else if (query) create();
-            }}
-          />
-        </div>
+      )}
 
-        <div className="files sp-list">
-          {others.map((s) => (
-            <div key={`s-${s.slug}`}>
-              <button className="sp-item" onClick={() => props.onEnter(s)}>
-                <b>{s.title}</b>{s.priv && <Lock />}<span className="mono dim">as {s.handle}</span>
+      {tab === "browse" && (
+        <div className="sp-pane" key="browse">
+          <label className="sp-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" /></svg>
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search spaces" autoComplete="off" maxLength={32} enterKeyHint="search" />
+          </label>
+          <div className="sp-grid">
+            {savedHere.map((s) => (
+              <button key={`s-${s.slug}`} className="sp-card lg-press" style={{ "--hue": hueOf(s.slug) } as CSSProperties} onClick={() => props.onEnter(s)}>
+                <i className="sp-orb" />
+                <b>{s.title}</b>
+                <span className="mono dim">{s.priv ? <><Lock /> private · </> : null}joined</span>
+                <span className="sp-go"><Arrow /></span>
               </button>
-              <span className="mono sp-go">Enter</span>
-            </div>
-          ))}
-          {found.map((h) => (
-            <div key={`h-${h.slug}`} className={askPass === h.slug ? "ask" : undefined}>
-              <button className="sp-item" disabled={busy} onClick={() => pick(h)}>
-                <b>{h.title}</b>{h.priv && <Lock />}
+            ))}
+            {others.map((h) => (
+              <button key={`h-${h.slug}`} className="sp-card lg-press" style={{ "--hue": hueOf(h.slug) } as CSSProperties} onClick={() => pick(h)}>
+                <i className="sp-orb" />
+                <b>{h.title}</b>
+                <span className="mono dim">{h.priv ? <><Lock /> private</> : "open"}</span>
+                <span className="sp-go"><Arrow /></span>
               </button>
-              {askPass === h.slug ? (
-                <span className="sp-pass">
-                  <input
-                    className="line-input"
-                    autoFocus
-                    value={pass}
-                    placeholder="Passcode"
-                    autoComplete="off"
-                    onChange={(e) => setPass(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && pick(h)}
-                  />
-                  <button className="pill solid lg-press" disabled={busy || !pass} onClick={() => pick(h)}>Join</button>
-                </span>
-              ) : (
-                <span className="mono sp-go">Join</span>
-              )}
-            </div>
-          ))}
-          {query && !exact && (
-            <div className="sp-new">
-              <button className="sp-item" disabled={busy} onClick={create}>
-                <b>Create “{query}”</b>
-              </button>
-              <span className="chips">
-                <button className={`chip lg-press${!priv ? " on" : ""}`} onClick={() => (setPriv(false), setAskPass(null))}>Open</button>
-                <button className={`chip lg-press${priv ? " on" : ""}`} onClick={() => (setPriv(true), setAskPass("new"))}><Lock /> Private</button>
-              </span>
-              {priv && askPass === "new" && (
-                <span className="sp-pass">
-                  <input className="line-input" value={pass} placeholder="Passcode to enter" autoComplete="off" onChange={(e) => setPass(e.target.value)} onKeyDown={(e) => e.key === "Enter" && create()} />
-                </span>
-              )}
+            ))}
+          </div>
+          {hits !== null && !savedHere.length && !others.length && (
+            <div className="sp-empty">
+              <span className="mono dim">{q ? `No space called “${q}” yet` : "No spaces yet"}</span>
+              <button className="pill lg-press" onClick={() => setTab("create")}>Create {q ? `“${q}”` : "one"}</button>
             </div>
           )}
-          {!others.length && !found.length && !query && <div><span className="mono dim">No spaces yet. Type a name to create one</span></div>}
         </div>
-        {err && <p className="err">{err}</p>}
-        <div className="grow" />
-        {query && !exact && (
-          <button className="cta lg-press" disabled={busy} onClick={create}>{busy ? "Creating…" : `Create ${priv ? "private " : ""}space`}</button>
-        )}
+      )}
+
+      {tab === "create" && (
+        <CreateForm
+          title0={q}
+          handle0={handle}
+          onDone={(s) => props.onEnter(s)}
+        />
+      )}
+
+      {joining && (
+        <JoinBubble
+          hit={joining}
+          handle0={handle}
+          onClose={() => setJoining(null)}
+          onDone={(s) => {
+            setJoining(null);
+            props.onEnter(s);
+          }}
+        />
+      )}
+    </Pop>
+  );
+}
+
+function CreateForm(props: { title0: string; handle0: string; onDone: (s: SpaceSession) => void }) {
+  const [title, setTitle] = useState(props.title0);
+  const [handle, setHandle] = useState(props.handle0);
+  const [priv, setPriv] = useState(false);
+  const [pass, setPass] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  useEffect(() => setHandle((h) => h || props.handle0), [props.handle0]);
+  const ok = title.trim().length > 0 && handle.trim().length > 0 && (!priv || pass.length >= 4);
+  const go = async () => {
+    if (!ok || busy) return;
+    setBusy(true);
+    setErr("");
+    try {
+      props.onDone(await createSpace(title.trim(), handle.trim(), priv, pass));
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="sp-pane" key="create">
+      <div className="field">
+        <label><span className="mono">Name your space</span><span className="mono dim">{title.length}/32</span></label>
+        <input className="line-input name-input" value={title} maxLength={32} onChange={(e) => setTitle(e.target.value)} placeholder="Studio, Family, Team…" autoComplete="off" />
       </div>
-    </Drawer>
+      <div className="seg" role="radiogroup" aria-label="Who can enter">
+        <button role="radio" aria-checked={!priv} className={!priv ? "on" : ""} onClick={() => setPriv(false)}>Open · anyone</button>
+        <button role="radio" aria-checked={priv} className={priv ? "on" : ""} onClick={() => setPriv(true)}><Lock /> Private</button>
+      </div>
+      {priv && (
+        <div className="field">
+          <label><span className="mono">Passcode to enter</span></label>
+          <input className="line-input" value={pass} maxLength={64} onChange={(e) => setPass(e.target.value)} placeholder="4+ characters" autoComplete="off" />
+        </div>
+      )}
+      <div className="field">
+        <label><span className="mono">Your name in it</span></label>
+        <input className="line-input" value={handle} maxLength={24} onChange={(e) => setHandle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} placeholder="How others see your objects" autoComplete="off" />
+      </div>
+      {err && <p className="err">{err}</p>}
+      <button className="cta lg-press" disabled={!ok || busy} onClick={go}>{busy ? "Creating…" : <>Create {priv ? "private " : ""}space <Arrow /></>}</button>
+    </div>
+  );
+}
+
+/** The droplet that pops over a space you tapped: name yourself (and the passcode), then step in. */
+function JoinBubble(props: { hit: SpaceHit; handle0: string; onClose: () => void; onDone: (s: SpaceSession) => void }) {
+  const { hit } = props;
+  const [handle, setHandle] = useState(props.handle0);
+  const [pass, setPass] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const first = useRef<HTMLInputElement>(null);
+  useEffect(() => first.current?.focus({ preventScroll: true }), []);
+  const ok = handle.trim().length > 0 && (!hit.priv || pass.length > 0);
+  const go = async () => {
+    if (!ok || busy) return;
+    setBusy(true);
+    setErr("");
+    try {
+      props.onDone(await joinSpace(hit.slug, handle.trim(), hit.priv ? pass : undefined));
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="join-wrap" onClick={(e) => e.target === e.currentTarget && props.onClose()}>
+      <div className="join-bubble lg" style={{ "--hue": hueOf(hit.slug) } as CSSProperties}>
+        <i className="sp-orb big" />
+        <span className="mono dim">Entering</span>
+        <div className="wide sp-title">{hit.title}{hit.priv && <Lock />}</div>
+        <div className="join-row">
+          <input ref={first} className="join-input" value={handle} maxLength={24} placeholder="Name yourself" autoComplete="off"
+            onChange={(e) => setHandle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} />
+          {!hit.priv && <button className="join-go lg-press" disabled={!ok || busy} onClick={go} aria-label="Enter the space"><Arrow /></button>}
+        </div>
+        {hit.priv && (
+          <div className="join-row">
+            <input className="join-input" value={pass} maxLength={64} placeholder="Passcode" autoComplete="off"
+              onChange={(e) => setPass(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} />
+            <button className="join-go lg-press" disabled={!ok || busy} onClick={go} aria-label="Enter the space"><Arrow /></button>
+          </div>
+        )}
+        {err && <p className="err">{err}</p>}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Inside a space the void sits under one big pane of glass (corners left open, like a ship's canopy),
+ * with everyone in the space floating as bubbles along its top edge. Live ones glow; the creator can remove anyone.
+ */
+export function SpaceRoom(props: { space: SpaceSession; info: SpaceInfo | null; online: Set<string>; onKick: (id: string, handle: string) => void }) {
+  const { space, info, online } = props;
+  const [arm, setArm] = useState<string | null>(null);
+  useEffect(() => {
+    if (!arm) return;
+    const t = setTimeout(() => setArm(null), 3000);
+    return () => clearTimeout(t);
+  }, [arm]);
+  const members = [...(info?.members ?? [])].sort((a, b) => Number(b.you) - Number(a.you) || Number(online.has(b.id)) - Number(online.has(a.id)));
+  const live = members.filter((m) => online.has(m.id) || m.you).length;
+  return (
+    <div className="room" aria-label={`Space ${space.title}`}>
+      <div className="room-glass" aria-hidden><i className="c tl" /><i className="c tr" /><i className="c bl" /><i className="c br" /></div>
+      <div className="room-top">
+        <div className="room-name">
+          <span className="mono dim">{space.priv ? "private space" : "space"} · {live} live</span>
+          <b className="wide">{space.title}</b>
+        </div>
+        <div className="room-crew">
+          {members.slice(0, 14).map((m) => (
+            <button
+              key={m.id}
+              className={`crew${online.has(m.id) || m.you ? " on" : ""}${m.you ? " you" : ""}${arm === m.id ? " arm" : ""}`}
+              style={{ "--hue": hueOf(m.handle) } as CSSProperties}
+              title={m.handle}
+              onClick={() => {
+                if (!info?.owner || m.you) return;
+                if (arm === m.id) {
+                  setArm(null);
+                  props.onKick(m.id, m.handle);
+                } else setArm(m.id);
+              }}
+            >
+              <i>{initials(m.handle)}</i>
+              <span>{arm === m.id ? "Remove?" : m.you ? "you" : m.handle}</span>
+            </button>
+          ))}
+          {members.length > 14 && <span className="crew more"><i>+{members.length - 14}</i></span>}
+        </div>
+      </div>
+    </div>
   );
 }

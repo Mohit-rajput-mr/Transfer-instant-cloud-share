@@ -481,7 +481,23 @@ export function ShareBlock({ id }: { id: string }) {
 
 /* ------------------------------ SEND ------------------------------ */
 
-export type LaunchJob = { file: File; name: string; files: number; passcode: string; maxDownloads: number | null };
+export type LaunchJob = { file: File; name: string; files: number; passcode: string; maxDownloads: number | null; life: number; open: boolean };
+
+const LIVES = [5, 10, 15, 20, 25, 30];
+// the last choices stick (this device only): the next send is one tap
+const pref = <T,>(k: string, d: T): T => {
+  try {
+    const v = localStorage.getItem(`orbit:pref:${k}`);
+    return v == null ? d : (JSON.parse(v) as T);
+  } catch {
+    return d;
+  }
+};
+const setPref = (k: string, v: unknown) => {
+  try {
+    localStorage.setItem(`orbit:pref:${k}`, JSON.stringify(v));
+  } catch {}
+};
 
 export function SendPanel(props: { files: File[]; folder?: Folder | null; onClose: () => void; onLaunch: (job: LaunchJob) => void }) {
   const { folder, onClose } = props;
@@ -496,46 +512,54 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
   );
   const [code, setCode] = useState("");
   const [max, setMax] = useState<number | null>(null);
+  const [locked, setLocked] = useState(() => pref("locked", false));
+  const [life, setLife] = useState(() => pref("life", 30));
+  const [focusNow] = useState(finePointer);
 
   const tooBig = total > MAX_FILE_BYTES;
+  const ready = !tooBig && (!locked || code.length >= 4);
   const go = () => {
-    if (code.length < 4 || tooBig) return;
+    if (!ready) return;
     const label = name.trim() || (folder ? folder.name : single ? first.name : `${count} files`);
     // several files travel as ONE ball (no zipping: streamed as-is behind a small manifest)
     const file = folder ? packFolder(folder) : many ? packFolder(filesBundle(label.slice(0, 60), props.files), true) : first;
     tick("success");
-    props.onLaunch({ file, name: label.slice(0, 60), files: count, passcode: code, maxDownloads: max });
+    setPref("locked", locked);
+    setPref("life", life);
+    props.onLaunch({ file, name: label.slice(0, 60), files: count, passcode: locked ? code : "", maxDownloads: max, life, open: !locked });
   };
+  const kind = folder ? `Folder · ${count} files` : isLink ? "Link" : single ? `${ext(first.name)} · ${first.type || "file"}` : `${count} files · one ball`;
 
   return (
     <Drawer label="New object" onClose={onClose}>
       <div className="col">
-        <div>
-          <span className="mono dim">
-            {folder ? `folder · ${count} files` : isLink ? "link" : single ? first.type || "file" : `${count} files · one ball`} · {formatBytes(total)}
-          </span>
-          <div className="wide d-title">{folder ? "Folder" : isLink ? "Link" : single ? ext(first.name) : `${count}×`}</div>
-          <p className="note ellip">
-            {folder ? `${folder.name}/ — arrives as a real folder, structure intact` : single ? first.name : "All of them in one ball. One tap downloads them all."}
-          </p>
-        </div>
         <div className="field">
-          <label><span className="mono">Name in orbit</span><span className="mono dim">{name.length}/60</span></label>
+          <label><span className="mono">Name it</span><span className="mono dim">{name.length}/60</span></label>
           <input
-            className="line-input"
+            className="line-input name-input"
             value={name}
             maxLength={60}
-            enterKeyHint="next"
+            autoFocus={focusNow}
+            enterKeyHint="go"
             autoComplete="off"
+            onFocus={(e) => e.currentTarget.select()}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => {
               if (e.key !== "Enter") return;
               e.preventDefault();
-              e.currentTarget.closest(".drawer")?.querySelector<HTMLInputElement>(".code-input")?.focus();
+              if (locked) e.currentTarget.closest(".drawer")?.querySelector<HTMLInputElement>(".code-input")?.focus();
+              else go();
             }}
             placeholder="Give it a name"
           />
         </div>
+        <div className="send-meta">
+          <span className="mono">{kind}</span>
+          <span className="mono dim">{formatBytes(total)}</span>
+        </div>
+        <p className="note ellip">
+          {folder ? `${folder.name}/ · arrives as a real folder` : single ? first.name : "All of them in one ball. One tap gets them all."}
+        </p>
         {many && (
           <div className="files">
             {props.files.map((f, i) => (
@@ -544,10 +568,25 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
           </div>
         )}
         <div className="grow" />
-        <p className="mono dim">30 min lifetime · AES-256-GCM on device</p>
+        <p className="mono dim">AES-256-GCM on this device · no login</p>
       </div>
       <div className="col">
-        <PasscodeInput value={code} onChange={setCode} onEnter={go} autoFocus generate />
+        <div className="field">
+          <label><span className="mono">Who can open it</span></label>
+          <div className="seg" role="radiogroup" aria-label="Access">
+            <button role="radio" aria-checked={!locked} className={`lg-press${!locked ? " on" : ""}`} onClick={() => setLocked(false)}>Anyone · 1 tap</button>
+            <button role="radio" aria-checked={locked} className={`lg-press${locked ? " on" : ""}`} onClick={() => setLocked(true)}>Passcode</button>
+          </div>
+        </div>
+        {locked && <PasscodeInput value={code} onChange={setCode} onEnter={go} autoFocus generate />}
+        <div className="field">
+          <label><span className="mono">Burns in</span><span className="mono dim">{life} min</span></label>
+          <div className="chips lives" role="radiogroup" aria-label="Lifetime">
+            {LIVES.map((m) => (
+              <button key={m} role="radio" aria-checked={life === m} className={`chip lg-press${life === m ? " on" : ""}`} onClick={() => setLife(m)}>{m}m</button>
+            ))}
+          </div>
+        </div>
         <div className="field">
           <label><span className="mono">Burn after downloads</span><span className="mono dim">{max ? `${max} max` : "unlimited"}</span></label>
           <div className="chips" role="radiogroup" aria-label="Burn after downloads">
@@ -558,7 +597,7 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
         </div>
         {tooBig && <p className="err">{folder ? `The ${folder.name} folder is` : many ? "Together these files are" : `${first.name} is`} over the 2 GB limit</p>}
         <div className="grow" />
-        <button className="cta lg-press" disabled={code.length < 4 || tooBig} onClick={go}>{code.length > 0 && code.length < 4 ? "Min 4 characters" : "Launch ↗"}</button>
+        <button className="cta lg-press" disabled={!ready} onClick={go}>{locked && code.length > 0 && code.length < 4 ? "Min 4 characters" : "Launch ↗"}</button>
       </div>
     </Drawer>
   );
@@ -610,6 +649,38 @@ const kindOf = (f: File) =>
     : f.type === "application/pdf" ? "Document" : /zip|compressed|rar|7z/.test(f.type) ? "Archive" : ext(f.name) === "FILE" ? "No preview" : "File";
 const nFiles = (n: number) => `${n} file${n === 1 ? "" : "s"}`;
 const errName = (e: unknown) => (e as { name?: string } | null)?.name;
+
+// links, emails, phone numbers and long codes in a received note: highlighted, each with its own copy
+const RICH = /(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)\]]|www\.[^\s<>"']+[^\s<>"'.,;:!?)\]]|[\w.+-]+@[\w-]+(?:\.[\w-]+)+|\+?\d[\d\s().-]{7,}\d|\b[A-Z0-9]{6,}\b)/g;
+const kindOfChunk = (t: string) =>
+  /^(https?:|www\.)/.test(t) ? "link" : t.includes("@") ? "email" : /^\+?\d[\d\s().-]+$/.test(t) ? "phone" : "code";
+
+function RichText({ text }: { text: string }) {
+  const [copied, setCopied] = useState<number | null>(null);
+  const parts = text.split(RICH);
+  const copy = async (t: string, i: number) => {
+    try {
+      await navigator.clipboard.writeText(t);
+      setCopied(i);
+      setTimeout(() => setCopied((c) => (c === i ? null : c)), 1300);
+    } catch {}
+  };
+  return (
+    <pre className="note-out rich">
+      {parts.map((p, i) => {
+        if (i % 2 === 0) return p;
+        const k = kindOfChunk(p);
+        const href = k === "link" ? (p.startsWith("www.") ? `https://${p}` : p) : k === "email" ? `mailto:${p}` : k === "phone" ? `tel:${p.replace(/[^\d+]/g, "")}` : undefined;
+        return (
+          <span key={i} className={`rt rt-${k}`}>
+            {href ? <a href={href} target="_blank" rel="noopener noreferrer nofollow">{p}</a> : <b>{p}</b>}
+            <button type="button" className="rt-copy" onClick={() => copy(p, i)} aria-label={`Copy ${k}`}>{copied === i ? "✓" : "copy"}</button>
+          </span>
+        );
+      })}
+    </pre>
+  );
+}
 
 export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; onClose: () => void; onDownloaded: () => void; onViewed: () => void }) {
   const { orb, now, watchers, onClose } = props;
@@ -831,8 +902,9 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
   };
 
   // Step 1: the passcode is checked with the server FIRST. Nothing is picked or saved until it's right.
+  const free = !!orb.open;
   const go = async () => {
-    if (!code || busy) return;
+    if ((!free && !code) || busy) return;
     setErr(null);
     setNeedSpot(false);
     setBusy(true);
@@ -981,6 +1053,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
           <div className="kv">
             <div><span className="mono">Size</span><b>{formatBytes(orb.size)}</b></div>
             <div><span className="mono">Burns in</span><b>{formatClock(left)}</b></div>
+            {orb.by && <div><span className="mono">From</span><b>{orb.by}</b></div>}
             <div><span className="mono">Downloads</span><b>{orb.downloads}{orb.maxDownloads ? ` / ${orb.maxDownloads}` : ""}</b></div>
             <div><span className="mono">Live now</span><b>{watchers}</b></div>
           </div>
@@ -995,7 +1068,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
           {isLink ? (
             <a className="link-out" href={got.text} target="_blank" rel="noopener noreferrer nofollow">{got.text}</a>
           ) : (
-            <pre className="note-out">{got.text}</pre>
+            <RichText text={got.text} />
           )}
           <div className="grow" />
           <div className="row-btns">
@@ -1009,7 +1082,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
                 } catch {}
               }}
             >
-              {copied ? "Copied ✓" : "Copy"}
+              {copied ? "Copied ✓" : "Copy all"}
             </button>
             {isLink && <a className="cta lg-press" href={got.text} target="_blank" rel="noopener noreferrer nofollow">Open link ↗</a>}
           </div>
@@ -1098,7 +1171,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
             <>
               <div className="verified">
                 <svg className="save-check" viewBox="0 0 24 24" aria-hidden><path d="M3.5 12.5l5.5 5.5L20.5 6" /></svg>
-                <b className="wide">Passcode correct</b>
+                <b className="wide">{free ? "Ready" : "Passcode correct"}</b>
               </div>
               <p className="note">
                 {asDir ? "Now choose a folder. It lands there as-is: same name, every subfolder, no zip." : "Now choose where to save it."}
@@ -1124,10 +1197,14 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
             </>
           ) : (
             <>
-              <PasscodeInput value={code} onChange={setCode} onEnter={() => go()} autoFocus />
+              {free ? (
+                <div className="open-badge"><i className="dot" /><b className="wide">Open object</b><span className="mono dim">no passcode · one tap</span></div>
+              ) : (
+                <PasscodeInput value={code} onChange={setCode} onEnter={() => go()} autoFocus />
+              )}
               {err && <p className="err">{err}</p>}
               <p className="note">
-                Decrypted locally. The passcode never leaves this device.
+                {free ? "The sender left this open: anyone with the page can take it. Still decrypted on this device." : "Decrypted locally. The passcode never leaves this device."}
                 {env.mobile && !inline && !(asDir && canWriteFolders()) ? " After decrypting, you choose where to save it." : ""}
               </p>
               {env.inApp && (
@@ -1148,8 +1225,8 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
                     : "First the passcode is checked; then you choose the folder it lands in."}
                 </p>
               ) : null}
-              <button className="cta lg-press" disabled={!code} onClick={() => go()}>
-                {isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : env.mobile && !(asDir && canWriteFolders()) ? "Decrypt →" : loose ? "Decrypt + download all ↓" : isFolder ? "Unlock folder →" : needsSavePicker(orb) ? "Unlock →" : "Decrypt + download ↓"}
+              <button className="cta lg-press" disabled={!free && !code} onClick={() => go()}>
+                {free ? (isLink || inline ? "Open ↗" : isFolder ? "Get it ↓" : "Download ↓") : isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : env.mobile && !(asDir && canWriteFolders()) ? "Decrypt →" : loose ? "Decrypt + download all ↓" : isFolder ? "Unlock folder →" : needsSavePicker(orb) ? "Unlock →" : "Decrypt + download ↓"}
               </button>
             </>
           )}

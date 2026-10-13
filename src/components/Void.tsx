@@ -8,15 +8,16 @@ import OrbView, { ORB_CAP, inheritSlot, pickHue, layout, type VoidMode } from ".
 import { ComposePanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin, type LaunchJob } from "./Panels";
 import LaunchDock, { isPending, pendingId, pendingOrb, type Launch } from "./LaunchDock";
 import { launch, type Stage } from "@/lib/transfer";
+import { preloadBurn } from "@/lib/burn";
 import { folderFromInput, fromDrop, textToFile, type Folder } from "@/lib/bundle";
 import { useRouter } from "next/navigation";
-import { deviceId, deviceInfo, ownerKey, type Orb } from "@/lib/client";
+import { deviceId, deviceInfo, dropOwnerKey, ownerKey, type Orb } from "@/lib/client";
 import { supabase, type RealtimeChannel } from "@/lib/realtime";
-import SpacePanel from "./Spaces";
-import { forget, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceSession } from "@/lib/space";
+import SpacePanel, { SpaceRoom } from "./Spaces";
+import { enterSpace as fetchRoom, forget, kickMember, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
 
 /** Someone else's launch, announced over realtime the moment they press Launch (before it has landed). */
-type Incoming = { key: string; by: string | null; name: string; size: number; files: number; hue: number; createdAt: string; net: string | null; frac: number; seen: number };
+type Incoming = { key: string; by: string | null; life: number; open: boolean; name: string; size: number; files: number; hue: number; createdAt: string; net: string | null; frac: number; seen: number };
 const incomingId = (k: string) => `in-${k}`;
 const isIncoming = (id: string) => id.startsWith("in-");
 // a launch that stops announcing itself (tab closed, network gone) fades out after this
@@ -29,8 +30,8 @@ function incomingOrb(i: Incoming): Orb {
   return {
     id: incomingId(i.key), name: i.name, fileName: i.name, mime: "application/octet-stream", size: i.size,
     salt: "", iterations: 0, hue: i.hue, status: "ready", netHash: i.net, maxDownloads: null, by: i.by,
-    downloads: 0, devices: 0, views: 0, createdAt: i.createdAt,
-    expiresAt: new Date(new Date(i.createdAt).getTime() + 30 * 60_000).toISOString(),
+    downloads: 0, devices: 0, views: 0, createdAt: i.createdAt, life: i.life, open: i.open,
+    expiresAt: new Date(new Date(i.createdAt).getTime() + i.life * 60_000).toISOString(),
   };
 }
 
@@ -58,6 +59,10 @@ export default function Void() {
   const [space, setSpace] = useState<SpaceSession | null>(null);
   const spaceRef = useRef<SpaceSession | null>(null);
   const [spaceReady, setSpaceReady] = useState(false);
+  // who is in the space (and who is live right now, via realtime presence on its channel)
+  const [room, setRoom] = useState<SpaceInfo | null>(null);
+  const [live, setLive] = useState<Set<string>>(new Set());
+  const myId = room?.members.find((m) => m.you)?.id ?? null;
   // incoming launch the user tapped: it opens by itself the moment it lands
   const waitFor = useRef<string | null>(null);
   const landedKeys = useRef(new Set<string>());
@@ -216,11 +221,13 @@ export default function Void() {
     const l: Launch = {
       key, name: job.name, size: job.file.size, files: job.files, hue: pickHue(orbsRef.current.map((o) => o.hue)),
       createdAt: new Date(Date.now() + skew).toISOString(), stage: "deriving", frac: 0, abort: new AbortController(), open: false,
+      life: job.life,
+      free: job.open,
     };
     setLaunches((ls) => [...ls, l]);
     setPanel(null);
     // Every other open tab sees the ball right now, and watches it fill up, instead of after the upload.
-    const info = { k: key, name: l.name, size: l.size, files: l.files, hue: l.hue, at: l.createdAt };
+    const info = { k: key, name: l.name, size: l.size, files: l.files, hue: l.hue, at: l.createdAt, life: job.life, o: job.open };
     let frac = 0;
     let beamed = 0;
     const announce = () => {
@@ -234,7 +241,7 @@ export default function Void() {
       frac = st === "uploading" ? f : st === "finalizing" || st === "done" ? 1 : 0;
       if (Date.now() - beamed > 500) announce();
     };
-    launch({ file: job.file, name: job.name, passcode: job.passcode, maxDownloads: job.maxDownloads, hue: l.hue, signal: l.abort.signal, onProgress })
+    launch({ file: job.file, name: job.name, passcode: job.passcode, maxDownloads: job.maxDownloads, life: job.life, open: job.open, hue: l.hue, signal: l.abort.signal, onProgress })
       .then((orb) => {
         clearInterval(keepAlive);
         beam("landed", { k: key, id: orb.id });
@@ -259,6 +266,8 @@ export default function Void() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [skew]);
   const dockLaunches = useMemo(() => launches.map((l) => (prog[l.key] && !l.orb ? { ...l, ...prog[l.key] } : l)), [launches, prog]);
+
+  useEffect(() => preloadBurn(), []);
 
   // clock
   useEffect(() => {
@@ -370,8 +379,9 @@ export default function Void() {
     const createdAt = new Date(Number.isFinite(at) && Math.abs(at - serverNow) < 120_000 ? at : serverNow).toISOString();
     const net = typeof p.net === "string" && /^[0-9a-f]{12}$/.test(p.net) ? p.net : null;
     const by = typeof p.by === "string" ? p.by.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 24) || null : null;
+    const life = [5, 10, 15, 20, 25, 30].includes(Number(p.life)) ? Number(p.life) : 30;
     const item: Incoming = {
-      key: k, by, name, createdAt, net,
+      key: k, by, life, open: p.o === true, name, createdAt, net,
       size: Math.round(num(p.size, 0, 4 * 1024 ** 3, 0)),
       files: Math.round(num(p.files, 1, 100_000, 1)),
       hue: Math.round(num(p.hue, 0, 359, 0)),
@@ -452,6 +462,41 @@ export default function Void() {
   beams.current = { launch: onLaunchBeam, landed: onLandedBeam, gone: onGoneBeam };
 
   const chanName = space ? `orbit-s-${space.chan}` : "orbit-void";
+  const myIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    myIdRef.current = myId;
+    if (myId && spaceRef.current && channel.current) channel.current.track({ id: myId }).catch(() => {});
+  }, [myId]);
+  // the member list: on entering, every 15 s, and right after someone is removed
+  const loadRoom = useCallback(async () => {
+    const sp = spaceRef.current;
+    if (!sp) return setRoom(null);
+    try {
+      const info = await fetchRoom(sp);
+      if (spaceRef.current === sp) setRoom(info);
+    } catch (e) {
+      if ((e as { status?: number }).status === 403 && spaceRef.current === sp) removedRef.current(sp);
+    }
+  }, []);
+  useEffect(() => {
+    setRoom(null);
+    setLive(new Set());
+    if (!space) return;
+    loadRoom();
+    const t = setInterval(loadRoom, 15_000);
+    return () => clearInterval(t);
+  }, [space, loadRoom]);
+  const kick = useCallback(async (id: string, who: string) => {
+    const sp = spaceRef.current;
+    if (!sp) return;
+    try {
+      await kickMember(sp, id);
+      toast(`${who} was removed`);
+      loadRoom();
+    } catch (e) {
+      toast((e as Error).message);
+    }
+  }, [loadRoom, toast]);
   // realtime broadcast only (no presence): constant cost per message, scales with Supabase's fan-out
   useEffect(() => {
     const ch = supabase.channel(chanName, { config: { broadcast: { self: false } } });
@@ -462,8 +507,17 @@ export default function Void() {
     ch.on("broadcast", { event: "launch" }, ({ payload }) => beams.current.launch(payload ?? {}));
     ch.on("broadcast", { event: "landed" }, ({ payload }) => void beams.current.landed(payload ?? {}));
     ch.on("broadcast", { event: "gone" }, ({ payload }) => beams.current.gone(payload ?? {}));
+    if (spaceRef.current) {
+      ch.on("presence", { event: "sync" }, () => {
+        const ids = new Set<string>();
+        for (const list of Object.values(ch.presenceState())) for (const p of list as { id?: string }[]) if (p.id) ids.add(p.id);
+        setLive(ids);
+      });
+    }
     ch.subscribe((status) => {
-      if (status === "SUBSCRIBED") channel.current = ch;
+      if (status !== "SUBSCRIBED") return;
+      channel.current = ch;
+      if (spaceRef.current && myIdRef.current) ch.track({ id: myIdRef.current }).catch(() => {});
     });
     return () => {
       channel.current = null;
@@ -593,6 +647,18 @@ export default function Void() {
   }, []);
 
   const serverNow = now + skew;
+  // Short-lived objects of yours: the server already hides and refuses them on time; this device also
+  // deletes the stored ciphertext the moment it burns, so nothing outlives the lifetime the sender picked.
+  const purged = useRef(new Set<string>());
+  useEffect(() => {
+    for (const o of orbs) {
+      if ((o.life ?? 30) >= 30 || purged.current.has(o.id) || new Date(o.expiresAt).getTime() > serverNow) continue;
+      const key = ownerKey(o.id);
+      if (!key) continue;
+      purged.current.add(o.id);
+      fetch(`/api/transfers/${o.id}`, { method: "DELETE", headers: { "x-owner": key } }).finally(() => dropOwnerKey(o.id));
+    }
+  }, [orbs, serverNow]);
   // Membership only changes when something launches or expires, not on every clock tick, so the
   // layout / colour / choreography work below runs on change instead of every second.
   const aliveKey = useMemo(() => orbs.filter((o) => new Date(o.expiresAt).getTime() > serverNow).map((o) => o.id).join(","), [orbs, serverNow]);
@@ -736,15 +802,15 @@ export default function Void() {
           </nav>
           <div className="top-right">
             <span className="live" aria-label={`${online} ${online > 1 ? "devices" : "device"} in orbit`}><span className="dot" /><b>{online}</b><span className="live-txt">{space ? "in this space" : online > 1 ? "devices in orbit" : "device in orbit"}</span></span>
-            <button className={`pill lg-press space-chip${space ? " in" : ""}`} onClick={() => setPanel({ kind: "space" })} aria-label={space ? `Space: ${space.title}` : "Spaces"}>
-              {space ? <><i className="space-dot" />{space.title}</> : "Spaces"}
+            <button className={`pill lg-press space-chip${space ? " in" : ""}`} onClick={() => setPanel({ kind: "space" })} aria-label={space ? `Space: ${space.title}. Change space` : "Public void. Open spaces"}>
+              <i className="space-dot" />{space ? space.title : "Public void"}
             </button>
-            <button className="pill lg-press" onClick={openMenu}>Send</button>
+            <button className="pill solid lg-press send-pill" onClick={openMenu}>Send</button>
           </div>
         </div>
         <div className="top-row">
           <div className="sub-left">
-            <span>No login</span><span>End-to-end encrypted</span><span>Any size</span><span>Burns in 30 min</span>
+            <span className="hl"><i />No login</span><span>End-to-end encrypted</span><span>Any size</span><span>Burns in 5–30 min</span>
           </div>
           <span />
           <div className="toggle" role="tablist" aria-label="Scope">
@@ -761,10 +827,11 @@ export default function Void() {
 
       <main className={menu && !menuOut ? "menu-open" : undefined}>
         <section
-          className={`void${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
+          className={`void${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
           id="void"
           style={flow ? ({ "--n": rows } as React.CSSProperties) : undefined}
         >
+          {space && <SpaceRoom space={space} info={room} online={live} onKick={kick} />}
           <div className="ghost-type" aria-hidden>
             <span className="wide">Drop</span>
             <span className="wide">Lock</span>
@@ -774,7 +841,7 @@ export default function Void() {
           </div>
           <div className="ghost-big" aria-hidden>
             <div className="wide">30 Min</div>
-            <p className="mono">Lifetime of every object,<br />from launch to burn-up.</p>
+            <p className="mono">Longest life of any object.<br />The sender picks 5 to 30.</p>
           </div>
 
           {loaded && shown.length === 0 && (
@@ -847,9 +914,9 @@ export default function Void() {
           <div className="table-head"><span>Phase</span><span>Codename</span><span>What happens</span><span style={{ textAlign: "right" }}>Step</span></div>
           {[
             ["Upload", "Drop", "Drag any file onto the page, or paste it. Name it whatever you like. It becomes an object drifting in the void."],
-            ["Encrypt", "Lock", "Pick a passcode. The file is chunk-encrypted with AES-256-GCM inside your browser. The server never sees the passcode or the content."],
+            ["Encrypt", "Lock", "Send it open (one tap for anyone) or with a passcode. Either way it is chunk-encrypted with AES-256-GCM inside your browser."],
             ["Receive", "Beam", "Open ORBIT on the other device. Tap the object, enter the passcode, and it decrypts and lands. Live stats show who is accessing it."],
-            ["Destroy", "Burn", "After 30 minutes, after N downloads, or the moment the sender hits destroy, it is erased for good."],
+            ["Destroy", "Burn", "After the lifetime the sender picked (5 to 30 minutes), after N downloads, or the moment the sender hits destroy, it is erased for good."],
           ].map(([a, b, c], i) => (
             <div className="table-row" key={b}>
               <span>{a}</span>
@@ -904,6 +971,7 @@ export default function Void() {
       {panel?.kind === "space" && (
         <SpacePanel
           current={space}
+          info={room}
           start={panel.start}
           onEnter={enterSpace}
           onLeave={() => {
@@ -992,7 +1060,6 @@ export default function Void() {
         onDismiss={(key) => setLaunches((ls) => ls.filter((l) => l.key !== key))}
         onOpenOwner={(id) => setPanel({ kind: "owner", id })}
       />
-      <div className={`made${launches.length ? " docked" : ""}`}>made with <svg className="heart" viewBox="0 0 10 9" aria-label="love" role="img"><path d="M1 0H4L5 1L6 0H9L10 1V4.2L5 9L0 4.2V1Z" fill="currentColor" /><rect x="6.6" y="1.6" width="1.4" height="1.4" fill="#000" opacity="0.55" /></svg> by <b>Mohit</b></div>
     </>
   );
 }

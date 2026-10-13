@@ -18,7 +18,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (u.protocol !== "https:" || !u.hostname.endsWith(".public.blob.vercel-storage.com") || !u.pathname.startsWith(`/o/${id}-`))
     return NextResponse.json({ error: "bad url" }, { status: 400 });
 
-  const item = await rpc<{ name?: unknown } | null>("orbit_finalize", { p_id: id, p_owner_hash: sha256(b.owner), p_url: u.toString() });
+  const item = await rpc<{ name?: unknown; expiresAt?: unknown } | null>("orbit_finalize", { p_id: id, p_owner_hash: sha256(b.owner), p_url: u.toString() });
   if (!item) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   return NextResponse.json(untag(item));
 }

@@ -15,6 +15,9 @@ export interface Launch {
   stage: Stage;
   frac: number;
   abort: AbortController;
+  life?: number;
+  /** open object (no passcode) */
+  free?: boolean;
   orb?: Orb;
   err?: string;
   /** expanded: QR + share; collapsed: one slim pill */
@@ -43,7 +46,9 @@ export function pendingOrb(l: Launch): Orb {
     devices: 0,
     views: 0,
     createdAt: l.createdAt,
-    expiresAt: new Date(t + 30 * 60_000).toISOString(),
+    expiresAt: new Date(t + (l.life ?? 30) * 60_000).toISOString(),
+    life: l.life,
+    open: l.free,
   };
 }
 

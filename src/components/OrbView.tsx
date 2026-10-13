@@ -2,6 +2,10 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
 import { setCardOrigin } from "./Panels";
 import { ext, formatBytes, formatClock, type Orb } from "@/lib/client";
+import { burnAt } from "@/lib/burn";
+
+/** 7 → "7", 12 → "10+", 140 → "100+": a crowd stays readable */
+const crowd = (n: number) => (n >= 1000 ? "1k+" : n >= 100 ? "100+" : n >= 10 ? "10+" : String(n));
 
 export const LIFETIME_MS = 30 * 60 * 1000;
 
@@ -211,7 +215,7 @@ export default function OrbView(props: {
   const up = launching !== undefined;
   const h = hash(orb.id);
   const left = new Date(orb.expiresAt).getTime() - now;
-  const frac = Math.max(0, Math.min(1, left / LIFETIME_MS));
+  const frac = Math.max(0, Math.min(1, left / ((orb.life ?? 30) * 60_000)));
   const size = Math.round(96 + Math.min(1, Math.log10(Math.max(orb.size, 1024)) / 10) * 70);
   const R = 48;
   const C = 2 * Math.PI * R;
@@ -243,6 +247,13 @@ export default function OrbView(props: {
     const cy = Math.min(d.bh - m - d.by, Math.max(90 - d.by, y));
     return { x: cx, y: cy, hitX: cx !== x, hitY: cy !== y };
   };
+
+  // burning: tsParticles flames, smoke and sparks rise from where the sphere was
+  useEffect(() => {
+    if (phase !== "burning") return;
+    const r = anchor.current?.querySelector(".sphere")?.getBoundingClientRect();
+    if (r && r.width) burnAt(r.left + r.width / 2, r.top + r.height / 2, r.width / 2);
+  }, [phase]);
 
   // While a touch drag is armed the page must not scroll. React's touch listeners are passive,
   // so the blocking one is attached by hand.
@@ -429,24 +440,12 @@ export default function OrbView(props: {
         <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : ext(orb.fileName)}</span>
         {mine && badge ? <span className="mine-no" aria-hidden>{badge}</span> : null}
         {!up && <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
-          <span title="Live now"><i className="b-live" />{watchers}</span>
-          <span title="Opened by"><svg viewBox="0 0 16 16" aria-hidden><path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" strokeWidth="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>{orb.views ?? 0}</span>
-          <span title="Downloads">↓{orb.downloads}</span>
+          <span title="Live now"><i className="b-live" />{crowd(watchers)}</span>
+          <span title="Opened by"><svg viewBox="0 0 16 16" aria-hidden><path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" strokeWidth="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>{crowd(orb.views ?? 0)}</span>
+          <span title="Downloads">↓{crowd(orb.downloads)}</span>
         </span>}
         {phase === "arriving" && <span className="shock" />}
-        {phase === "burning" && (
-          <>
-            <span className="flash" />
-            {Array.from({ length: 18 }, (_, i) => (
-              <span
-                key={i}
-                className="ember"
-                style={{ "--a": `${(360 / 18) * i + (h % 20)}deg`, "--d": `${50 + ((h >> (i % 16)) % 70)}px`, "--t": `${0.9 + ((h >> i) % 5) / 10}s` } as CSSProperties}
-              />
-            ))}
-          </>
-        )}
-        {Array.from({ length: Math.min(watchers, 8) }, (_, i) => (
+        {Array.from({ length: Math.min(watchers, 4) }, (_, i) => (
           <span
             key={i}
             className="sat"
@@ -461,10 +460,11 @@ export default function OrbView(props: {
         {up ? <span>↑ {Math.round(launching * 100)}%</span> : <span>{formatClock(left)}</span>}
         {orb.maxDownloads ? <span>max {orb.maxDownloads}</span> : null}
       </div>
-      {(mine || nearby || sealed || incoming) && (
+      {(mine || nearby || sealed || incoming || orb.open) && (
         <div className="tags">
           {mine && <span className="tag me">{badge ? `YOURS · #${badge}` : "YOURS"}</span>}
           {incoming && <span className="tag in">INCOMING</span>}
+          {orb.open && !incoming && <span className="tag open">OPEN</span>}
           {nearby && !mine && !incoming && <span className="tag near">NEARBY</span>}
           {sealed && <span className="tag dead">SEALED</span>}
         </div>

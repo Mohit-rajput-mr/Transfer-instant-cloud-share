@@ -56,4 +56,17 @@ export interface AdminTransfer {
   device: string | null;
   createdAt: string;
   expiresAt: string;
+  space?: string | null;
+  by?: string | null;
+  life?: number;
+  open?: boolean;
+}
+
+export interface AdminSpace {
+  slug: string;
+  title: string;
+  priv: boolean;
+  at: number;
+  members: string[];
+  kicked: number;
 }

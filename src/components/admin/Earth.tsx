@@ -237,7 +237,7 @@ export default function Earth({ data, layers, spin }: { data: Overview | null; l
       const f = d.live[0] ?? d.visitors[0];
       if (f) {
         centred.current = true;
-        m.flyTo({ center: [f.lon, f.lat], zoom: 3.2, duration: 2200, essential: true });
+        m.flyTo({ center: [f.lon, f.lat], zoom: Math.min(14, Math.max(m.getZoom() + 4, 6)), duration: 2200, essential: true });
       }
     }
   };

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatBytes } from "@/lib/client";
 import type { Layer } from "./Earth";
-import type { Overview } from "./types";
+import type { AdminSpace, AdminTransfer, Overview } from "./types";
 
 // three.js only loads for the admin, never for regular visitors
 const Earth = dynamic(() => import("./Earth"), { ssr: false, loading: () => <div className="earth earth-loading mono">Booting globe…</div> });
@@ -105,8 +105,18 @@ const LAYERS: { id: Layer; label: string; dot: string }[] = [
   { id: "routes", label: "Transfer routes", dot: "linear-gradient(90deg,#59b8ff,#ffa045)" },
 ];
 
+type Expand = "objects" | "cities" | "spaces" | null;
+
 function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; now: number; onRefresh: () => void; onLogout: () => void }) {
   const [layers, setLayers] = useState<Set<Layer>>(new Set(["live", "visitors", "uploads", "downloads", "routes"]));
+  const [expand, setExpand] = useState<Expand>(null);
+  const [spaces, setSpaces] = useState<AdminSpace[] | null>(null);
+  useEffect(() => {
+    const get = () => fetch("/api/admin/spaces", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => d && setSpaces(d.spaces)).catch(() => {});
+    get();
+    const t = setInterval(get, 20_000);
+    return () => clearInterval(t);
+  }, []);
   const [spin, setSpin] = useState(true);
   const toggle = (l: Layer) => setLayers((s) => {
     const x = new Set(s);
@@ -187,7 +197,19 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
             </div>
           </Panel>
 
-          <Panel title="Top cities">
+          <Panel title="Spaces" right={`${spaces?.length ?? "…"}`} onExpand={() => setExpand("spaces")}>
+            <div className="hq-list">
+              {spaces?.length ? spaces.slice(0, 6).map((sp) => (
+                <div key={sp.slug} className="hq-row short">
+                  <span className="hq-flag">{sp.priv ? "🔒" : "◎"}</span>
+                  <span className="hq-name">{sp.title} <span className="mono dim">· {data?.transfers.filter((t) => t.space === sp.slug).length ?? 0} objects</span></span>
+                  <b>{sp.members.length}</b>
+                </div>
+              )) : <Empty />}
+            </div>
+          </Panel>
+
+          <Panel title="Top cities" onExpand={() => setExpand("cities")}>
             <div className="hq-list">
               {data?.cities.length ? data.cities.map((c) => (
                 <div key={`${c.city}-${c.country}`} className="hq-row short">
@@ -217,12 +239,12 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
             </div>
           </Panel>
 
-          <Panel title="Objects in orbit" right={`${data?.transfers.length ?? 0}`}>
+          <Panel title="Objects in orbit" right={`${data?.transfers.length ?? 0}`} onExpand={() => setExpand("objects")}>
             <div className="hq-table">
               {data?.transfers.length ? data.transfers.map((t) => (
                 <div key={t.id} className="hq-tr">
                   <div>
-                    <b>{t.name}</b>
+                    <b>{t.name}{t.space ? <span className="hq-tag">◎ {t.space}{t.by ? ` · ${t.by}` : ""}</span> : null}{t.open ? <span className="hq-tag open">open</span> : null}</b>
                     <span className="mono dim">{t.id} · {formatBytes(t.size)} · {t.status} · {flag(t.country)} {t.city || ""}</span>
                     <span className="mono dim">👁 {t.views} · ↓ {t.downloads} · ● {t.watchers} live · ✕ {t.failed} wrong{t.reports ? ` · ⚑ ${t.reports}` : ""} · burns in {Math.max(0, Math.round((new Date(t.expiresAt).getTime() - now) / 60000))}m</span>
                   </div>
@@ -233,6 +255,137 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
           </Panel>
         </aside>
       </main>
+      {expand && data && <Expanded kind={expand} data={data} spaces={spaces ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} />}
+    </div>
+  );
+}
+
+/** Full-screen detail for one panel, with filters. */
+function Expanded({ kind, data, spaces, now, onClose, onDestroy }: { kind: Exclude<Expand, null>; data: Overview; spaces: AdminSpace[]; now: number; onClose: () => void; onDestroy: (id: string) => void }) {
+  const [q, setQ] = useState("");
+  const [cc, setCc] = useState("");
+  const [city, setCity] = useState("");
+  const [space, setSpace] = useState("");
+  const [access, setAccess] = useState<"" | "open" | "locked">("");
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, [onClose]);
+  const T = data.transfers;
+  const countries = [...new Set(T.map((t) => t.country).filter(Boolean))] as string[];
+  const citiesIn = [...new Set(T.filter((t) => !cc || t.country === cc).map((t) => t.city).filter(Boolean))] as string[];
+  const rows = T.filter((t: AdminTransfer) =>
+    (!q || `${t.name} ${t.id} ${t.by ?? ""} ${t.fileName}`.toLowerCase().includes(q.toLowerCase())) &&
+    (!cc || t.country === cc) && (!city || t.city === city) &&
+    (!space || (space === "public" ? !t.space : t.space === space)) &&
+    (!access || (access === "open" ? t.open : !t.open)));
+  const bytes = rows.reduce((a, t) => a + t.size, 0);
+  // data in orbit by place
+  const byCity = Object.values(T.reduce<Record<string, { key: string; cc: string | null; city: string; n: number; bytes: number; down: number }>>((m, t) => {
+    const key = `${t.city ?? "?"}|${t.country ?? "?"}`;
+    m[key] ??= { key, cc: t.country, city: t.city || "Unknown", n: 0, bytes: 0, down: 0 };
+    m[key].n++;
+    m[key].bytes += t.size;
+    m[key].down += t.downloads;
+    return m;
+  }, {})).sort((a, b) => b.bytes - a.bytes);
+  const maxB = Math.max(1, ...byCity.map((c) => c.bytes));
+  return (
+    <div className="hq-expand" role="dialog" aria-label="Details">
+      <div className="hq-expand-head">
+        <b className="wide">{kind === "objects" ? "Objects in orbit" : kind === "cities" ? "Places" : "Spaces"}</b>
+        <button className="pill" onClick={onClose}>Close ✕</button>
+      </div>
+      {kind === "objects" && (
+        <>
+          <div className="hq-filters">
+            <input className="hq-input" placeholder="Search name, id, sender" value={q} onChange={(e) => setQ(e.target.value)} />
+            <select className="hq-input" value={cc} onChange={(e) => (setCc(e.target.value), setCity(""))}>
+              <option value="">All countries</option>
+              {countries.map((c) => <option key={c} value={c}>{flag(c)} {country(c)}</option>)}
+            </select>
+            <select className="hq-input" value={city} onChange={(e) => setCity(e.target.value)}>
+              <option value="">All cities</option>
+              {citiesIn.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <select className="hq-input" value={space} onChange={(e) => setSpace(e.target.value)}>
+              <option value="">Everywhere</option>
+              <option value="public">Public void</option>
+              {spaces.map((s) => <option key={s.slug} value={s.slug}>◎ {s.title}</option>)}
+            </select>
+            <select className="hq-input" value={access} onChange={(e) => setAccess(e.target.value as typeof access)}>
+              <option value="">Open + locked</option>
+              <option value="open">Open only</option>
+              <option value="locked">Passcode only</option>
+            </select>
+          </div>
+          <p className="mono dim hq-sum">{rows.length} objects · {formatBytes(bytes)} · {rows.reduce((a, t) => a + t.downloads, 0)} downloads · {rows.reduce((a, t) => a + t.watchers, 0)} watching now</p>
+          <div className="hq-grid-table">
+            <div className="hq-gt head"><span>Name</span><span>Where</span><span>Space · by</span><span>Size</span><span>Views</span><span>Down</span><span>Live</span><span>Burns</span><span /></div>
+            {rows.map((t) => (
+              <div key={t.id} className="hq-gt">
+                <span><b>{t.name}</b><small className="mono dim">{t.id} · {t.open ? "open" : "passcode"} · {t.status}</small></span>
+                <span>{flag(t.country)} {t.city || country(t.country)}</span>
+                <span>{t.space ? `◎ ${t.space}${t.by ? ` · ${t.by}` : ""}` : "public"}</span>
+                <span>{formatBytes(t.size)}</span>
+                <span>{t.views}</span>
+                <span>{t.downloads}</span>
+                <span>{t.watchers}</span>
+                <span>{Math.max(0, Math.round((new Date(t.expiresAt).getTime() - now) / 60000))}m</span>
+                <span><button className="danger-btn" onClick={() => onDestroy(t.id)}>Destroy</button></span>
+              </div>
+            ))}
+            {!rows.length && <Empty />}
+          </div>
+        </>
+      )}
+      {kind === "cities" && (
+        <div className="hq-split">
+          <section>
+            <span className="mono dim">Data in orbit right now, by place</span>
+            <div className="hq-list">
+              {byCity.length ? byCity.map((c) => (
+                <div key={c.key} className="hq-row">
+                  <span className="hq-flag">{flag(c.cc)}</span>
+                  <span className="hq-name">{c.city} <span className="mono dim">· {c.n} objects · ↓{c.down}</span></span>
+                  <span className="hq-live" />
+                  <span className="hq-bar"><i style={{ width: `${(c.bytes / maxB) * 100}%` }} /></span>
+                  <b>{formatBytes(c.bytes)}</b>
+                </div>
+              )) : <Empty />}
+            </div>
+          </section>
+          <section>
+            <span className="mono dim">Devices by city (all-time)</span>
+            <div className="hq-list">
+              {data.cities.map((c) => (
+                <div key={`${c.city}-${c.country}`} className="hq-row short">
+                  <span className="hq-flag">{flag(c.country)}</span>
+                  <span className="hq-name">{c.city}, {country(c.country)}</span>
+                  <b>{n(c.n)}</b>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+      {kind === "spaces" && (
+        <div className="hq-grid-table">
+          <div className="hq-gt sp head"><span>Space</span><span>Access</span><span>Members</span><span>Objects now</span><span>Removed</span><span>Created</span></div>
+          {spaces.map((s) => (
+            <div key={s.slug} className="hq-gt sp">
+              <span><b>{s.title}</b><small className="mono dim">{s.slug}</small></span>
+              <span>{s.priv ? "🔒 private" : "open"}</span>
+              <span title={s.members.join(", ")}>{s.members.length} <small className="mono dim">{s.members.slice(0, 6).join(", ")}{s.members.length > 6 ? "…" : ""}</small></span>
+              <span>{T.filter((t) => t.space === s.slug).length}</span>
+              <span>{s.kicked}</span>
+              <span>{new Date(s.at).toLocaleDateString()}</span>
+            </div>
+          ))}
+          {!spaces.length && <Empty />}
+        </div>
+      )}
     </div>
   );
 }
@@ -247,10 +400,13 @@ function Tile({ label, value, sub, accent }: { label: string; value: string; sub
   );
 }
 
-function Panel({ title, right, children }: { title: string; right?: string; children: React.ReactNode }) {
+function Panel({ title, right, children, onExpand }: { title: string; right?: string; children: React.ReactNode; onExpand?: () => void }) {
   return (
     <section className="hq-panel">
-      <div className="hq-panel-head"><span className="mono">{title}</span>{right && <span className="mono dim">{right}</span>}</div>
+      <div className="hq-panel-head">
+        <span className="mono">{title}</span>
+        <span className="hq-panel-r">{right && <span className="mono dim">{right}</span>}{onExpand && <button className="hq-exp mono" onClick={onExpand}>Expand ↗</button>}</span>
+      </div>
       {children}
     </section>
   );

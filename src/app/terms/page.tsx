@@ -13,10 +13,12 @@ export default function Terms() {
       <ul>
         <li>Only upload files you have the right to share.</li>
         <li>No malware, illegal content, harassment, or material that infringes anyone&apos;s rights.</li>
-        <li>Limits: 2 GB per file, 30 uploads per network per hour. Every object is deleted after 30 minutes.</li>
+        <li>Limits: 2 GB per file, 30 uploads per network per hour. Every object burns after the lifetime its sender picked, 30 minutes at most.</li>
+        <li>Objects sent without a passcode are open: anyone who can see them can download them.</li>
+        <li>Space creators can remove anyone from their space. Do not use spaces to harass or exclude people unlawfully.</li>
       </ul>
       <h2>Your responsibility</h2>
-      <p>Files are encrypted on your device with your passcode, so ORBIT cannot see or check their contents. You are fully responsible for what you upload and who you share the passcode with.</p>
+      <p>Files are encrypted on your device before upload, so ORBIT cannot see or check their contents. You are fully responsible for what you upload, whether you send it open or with a passcode, and who you share the passcode with.</p>
       <h2>Reports and removal</h2>
       <p>Anyone can flag an object with the ⚑ Report button. Objects reported by several devices are removed immediately. We may remove any object or block abusive traffic at any time.</p>
       <h2>No warranty</h2>

@@ -19,6 +19,10 @@ export interface Orb {
   /** inside a space: who launched it (their name in the space) */
   by?: string | null;
   space?: string | null;
+  /** minutes from launch to burn-up (5..30) */
+  life?: number;
+  /** open object: no passcode, anyone downloads it in one tap */
+  open?: boolean;
   createdAt: string;
   expiresAt: string;
 }
