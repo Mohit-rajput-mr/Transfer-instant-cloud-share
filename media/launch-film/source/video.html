@@ -1,0 +1,432 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>ORBITRANSFER film</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=block" />
+<style>
+  :root { --w: 1920px; --h: 1080px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: var(--w); height: var(--h); background: #000; overflow: hidden; }
+  body { font-family: Inter, sans-serif; color: #fff; -webkit-font-smoothing: antialiased; }
+  .layer { position: absolute; inset: 0; pointer-events: none; }
+  canvas { position: absolute; inset: 0; }
+  .wide { font-family: Archivo, sans-serif; font-weight: 900; font-variation-settings: "wdth" 125; text-transform: uppercase; letter-spacing: -0.02em; line-height: 0.86; }
+  .mono { font-family: "JetBrains Mono", monospace; text-transform: uppercase; letter-spacing: 0.22em; color: #9b9b9b; font-size: 18px; }
+
+  /* logo */
+  #logo { display: grid; place-items: center; }
+  #logo .stack { display: flex; flex-direction: column; align-items: center; gap: 34px; }
+  #emblem { position: absolute; left: 50%; top: 50%; width: 260px; height: 260px; margin: -130px 0 0 -130px; }
+  #wordmark { height: 118px; display: block; }
+  #wordmarkWrap { overflow: hidden; }
+  #tag { margin-top: 6px; }
+
+  /* kinetic */
+  #kin { display: grid; place-items: center; }
+  #kin .word { font-size: 300px; position: absolute; top: 50%; left: 50%; transform-origin: 50% 50%; white-space: nowrap; }
+  #kin .sub { position: absolute; left: 50%; top: calc(50% + 190px); transform: translateX(-50%); white-space: nowrap; }
+
+  /* devices */
+  #stage { perspective: 2400px; }
+  #browser { position: absolute; left: 50%; top: 50%; width: 1440px; height: 940px; margin: -470px 0 0 -720px; border-radius: 22px; overflow: hidden;
+    background: #0a0a0a; border: 1px solid rgba(255,255,255,0.14); box-shadow: 0 80px 200px rgba(0,0,0,0.9), 0 0 0 1px rgba(0,0,0,0.6); transform-style: preserve-3d; }
+  #browser .bar { height: 40px; background: linear-gradient(#1b1b1d, #141416); border-bottom: 1px solid rgba(255,255,255,0.07); display: flex; align-items: center; padding: 0 16px; gap: 8px; }
+  #browser .dot { width: 12px; height: 12px; border-radius: 50%; background: #3a3a3c; }
+  #browser .url { margin: 0 auto; width: 420px; height: 26px; border-radius: 8px; background: #0c0c0d; border: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; color: #cfcfcf; letter-spacing: 0.02em; }
+  #browser .url svg { width: 11px; height: 11px; opacity: 0.7; }
+  #browser .screen { position: absolute; left: 0; right: 0; top: 40px; bottom: 0; overflow: hidden; }
+  #browser .screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+
+  #phone { position: absolute; width: 430px; height: 904px; left: 1130px; top: 88px; border-radius: 70px; padding: 12px;
+    background: linear-gradient(145deg, #4a4a4e, #1c1c1f 30%, #2e2e31 60%, #121214); box-shadow: 0 70px 160px rgba(0,0,0,0.95), inset 0 0 0 2px rgba(255,255,255,0.08); }
+  #phone .glass { position: relative; width: 100%; height: 100%; border-radius: 58px; overflow: hidden; background: #000; box-shadow: 0 0 0 3px #050505; }
+  #phone .glass .vp { position: absolute; left: 0; right: 0; top: 54px; height: 691px; overflow: hidden; }
+  #phone .glass .vp img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #phone .status { position: absolute; left: 0; right: 0; top: 0; height: 54px; display: flex; align-items: center; justify-content: space-between; padding: 6px 34px 0 40px; font: 600 16px Inter, sans-serif; color: #fff; }
+  #phone .status .ic { display: flex; gap: 6px; align-items: center; }
+  #phone .safari { position: absolute; left: 0; right: 0; bottom: 0; height: 135px; background: rgba(20,20,22,0.96); border-top: 1px solid rgba(255,255,255,0.06); }
+  #phone .safari .pill { position: absolute; left: 16px; right: 16px; top: 12px; height: 46px; border-radius: 14px; background: #2a2a2d; display: flex; align-items: center; justify-content: center; gap: 7px; font: 500 16px Inter, sans-serif; color: #f2f2f2; }
+  #phone .safari .home { position: absolute; left: 50%; bottom: 9px; width: 136px; height: 5px; margin-left: -68px; border-radius: 3px; background: #fff; }
+  #phone .island { position: absolute; top: 14px; left: 50%; width: 118px; height: 34px; margin-left: -59px; border-radius: 20px; background: #000; z-index: 5; }
+  #phone .btn { position: absolute; width: 4px; border-radius: 2px; background: #2a2a2d; }
+  .tap { position: absolute; width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.9); background: rgba(255,255,255,0.18); z-index: 6; opacity: 0; }
+
+  /* captions */
+  #cap { position: absolute; left: 0; right: 0; top: auto; bottom: 0; height: 240px; background: linear-gradient(transparent, rgba(0,0,0,0.85)); }
+  #cap .c { position: absolute; left: 50%; bottom: 52px; transform: translateX(-50%); display: flex; align-items: center; gap: 22px; white-space: nowrap; }
+  #cap .n { font-family: "JetBrains Mono", monospace; font-size: 18px; color: #000; background: #fff; border-radius: 999px; padding: 6px 14px; letter-spacing: 0.1em; }
+  #cap .t { font-size: 38px; }
+
+  #left { position: absolute; left: 150px; top: 50%; transform: translateY(-50%); width: 900px; }
+  #left .big { font-size: 112px; }
+  #left .mono { margin-top: 34px; font-size: 20px; }
+  .lineMask { overflow: hidden; padding-bottom: 0.06em; }
+  .line { display: block; }
+
+  #feat { display: grid; place-items: center; text-align: center; }
+  #feat .f { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); }
+  #feat .big { font-size: 150px; }
+  #feat .mono { margin-top: 40px; font-size: 21px; color: #a8a8a8; }
+
+  #void { overflow: hidden; }
+  #void img { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1200px; margin: -600px 0 0 -960px; object-fit: cover; }
+  #voidCap { position: absolute; left: 0; right: 0; bottom: 70px; text-align: center; }
+  #voidCap .t { font-size: 54px; }
+
+  #end { display: grid; place-items: center; }
+  #end .stack { display: flex; flex-direction: column; align-items: center; }
+  #endWord { height: 104px; }
+  #endUrl { margin-top: 44px; font-family: "JetBrains Mono", monospace; font-size: 30px; letter-spacing: 0.14em; color: #fff; border: 1px solid rgba(255,255,255,0.25); border-radius: 999px; padding: 14px 34px; }
+  #endTag { margin-top: 30px; }
+  #made { position: absolute; left: 0; right: 0; bottom: 56px; display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 18px; color: #8a8a8a; }
+  #made b { color: #fff; font-weight: 500; }
+  #flash { background: #fff; opacity: 0; }
+  #vignette { background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.65)); }
+  #grain { opacity: 0.022; mix-blend-mode: screen; }
+</style>
+</head>
+<body>
+<canvas id="stars" width="1920" height="1080"></canvas>
+<canvas id="orbs" width="1920" height="1080"></canvas>
+
+<div class="layer" id="logo">
+  <img id="emblem" src="emblem.svg" />
+  <div class="stack">
+    <div id="wordmarkWrap"><img id="wordmark" src="logo.svg" /></div>
+    <div class="mono" id="tag">Send anything · to any device · instantly</div>
+  </div>
+</div>
+
+<div class="layer" id="kin"></div>
+
+<div class="layer" id="void"><img id="voidImg" /><div id="voidCap"><div class="wide t">Live. In the void.</div><div class="mono" style="margin-top:18px">every view · every download · in real time</div></div></div>
+
+<div class="layer" id="stage">
+  <div id="browser">
+    <div class="bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i>
+      <div class="url"><svg viewBox="0 0 12 12"><rect x="2" y="5.5" width="8" height="6" rx="1.2" fill="#cfcfcf"/><path d="M4 5.5V4a2 2 0 0 1 4 0v1.5" stroke="#cfcfcf" stroke-width="1.3" fill="none"/></svg>orbitransfer.com</div>
+    </div>
+    <div class="screen"><img id="bA" /><img id="bB" /></div>
+  </div>
+  <div id="phone">
+    <i class="btn" style="left:-3px;top:180px;height:40px"></i><i class="btn" style="left:-3px;top:250px;height:70px"></i><i class="btn" style="right:-3px;top:260px;height:110px"></i>
+    <div class="glass">
+      <div class="status"><span>9:41</span><span class="ic"><svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" fill="#fff"/><rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="#fff"/><rect x="10" y="3" width="3" height="9" rx="1" fill="#fff"/><rect x="15" y="0" width="3" height="12" rx="1" fill="#fff"/></svg><svg width="27" height="13" viewBox="0 0 27 13"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke="#fff" opacity="0.5" fill="none"/><rect x="2" y="2" width="18" height="9" rx="2" fill="#fff"/><rect x="25" y="4.5" width="1.6" height="4" rx="0.8" fill="#fff" opacity="0.5"/></svg></span></div>
+      <div class="vp"><img id="pA" /><div class="tap" id="tap"></div></div>
+      <div class="island"></div>
+      <div class="safari"><div class="pill"><svg width="11" height="13" viewBox="0 0 12 12"><rect x="2" y="5.5" width="8" height="6" rx="1.2" fill="#ddd"/><path d="M4 5.5V4a2 2 0 0 1 4 0v1.5" stroke="#ddd" stroke-width="1.3" fill="none"/></svg>orbitransfer.com</div><div class="home"></div></div>
+    </div>
+  </div>
+  <div id="left"></div>
+</div>
+
+<div class="layer" id="feat"></div>
+<div class="layer" id="cap"></div>
+
+<div class="layer" id="end">
+  <div class="stack">
+    <img id="endWord" src="logo.svg" />
+    <div id="endUrl">orbitransfer.com</div>
+    <div class="mono" id="endTag">free · no login · end-to-end encrypted</div>
+  </div>
+  <div id="made">made with <svg viewBox="0 0 10 9" width="15" height="14"><path d="M1 0H4L5 1L6 0H9L10 1V4.2L5 9L0 4.2V1Z" fill="#fff"/><rect x="6.6" y="1.6" width="1.4" height="1.4" fill="#000" opacity="0.55"/></svg> by <b>Mohit</b></div>
+</div>
+
+<div class="layer" id="vignette"></div>
+<canvas class="layer" id="grain" width="960" height="540" style="width:1920px;height:1080px"></canvas>
+<div class="layer" id="flash"></div>
+
+<script>
+// ---------------- timing helpers ----------------
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, k) => a + (b - a) * k;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const eOut3 = (k) => 1 - Math.pow(1 - k, 3);
+const eInOut3 = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+const eOutExpo = (k) => (k >= 1 ? 1 : 1 - Math.pow(2, -10 * k));
+const eInExpo = (k) => (k <= 0 ? 0 : Math.pow(2, 10 * k - 10));
+const eOutBack = (k, s = 1.4) => 1 + (s + 1) * Math.pow(k - 1, 3) + s * Math.pow(k - 1, 2);
+const spring = (k) => (k >= 1 ? 1 : 1 - Math.exp(-6.5 * k) * Math.cos(9 * k)); // damped
+const $ = (id) => document.getElementById(id);
+const show = (el, o) => { el.style.opacity = o; el.style.visibility = o <= 0.001 ? "hidden" : "visible"; };
+
+// ---------------- deterministic RNG ----------------
+let seed = 7;
+const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+
+// ---------------- starfield ----------------
+const S = $("stars").getContext("2d");
+const STARS = Array.from({ length: 900 }, () => ({ x: rnd() * 1920, y: rnd() * 1080, z: 0.15 + rnd() * 0.85, p: rnd() * 6.28, r: rnd() }));
+function drawStars(t, speed, alpha) {
+  S.clearRect(0, 0, 1920, 1080);
+  if (alpha <= 0) return;
+  for (const s of STARS) {
+    const x = ((s.x - speed * s.z * 60) % 1920 + 1920) % 1920;
+    const tw = 0.55 + 0.45 * Math.sin(t * (1.2 + s.r * 2) + s.p);
+    const a = alpha * (0.25 + 0.75 * s.z) * tw;
+    const size = s.z > 0.92 ? 2.2 : s.z > 0.7 ? 1.5 : 1;
+    S.fillStyle = `rgba(255,255,255,${a})`;
+    S.fillRect(x, s.y, size, size);
+  }
+}
+
+// ---------------- metallic spheres (features scene) ----------------
+const O = $("orbs").getContext("2d");
+const ORBS = [
+  { x: 260, y: 230, r: 120, h: 205, d: 0.6 }, { x: 1650, y: 210, r: 90, h: 32, d: 0.9 },
+  { x: 1560, y: 820, r: 150, h: 150, d: 0.4 }, { x: 330, y: 860, r: 70, h: 330, d: 1.1 },
+  { x: 980, y: 120, r: 46, h: 280, d: 1.3 }, { x: 1180, y: 960, r: 54, h: 95, d: 1.0 },
+];
+function sphere(x, y, r, h, a) {
+  const g = O.createRadialGradient(x - r * 0.36, y - r * 0.44, r * 0.05, x, y, r);
+  g.addColorStop(0, `hsla(${h},60%,82%,${a})`);
+  g.addColorStop(0.5, `hsla(${h},45%,44%,${a})`);
+  g.addColorStop(1, `hsla(${h},40%,12%,${a})`);
+  O.fillStyle = g;
+  O.beginPath(); O.arc(x, y, r, 0, Math.PI * 2); O.fill();
+  O.strokeStyle = `hsla(${h},40%,75%,${a * 0.35})`; O.lineWidth = 1.5;
+  O.beginPath(); O.arc(x, y, r * 1.22, 0, Math.PI * 2); O.stroke();
+}
+function drawOrbs(t, a) {
+  O.clearRect(0, 0, 1920, 1080);
+  if (a <= 0) return;
+  for (const o of ORBS) sphere(o.x + Math.sin(t * 0.5 * o.d + o.h) * 26, o.y + Math.cos(t * 0.4 * o.d + o.h) * 20 - (t - 20) * 14 * o.d, o.r, o.h, a);
+}
+
+// ---------------- film grain ----------------
+const G = $("grain").getContext("2d");
+const grainImg = G.createImageData(960, 540);
+function drawGrain(f) {
+  let s = (f * 9301 + 49297) % 233280;
+  const d = grainImg.data;
+  for (let i = 0; i < d.length; i += 4) { s = (s * 9301 + 49297) % 233280; const v = (s / 233280) * 255; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+  G.putImageData(grainImg, 0, 0);
+}
+
+// ---------------- image sequences ----------------
+let SEQ = {};
+const cur = {};
+async function setImg(el, src) {
+  if (!src) { el.style.opacity = 0; return; }
+  if (cur[el.id] !== src) { cur[el.id] = src; el.src = src; try { await el.decode(); } catch {} }
+}
+const at = (name, k) => { const s = SEQ[name]; return s[Math.max(0, Math.min(s.length - 1, Math.floor(k)))]; };
+
+// ---------------- kinetic words ----------------
+const WORDS = [["DROP.", "any file"], ["LOCK.", "with a passcode"], ["BEAM.", "to any device"], ["BURN.", "after 30 minutes"]];
+$("kin").innerHTML = WORDS.map((w, i) => `<div class="wide word" id="w${i}">${w[0]}</div><div class="mono sub" id="ws${i}">${w[1]}</div>`).join("");
+
+const FEATS = [
+  ["End-to-end<br>encrypted.", "AES-256 · decrypted only on the receiving device"],
+  ["No login.<br>No app.", "open the link · enter the passcode · done"],
+  ["Files. Folders.<br>Links.", "photos · videos · whole folders · up to 2 GB"],
+  ["Gone in<br>30 minutes.", "every object burns up · no traces"],
+];
+$("feat").innerHTML = FEATS.map((f, i) => `<div class="f" id="f${i}"><div class="lineMask"><div class="wide big line" id="fl${i}">${f[0]}</div></div><div class="mono" id="fs${i}">${f[1]}</div></div>`).join("");
+
+const LEFT = [
+  ["Opens on<br>any device.", "no app · no account · just the passcode"],
+  ["Saves where<br>you choose.", "photos · files · icloud drive"],
+];
+$("left").innerHTML = LEFT.map((l, i) => `<div id="l${i}" style="position:absolute;top:0;left:0;width:900px;transform:translateY(-50%)"><div class="lineMask"><div class="wide big line" id="ll${i}">${l[0]}</div></div><div class="mono" id="ls${i}">${l[1]}</div></div>`).join("");
+
+const CAPS = [["01", "Drop anything in"], ["02", "Lock it with a passcode"], ["03", "It's in orbit. Instantly."]];
+$("cap").innerHTML = CAPS.map((c, i) => `<div class="c" id="c${i}"><span class="n">${c[0]}</span><span class="wide t">${c[1]}</span></div>`).join("");
+
+// ---------------- the film ----------------
+const T = { logo: [0, 3.4], kin: [3.4, 6.5], desk: [6.5, 14.5], phone: [14.5, 20.3], feat: [20.3, 25.9], void: [25.9, 29.0], end: [29.0, 32.5] };
+window.DURATION = 32.5;
+
+window.render = async function (t, f) {
+  // stars: drift, speed up in the kinetic scene
+  const warp = prog(t, 3.3, 3.6) * (1 - prog(t, 6.3, 6.7));
+  drawStars(t, t * 0.6 + warp * (t - 3.3) * 8, (1 - prog(t, 6.5, 7.2) * 0.55) * prog(t, 0, 0.9) * (t > 29.0 ? 1 : 1));
+  drawGrain(f);
+
+  // ----- logo -----
+  {
+    const vis = t < T.logo[1] + 0.05;
+    const k1 = eOutBack(prog(t, 0.25, 1.05), 1.6);
+    const out = eInExpo(prog(t, 2.95, 3.4));
+    const hand = eInOut3(prog(t, 1.15, 1.55));
+    $("emblem").style.transform = `scale(${lerp(0.5, 1, k1) * (1 - hand * 0.55)}) rotate(${lerp(-30, 0, eOut3(prog(t, 0.25, 1.1)))}deg)`;
+    $("emblem").style.opacity = prog(t, 0.25, 0.6) * (1 - hand);
+    const k2 = eInOut3(prog(t, 1.25, 2.15));
+    $("wordmarkWrap").style.clipPath = `inset(0 ${100 - k2 * 100}% 0 0)`;
+    $("wordmark").style.transform = `translateX(${lerp(-40, 0, eOut3(prog(t, 1.05, 2.1)))}px)`;
+    $("wordmarkWrap").style.opacity = 1 - out;
+    const k3 = eOut3(prog(t, 1.8, 2.6));
+    $("tag").style.opacity = k3 * (1 - out);
+    $("tag").style.letterSpacing = `${lerp(0.6, 0.22, k3)}em`;
+    $("logo").style.transform = `scale(${1 + out * 0.25})`;
+    show($("logo"), vis ? 1 : 0);
+  }
+
+  // ----- kinetic words -----
+  {
+    show($("kin"), t >= 3.35 && t < 6.6 ? 1 : 0);
+    WORDS.forEach((w, i) => {
+      const s = 3.45 + i * 0.75, e = s + 0.75;
+      const kin = eOutExpo(prog(t, s, s + 0.32));
+      const ko = prog(t, e - 0.12, e);
+      const last = i === 3;
+      const hold = last ? prog(t, e - 0.12, 6.5) : 0;
+      const el = $("w" + i), sub = $("ws" + i);
+      const a = t < s || (!last && t > e) || (last && t > 6.5) ? 0 : kin * (last ? 1 - eInExpo(prog(t, 6.15, 6.5)) : 1 - ko);
+      el.style.opacity = a;
+      el.style.transform = `translate(-50%,-56%) scale(${lerp(1.45, 1, kin) * (last ? 1 + hold * 0.06 : 1)})`;
+      el.style.letterSpacing = `${lerp(0.12, -0.02, kin)}em`;
+      sub.style.opacity = a * prog(t, s + 0.12, s + 0.34);
+    });
+    $("flash").style.opacity = 0.0;
+  }
+
+  // ----- desktop: browser with the real site -----
+  {
+    const [a, b] = T.desk;
+    const vis = t >= a && t < T.phone[0] + 0.7;
+    show($("browser"), vis ? 1 : 0);
+    const ct = t - a;
+    // content timeline: idle 1.2 → split 1.3 → hold → send (open .8, typing .8, hold .35, launch 3.2)
+    const cut = 2.85;
+    let srcA = null, srcB = null, mix = 0;
+    if (ct < 1.2) srcA = at("idle", ct * 60);
+    else if (ct < cut) srcA = at("split", (ct - 1.2) * 60);
+    if (ct >= cut - 0.25) {
+      const st = Math.max(0, ct - cut);
+      srcB = at("send", st * 60);
+      mix = eInOut3(prog(ct, cut - 0.25, cut + 0.05));
+      if (ct >= cut + 0.05) srcA = null;
+    }
+    if (!srcA && ct < 1.2) srcA = at("idle", 0);
+    await setImg($("bA"), srcA || srcB);
+    await setImg($("bB"), srcB);
+    $("bA").style.opacity = srcA ? 1 : 0;
+    $("bB").style.opacity = srcB ? (srcA ? mix : 1) : 0;
+
+    // camera
+    const enter = eOut3(prog(t, a, a + 1.0));
+    let sc = lerp(0.86, 1, enter), rx = lerp(16, 0, enter), ty = lerp(160, 0, enter), tx = 0;
+    sc *= 1 + 0.07 * eInOut3(prog(ct, 0.9, cut));
+    // push into the send card while typing, ease back out for the launch
+    const zin = eInOut3(prog(ct, cut, cut + 1.6));
+    const zout = eInOut3(prog(ct, cut + 2.0, cut + 2.9));
+    sc *= 1 + 0.42 * zin * (1 - zout);
+    ty += 10 * zin * (1 - zout);
+    sc *= 1 + 0.06 * eInOut3(prog(ct, cut + 3.0, cut + 5.2));
+    // exit to the left for the phone
+    const ex = eInOut3(prog(t, T.phone[0], T.phone[0] + 0.7));
+    tx += -260 * ex; sc *= 1 - 0.12 * ex;
+    $("browser").style.transform = `translate(${tx}px, ${ty}px) rotateX(${rx}deg) scale(${sc})`;
+    $("browser").style.opacity = enter * (1 - ex);
+    $("browser").style.filter = ex > 0 ? `blur(${ex * 8}px)` : "none";
+
+    // captions
+    const caps = [[a + 0.9, a + cut - 0.1], [a + cut + 0.1, a + cut + 1.95], [a + cut + 2.1, b - 0.15]];
+    let any = 0;
+    caps.forEach(([s, e], i) => {
+      const k = eOut3(prog(t, s, s + 0.4)) * (1 - prog(t, e - 0.2, e));
+      const el = $("c" + i);
+      el.style.opacity = k;
+      el.style.transform = `translate(-50%, ${lerp(24, 0, eOut3(prog(t, s, s + 0.4)))}px)`;
+      any = Math.max(any, k);
+    });
+    show($("cap"), t >= a && t < b ? 1 : 0);
+  }
+
+  // ----- phone: receiving on an iPhone -----
+  {
+    const [a, b] = T.phone;
+    const vis = t >= a && t < b + 0.05;
+    show($("phone"), vis ? 1 : 0);
+    show($("left"), vis ? 1 : 0);
+    const enter = prog(t, a + 0.15, a + 1.15);
+    const ex = eInExpo(prog(t, b - 0.45, b));
+    $("phone").style.transform = `translate(0, ${lerp(520, 0, spring(enter)) + ex * 60}px) rotate(${lerp(-8, 0, spring(enter))}deg) scale(${1 - ex * 0.08})`;
+    $("phone").style.opacity = prog(t, a + 0.15, a + 0.5) * (1 - ex);
+    const ct = Math.max(0, t - (a + 0.55));
+    await setImg($("pA"), at("phone", ct * 60));
+    $("pA").style.opacity = 1;
+    // taps where the real taps happened
+    const tp = $("tap");
+    const P = window.PHONE_MARKS;
+    const taps = [[P.decryptAt / 60, 0.5, 0.936], [P.saveAt / 60, 0.5, 0.82]];
+    let shown = false;
+    for (const [tt, x, y] of taps) {
+      const k = prog(ct, tt - 0.12, tt + 0.38);
+      if (k > 0 && k < 1) {
+        shown = true;
+        tp.style.left = x * 100 + "%"; tp.style.top = y * 100 + "%";
+        tp.style.opacity = Math.sin(k * Math.PI) * 0.9;
+        tp.style.transform = `scale(${lerp(0.5, 1.25, eOut3(k))})`;
+      }
+    }
+    if (!shown) tp.style.opacity = 0;
+
+    // left headlines
+    const L = [[a + 0.5, a + 2.9], [a + 3.05, b - 0.2]];
+    L.forEach(([s, e], i) => {
+      const kin = eOutExpo(prog(t, s, s + 0.55));
+      const ko = eInExpo(prog(t, e - 0.3, e));
+      $("ll" + i).style.transform = `translateY(${lerp(105, 0, kin) + ko * -105}%)`;
+      $("ls" + i).style.opacity = prog(t, s + 0.2, s + 0.6) * (1 - prog(t, e - 0.3, e - 0.1));
+      $("l" + i).style.opacity = t >= s && t < e ? 1 : 0;
+    });
+  }
+
+  // ----- features -----
+  {
+    const [a, b] = T.feat;
+    const vis = t >= a - 0.1 && t < b + 0.1;
+    show($("feat"), vis ? 1 : 0);
+    drawOrbs(t, vis ? prog(t, a - 0.2, a + 0.6) * (1 - prog(t, b - 0.4, b)) : 0);
+    const d = (b - a) / 4;
+    FEATS.forEach((_, i) => {
+      const s = a + i * d, e = s + d;
+      const kin = eOutExpo(prog(t, s + 0.02, s + 0.55));
+      const ko = eInExpo(prog(t, e - 0.28, e));
+      $("fl" + i).style.transform = `translateY(${lerp(110, 0, kin) - ko * 110}%)`;
+      $("fs" + i).style.opacity = prog(t, s + 0.22, s + 0.6) * (1 - prog(t, e - 0.3, e - 0.12));
+      $("fs" + i).style.letterSpacing = `${lerp(0.4, 0.22, eOut3(prog(t, s + 0.2, s + 0.8)))}em`;
+      $("f" + i).style.opacity = t >= s && t < e ? 1 : 0;
+    });
+  }
+
+  // ----- the live void -----
+  {
+    const [a, b] = T.void;
+    const vis = t >= a && t < b;
+    show($("void"), vis ? prog(t, a, a + 0.45) * (1 - prog(t, b - 0.45, b)) : 0);
+    if (vis) {
+      const ct = t - a;
+      const s = $("voidImg");
+      await setImg(s, at("void", ct * 60));
+      s.style.opacity = 1;
+      s.style.transform = `scale(${lerp(1.14, 1.0, eOut3(prog(ct, 0, b - a)))})`;
+      const k = eOut3(prog(t, a + 0.5, a + 1.1)) * (1 - prog(t, b - 0.6, b - 0.3));
+      $("voidCap").style.opacity = k;
+      $("voidCap").style.transform = `translateY(${lerp(30, 0, k)}px)`;
+    }
+  }
+
+  // ----- end card -----
+  {
+    const [a, b] = T.end;
+    const vis = t >= a;
+    show($("end"), vis ? 1 - prog(t, b - 0.5, b) : 0);
+    const k2 = eInOut3(prog(t, a + 0.2, a + 1.1));
+    $("endWord").style.clipPath = `inset(0 ${100 - k2 * 100}% 0 0)`;
+    $("endWord").style.transform = `scale(${lerp(1.08, 1, eOut3(prog(t, a + 0.2, a + 1.6)))})`;
+    const k3 = eOut3(prog(t, a + 1.2, a + 1.8));
+    $("endUrl").style.opacity = k3; $("endUrl").style.transform = `translateY(${lerp(20, 0, k3)}px)`;
+    const k4 = eOut3(prog(t, a + 1.5, a + 2.1));
+    $("endTag").style.opacity = k4;
+    $("made").style.opacity = eOut3(prog(t, a + 1.9, a + 2.5));
+  }
+  return true;
+};
+window.ready = (async () => { await document.fonts.ready; await Promise.all([...document.images].filter((i) => i.src).map((i) => i.decode().catch(() => {}))); return true; })();
+</script>
+</body>
+</html>
