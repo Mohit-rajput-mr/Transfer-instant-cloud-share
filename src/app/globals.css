@@ -1392,3 +1392,73 @@ html.lg-refract :is(.top, .drawer, .send-menu, .up-pill, .up-card, .send-fab).lg
   .void.in-space.flow { --flow-min: calc(436px + var(--safe-t)); }
   .void.in-space { min-height: calc(var(--vh-s) + 120px); }
 }
+/* HQ section tabs (header) */
+.hq-tabs { display: flex; gap: 4px; padding: 3px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); }
+.hq-tabs button { height: 30px; padding: 0 12px; border-radius: 9px; font-family: var(--font-chip), var(--sans); font-weight: 500; text-transform: uppercase; letter-spacing: 0.12em; font-size: 10.5px; color: #bbb; display: inline-flex; align-items: center; gap: 6px; }
+.hq-tabs button b { font-weight: 500; color: var(--live); }
+.hq-tabs button.on { background: #fff; color: #000; }
+.hq-tabs button.on b { color: #0a7a3c; }
+.hq-expand { top: calc(48px + var(--safe-t)); z-index: 9; }
+@media (max-width: 860px) { .hq-top { flex-wrap: wrap; height: auto; padding-block: 8px; } .hq-tabs { order: 5; width: 100%; overflow-x: auto; } .hq-expand { top: calc(96px + var(--safe-t)); } }
+
+/* ---------------- Real glass: clear body, bright hairline edge, top highlight, bottom glint ---------------- */
+.glass {
+  position: relative; isolation: isolate;
+  background:
+    linear-gradient(155deg, rgba(225,235,255,0.20) 0%, rgba(210,222,245,0.07) 38%, rgba(190,205,235,0.04) 62%, rgba(215,228,255,0.12) 100%);
+  border: 1px solid rgba(255,255,255,0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.75),
+    inset 0 -1px 0 rgba(255,255,255,0.28),
+    inset 1px 0 0 rgba(255,255,255,0.18), inset -1px 0 0 rgba(255,255,255,0.18),
+    inset 0 0 40px rgba(200,220,255,0.06),
+    0 18px 50px rgba(0,0,0,0.45);
+  -webkit-backdrop-filter: blur(16px) saturate(170%) brightness(1.08); backdrop-filter: blur(16px) saturate(170%) brightness(1.08);
+}
+/* sheen across the top-left, like light on a pane */
+.glass::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+  background: linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.04) 32%, transparent 55%); }
+/* the bright glint where light catches the bottom edge */
+.glass::after { content: ""; position: absolute; left: 50%; bottom: -1px; width: min(36%, 220px); height: 14px; translate: -50% 0; pointer-events: none;
+  background: radial-gradient(50% 100% at 50% 100%, rgba(255,255,255,0.95), rgba(255,255,255,0.35) 40%, transparent 75%); filter: blur(0.5px); }
+
+.room { z-index: 0; }
+.room-glass.glass { border-radius: 40px; }
+.void .empty { z-index: 4; }
+.room-top { align-items: flex-start; }
+.room-exit { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border-radius: 12px; pointer-events: auto; order: 3; margin-left: 10px;
+  font-family: var(--font-chip), var(--sans); font-weight: 500; text-transform: uppercase; letter-spacing: 0.12em; font-size: 10.5px; color: #fff; flex: none; }
+.room-exit svg { width: 15px; height: 15px; }
+.room-exit::after { width: 50%; height: 8px; }
+.room-name { order: 1; margin-right: auto; }
+.room-crew { order: 2; }
+/* member bubbles as little glass spheres */
+.crew i { background: radial-gradient(circle at 32% 26%, rgba(255,255,255,0.55), transparent 34%), radial-gradient(circle at 50% 70%, hsl(var(--hue) 55% 50% / 0.55), hsl(var(--hue) 50% 22% / 0.6));
+  border: 1px solid rgba(255,255,255,0.6); box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -4px 10px rgba(255,255,255,0.12), 0 6px 18px rgba(0,0,0,0.45);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.join-bubble.glass { background: linear-gradient(155deg, rgba(225,235,255,0.22), rgba(210,222,245,0.08) 45%, rgba(215,228,255,0.14)); }
+.sp-quit { color: var(--danger); border-color: rgba(255,59,48,0.35) !important; }
+.sp-quit.arm { background: rgba(255,59,48,0.12); }
+@media (max-width: 720px) {
+  .room-top { margin-top: calc(70px + var(--safe-t)); flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .room-name { width: calc(100% - 90px); }
+  .room-exit { order: 2; margin-left: 0; }
+  .room-crew { order: 3; width: 100%; }
+  .room-glass, .room-glass.glass { inset: calc(250px + var(--safe-t)) 10px 16px; border-radius: 30px; }
+  .void.in-space.flow { --flow-min: calc(356px + var(--safe-t)); }
+  /* the send button floats above the glass, never behind it */
+  .send-fab { z-index: 40; }
+}
+.room-glass.glass { position: absolute; }
+@media (max-width: 720px) {
+  .room-glass, .room-glass.glass { inset: calc(284px + var(--safe-t)) 10px 16px; }
+  .void.in-space.flow { --flow-min: calc(392px + var(--safe-t)); }
+}
+/* on a black sky the pane needs a little more light to read as glass */
+.glass { background: linear-gradient(155deg, rgba(228,238,255,0.27) 0%, rgba(212,226,250,0.10) 34%, rgba(196,212,240,0.06) 60%, rgba(222,234,255,0.16) 100%); }
+.room-glass.glass { box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -1px 0 rgba(255,255,255,0.3), inset 1px 0 0 rgba(255,255,255,0.22), inset -1px 0 0 rgba(255,255,255,0.22), inset 0 0 60px rgba(190,215,255,0.08), 0 24px 70px rgba(0,0,0,0.5); }
+@media (max-width: 720px) {
+  .room-top { margin-top: calc(18px + var(--safe-t)); }
+  .room-glass, .room-glass.glass { inset: calc(232px + var(--safe-t)) 10px 16px; }
+  .void.in-space.flow { --flow-min: calc(340px + var(--safe-t)); }
+}

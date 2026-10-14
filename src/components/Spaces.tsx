@@ -66,10 +66,13 @@ export default function SpacePanel(props: {
   start?: string;
   onEnter: (s: SpaceSession) => void;
   onLeave: () => void;
+  /** leave the space for good: removed from its members, forgotten on this device */
+  onQuit: () => void;
   onClose: () => void;
   toast: (t: string) => void;
 }) {
   const { current, info } = props;
+  const [quitArm, setQuitArm] = useState(false);
   const [tab, setTab] = useState<Tab>(props.start ? "browse" : current ? "here" : "browse");
   const [q, setQ] = useState(props.start ?? "");
   const [hits, setHits] = useState<SpaceHit[] | null>(null);
@@ -128,7 +131,10 @@ export default function SpacePanel(props: {
           <p className="note">Only people in this space see what is launched here. Everyone in it floats as a bubble at the top of the glass{info?.owner ? "; tap one to remove them" : ""}.</p>
           <div className="sp-acts">
             <button className="ghost-btn lg-press" onClick={copyInvite}>Copy invite link</button>
-            <button className="cta lg-press" onClick={props.onLeave}>Back to the public void</button>
+            <button className="cta lg-press" onClick={props.onLeave}>Exit to the public void</button>
+            <button className={`ghost-btn lg-press sp-quit${quitArm ? " arm" : ""}`} onClick={() => (quitArm ? props.onQuit() : setQuitArm(true))}>
+              {quitArm ? "Tap again: leave for good" : "Leave this space for good"}
+            </button>
           </div>
         </div>
       )}
@@ -260,7 +266,7 @@ function JoinBubble(props: { hit: SpaceHit; handle0: string; onClose: () => void
   };
   return (
     <div className="join-wrap" onClick={(e) => e.target === e.currentTarget && props.onClose()}>
-      <div className="join-bubble lg" style={{ "--hue": hueOf(hit.slug) } as CSSProperties}>
+      <div className="join-bubble glass" style={{ "--hue": hueOf(hit.slug) } as CSSProperties}>
         <i className="sp-orb big" />
         <span className="mono dim">Entering</span>
         <div className="wide sp-title">{hit.title}{hit.priv && <Lock />}</div>
@@ -286,7 +292,7 @@ function JoinBubble(props: { hit: SpaceHit; handle0: string; onClose: () => void
  * Inside a space the void sits under one big pane of glass (corners left open, like a ship's canopy),
  * with everyone in the space floating as bubbles along its top edge. Live ones glow; the creator can remove anyone.
  */
-export function SpaceRoom(props: { space: SpaceSession; info: SpaceInfo | null; online: Set<string>; onKick: (id: string, handle: string) => void }) {
+export function SpaceRoom(props: { space: SpaceSession; info: SpaceInfo | null; online: Set<string>; onKick: (id: string, handle: string) => void; onExit: () => void }) {
   const { space, info, online } = props;
   const [arm, setArm] = useState<string | null>(null);
   useEffect(() => {
@@ -298,12 +304,16 @@ export function SpaceRoom(props: { space: SpaceSession; info: SpaceInfo | null; 
   const live = members.filter((m) => online.has(m.id) || m.you).length;
   return (
     <div className="room" aria-label={`Space ${space.title}`}>
-      <div className="room-glass" aria-hidden><i className="c tl" /><i className="c tr" /><i className="c bl" /><i className="c br" /></div>
+      <div className="room-glass glass" aria-hidden />
       <div className="room-top">
         <div className="room-name">
           <span className="mono dim">{space.priv ? "private space" : "space"} · {live} live</span>
           <b className="wide">{space.title}</b>
         </div>
+        <button className="room-exit glass lg-press" onClick={props.onExit} aria-label="Exit this space, back to the public void">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" /><path d="M10 16l-4-4 4-4" /><path d="M6 12h10" /></svg>
+          Exit
+        </button>
         <div className="room-crew">
           {members.slice(0, 14).map((m) => (
             <button

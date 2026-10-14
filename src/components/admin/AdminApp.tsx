@@ -44,6 +44,20 @@ export default function AdminApp() {
     load();
   }, [load]);
 
+  // a new deploy reloads HQ by itself, so it never shows an old build
+  useEffect(() => {
+    let first: string | null = null;
+    const check = async () => {
+      const v = await fetch("/api/version", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => d?.v as string | undefined).catch(() => undefined);
+      if (!v) return;
+      if (first === null) first = v;
+      else if (v !== first) window.location.reload();
+    };
+    check();
+    const t = setInterval(check, 60_000);
+    return () => clearInterval(t);
+  }, []);
+
   useEffect(() => {
     if (auth !== "in") return;
     const t = setInterval(load, 5000);
@@ -145,6 +159,12 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
           <img className="brand-logo" src="/logo.svg" alt="ORBITRANSFER" width={180} height={24} />
           <span className="brand-by">Mission HQ</span>
         </Link>
+        <nav className="hq-tabs" aria-label="HQ sections">
+          <button className={!expand ? "on" : ""} onClick={() => setExpand(null)}>Globe</button>
+          <button className={expand === "objects" ? "on" : ""} onClick={() => setExpand("objects")}>Objects <b>{data?.transfers.length ?? 0}</b></button>
+          <button className={expand === "spaces" ? "on" : ""} onClick={() => setExpand("spaces")}>Spaces <b>{spaces?.length ?? 0}</b></button>
+          <button className={expand === "cities" ? "on" : ""} onClick={() => setExpand("cities")}>Places</button>
+        </nav>
         <span className="live"><span className="dot" /><b>{n(data?.online)}</b> online now</span>
         <span className="mono dim hq-clock">{new Date(now).toLocaleTimeString()}</span>
         <button className="pill" onClick={logout}>Lock</button>
@@ -176,8 +196,23 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
             <Tile label="Uploads today" value={n(today.uploads)} sub={formatBytes(today.bytes_up ?? 0)} />
             <Tile label="Downloads today" value={n(today.downloads)} sub={formatBytes(today.bytes_down ?? 0)} />
             <Tile label="Devices all-time" value={n(data?.devices)} sub={`${n(data?.visits)} visits`} />
+            <Tile label="Spaces" value={n(spaces?.length)} sub={`${n(spaces?.filter((x) => x.priv).length)} private · ${n(spaces?.reduce((a, x) => a + x.members.length, 0))} members`} />
+            <Tile label="Open objects now" value={n(data?.transfers.filter((t) => t.open).length)} sub={`${n(data?.transfers.filter((t) => !t.open).length)} with passcode`} />
+            <Tile label="In spaces now" value={n(data?.transfers.filter((t) => t.space).length)} sub={`${n(data?.transfers.filter((t) => !t.space).length)} in the public void`} />
             <Tile label="Data moved all-time" value={formatBytes((data?.totals.bytes_up ?? 0) + (data?.totals.bytes_down ?? 0))} sub={`${n(data?.totals.uploads)} up · ${n(data?.totals.downloads)} down`} />
           </div>
+
+          <Panel title="Spaces" right={`${spaces?.length ?? "…"}`} onExpand={() => setExpand("spaces")}>
+            <div className="hq-list">
+              {spaces?.length ? spaces.slice(0, 6).map((sp) => (
+                <div key={sp.slug} className="hq-row short">
+                  <span className="hq-flag">{sp.priv ? "🔒" : "◎"}</span>
+                  <span className="hq-name">{sp.title} <span className="mono dim">· {data?.transfers.filter((t) => t.space === sp.slug).length ?? 0} objects</span></span>
+                  <b>{sp.members.length}</b>
+                </div>
+              )) : <Empty />}
+            </div>
+          </Panel>
 
           <Panel title="Last 24 hours">
             <Hourly data={data} />
@@ -192,18 +227,6 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
                   <span className="hq-live">{c.live > 0 ? `● ${c.live}` : ""}</span>
                   <span className="hq-bar"><i style={{ width: `${(c.devices / maxCountry) * 100}%` }} /></span>
                   <b>{n(c.devices)}</b>
-                </div>
-              )) : <Empty />}
-            </div>
-          </Panel>
-
-          <Panel title="Spaces" right={`${spaces?.length ?? "…"}`} onExpand={() => setExpand("spaces")}>
-            <div className="hq-list">
-              {spaces?.length ? spaces.slice(0, 6).map((sp) => (
-                <div key={sp.slug} className="hq-row short">
-                  <span className="hq-flag">{sp.priv ? "🔒" : "◎"}</span>
-                  <span className="hq-name">{sp.title} <span className="mono dim">· {data?.transfers.filter((t) => t.space === sp.slug).length ?? 0} objects</span></span>
-                  <b>{sp.members.length}</b>
                 </div>
               )) : <Empty />}
             </div>

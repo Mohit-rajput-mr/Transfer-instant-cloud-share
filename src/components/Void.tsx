@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 import { deviceId, deviceInfo, dropOwnerKey, ownerKey, type Orb } from "@/lib/client";
 import { supabase, type RealtimeChannel } from "@/lib/realtime";
 import SpacePanel, { SpaceRoom } from "./Spaces";
-import { enterSpace as fetchRoom, forget, kickMember, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
+import { enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
 
 /** Someone else's launch, announced over realtime the moment they press Launch (before it has landed). */
 type Incoming = { key: string; by: string | null; life: number; open: boolean; name: string; size: number; files: number; hue: number; createdAt: string; net: string | null; frac: number; seen: number };
@@ -831,7 +831,10 @@ export default function Void() {
           id="void"
           style={flow ? ({ "--n": rows } as React.CSSProperties) : undefined}
         >
-          {space && <SpaceRoom space={space} info={room} online={live} onKick={kick} />}
+          {space && <SpaceRoom space={space} info={room} online={live} onKick={kick} onExit={() => {
+            switchSpace(null);
+            toast("Back in the public void");
+          }} />}
           <div className="ghost-type" aria-hidden>
             <span className="wide">Drop</span>
             <span className="wide">Lock</span>
@@ -978,6 +981,16 @@ export default function Void() {
             switchSpace(null);
             setPanel(null);
             toast("Back in the public void");
+          }}
+          onQuit={() => {
+            const sp = spaceRef.current;
+            if (sp) {
+              leaveSpace(sp);
+              forget(sp.slug);
+              toast(`You left ${sp.title}`);
+            }
+            switchSpace(null);
+            setPanel(null);
           }}
           onClose={() => setPanel(null)}
           toast={toast}
