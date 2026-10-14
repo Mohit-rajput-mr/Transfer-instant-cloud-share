@@ -1589,7 +1589,7 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
 .orb.group:hover .blob { animation-duration: 2.6s; scale: 1.03 0.97; }
 .orb-anchor.dragging .orb.group .blob { animation-duration: 1.4s; scale: 1.08 0.92; }
 .orb-anchor.flung .orb.group .blob { animation-duration: 2s; scale: 0.94 1.06; }
-.zoom-cue { position: absolute; left: 50%; top: 3%; translate: -50% 0; z-index: 3; padding: 3px 9px; border-radius: 999px; background: #fff; color: #000;
+.zoom-cue { position: absolute; left: 50%; top: -6%; translate: -50% 0; z-index: 3; padding: 3px 9px; border-radius: 999px; background: #fff; color: #000;
   font-family: var(--font-chip), var(--sans); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; }
 .orb.group:hover .zoom-cue { opacity: 1; }
 @media (hover: none) { .zoom-cue { display: none; } }
@@ -1616,6 +1616,10 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
 .mring .life { stroke: hsl(var(--sh) 75% 72%); stroke-linecap: round; }
 @keyframes orbit-turn { to { transform: rotate(360deg); } }
 .member:hover .mball { scale: 1.1; }
+.member { cursor: grab; transition: left 0.05s linear, top 0.05s linear; }
+.member.lifted { z-index: 5; animation-play-state: paused; cursor: grabbing; }
+.member.lifted .mball { scale: 1.18; box-shadow: inset -4px -5px 10px rgba(0,0,0,0.45), 0 10px 24px rgba(0,0,0,0.6); }
+.bubble-body { transition: scale 0.25s ease-out; }
 .mname { max-width: 100%; margin-top: calc(var(--md) * 0.2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--display); font-weight: 800; font-size: calc(var(--md) * 0.17 + 2px); text-transform: uppercase; color: #fff; text-align: center; }
 .mmeta { font-family: var(--mono); font-size: calc(var(--md) * 0.13 + 2px); color: #9a9a9a; white-space: nowrap; }
 .member.got .mball { filter: grayscale(1) brightness(0.62); }

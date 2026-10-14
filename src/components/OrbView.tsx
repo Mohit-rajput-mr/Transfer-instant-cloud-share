@@ -195,9 +195,13 @@ const HOLD_MS = 280;
 export type GroupMember = { id: string; name: string; hue: number; size: number; got: boolean; fileName: string; expiresAt: string; life: number };
 
 /** A sender's bubble: round-ish, its balls spread loosely around the middle (never in a row), none overlapping. */
+const clampTo = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+/** where the user dragged each ball inside its bubble (kept across re-renders) */
+const memberPos = new Map<string, [number, number]>();
+
 export function bubbleLayout(n: number) {
   const d = n <= 2 ? 58 : n <= 3 ? 50 : n <= 4 ? 46 : n <= 5 ? 40 : n <= 7 ? 36 : n <= 10 ? 31 : 26;
-  const D = n <= 2 ? 230 : n <= 3 ? 245 : n <= 4 ? 265 : n <= 5 ? 280 : n <= 7 ? 300 : Math.min(420, 88 * Math.sqrt(n) + 70);
+  const D = n <= 2 ? 230 : n <= 3 ? 245 : n <= 4 ? 265 : n <= 5 ? 280 : n <= 7 ? 300 : Math.min(460, 100 * Math.sqrt(n) + 90);
   // hand-placed clusters for small counts, a sunflower spiral beyond; [x, y] as a share of the bubble
   const SET: Record<number, [number, number][]> = {
     1: [[0.5, 0.46]],
@@ -212,11 +216,12 @@ export function bubbleLayout(n: number) {
   if (!spots && n <= 7) spots = [[0.5, 0.47], ...around(n - 1, 0.3, -Math.PI / 2 + 0.3)];
   if (!spots)
     spots = Array.from({ length: n }, (_, i) => {
-      const r = 0.36 * Math.sqrt((i + 0.6) / n), a = i * 2.39996 + 0.4;
+      const r = 0.3 * Math.sqrt((i + 0.6) / n), a = i * 2.39996 + 0.4;
       return [0.5 + r * Math.cos(a), 0.47 + r * Math.sin(a)] as [number, number];
     });
   // spread a touch wider around the middle so names and details never run into the next ball
-  spots = spots.map(([x, y]) => [0.5 + (x - 0.5) * 1.12, 0.47 + (y - 0.47) * 1.12] as [number, number]);
+  // (and never past the skin: a ball plus its label stays inside)
+  spots = spots.map(([x, y]) => [clampTo(0.5 + (x - 0.5) * 1.12, 0.2, 0.8), clampTo(0.47 + (y - 0.47) * 1.12, 0.2, 0.72)] as [number, number]);
   return { d, D, spots };
 }
 
@@ -260,6 +265,8 @@ export default function OrbView(props: {
   const drag = useRef<Drag | null>(null);
   const suppressClick = useRef(false);
   const pressed = useRef<string | null>(null);
+  // one ball inside a bubble, dragged on its own
+  const mdrag = useRef<{ id: number; el: HTMLElement; mid: string; sx: number; sy: number; x: number; y: number; w: number; h: number; armed: boolean; moved: boolean; hold: ReturnType<typeof setTimeout> | null } | null>(null);
   const off = offsets.get(orb.id) ?? { x: 0, y: 0 };
   // stagger slot is fixed at mount: re-indexing later must not replay the entrance
   const [idx] = useState(() => Math.min(props.index ?? 0, 20));
@@ -282,6 +289,41 @@ export default function OrbView(props: {
     return { x: cx, y: cy, hitX: cx !== x, hitY: cy !== y };
   };
 
+  // Hover a bubble and scroll up: it swells under the cursor, then opens zoomed in. Scrolling down (or
+  // anywhere else) still scrolls the page.
+  const isGroupOrb = !!group;
+  useEffect(() => {
+    const el = button.current;
+    if (!el || !isGroupOrb) return;
+    let acc = 0, idle: ReturnType<typeof setTimeout> | null = null;
+    const body = () => el.querySelector<HTMLElement>(".bubble-body");
+    const settle = () => {
+      acc = 0;
+      body()?.style.removeProperty("scale");
+    };
+    const wheel = (e: WheelEvent) => {
+      const up = e.deltaY < 0 || (e.ctrlKey && e.deltaY < 0);
+      if (!up && acc <= 0) return;
+      e.preventDefault();
+      acc = Math.max(0, acc - e.deltaY * (e.deltaMode === 1 ? 16 : 1));
+      const b = body();
+      if (b) b.style.scale = String(1 + Math.min(acc, 150) / 700);
+      if (idle) clearTimeout(idle);
+      if (acc > 150) {
+        settle();
+        onOpenRef.current();
+        return;
+      }
+      // a mouse wheel sends one notch at a time with a pause between: keep counting across it
+      idle = setTimeout(settle, 900);
+    };
+    el.addEventListener("wheel", wheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", wheel);
+      if (idle) clearTimeout(idle);
+    };
+  }, [isGroupOrb]);
+
   // While a touch drag is armed the page must not scroll. React's touch listeners are passive,
   // so the blocking one is attached by hand.
   useEffect(() => {
@@ -299,6 +341,12 @@ export default function OrbView(props: {
     anchor.current?.classList.add("dragging");
   };
 
+  const onOpenRef = useRef(() => {});
+  onOpenRef.current = () => {
+    const r = anchor.current?.querySelector(".orb-body")?.getBoundingClientRect();
+    if (r) setCardOrigin(r.left + r.width / 2, r.top + r.height / 2);
+    onOpen(orb);
+  };
   const open = (target: Element) => {
     const r = target.querySelector(".orb-body")?.getBoundingClientRect();
     if (r) setCardOrigin(r.left + r.width / 2, r.top + r.height / 2);
@@ -308,7 +356,29 @@ export default function OrbView(props: {
   const onPointerDown = (e: RPointerEvent<HTMLButtonElement>) => {
     if (e.button !== 0 || phase === "burning") return;
     // the button captures the pointer (for dragging), so the click reports the button: remember the ball pressed
-    pressed.current = ((e.target as Element).closest?.("[data-member]") as HTMLElement | null)?.dataset.member ?? null;
+    const mel = (e.target as Element).closest?.("[data-member]") as HTMLElement | null;
+    pressed.current = mel?.dataset.member ?? null;
+    if (mel && group) {
+      const box = mel.parentElement!.getBoundingClientRect();
+      const mid = mel.dataset.member!;
+      const at = memberPos.get(mid) ?? [parseFloat(mel.style.left) / 100, parseFloat(mel.style.top) / 100];
+      const touch = e.pointerType !== "mouse";
+      const md = { id: e.pointerId, el: mel, mid, sx: e.clientX, sy: e.clientY, x: at[0], y: at[1], w: box.width, h: box.height, armed: !touch, moved: false, hold: null as ReturnType<typeof setTimeout> | null };
+      mdrag.current = md;
+      if (touch) {
+        // like the spheres: a short hold picks the ball up, a quick swipe still scrolls
+        md.hold = setTimeout(() => {
+          md.hold = null;
+          md.armed = true;
+          try {
+            button.current?.setPointerCapture(md.id);
+          } catch {}
+          mel.classList.add("lifted");
+          window.dispatchEvent(new CustomEvent("orbit:haptic", { detail: "light" }));
+        }, HOLD_MS);
+      } else e.currentTarget.setPointerCapture(e.pointerId);
+      return;
+    }
     const prev = drag.current;
     if (prev) {
       cancelAnimationFrame(prev.raf);
@@ -344,6 +414,25 @@ export default function OrbView(props: {
   };
 
   const onPointerMove = (e: RPointerEvent<HTMLButtonElement>) => {
+    const md = mdrag.current;
+    if (md && md.id === e.pointerId) {
+      const dx = e.clientX - md.sx, dy = e.clientY - md.sy;
+      if (!md.armed) {
+        if (Math.hypot(dx, dy) > 8) {
+          if (md.hold) clearTimeout(md.hold);
+          mdrag.current = null; // a swipe before the hold: let the page scroll
+        }
+        return;
+      }
+      if (!md.moved && Math.hypot(dx, dy) < 5) return;
+      if (!md.moved) md.el.classList.add("lifted");
+      md.moved = true;
+      const x = clampTo(md.x + dx / md.w, 0.14, 0.86), y = clampTo(md.y + dy / md.h, 0.14, 0.78);
+      md.el.style.left = `${x * 100}%`;
+      md.el.style.top = `${y * 100}%`;
+      memberPos.set(md.mid, [x, y]);
+      return;
+    }
     const d = drag.current;
     if (!d || d.id !== e.pointerId) return;
     const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
@@ -377,6 +466,17 @@ export default function OrbView(props: {
   };
 
   const onPointerUp = (e: RPointerEvent<HTMLButtonElement>) => {
+    const md = mdrag.current;
+    if (md && md.id === e.pointerId) {
+      if (md.hold) clearTimeout(md.hold);
+      md.el.classList.remove("lifted");
+      mdrag.current = null;
+      if (md.moved) {
+        suppressClick.current = true;
+        setTimeout(() => (suppressClick.current = false), 450);
+      }
+      return;
+    }
     const d = drag.current;
     if (!d || d.id !== e.pointerId) return;
     if (d.hold) clearTimeout(d.hold);
@@ -471,12 +571,12 @@ export default function OrbView(props: {
           return (
             <div className="orb-body bubble-body" style={{ width: `calc(${L.D}px * var(--k))`, height: `calc(${L.D}px * var(--k))` }}>
               <div className="blob" />
-              <span className="zoom-cue" aria-hidden>⤢ Zoom in</span>
+              <span className="zoom-cue" aria-hidden>⤢ Click or scroll to zoom</span>
               <div className="members" style={{ "--md": `calc(${L.d}px * var(--k))` } as CSSProperties}>
                 {group.map((m, i) => {
                   const mleft = new Date(m.expiresAt).getTime() - now;
                   const mf = Math.max(0, Math.min(1, mleft / (m.life * 60_000)));
-                  const [x, y] = L.spots[i] ?? [0.5, 0.5];
+                  const [x, y] = memberPos.get(m.id) ?? L.spots[i] ?? [0.5, 0.5];
                   return (
                     <span
                       key={m.id}

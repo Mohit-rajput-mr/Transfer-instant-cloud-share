@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { ext, formatBytes, formatClock, hasGot, type Orb } from "@/lib/client";
 import { bubbleLayout } from "./OrbView";
 
@@ -50,6 +50,31 @@ export default function BubbleZoom(props: {
     window.addEventListener("keydown", k);
     return () => window.removeEventListener("keydown", k);
   }, [close, surf]);
+
+  // scroll down (or pinch out) to zoom back out to the void. Subscribed once: the void re-renders
+  // every second, and re-subscribing would reset a scroll that is under way.
+  const closeRef = useRef(close);
+  closeRef.current = close;
+  useEffect(() => {
+    let acc = 0, idle: ReturnType<typeof setTimeout> | null = null;
+    const wheel = (e: WheelEvent) => {
+      if (document.querySelector(".drawer, .pop")) return;
+      e.preventDefault();
+      acc = Math.max(0, acc + e.deltaY * (e.deltaMode === 1 ? 16 : 1));
+      if (idle) clearTimeout(idle);
+      // a mouse wheel sends one notch at a time with a pause between: keep counting across it
+      idle = setTimeout(() => (acc = 0), 900);
+      if (acc > 150) {
+        acc = 0;
+        closeRef.current();
+      }
+    };
+    window.addEventListener("wheel", wheel, { passive: false });
+    return () => {
+      window.removeEventListener("wheel", wheel);
+      if (idle) clearTimeout(idle);
+    };
+  }, []);
 
   // swipe sideways on touch screens to surf
   const [sx, setSx] = useState<number | null>(null);
@@ -126,7 +151,7 @@ export default function BubbleZoom(props: {
         </>
       )}
       <button className="cta lg-press zoom-all" onClick={() => props.onDownloadAll(b.id)}>Download all {n} ↓</button>
-      <p className="zoom-hint mono dim">Tap a ball to download just that one · {bubbles.length > 1 ? "← → to surf bubbles · " : ""}Esc to zoom out</p>
+      <p className="zoom-hint mono dim">Tap a ball to download just that one · scroll down to zoom out · {bubbles.length > 1 ? "← → to surf bubbles · " : ""}Esc to zoom out</p>
     </div>
   );
 }
