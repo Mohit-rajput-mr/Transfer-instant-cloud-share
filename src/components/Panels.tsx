@@ -324,7 +324,7 @@ function BackBtn() {
 
 const STAGE_LABEL: Record<Stage, string> = {
   packing: "Packing folder on this device",
-  deriving: "Forging key from passcode",
+  deriving: "Unlocking",
   encrypting: "Encrypting in your browser",
   uploading: "Encrypting + beaming into orbit",
   finalizing: "Stabilising orbit",
@@ -408,7 +408,7 @@ function PasscodeInput(props: { value: string; onChange: (v: string) => void; on
   return (
     <div className="field">
       <label>
-        <span className="mono">Passcode</span>
+        <span className="mono">Password</span>
         <span style={{ display: "flex", gap: 14 }}>
           {props.generate && <button className="mono dim" onClick={gen} type="button">Generate</button>}
           <button className="mono dim" onClick={() => setShow((s) => !s)} type="button">{show ? "Hide" : "Show"}</button>
@@ -534,6 +534,7 @@ export function SendPanel(props: {
   const setName = setTyped;
   const [code, setCode] = useState("");
   const [bubble, setBubble] = useState("");
+  const [more, setMore] = useState(false);
   const [max, setMax] = useState<number | null>(null);
   const [locked, setLocked] = useState(() => pref("locked", false));
   const [life, setLife] = useState(() => pref("life", 30));
@@ -565,14 +566,14 @@ export function SendPanel(props: {
   const kind = split ? `${n} balls` : folder ? (multi ? `${n} items · one ball` : `Folder · ${count} files`) : isLink ? "Link" : single ? `${ext(first.name)} · ${first.type || "file"}` : `${count} files · one ball`;
 
   return (
-    <Drawer label="New object" onClose={onClose}>
+    <Drawer label="Send" onClose={onClose}>
       <div className="col">
         {multi && (
           <div className="field">
-            <label><span className="mono">Launch as</span><span className="mono dim">{n} picked</span></label>
+            <label><span className="mono">Send as</span><span className="mono dim">{n} picked</span></label>
             <div className="seg" role="radiogroup" aria-label="Launch as">
-              <button role="radio" aria-checked={!split} className={`lg-press${!split ? " on" : ""}`} onClick={() => setSplit(false)}>Together · 1 ball</button>
-              <button role="radio" aria-checked={split} className={`lg-press${split ? " on" : ""}`} onClick={() => setSplit(true)}>Separate · {n} balls</button>
+              <button role="radio" aria-checked={!split} className={`lg-press${!split ? " on" : ""}`} onClick={() => setSplit(false)}>One ball</button>
+              <button role="radio" aria-checked={split} className={`lg-press${split ? " on" : ""}`} onClick={() => setSplit(true)}>{n} balls</button>
             </div>
           </div>
         )}
@@ -621,10 +622,10 @@ export function SendPanel(props: {
         </div>
         <p className="note ellip">
           {split
-            ? "Each one is its own ball, together in one glass container."
+            ? "Each one its own ball, in one container."
             : folder
-              ? multi ? "All in one ball, folders stay folders." : `${folder.name}/ · arrives as a real folder`
-              : single ? first.name : "All of them in one ball. One tap gets them all."}
+              ? multi ? "All in one ball." : `${folder.name}/ · arrives as a folder`
+              : single ? first.name : "All in one ball."}
         </p>
         {multi && (
           <div className="files">
@@ -645,36 +646,46 @@ export function SendPanel(props: {
           </div>
         )}
         <div className="grow" />
-        {!multi && <p className="mono dim">Encrypted on this device · sent straight to the receiver, keep this page open · no login required</p>}
+        {!multi && <p className="mono dim">Encrypted · keep this page open until it&apos;s received</p>}
       </div>
       <div className="col">
         <div className="field">
-          <label><span className="mono">Who can open it</span></label>
-          <div className="seg" role="radiogroup" aria-label="Access">
-            <button role="radio" aria-checked={!locked} className={`lg-press${!locked ? " on" : ""}`} onClick={() => setLocked(false)}>Anyone · 1 tap</button>
-            <button role="radio" aria-checked={locked} className={`lg-press${locked ? " on" : ""}`} onClick={() => setLocked(true)}>Passcode</button>
+          <label><span className="mono">Password</span><span className="mono dim">{locked ? "only people with it" : "anyone can open it"}</span></label>
+          <div className="seg" role="radiogroup" aria-label="Password">
+            <button role="radio" aria-checked={!locked} className={`lg-press${!locked ? " on" : ""}`} onClick={() => setLocked(false)}>No password</button>
+            <button role="radio" aria-checked={locked} className={`lg-press${locked ? " on" : ""}`} onClick={() => setLocked(true)}>Add password</button>
           </div>
         </div>
         {locked && <PasscodeInput value={code} onChange={setCode} onEnter={go} autoFocus generate />}
-        <div className="field">
-          <label><span className="mono">Burns in</span><span className="mono dim">{life} min</span></label>
-          <div className="chips lives" role="radiogroup" aria-label="Lifetime">
-            {LIVES.map((m) => (
-              <button key={m} role="radio" aria-checked={life === m} className={`chip lg-press${life === m ? " on" : ""}`} onClick={() => setLife(m)}>{m}m</button>
-            ))}
-          </div>
-        </div>
-        <div className="field">
-          <label><span className="mono">Burn after downloads</span><span className="mono dim">{max ? `${max} max` : "unlimited"}</span></label>
-          <div className="chips" role="radiogroup" aria-label="Burn after downloads">
-            {[null, 1, 2, 3, 5, 10].map((m) => (
-              <button key={String(m)} role="radio" aria-checked={max === m} className={`chip lg-press${max === m ? " on" : ""}`} onClick={() => setMax(m)}>{m ?? "∞"}</button>
-            ))}
-          </div>
-        </div>
+        {/* the rest folds away: one line says what is set, a tap shows the choices */}
+        <button type="button" className={`more-opts${more ? " open" : ""}`} onClick={() => setMore((m) => !m)} aria-expanded={more}>
+          <span className="mono">More options</span>
+          <span className="mono dim">{life} min · {max ? `${max} download${max > 1 ? "s" : ""}` : "unlimited"}</span>
+          <i aria-hidden>▾</i>
+        </button>
+        {more && (
+          <>
+            <div className="field">
+              <label><span className="mono">Disappears in</span><span className="mono dim">{life} min</span></label>
+              <div className="chips lives" role="radiogroup" aria-label="Disappears in">
+                {LIVES.map((m) => (
+                  <button key={m} role="radio" aria-checked={life === m} className={`chip lg-press${life === m ? " on" : ""}`} onClick={() => setLife(m)}>{m}m</button>
+                ))}
+              </div>
+            </div>
+            <div className="field">
+              <label><span className="mono">Download limit</span><span className="mono dim">{max ? `gone after ${max}` : "unlimited"}</span></label>
+              <div className="chips" role="radiogroup" aria-label="Download limit">
+                {[null, 1, 2, 3, 5, 10].map((m) => (
+                  <button key={String(m)} role="radio" aria-checked={max === m} className={`chip lg-press${max === m ? " on" : ""}`} onClick={() => setMax(m)}>{m ?? "∞"}</button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
         {tooBig && <p className="err">{split ? "One of them is" : multi ? "Together they are" : folder ? `The ${folder.name} folder is` : `${first.name} is`} over the 2 GB limit</p>}
         <div className="grow" />
-        <button className="cta lg-press" disabled={!ready} onClick={go}>{locked && code.length > 0 && code.length < 4 ? "Min 4 characters" : split ? `Launch ${n} balls ↗` : "Launch ↗"}</button>
+        <button className="cta lg-press" disabled={!ready} onClick={go}>{locked && code.length > 0 && code.length < 4 ? "Password: 4+ characters" : split ? `Send ${n} ↗` : "Send ↗"}</button>
       </div>
     </Drawer>
   );
@@ -1281,13 +1292,13 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
           ) : (
             <>
               {free ? (
-                <div className="open-badge"><i className="dot" /><b className="wide">Open object</b><span className="mono dim">no passcode · one tap</span></div>
+                <div className="open-badge"><i className="dot" /><b className="wide">No password</b><span className="mono dim">just tap Download</span></div>
               ) : (
                 <PasscodeInput value={code} onChange={setCode} onEnter={() => go()} autoFocus />
               )}
               {err && <p className="err">{err}</p>}
               <p className="note">
-                {free ? "The sender left this open: anyone with the page can take it. Still decrypted on this device." : "Decrypted locally. The passcode never leaves this device."}
+                {free ? "Encrypted end to end, unlocked on this device." : "The password never leaves this device."}
                 {env.mobile && !inline && !(asDir && canWriteFolders()) ? " After decrypting, you choose where to save it." : ""}
               </p>
               {env.inApp && (
@@ -1305,7 +1316,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
                     ? env.mobile
                       ? "It arrives as one .zip, and you choose where to save it."
                       : "This browser can't write folders, so it arrives as a .zip (Chrome or Edge on a computer saves a real folder)."
-                    : "First the passcode is checked; then you choose the folder it lands in."}
+                    : "First the password is checked, then you pick the folder."}
                 </p>
               ) : null}
               <button className="cta lg-press" disabled={!free && !code} onClick={() => go()}>
@@ -1360,14 +1371,14 @@ export function GroupPanel(props: { members: Orb[]; now: number; onOpen: (o: Orb
       <div className="col">
         {locked.length > 0 && (
           <div className="field">
-            <label><span className="mono">Passcode</span><span className="mono dim">{locked.length} locked</span></label>
+            <label><span className="mono">Password</span><span className="mono dim">{locked.length} need it</span></label>
             <PasscodeInput value={code} onChange={setCode} onEnter={all} />
           </div>
         )}
         <p className="note">Downloads run in the background: close this and keep browsing, progress shows bottom right.</p>
         <div className="grow" />
         <button className="cta lg-press" disabled={!ready} onClick={all}>
-          {locked.length && code.length < 4 ? "Enter the passcode" : `Download all ${members.length} ↓`}
+          {locked.length && code.length < 4 ? "Enter the password" : `Download all ${members.length} ↓`}
         </button>
       </div>
     </Drawer>

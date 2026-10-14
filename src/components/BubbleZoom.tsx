@@ -224,7 +224,7 @@ export default function BubbleZoom(props: {
                 <span className="zname wide">{o.name}</span>
                 <span className="zmeta mono">{formatBytes(o.size)} · {formatClock(left)}</span>
                 <span className="ztags">
-                  {o.open ? <span className="tag open">OPEN</span> : <span className="tag">PASSCODE</span>}
+                  {o.open ? <span className="tag open">NO PASSWORD</span> : <span className="tag">PASSWORD</span>}
                   {got && <span className="tag got">DOWNLOADED</span>}
                 </span>
                 {(() => {

@@ -1738,3 +1738,12 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
 .destroy-all { color: #fff; border-color: rgba(255,59,48,0.6) !important; background: rgba(255,59,48,0.18) !important; }
 .destroy-all:hover { background: rgba(255,59,48,0.32) !important; }
 .orb .orb-body > .destroy.box { top: -13px; bottom: auto; left: 14px; right: auto; }
+
+/* ---------------- Send panel: the rarely changed settings fold into one line ---------------- */
+.more-opts { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.03); text-align: left; transition: background 0.2s; }
+.more-opts:hover { background: rgba(255,255,255,0.07); }
+.more-opts .mono { font-size: 10.5px; }
+.more-opts .dim { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+.more-opts i { font-style: normal; transition: rotate 0.25s; }
+.more-opts.open i { rotate: 180deg; }
