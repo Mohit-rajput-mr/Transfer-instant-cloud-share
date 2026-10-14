@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { deviceId, deviceInfo, dropOwnerKey, hasGot, ownerKey, type Orb } from "@/lib/client";
 import { supabase, type RealtimeChannel } from "@/lib/realtime";
 import SpacePanel, { SpaceRoom } from "./Spaces";
+import BubbleZoom from "./BubbleZoom";
 import { heldIds, release } from "@/lib/p2p";
 import { enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
 
@@ -264,6 +265,8 @@ export default function Void() {
     }, 120);
   }, []);
   const freshHues = useRef<number[]>([]);
+  // zoomed into a sender's bubble (surfing between bubbles)
+  const [zoom, setZoom] = useState<{ id: string; from: { x: number; y: number } | null } | null>(null);
   const startLaunch = useCallback((job: LaunchJob) => {
     const key = Math.random().toString(36).slice(2, 10);
     // several balls launched at once ("Separate") each get their own colour, not the same free one
@@ -742,6 +745,7 @@ export default function Void() {
     [alive, scope, net],
   );
   const groups = grouped.groups;
+  const bubbles = useMemo(() => grouped.list.filter((o) => isGroup(o.id)).map((o) => ({ id: o.id, name: o.name, members: groups.get(o.id) ?? [] })), [grouped, groups]);
   const shown = useMemo(
     () => [
       ...grouped.list,
@@ -861,12 +865,13 @@ export default function Void() {
       return toast(`${o.name} is still launching. It opens here the moment it lands`);
     }
     if (isPending(o.id)) return setLaunches((ls) => ls.map((l) => (pendingId(l.key) === o.id ? { ...l, open: true } : l)));
-    if (isGroup(o.id)) return setPanel({ kind: "group", id: o.id });
+    if (isGroup(o.id)) {
+      const r = document.querySelector(`[data-orb="${o.id}"] .orb-body`)?.getBoundingClientRect();
+      return setZoom({ id: o.id, from: r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null });
+    }
     setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id });
   }, [toast]);
   const noop = useCallback(() => {}, []);
-  // one ball inside a sender's bubble
-  const openMember = useCallback((id: string) => setPanel(ownerKey(id) ? { kind: "owner", id } : { kind: "unlock", id }), []);
   const listedUnlock = panel?.kind === "unlock" ? orbs.find((o) => o.id === panel.id) ?? extra : null;
   if (listedUnlock) keptUnlock.current = listedUnlock;
   else if (panel?.kind !== "unlock") keptUnlock.current = null;
@@ -976,8 +981,7 @@ export default function Void() {
               incoming={isIncoming(o.id)}
               badge={badges.get(o.id)}
               got={gotIds.has(o.id)}
-              group={isGroup(o.id) ? groups.get(o.id)?.map((m) => ({ id: m.id, name: m.name, hue: m.hue, size: m.size, got: hasGot(m.id), fileName: m.fileName })) : undefined}
-              onOpenMember={isGroup(o.id) ? openMember : undefined}
+              group={isGroup(o.id) ? groups.get(o.id)?.map((m) => ({ id: m.id, name: m.name, hue: m.hue, size: m.size, got: hasGot(m.id), fileName: m.fileName, expiresAt: m.expiresAt, life: m.life ?? 30 })) : undefined}
             />
           ))}
           {ghosts.map((g) => (
@@ -1095,6 +1099,18 @@ export default function Void() {
           }}
           onClose={() => setPanel(null)}
           toast={toast}
+        />
+      )}
+      {zoom && bubbles.some((b) => b.id === zoom.id) && (
+        <BubbleZoom
+          bubbles={bubbles}
+          id={zoom.id}
+          from={zoom.from}
+          now={serverNow}
+          onSurf={(id) => setZoom((z) => (z ? { ...z, id } : z))}
+          onOpen={(o) => setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id })}
+          onDownloadAll={(id) => setPanel({ kind: "group", id })}
+          onClose={() => setZoom(null)}
         />
       )}
       {panel?.kind === "group" && groups.get(panel.id) && (

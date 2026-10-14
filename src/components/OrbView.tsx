@@ -192,15 +192,32 @@ type Drag = {
 
 const HOLD_MS = 280;
 
-export type GroupMember = { id: string; name: string; hue: number; size: number; got: boolean; fileName: string };
+export type GroupMember = { id: string; name: string; hue: number; size: number; got: boolean; fileName: string; expiresAt: string; life: number };
 
-/** A sender's bubble: how big its balls are and how they sit, so none overlap and the bubble stays compact. */
-function bubbleLayout(n: number) {
-  const d = n <= 2 ? 58 : n <= 4 ? 50 : n <= 6 ? 42 : n <= 9 ? 36 : 30;
-  const cols = n <= 3 ? n : n <= 4 ? 2 : n <= 9 ? 3 : 4;
-  const rows = Math.ceil(n / cols);
-  const cw = d * 1.9, ch = d + 32, pad = d * 0.5;
-  return { d, cols, w: cols * cw + pad * 2, h: rows * ch + pad * 2, pad };
+/** A sender's bubble: round-ish, its balls spread loosely around the middle (never in a row), none overlapping. */
+export function bubbleLayout(n: number) {
+  const d = n <= 2 ? 58 : n <= 3 ? 50 : n <= 4 ? 46 : n <= 5 ? 40 : n <= 7 ? 36 : n <= 10 ? 31 : 26;
+  const D = n <= 2 ? 230 : n <= 3 ? 245 : n <= 4 ? 265 : n <= 5 ? 280 : n <= 7 ? 300 : Math.min(420, 88 * Math.sqrt(n) + 70);
+  // hand-placed clusters for small counts, a sunflower spiral beyond; [x, y] as a share of the bubble
+  const SET: Record<number, [number, number][]> = {
+    1: [[0.5, 0.46]],
+    2: [[0.34, 0.4], [0.64, 0.56]],
+    3: [[0.5, 0.28], [0.29, 0.58], [0.69, 0.6]],
+    4: [[0.34, 0.31], [0.67, 0.35], [0.31, 0.64], [0.65, 0.68]],
+    5: [[0.5, 0.24], [0.24, 0.45], [0.76, 0.46], [0.36, 0.72], [0.66, 0.73]],
+  };
+  const around = (k: number, r: number, from: number) =>
+    Array.from({ length: k }, (_, i) => [0.5 + r * Math.cos(from + (i * 2 * Math.PI) / k), 0.48 + r * Math.sin(from + (i * 2 * Math.PI) / k)] as [number, number]);
+  let spots = SET[n];
+  if (!spots && n <= 7) spots = [[0.5, 0.47], ...around(n - 1, 0.3, -Math.PI / 2 + 0.3)];
+  if (!spots)
+    spots = Array.from({ length: n }, (_, i) => {
+      const r = 0.36 * Math.sqrt((i + 0.6) / n), a = i * 2.39996 + 0.4;
+      return [0.5 + r * Math.cos(a), 0.47 + r * Math.sin(a)] as [number, number];
+    });
+  // spread a touch wider around the middle so names and details never run into the next ball
+  spots = spots.map(([x, y]) => [0.5 + (x - 0.5) * 1.12, 0.47 + (y - 0.47) * 1.12] as [number, number]);
+  return { d, D, spots };
 }
 
 export default function OrbView(props: {
@@ -423,7 +440,7 @@ export default function OrbView(props: {
   } as CSSProperties;
 
   return (
-    <div className={`orb-anchor${phase ? ` ${phase}` : ""}`} ref={anchor} style={{ ...style, transform: `translate(${off.x}px, ${off.y}px)` }}>
+    <div className={`orb-anchor${phase ? ` ${phase}` : ""}`} data-orb={orb.id} ref={anchor} style={{ ...style, transform: `translate(${off.x}px, ${off.y}px)` }}>
     <button
       ref={button}
       className={`orb${mine ? " mine" : ""}${up ? " launching" : ""}${dying && !up ? " dying" : ""}${sealed ? " sealed" : ""}${got && !up ? " got" : ""}${group ? " group" : ""}`}
@@ -452,15 +469,34 @@ export default function OrbView(props: {
         (() => {
           const L = bubbleLayout(group.length);
           return (
-            <div className="orb-body bubble-body" style={{ width: `calc(${L.w}px * var(--k))`, height: `calc(${L.h}px * var(--k))` }}>
+            <div className="orb-body bubble-body" style={{ width: `calc(${L.D}px * var(--k))`, height: `calc(${L.D}px * var(--k))` }}>
               <div className="blob" />
-              <div className="members" style={{ "--md": `calc(${L.d}px * var(--k))`, padding: `calc(${L.pad}px * var(--k))`, gridTemplateColumns: `repeat(${L.cols}, 1fr)` } as CSSProperties}>
-                {group.map((m, i) => (
-                  <span key={m.id} className={`member${m.got ? " got" : ""}`} data-member={m.id} style={{ "--sh": m.hue, "--mi": i } as CSSProperties} title={m.name}>
-                    <span className="mball"><span>{ext(m.fileName)}</span></span>
-                    <span className="mname">{m.name}</span>
-                  </span>
-                ))}
+              <span className="zoom-cue" aria-hidden>⤢ Zoom in</span>
+              <div className="members" style={{ "--md": `calc(${L.d}px * var(--k))` } as CSSProperties}>
+                {group.map((m, i) => {
+                  const mleft = new Date(m.expiresAt).getTime() - now;
+                  const mf = Math.max(0, Math.min(1, mleft / (m.life * 60_000)));
+                  const [x, y] = L.spots[i] ?? [0.5, 0.5];
+                  return (
+                    <span
+                      key={m.id}
+                      className={`member${m.got ? " got" : ""}`}
+                      data-member={m.id}
+                      style={{ "--sh": m.hue, "--mi": i, left: `${x * 100}%`, top: `${y * 100}%` } as CSSProperties}
+                      title={`${m.name} · ${formatBytes(m.size)} · ${formatClock(mleft)}`}
+                    >
+                      <span className="mball">
+                        <svg className="mring" viewBox="0 0 100 100" aria-hidden>
+                          <circle className="track" cx="50" cy="50" r="48" />
+                          <circle className="life" cx="50" cy="50" r="48" strokeDasharray={301.6} strokeDashoffset={301.6 * (1 - mf)} />
+                        </svg>
+                        <span>{ext(m.fileName)}</span>
+                      </span>
+                      <span className="mname">{m.name}</span>
+                      <span className="mmeta">{formatBytes(m.size)} · {formatClock(mleft)}</span>
+                    </span>
+                  );
+                })}
               </div>
         {got && !up ? <span className="got-mark" aria-hidden>✓</span> : null}
         {!up && <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
