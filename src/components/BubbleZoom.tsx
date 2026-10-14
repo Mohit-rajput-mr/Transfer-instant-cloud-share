@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { ext, formatBytes, formatClock, hasGot, type Orb } from "@/lib/client";
+import { ext, formatBytes, formatClock, hasGot, ownerKey, type Orb } from "@/lib/client";
 import { bubbleLayout, clampTo, fling, memberPos, stopFling, tracker } from "./OrbView";
 import { enqueue, useDownloads } from "@/lib/downloads";
 
@@ -24,6 +24,8 @@ export default function BubbleZoom(props: {
   onSurf: (id: string) => void;
   onOpen: (o: Orb) => void;
   onDownloadAll: (id: string) => void;
+  /** the sender destroys their own objects */
+  onDestroy?: (ids: string[]) => void;
   onClose: () => void;
 }) {
   const { bubbles, id, now } = props;
@@ -159,7 +161,11 @@ export default function BubbleZoom(props: {
           <b className="wide">{b.name}</b>
           <span className="mono dim">{n} items · {formatBytes(b.members.reduce((a, o) => a + o.size, 0))}{bubbles.length > 1 ? ` · ${at + 1} of ${bubbles.length}` : ""}</span>
         </div>
-        <span className="zoom-spacer" />
+        {props.onDestroy && b.members.some((o) => ownerKey(o.id)) ? (
+          <button className="pill lg-press destroy-all" onClick={() => props.onDestroy?.(b.members.map((o) => o.id))}>✕ Destroy all</button>
+        ) : (
+          <span className="zoom-spacer" />
+        )}
       </div>
 
       <div key={b.id} className={`zoom-bubble${dir === 1 ? " from-right" : dir === -1 ? " from-left" : ""}`} style={{ "--ar": L.W / L.H } as CSSProperties}>
@@ -199,6 +205,22 @@ export default function BubbleZoom(props: {
                     <span key={k} className="sat" style={{ "--r": `${10 + k * 7}px`, "--t": `${5 + k * 1.7}s`, "--d": `-${k * 0.9}s` } as CSSProperties} aria-hidden />
                   ))}
                 </span>
+                {ownerKey(o.id) && props.onDestroy && (
+                  <span
+                    className="destroy"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Destroy ${o.name}`}
+                    title="Destroy"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      props.onDestroy?.([o.id]);
+                    }}
+                  >
+                    ×
+                  </span>
+                )}
                 <span className="zname wide">{o.name}</span>
                 <span className="zmeta mono">{formatBytes(o.size)} · {formatClock(left)}</span>
                 <span className="ztags">

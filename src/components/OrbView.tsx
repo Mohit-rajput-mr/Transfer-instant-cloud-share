@@ -192,7 +192,7 @@ type Drag = {
 
 const HOLD_MS = 280;
 
-export type GroupMember = { id: string; name: string; hue: number; size: number; got: boolean; fileName: string; expiresAt: string; life: number; watchers: number };
+export type GroupMember = { id: string; name: string; hue: number; size: number; got: boolean; fileName: string; expiresAt: string; life: number; watchers: number; mine: boolean };
 
 export const clampTo = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 /** where the user dragged each ball inside its container (kept across re-renders, shared with the zoom) */
@@ -303,6 +303,10 @@ export default function OrbView(props: {
   group?: GroupMember[];
   /** tap on one ball inside the bubble */
   onOpenMember?: (id: string) => void;
+  /** the sender's own: destroy this ball (or everything in this container) */
+  onDestroy?: () => void;
+  /** the sender's own ball inside a container */
+  onDestroyMember?: (id: string) => void;
 }) {
   const { orb, pos, now, mine, nearby, watchers, onOpen, phase, launching, incoming, badge, got, group } = props;
   const up = launching !== undefined;
@@ -411,6 +415,10 @@ export default function OrbView(props: {
   const onPointerDown = (e: RPointerEvent<HTMLButtonElement>) => {
     if (e.button !== 0 || phase === "burning") return;
     // the button captures the pointer (for dragging), so the click reports the button: remember the ball pressed
+    if ((e.target as Element).closest?.("[data-destroy]")) {
+      pressed.current = null;
+      return;
+    }
     const mel = (e.target as Element).closest?.("[data-member]") as HTMLElement | null;
     pressed.current = mel?.dataset.member ?? null;
     if (mel && group) {
@@ -616,6 +624,15 @@ export default function OrbView(props: {
           suppressClick.current = false;
           return;
         }
+        // the red destroy icons
+        const kill = (e.target as Element).closest?.("[data-destroy]") as HTMLElement | null;
+        if (kill) {
+          pressed.current = null;
+          const mid = kill.dataset.destroy;
+          if (mid && props.onDestroyMember) props.onDestroyMember(mid);
+          else props.onDestroy?.();
+          return;
+        }
         const id = pressed.current ?? ((e.target as Element).closest?.("[data-member]") as HTMLElement | null)?.dataset.member;
         pressed.current = null;
         if (id && props.onOpenMember) {
@@ -638,6 +655,7 @@ export default function OrbView(props: {
                 <span key={k} className="edge-sat" style={{ "--d": `${-k * 2.2}s` } as CSSProperties} aria-hidden />
               ))}
               <span className="zoom-cue" aria-hidden>⤢ Click or scroll to open</span>
+              {props.onDestroy && mine && <span className="destroy box" data-destroy="" role="button" aria-label="Destroy everything in this container" title="Destroy all">×</span>}
               <div className="members" style={{ "--md": `calc(${L.d}px * var(--k))` } as CSSProperties}>
                 {group.map((m, i) => {
                   const mleft = new Date(m.expiresAt).getTime() - now;
@@ -661,6 +679,7 @@ export default function OrbView(props: {
                           <span key={k} className="sat msat" style={{ "--r": `${5 + k * 4}px`, "--t": `${4 + k * 1.5}s`, "--d": `-${k * 0.8}s` } as CSSProperties} aria-hidden />
                         ))}
                       </span>
+                      {m.mine && props.onDestroyMember && <span className="destroy small" data-destroy={m.id} role="button" aria-label={`Destroy ${m.name}`} title="Destroy">×</span>}
                       <span className="mname">{m.name}</span>
                       <span className="mmeta">{formatBytes(m.size)} · {formatClock(mleft)}</span>
                     </span>
@@ -686,6 +705,7 @@ export default function OrbView(props: {
           <circle className="life" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - (up ? Math.max(0.03, launching) : frac))} />
         </svg>
         <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : ext(orb.fileName)}</span>
+        {props.onDestroy && mine && !up && phase !== "burning" && <span className="destroy" data-destroy="" role="button" aria-label={`Destroy ${orb.name}`} title="Destroy">×</span>}
         {mine && badge ? <span className="mine-no" aria-hidden>{badge}</span> : null}
         {got && !up ? <span className="got-mark" aria-hidden>✓</span> : null}
         {!up && <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>

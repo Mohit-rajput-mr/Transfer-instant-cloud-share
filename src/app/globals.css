@@ -1725,3 +1725,16 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
 .blob { border-radius: 34px; -webkit-backdrop-filter: blur(9px) saturate(140%); backdrop-filter: blur(9px) saturate(140%); }
 .blob.big { border-radius: 44px; -webkit-backdrop-filter: blur(12px) saturate(140%); backdrop-filter: blur(12px) saturate(140%); }
 .dl-card { background: rgba(10,10,12,0.9); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+
+/* ---------------- The sender's red destroy icon ---------------- */
+.destroy { position: absolute; z-index: 4; right: 4%; top: 4%; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--danger); color: #fff; font-size: 15px; font-weight: 700; line-height: 1; cursor: pointer;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.55), 0 4px 12px rgba(255,59,48,0.45); transition: scale 0.2s var(--spring), opacity 0.2s; }
+.destroy:hover { scale: 1.15; }
+.orb .orb-body > .destroy { right: 2%; top: auto; bottom: 6%; }
+.destroy.small { width: 18px; height: 18px; font-size: 12px; right: calc(50% - var(--md) * 0.62); top: calc(var(--md) * -0.12); }
+.destroy.box { right: auto; left: 12px; top: -12px; width: 26px; height: 26px; }
+.zball .destroy { right: calc(50% - var(--zd) * 0.6); top: calc(var(--zd) * -0.08); width: 28px; height: 28px; font-size: 17px; }
+.destroy-all { color: #fff; border-color: rgba(255,59,48,0.6) !important; background: rgba(255,59,48,0.18) !important; }
+.destroy-all:hover { background: rgba(255,59,48,0.32) !important; }
+.orb .orb-body > .destroy.box { top: -13px; bottom: auto; left: 14px; right: auto; }

@@ -489,6 +489,13 @@ export default function Void() {
   }, [dropIncoming, refresh]);
 
   const onGoneBeam = useCallback((p: Record<string, unknown>) => {
+    // a sender destroyed objects: they leave every screen now (even ones that just landed here)
+    const ids = Array.isArray(p?.ids) ? (p.ids as unknown[]).filter((x): x is string => typeof x === "string" && /^[a-z0-9]{4,12}$/.test(x)) : [];
+    if (ids.length) {
+      ids.forEach((id) => recent.current.delete(id));
+      setOrbs((list) => list.filter((o) => !ids.includes(o.id)));
+      return;
+    }
     const k = p?.k;
     if (!validKey(k)) return;
     dropIncoming(k);
@@ -872,6 +879,25 @@ export default function Void() {
     setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id });
   }, [toast]);
   const noop = useCallback(() => {}, []);
+  // the sender destroys their own objects (a ball, or everything in their container): gone for everyone now
+  const destroy = useCallback(async (ids: string[]) => {
+    const mine = ids.filter((id) => ownerKey(id));
+    if (!mine.length) return;
+    window.dispatchEvent(new CustomEvent("orbit:haptic", { detail: "warn" }));
+    await Promise.all(
+      mine.map(async (id) => {
+        const key = ownerKey(id) ?? "";
+        release(id);
+        const r = await fetch(`/api/transfers/${id}`, { method: "DELETE", headers: { "x-owner": key } }).catch(() => null);
+        if (r?.ok || r?.status === 403) dropOwnerKey(id);
+      }),
+    );
+    mine.forEach((id) => recent.current.delete(id));
+    setOrbs((list) => list.filter((o) => !mine.includes(o.id)));
+    beam("gone", { ids: mine });
+    toast(mine.length > 1 ? `${mine.length} objects destroyed` : "Object destroyed");
+    broadcast();
+  }, [toast, broadcast, beam]);
   const listedUnlock = panel?.kind === "unlock" ? orbs.find((o) => o.id === panel.id) ?? extra : null;
   if (listedUnlock) keptUnlock.current = listedUnlock;
   else if (panel?.kind !== "unlock") keptUnlock.current = null;
@@ -981,7 +1007,9 @@ export default function Void() {
               incoming={isIncoming(o.id)}
               badge={badges.get(o.id)}
               got={gotIds.has(o.id)}
-              group={isGroup(o.id) ? groups.get(o.id)?.map((m) => ({ id: m.id, name: m.name, hue: m.hue, size: m.size, got: hasGot(m.id), fileName: m.fileName, expiresAt: m.expiresAt, life: m.life ?? 30, watchers: watchers(m.id) })) : undefined}
+              onDestroy={isGroup(o.id) ? () => destroy((groups.get(o.id) ?? []).map((m) => m.id)) : ownerKey(o.id) ? () => destroy([o.id]) : undefined}
+              onDestroyMember={isGroup(o.id) ? (id) => destroy([id]) : undefined}
+              group={isGroup(o.id) ? groups.get(o.id)?.map((m) => ({ id: m.id, name: m.name, hue: m.hue, size: m.size, got: hasGot(m.id), fileName: m.fileName, expiresAt: m.expiresAt, life: m.life ?? 30, watchers: watchers(m.id), mine: !!ownerKey(m.id) })) : undefined}
             />
           ))}
           {ghosts.map((g) => (
@@ -1110,6 +1138,7 @@ export default function Void() {
           onSurf={(id) => setZoom((z) => (z ? { ...z, id } : z))}
           onOpen={(o) => setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id })}
           onDownloadAll={(id) => setPanel({ kind: "group", id })}
+          onDestroy={destroy}
           onClose={() => setZoom(null)}
         />
       )}
