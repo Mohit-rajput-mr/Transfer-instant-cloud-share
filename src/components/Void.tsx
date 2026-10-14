@@ -981,7 +981,7 @@ export default function Void() {
               incoming={isIncoming(o.id)}
               badge={badges.get(o.id)}
               got={gotIds.has(o.id)}
-              group={isGroup(o.id) ? groups.get(o.id)?.map((m) => ({ id: m.id, name: m.name, hue: m.hue, size: m.size, got: hasGot(m.id), fileName: m.fileName, expiresAt: m.expiresAt, life: m.life ?? 30 })) : undefined}
+              group={isGroup(o.id) ? groups.get(o.id)?.map((m) => ({ id: m.id, name: m.name, hue: m.hue, size: m.size, got: hasGot(m.id), fileName: m.fileName, expiresAt: m.expiresAt, life: m.life ?? 30, watchers: watchers(m.id) })) : undefined}
             />
           ))}
           {ghosts.map((g) => (

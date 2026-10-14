@@ -192,11 +192,71 @@ type Drag = {
 
 const HOLD_MS = 280;
 
-export type GroupMember = { id: string; name: string; hue: number; size: number; got: boolean; fileName: string; expiresAt: string; life: number };
+export type GroupMember = { id: string; name: string; hue: number; size: number; got: boolean; fileName: string; expiresAt: string; life: number; watchers: number };
 
 export const clampTo = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 /** where the user dragged each ball inside its container (kept across re-renders, shared with the zoom) */
 export const memberPos = new Map<string, [number, number]>();
+
+/**
+ * Let go of a ball inside a container: it carries the throw (v in container-widths per ms), slows down
+ * and bounces off the glass walls, like a single sphere flung across the void.
+ */
+const flinging = new Map<string, number>();
+export function fling(el: HTMLElement, id: string, x: number, y: number, vx: number, vy: number, box: { x0: number; x1: number; y0: number; y1: number }) {
+  cancelAnimationFrame(flinging.get(id) ?? 0);
+  let last = performance.now();
+  const step = (t: number) => {
+    const k = Math.min(3, Math.max(0.25, (t - last) / 16.667));
+    last = t;
+    const decay = Math.pow(0.94, k);
+    vx *= decay;
+    vy *= decay;
+    x += vx * 16.667 * k;
+    y += vy * 16.667 * k;
+    if (x < box.x0 || x > box.x1) {
+      x = clampTo(x, box.x0, box.x1);
+      vx = -vx * 0.65;
+    }
+    if (y < box.y0 || y > box.y1) {
+      y = clampTo(y, box.y0, box.y1);
+      vy = -vy * 0.65;
+    }
+    el.style.left = `${x * 100}%`;
+    el.style.top = `${y * 100}%`;
+    memberPos.set(id, [x, y]);
+    if (Math.hypot(vx, vy) > 0.00002 && el.isConnected) flinging.set(id, requestAnimationFrame(step));
+    else {
+      flinging.delete(id);
+      el.classList.remove("lifted");
+    }
+  };
+  flinging.set(id, requestAnimationFrame(step));
+}
+/** caught mid-glide: stop it where it is */
+export function stopFling(id: string) {
+  cancelAnimationFrame(flinging.get(id) ?? 0);
+  flinging.delete(id);
+}
+/** follows the pointer to know how fast it was moving when it let go */
+export function tracker() {
+  let px = 0, py = 0, pt = 0, vx = 0, vy = 0;
+  return {
+    start(x: number, y: number) {
+      px = x; py = y; pt = performance.now(); vx = vy = 0;
+    },
+    move(x: number, y: number, w: number, h: number) {
+      const t = performance.now(), dt = Math.max(1, t - pt);
+      vx = vx * 0.5 + ((x - px) / w / dt) * 0.5;
+      vy = vy * 0.5 + ((y - py) / h / dt) * 0.5;
+      px = x; py = y; pt = t;
+    },
+    /** stale if the pointer stopped before letting go */
+    velocity(): [number, number] {
+      return performance.now() - pt > 120 ? [0, 0] : [vx, vy];
+    },
+  };
+}
 
 /**
  * A sender's glass container: a landscape rectangle sized to what it holds. Each ball gets its own
@@ -261,7 +321,7 @@ export default function OrbView(props: {
   const suppressClick = useRef(false);
   const pressed = useRef<string | null>(null);
   // one ball inside a bubble, dragged on its own
-  const mdrag = useRef<{ id: number; el: HTMLElement; mid: string; sx: number; sy: number; x: number; y: number; w: number; h: number; armed: boolean; moved: boolean; hold: ReturnType<typeof setTimeout> | null } | null>(null);
+  const mdrag = useRef<{ id: number; el: HTMLElement; mid: string; sx: number; sy: number; x: number; y: number; w: number; h: number; armed: boolean; moved: boolean; hold: ReturnType<typeof setTimeout> | null; tr: ReturnType<typeof tracker>; cx: number; cy: number } | null>(null);
   const off = offsets.get(orb.id) ?? { x: 0, y: 0 };
   // stagger slot is fixed at mount: re-indexing later must not replay the entrance
   const [idx] = useState(() => Math.min(props.index ?? 0, 20));
@@ -356,9 +416,12 @@ export default function OrbView(props: {
     if (mel && group) {
       const box = mel.parentElement!.getBoundingClientRect();
       const mid = mel.dataset.member!;
+      stopFling(mid);
       const at = memberPos.get(mid) ?? [parseFloat(mel.style.left) / 100, parseFloat(mel.style.top) / 100];
       const touch = e.pointerType !== "mouse";
-      const md = { id: e.pointerId, el: mel, mid, sx: e.clientX, sy: e.clientY, x: at[0], y: at[1], w: box.width, h: box.height, armed: !touch, moved: false, hold: null as ReturnType<typeof setTimeout> | null };
+      const tr = tracker();
+      tr.start(e.clientX, e.clientY);
+      const md = { id: e.pointerId, el: mel, mid, sx: e.clientX, sy: e.clientY, x: at[0], y: at[1], w: box.width, h: box.height, armed: !touch, moved: false, hold: null as ReturnType<typeof setTimeout> | null, tr, cx: at[0], cy: at[1] };
       mdrag.current = md;
       if (touch) {
         // like the spheres: a short hold picks the ball up, a quick swipe still scrolls
@@ -423,6 +486,9 @@ export default function OrbView(props: {
       if (!md.moved) md.el.classList.add("lifted");
       md.moved = true;
       const x = clampTo(md.x + dx / md.w, 0.08, 0.92), y = clampTo(md.y + dy / md.h, 0.1, 0.74);
+      md.tr.move(e.clientX, e.clientY, md.w, md.h);
+      md.cx = x;
+      md.cy = y;
       md.el.style.left = `${x * 100}%`;
       md.el.style.top = `${y * 100}%`;
       memberPos.set(md.mid, [x, y]);
@@ -464,12 +530,13 @@ export default function OrbView(props: {
     const md = mdrag.current;
     if (md && md.id === e.pointerId) {
       if (md.hold) clearTimeout(md.hold);
-      md.el.classList.remove("lifted");
       mdrag.current = null;
       if (md.moved) {
         suppressClick.current = true;
         setTimeout(() => (suppressClick.current = false), 450);
-      }
+        const [vx, vy] = md.tr.velocity();
+        fling(md.el, md.mid, md.cx, md.cy, vx, vy, { x0: 0.08, x1: 0.92, y0: 0.1, y1: 0.74 });
+      } else md.el.classList.remove("lifted");
       return;
     }
     const d = drag.current;
@@ -566,6 +633,10 @@ export default function OrbView(props: {
           return (
             <div className="orb-body bubble-body" style={{ width: `calc(${L.W}px * var(--k))`, height: `calc(${L.H}px * var(--k))` }}>
               <div className="blob" />
+              {/* the container's own live viewers: green dots travelling round its edge */}
+              {Array.from({ length: Math.min(watchers, 4) }, (_, k) => (
+                <span key={k} className="edge-sat" style={{ "--d": `${-k * 2.2}s` } as CSSProperties} aria-hidden />
+              ))}
               <span className="zoom-cue" aria-hidden>⤢ Click or scroll to open</span>
               <div className="members" style={{ "--md": `calc(${L.d}px * var(--k))` } as CSSProperties}>
                 {group.map((m, i) => {
@@ -586,6 +657,9 @@ export default function OrbView(props: {
                           <circle className="life" cx="50" cy="50" r="48" strokeDasharray={301.6} strokeDashoffset={301.6 * (1 - mf)} />
                         </svg>
                         <span>{ext(m.fileName)}</span>
+                        {Array.from({ length: Math.min(m.watchers, 3) }, (_, k) => (
+                          <span key={k} className="sat msat" style={{ "--r": `${5 + k * 4}px`, "--t": `${4 + k * 1.5}s`, "--d": `-${k * 0.8}s` } as CSSProperties} aria-hidden />
+                        ))}
                       </span>
                       <span className="mname">{m.name}</span>
                       <span className="mmeta">{formatBytes(m.size)} · {formatClock(mleft)}</span>

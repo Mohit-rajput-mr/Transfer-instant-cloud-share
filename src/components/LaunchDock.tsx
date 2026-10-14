@@ -1,4 +1,6 @@
 "use client";
+import DownloadCard from "./DownloadCard";
+import { useDownloads } from "@/lib/downloads";
 import { useState, type CSSProperties } from "react";
 import { formatBytes, type Orb } from "@/lib/client";
 import type { Stage } from "@/lib/transfer";
@@ -69,9 +71,11 @@ export default function LaunchDock(props: {
   onOpenOwner: (id: string) => void;
 }) {
   const { launches } = props;
-  if (!launches.length) return null;
+  const dl = useDownloads();
+  if (!launches.length && !dl.jobs.length) return null;
   return (
     <div className="dock" aria-live="polite">
+      <DownloadCard />
       {launches.slice(-3).map((l) => (
         <DockItem key={l.key} l={l} {...props} />
       ))}
