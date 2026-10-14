@@ -197,7 +197,7 @@ export default function BubbleZoom(props: {
                   {Array.from({ length: Math.min(o.watchers ?? 0, 4) }, (_, k) => (
                     <span key={k} className="sat" style={{ "--r": `${10 + k * 7}px`, "--t": `${5 + k * 1.7}s`, "--d": `-${k * 0.9}s` } as CSSProperties} aria-hidden />
                   ))}
-                  {/* separate round icons pinned to the ball: trash top-right, lock top-left, download bottom-right */}
+                  {/* separate round icons pinned to the ball: grouped on the left arc: download, lock, trash */}
                   <span className="zicons">
                     {ownerKey(o.id) && props.onDestroy && (
                       <span

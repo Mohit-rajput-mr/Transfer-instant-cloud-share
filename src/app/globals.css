@@ -1879,3 +1879,7 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
 .zicons .ic.dl.fail { color: #ff6b5f; }
 .zicons .ic.dl.busy { color: #fff; border-color: transparent;
   background: radial-gradient(closest-side, rgba(14,15,19,1) 80%, transparent 84%), conic-gradient(#fff calc(var(--p) * 360deg), rgba(255,255,255,0.15) 0); }
+/* all three together on the left arc of the ring, ~36° apart: download, lock, trash */
+.zicons .ic.dl, .zicons .ic.dl.got, .zicons .ic.dl.fail, .zicons .ic.dl.busy { left: 1.5%; top: 14.7%; }
+.zicons .ic.lock, .zicons .ic.lock.open { left: -10%; top: 50%; }
+.zicons .ic.kill { left: 1.5%; top: 85.3%; }
