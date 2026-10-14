@@ -23,6 +23,8 @@ export interface Orb {
   life?: number;
   /** open object: no passcode, anyone downloads it in one tap */
   open?: boolean;
+  /** anonymous sender group: everything one device sent shares it */
+  from?: string | null;
   createdAt: string;
   expiresAt: string;
 }
@@ -49,6 +51,13 @@ export function deviceId() {
     }
     return id;
   }, "anon-" + Math.random().toString(36).slice(2));
+}
+
+/** This device's anonymous sender group: a hash of its random id (not reversible, says nothing about it). */
+export async function senderKey() {
+  const d = new TextEncoder().encode(`orbi-sender:${deviceId()}`);
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", d));
+  return Array.from(h.slice(0, 5), (x) => x.toString(16).padStart(2, "0")).join("");
 }
 
 export function deviceInfo() {

@@ -3,7 +3,7 @@ import {
   CHUNK, ITERATIONS, deriveKeys, fromB64, randomBytes, streamDecrypt, toB64, toHex,
   type DownloadSink,
 } from "./crypto";
-import { deviceLabel, setOwnerKey, type Orb } from "./client";
+import { deviceLabel, senderKey, setOwnerKey, type Orb } from "./client";
 import { FOLDER_MIME, directoryOutput, folderSink, zipOutput, type DirHandle, type Manifest } from "./bundle";
 import { autoDownload, safeMime, saveName } from "./save";
 import { spaceBody } from "./space";
@@ -42,7 +42,7 @@ export async function launch(opts: {
     body: JSON.stringify({
       name, fileName: file.name || "file", mime: file.type || "application/octet-stream", size: file.size,
       chunkSize: CHUNK, iterations, salt: toB64(salt), nonce: toB64(nonce), auth, owner,
-      maxDownloads, device: deviceLabel(), hue: opts.hue, life: opts.life ?? 30, open: !!opts.open, ...spaceBody(),
+      maxDownloads, device: deviceLabel(), hue: opts.hue, life: opts.life ?? 30, open: !!opts.open, from: await senderKey(), ...spaceBody(),
     }),
     signal,
   });

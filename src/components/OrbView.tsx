@@ -211,8 +211,10 @@ export default function OrbView(props: {
   badge?: number;
   /** this device already downloaded it */
   got?: boolean;
+  /** a bubble holding one sender's objects: their colours */
+  group?: number[];
 }) {
-  const { orb, pos, now, mine, nearby, watchers, onOpen, phase, launching, incoming, badge, got } = props;
+  const { orb, pos, now, mine, nearby, watchers, onOpen, phase, launching, incoming, badge, got, group } = props;
   const up = launching !== undefined;
   const h = hash(orb.id);
   const left = new Date(orb.expiresAt).getTime() - now;
@@ -408,7 +410,7 @@ export default function OrbView(props: {
     <div className={`orb-anchor${phase ? ` ${phase}` : ""}`} ref={anchor} style={{ ...style, transform: `translate(${off.x}px, ${off.y}px)` }}>
     <button
       ref={button}
-      className={`orb${mine ? " mine" : ""}${up ? " launching" : ""}${dying && !up ? " dying" : ""}${sealed ? " sealed" : ""}${got && !up ? " got" : ""}`}
+      className={`orb${mine ? " mine" : ""}${up ? " launching" : ""}${dying && !up ? " dying" : ""}${sealed ? " sealed" : ""}${got && !up ? " got" : ""}${group ? " group" : ""}`}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -421,17 +423,18 @@ export default function OrbView(props: {
         }
         open(e.currentTarget);
       }}
-      aria-label={`${up ? "Launching" : "Open"} ${orb.name}${mine ? `, yours${badge ? ` number ${badge}` : ""}` : ""}${got && !up ? ", already downloaded" : ""}`}
+      aria-label={`${up ? "Launching" : "Open"} ${group ? `a group of ${group.length} from one sender: ` : ""}${orb.name}${mine ? `, yours${badge ? ` number ${badge}` : ""}` : ""}${got && !up ? ", already downloaded" : ""}`}
     >
       <div className="orb-body">
         <div className="halo" />
         {mine && <span className="claim" />}
+        {group && group.slice(1, 3).map((h, i) => <span key={i} className={`stack s${i + 1}`} style={{ "--sh": h } as CSSProperties} aria-hidden />)}
         <div className="sphere" />
         <svg className="ring" viewBox="0 0 100 100">
           <circle className="track" cx="50" cy="50" r={R} />
           <circle className="life" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - (up ? Math.max(0.03, launching) : frac))} />
         </svg>
-        <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : ext(orb.fileName)}</span>
+        <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : group ? `×${group.length}` : ext(orb.fileName)}</span>
         {mine && badge ? <span className="mine-no" aria-hidden>{badge}</span> : null}
         {got && !up ? <span className="got-mark" aria-hidden>✓</span> : null}
         {!up && <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
@@ -463,6 +466,7 @@ export default function OrbView(props: {
           {nearby && !mine && !incoming && <span className="tag near">NEARBY</span>}
           {sealed && <span className="tag dead">SEALED</span>}
           {got && !up && <span className="tag got">DOWNLOADED</span>}
+          {group && <span className="tag grp">{group.length} ITEMS · ONE SENDER</span>}
         </div>
       )}
     </button>

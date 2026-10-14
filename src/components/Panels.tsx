@@ -2,7 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import QRCode from "qrcode";
 import {
-  deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, markGot, ownerKey, timeAgo, type Orb, type OwnerView,
+  deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, hasGot, markGot, ownerKey, timeAgo, type Orb, type OwnerView,
 } from "@/lib/client";
 import { MAX_FILE_BYTES } from "@/lib/limits";
 import { release } from "@/lib/p2p";
@@ -1301,6 +1301,130 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
 }
 
 /* ------------------------------ OWNER ------------------------------ */
+
+/* ---------------------------- GROUP (one sender, several objects) ---------------------------- */
+
+export function GroupPanel(props: { members: Orb[]; now: number; onOpen: (o: Orb) => void; onClose: () => void; onDownloaded: () => void }) {
+  const { members } = props;
+  const [env] = useState(saveEnv);
+  const locked = members.filter((o) => !o.open);
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [at, setAt] = useState(0);
+  const [stage, setStage] = useState<Stage>("deriving");
+  const [frac, setFrac] = useState(0);
+  const [errs, setErrs] = useState<Record<string, string>>({});
+  const [held, setHeld] = useState<File[]>([]);
+  const [done, setDone] = useState(false);
+  const abort = useRef<AbortController | null>(null);
+  useEffect(() => () => abort.current?.abort(), []);
+  const total = members.reduce((a, o) => a + o.size, 0);
+  const by = members[0]?.by;
+  const ready = !busy && (!locked.length || code.length >= 4);
+
+  // one after another, so each gets the full connection and the progress reads cleanly
+  const all = async () => {
+    if (!ready) return;
+    tick("success");
+    setBusy(true);
+    setErrs({});
+    setHeld([]);
+    setDone(false);
+    abort.current = new AbortController();
+    const keep: File[] = [];
+    const bad: Record<string, string> = {};
+    for (let i = 0; i < members.length; i++) {
+      const o = members[i];
+      setAt(i);
+      setStage("deriving");
+      setFrac(0);
+      try {
+        const un = await unlockOrb(o, o.open ? "" : code, abort.current.signal);
+        const res = await receive({
+          orb: o, unlocked: un, target: Promise.resolve(null), folderTarget: null, signal: abort.current.signal, hold: env.mobile,
+          onProgress: (st, f) => {
+            setStage(st);
+            setFrac(f);
+          },
+        });
+        if (res.kind === "file" && res.held) keep.push(...(res.parts?.length ? res.parts : [res.file]));
+        if (res.kind === "text") autoDownload(new File([res.text], `${o.name || "note"}.txt`, { type: "text/plain" }));
+        if (res.kind !== "file" || !res.held) markGot(o.id);
+      } catch (e) {
+        if (abort.current?.signal.aborted) break;
+        bad[o.id] = e instanceof UnlockError
+          ? e.reason === "wrong" ? "Wrong passcode" : e.reason === "sealed" ? "Download limit reached" : e.reason === "locked" ? "Locked: too many tries" : "Gone"
+          : e instanceof Error ? e.message : "Failed";
+      }
+    }
+    setErrs(bad);
+    setHeld(keep);
+    setBusy(false);
+    setDone(true);
+    props.onDownloaded();
+  };
+  // phones: everything lands in one share sheet (Photos, Files…) with a single tap
+  const saveHeld = () => {
+    if (!held.length) return;
+    const go = canShareFiles(held, env) ? shareFile(held) : Promise.reject(new Error("no share"));
+    go.catch(() => held.forEach((f, i) => setTimeout(() => autoDownload(f), i * 300))).finally(() => {
+      for (const o of members) if (!errs[o.id]) markGot(o.id);
+      setHeld([]);
+    });
+  };
+  const failed = Object.keys(errs).length;
+
+  return (
+    <Drawer label="From one sender" onClose={props.onClose}>
+      <div className="col">
+        <div className="sp-title wide">{by ? `${by}'s drop` : `${members.length} items`}</div>
+        <div className="send-meta">
+          <span className="mono">{members.length} items · one sender</span>
+          <span className="mono dim">{formatBytes(total)}</span>
+        </div>
+        <div className="files grp-list">
+          {members.map((o) => (
+            <div key={o.id} className={hasGot(o.id) ? "got" : undefined}>
+              <span>{o.name}</span>
+              <span className="mono dim">
+                {errs[o.id] ? <b className="err-inline">{errs[o.id]}</b> : <>{hasGot(o.id) ? "✓ · " : ""}{o.open ? "open · " : "passcode · "}{formatBytes(o.size)}</>}
+              </span>
+              <button type="button" className="pill lg-press" onClick={() => props.onOpen(o)} disabled={busy}>Open</button>
+            </div>
+          ))}
+        </div>
+        <p className="mono dim">Burns in {formatClock(Math.max(0, Math.min(...members.map((o) => new Date(o.expiresAt).getTime())) - props.now))} (the first one)</p>
+      </div>
+      <div className="col">
+        {busy ? (
+          <Progress stage={stage} frac={frac} extra={`${at + 1} of ${members.length} · ${members[at]?.name ?? ""}`} />
+        ) : (
+          <>
+            {locked.length > 0 && (
+              <div className="field">
+                <label><span className="mono">Passcode</span><span className="mono dim">{locked.length} locked</span></label>
+                <PasscodeInput value={code} onChange={setCode} onEnter={all} />
+              </div>
+            )}
+            {done && (
+              <p className={failed ? "err" : "note"}>
+                {failed ? `${members.length - failed} of ${members.length} done. ${failed} couldn't be opened: open those one by one.` : held.length ? "All received. Save them to your device:" : "All received."}
+              </p>
+            )}
+          </>
+        )}
+        <div className="grow" />
+        {held.length > 0 && !busy ? (
+          <button className="cta lg-press" onClick={saveHeld}>Save all {held.length} ↓</button>
+        ) : (
+          <button className="cta lg-press" disabled={!busy && !ready} onClick={busy ? () => abort.current?.abort() : all}>
+            {busy ? "Cancel" : locked.length && code.length < 4 ? "Enter the passcode" : `Download all ${members.length} ↓`}
+          </button>
+        )}
+      </div>
+    </Drawer>
+  );
+}
 
 export function OwnerPanel(props: { id: string; now: number; watchers: number; pulse: number; onClose: () => void; onDeleted: (id: string) => void }) {
   const { id, now, watchers, pulse, onClose } = props;

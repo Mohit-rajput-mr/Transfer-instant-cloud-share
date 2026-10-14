@@ -1559,3 +1559,21 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
 /* the pick list is the only part that gives way when the panel is short: it scrolls, nothing overlaps */
 .drawer .col > :not(.files):not(.grow) { flex-shrink: 0; }
 .drawer .col > .files { flex-shrink: 1; min-height: 56px; }
+
+/* ---------------- One sender's bubble: their objects gathered in one sphere ---------------- */
+/* two more spheres peek out behind it in the colours of the objects inside */
+.orb.group .stack { position: absolute; width: 74%; height: 74%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 34% 28%, hsl(var(--sh) 80% 82%), hsl(var(--sh) 70% 52%) 45%, hsl(var(--sh) 60% 22%));
+  box-shadow: inset -6px -8px 16px rgba(0,0,0,0.45), 0 6px 16px rgba(0,0,0,0.5); opacity: 0.9; }
+.orb.group .stack.s1 { left: -14%; top: 6%; }
+.orb.group .stack.s2 { right: -14%; top: 22%; width: 62%; height: 62%; }
+.orb.group .sphere { z-index: 1; }
+.orb.group .ext { z-index: 2; letter-spacing: 0.02em; }
+.tag.grp { border-color: rgba(255,255,255,0.4); color: #fff; }
+/* the list inside the bubble */
+.grp-list { max-height: 220px !important; }
+.grp-list > div { display: grid !important; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; }
+.grp-list > div > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.grp-list .pill { height: 26px; padding: 0 10px; font-size: 10px; }
+.grp-list > div.got > span:first-child { color: #8a8a8a; }
+.err-inline { color: var(--danger); font-weight: 500; }

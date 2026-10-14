@@ -175,12 +175,14 @@ export async function search(q: string) {
 }
 
 // ---- tags on transfer names ----
-// Extra facts about an object ride in its stored name: ⟪s=slug;b=handle;t=10;o=1⟫name
-//   s: space, b: launched by (name in the space), t: lifetime in minutes (< 30), o: open (no passcode)
+// Extra facts about an object ride in its stored name: ⟪s=slug;b=handle;t=10;o=1;g=ab12cd34ef⟫name
+//   s: space, b: launched by (name in the space), t: lifetime in minutes (< 30), o: open (no passcode),
+//   g: sender group (an anonymous per-device hash: one device's objects gather into one bubble)
 // The old space-only form ⟪slug|handle⟫ is still read.
-export interface Tags { space?: string; by?: string; life?: number; open?: boolean }
+export interface Tags { space?: string; by?: string; life?: number; open?: boolean; from?: string }
 const OLD = /^⟪([a-z0-9-]{1,32})\|([^⟫]{0,24})⟫/;
-const NEW = /^⟪((?:[sbto]=[^;⟫]*;?)*)⟫/;
+const NEW = /^⟪((?:[sbtog]=[^;⟫]*;?)*)⟫/;
+export const validFrom = (x: unknown): x is string => typeof x === "string" && /^[a-f0-9]{10}$/.test(x);
 export const LIFE_MIN = 30;
 export const LIVES = [5, 10, 15, 20, 25, 30];
 
@@ -190,19 +192,20 @@ export function tagName(name: string, t: Tags) {
   if (t.space && t.by) parts.push(`b=${t.by}`);
   if (t.life && t.life < LIFE_MIN) parts.push(`t=${t.life}`);
   if (t.open) parts.push("o=1");
+  if (t.from) parts.push(`g=${t.from}`);
   return parts.length ? `⟪${parts.join(";")}⟫${name}` : name;
 }
 
-export type Untagged<T> = T & { space: string | null; by: string | null; life: number; open: boolean };
+export type Untagged<T> = T & { space: string | null; by: string | null; life: number; open: boolean; from: string | null };
 export function untag<T extends { name?: unknown; expiresAt?: unknown }>(o: T): Untagged<T> {
   const name = typeof o.name === "string" ? o.name : "";
   const old = OLD.exec(name);
-  if (old) return { ...o, name: name.slice(old[0].length), space: old[1], by: old[2] || null, life: LIFE_MIN, open: false };
+  if (old) return { ...o, name: name.slice(old[0].length), space: old[1], by: old[2] || null, life: LIFE_MIN, open: false, from: null };
   const m = NEW.exec(name);
-  if (!m) return { ...o, space: null, by: null, life: LIFE_MIN, open: false };
+  if (!m) return { ...o, space: null, by: null, life: LIFE_MIN, open: false, from: null };
   const kv = Object.fromEntries(m[1].split(";").filter(Boolean).map((x) => [x[0], x.slice(2)]));
   const life = LIVES.includes(Number(kv.t)) ? Number(kv.t) : LIFE_MIN;
-  const out = { ...o, name: name.slice(m[0].length), space: kv.s || null, by: kv.b || null, life, open: kv.o === "1" };
+  const out = { ...o, name: name.slice(m[0].length), space: kv.s || null, by: kv.b || null, life, open: kv.o === "1", from: validFrom(kv.g) ? kv.g : null };
   // a shorter life burns earlier than the database's 30 minutes: the server hides it and refuses it from then on
   if (life < LIFE_MIN && typeof o.expiresAt === "string") {
     const t = Date.parse(o.expiresAt);

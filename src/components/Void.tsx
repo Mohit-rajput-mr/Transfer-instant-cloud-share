@@ -5,7 +5,7 @@ import Starfield from "./Starfield";
 import Uploader, { Icon } from "./Uploader";
 import LiquidGlass from "./LiquidGlass";
 import OrbView, { ORB_CAP, inheritSlot, pickHue, layout, type VoidMode } from "./OrbView";
-import { ComposePanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin, type LaunchJob } from "./Panels";
+import { ComposePanel, GroupPanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin, type LaunchJob } from "./Panels";
 import LaunchDock, { isPending, pendingId, pendingOrb, type Launch } from "./LaunchDock";
 import { launch, type Stage } from "@/lib/transfer";
 import { folderFromInput, fromDrop, textToFile, type Item } from "@/lib/bundle";
@@ -40,8 +40,49 @@ type Panel =
   | { kind: "compose" }
   | { kind: "unlock"; id: string }
   | { kind: "owner"; id: string }
+  | { kind: "group"; id: string }
   | { kind: "space"; start?: string }
   | null;
+
+// One device's objects gather into a single bubble once it has sent more than one.
+const GROUP = "g-";
+const isGroup = (id: string) => id.startsWith(GROUP);
+function groupOrbs(list: Orb[]) {
+  const by = new Map<string, Orb[]>();
+  for (const o of list) if (o.from) by.set(o.from, [...(by.get(o.from) ?? []), o]);
+  const groups = new Map<string, Orb[]>();
+  const out: Orb[] = [];
+  for (const o of list) {
+    const m = o.from ? by.get(o.from)! : null;
+    if (!m || m.length < 2) {
+      out.push(o);
+      continue;
+    }
+    const id = GROUP + o.from;
+    if (groups.has(id)) continue;
+    m.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    groups.set(id, m);
+    const sum = (k: "size" | "downloads" | "views" | "devices") => m.reduce((a, x) => a + (x[k] ?? 0), 0);
+    out.push({
+      ...m[0],
+      id,
+      name: m[0].by ? `${m[0].by} · ${m.length} items` : `${m.length} items`,
+      fileName: `${m.length} items`,
+      size: sum("size"),
+      downloads: sum("downloads"),
+      views: sum("views"),
+      devices: sum("devices"),
+      watchers: m.reduce((a, x) => a + (x.watchers ?? 0), 0),
+      maxDownloads: null,
+      status: "ready",
+      open: m.every((x) => x.open),
+      createdAt: m[0].createdAt,
+      expiresAt: m.reduce((a, x) => (x.expiresAt > a ? x.expiresAt : a), m[0].expiresAt),
+      life: Math.max(...m.map((x) => x.life ?? 30)),
+    });
+  }
+  return { list: out, groups };
+}
 
 export default function Void() {
   const [orbs, setOrbs] = useState<Orb[]>([]);
@@ -693,13 +734,18 @@ export default function Void() {
   const pending = useMemo(() => launches.filter((l) => !l.orb && !l.err).map(pendingOrb), [launches]);
   // other people's launches still on their way up
   const arrivingOrbs = useMemo(() => Object.values(incoming).map(incomingOrb), [incoming]);
+  const grouped = useMemo(
+    () => groupOrbs(alive.filter((o) => scope === "all" || (scope === "near" ? o.netHash === net || !!ownerKey(o.id) : !!ownerKey(o.id)))),
+    [alive, scope, net],
+  );
+  const groups = grouped.groups;
   const shown = useMemo(
     () => [
-      ...alive.filter((o) => scope === "all" || (scope === "near" ? o.netHash === net || !!ownerKey(o.id) : !!ownerKey(o.id))),
+      ...grouped.list,
       ...pending,
       ...(scope === "mine" ? [] : arrivingOrbs.filter((o) => scope === "all" || (!!net && o.netHash === net))),
     ],
-    [alive, scope, net, pending, arrivingOrbs],
+    [grouped, scope, net, pending, arrivingOrbs],
   );
   // Your balls are numbered 1..N in launch order, on the ball and on its dock row, so you can count yours at a glance.
   const badges = useMemo(() => {
@@ -756,8 +802,12 @@ export default function Void() {
     window.addEventListener("orbit:got", on);
     return () => window.removeEventListener("orbit:got", on);
   }, []);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const gotIds = useMemo(() => new Set(visible.filter((o) => hasGot(o.id)).map((o) => o.id)), [visible, gotTick]);
+  const gotIds = useMemo(
+    () => new Set(visible.filter((o) => (isGroup(o.id) ? !!groups.get(o.id)?.every((m) => hasGot(m.id)) : hasGot(o.id))).map((o) => o.id)),
+    // gotTick: re-read localStorage when this device downloads something
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [visible, groups, gotTick],
+  );
   const watchers = useCallback((id: string) => orbs.find((o) => o.id === id)?.watchers ?? 0, [orbs]);
   const nearbyCount = alive.filter((o) => o.netHash === net).length;
   const mineCount = badges.size;
@@ -808,6 +858,7 @@ export default function Void() {
       return toast(`${o.name} is still launching. It opens here the moment it lands`);
     }
     if (isPending(o.id)) return setLaunches((ls) => ls.map((l) => (pendingId(l.key) === o.id ? { ...l, open: true } : l)));
+    if (isGroup(o.id)) return setPanel({ kind: "group", id: o.id });
     setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id });
   }, [toast]);
   const noop = useCallback(() => {}, []);
@@ -910,9 +961,9 @@ export default function Void() {
               index={i}
               pos={positions.get(o.id)!}
               now={serverNow}
-              mine={!!ownerKey(o.id) || isPending(o.id)}
+              mine={isGroup(o.id) ? !!groups.get(o.id)?.some((m) => ownerKey(m.id)) : !!ownerKey(o.id) || isPending(o.id)}
               nearby={!!net && o.netHash === net}
-              watchers={watchers(o.id)}
+              watchers={isGroup(o.id) ? o.watchers ?? 0 : watchers(o.id)}
               onOpen={open}
               phase={arriving.has(o.id) ? "arriving" : undefined}
               hue={colors.get(o.id)}
@@ -920,6 +971,7 @@ export default function Void() {
               incoming={isIncoming(o.id)}
               badge={badges.get(o.id)}
               got={gotIds.has(o.id)}
+              group={isGroup(o.id) ? groups.get(o.id)?.map((m) => m.hue) : undefined}
             />
           ))}
           {ghosts.map((g) => (
@@ -1037,6 +1089,19 @@ export default function Void() {
           }}
           onClose={() => setPanel(null)}
           toast={toast}
+        />
+      )}
+      {panel?.kind === "group" && groups.get(panel.id) && (
+        <GroupPanel
+          key={panel.id}
+          members={groups.get(panel.id)!}
+          now={serverNow}
+          onOpen={(o) => setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id })}
+          onClose={() => setPanel(null)}
+          onDownloaded={() => {
+            refresh();
+            broadcast();
+          }}
         />
       )}
       {panel?.kind === "send" && (

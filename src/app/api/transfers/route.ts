@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MAX_FILE_BYTES } from "@/lib/limits";
 import { clean, geo, isB64, isHex, netHash, newId, reap, rpc, sha256 } from "@/lib/server";
-import { LIVES, burnedUp, member, tagName, untag } from "@/lib/spaces";
+import { LIVES, burnedUp, member, tagName, untag, validFrom } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   let name = (clean(b.name, 60) || "untitled").replace(/^⟪/, "(");
   const life = LIVES.includes(Number(b.life)) ? Number(b.life) : 30;
-  const tags = { life, open: b.open === true } as Parameters<typeof tagName>[1];
+  const tags = { life, open: b.open === true, from: validFrom(b.from) ? b.from : undefined } as Parameters<typeof tagName>[1];
   if (b.space != null) {
     const me = await member(b.space, b.deviceId, b.spaceToken);
     if (!me) return NextResponse.json({ error: "You are no longer in this space" }, { status: 403 });
