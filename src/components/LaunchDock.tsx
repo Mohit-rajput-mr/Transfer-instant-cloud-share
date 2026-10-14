@@ -6,6 +6,8 @@ import { useState, type CSSProperties } from "react";
 import { formatBytes, type Orb } from "@/lib/client";
 import type { Stage } from "@/lib/transfer";
 import { ShareBlock } from "./Panels";
+import { glyph } from "./Glyph";
+import { LuCheck } from "react-icons/lu";
 
 /** One send in flight (or just landed). The card closes on Launch; this is all that stays on screen. */
 export interface Launch {
@@ -134,13 +136,13 @@ function DockItem({ l, badges, onToggle, onDismiss, onOpenOwner }: { l: Launch }
           <b className="ellip">{l.name}</b>
           <span className="mono">In orbit · <span className="dock-code">{l.orb.id}</span>
             {cloud?.state === "saving" && <span className="dock-cloud"> · saving {Math.round(cloud.frac * 100)}%, keep open</span>}
-            {cloud?.state === "saved" && <span className="dock-cloud ok"> · saved ✓ safe to close</span>}
+            {cloud?.state === "saved" && <span className="dock-cloud ok"> · saved <LuCheck className="ic-inline" /> safe to close</span>}
             {cloud?.state === "failed" && <span className="dock-cloud"> · keep this page open</span>}
           </span>
           {cloud?.state === "saving" && <span className="dock-bar"><i style={{ transform: `scaleX(${Math.max(0.03, cloud.frac)})` }} /></span>}
         </div>
         {!l.open && (
-          <button className={`pill lg-press${copied ? " solid" : ""}`} onClick={copy}>{copied ? "Copied ✓" : "Copy link"}</button>
+          <button className={`pill lg-press${copied ? " solid" : ""}`} onClick={copy}>{glyph(copied ? "Copied ✓" : "Copy link")}</button>
         )}
         <button className="dock-x lg-press" aria-label={l.open ? "Minimize" : "Expand"} aria-expanded={l.open} onClick={() => onToggle(l.key)}>
           <svg viewBox="0 0 12 12" aria-hidden><path d={l.open ? "M2.5 4.5L6 8l3.5-3.5" : "M2.5 7.5L6 4l3.5 3.5"} /></svg>
@@ -151,7 +153,7 @@ function DockItem({ l, badges, onToggle, onDismiss, onOpenOwner }: { l: Launch }
         <div className="dock-more">
           <ShareBlock id={l.orb.id} />
           <p className="note">Floats for 30 minutes, encrypted on this device. <b>Share the passcode separately.</b></p>
-          <button className="cta lg-press" onClick={() => onOpenOwner(l.orb!.id)}>Mission control →</button>
+          <button className="cta lg-press" onClick={() => onOpenOwner(l.orb!.id)}>{glyph("Mission control →")}</button>
         </div>
       )}
     </div>

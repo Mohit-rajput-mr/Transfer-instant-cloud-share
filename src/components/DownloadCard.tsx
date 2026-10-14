@@ -1,5 +1,7 @@
 "use client";
 import { cancelAll, dismiss, saveHeld, useDownloads } from "@/lib/downloads";
+import { glyph } from "./Glyph";
+import { LuCheck } from "react-icons/lu";
 
 /** Bottom-right: every background download with its progress; stays when panels and containers close. */
 export default function DownloadCard() {
@@ -23,13 +25,13 @@ export default function DownloadCard() {
           <div key={j.id} className={`dl-row ${j.state}`}>
             <span className="dl-name">{j.name}</span>
             <span className="dl-state mono">
-              {j.state === "done" ? "✓" : j.state === "failed" ? j.err ?? "Failed" : j.state === "running" ? `${Math.round(j.frac * 100)}%` : "waiting"}
+              {j.state === "done" ? <LuCheck className="ic-inline" /> : j.state === "failed" ? j.err ?? "Failed" : j.state === "running" ? `${Math.round(j.frac * 100)}%` : "waiting"}
             </span>
             <i className="dl-bar" style={{ transform: `scaleX(${j.state === "done" ? 1 : j.frac})` }} />
           </div>
         ))}
       </div>
-      {held.length > 0 && !active && <button className="cta lg-press dl-save" onClick={saveHeld}>Save all {held.length} ↓</button>}
+      {held.length > 0 && !active && <button className="cta lg-press dl-save" onClick={saveHeld}>{glyph(`Save all ${held.length} ↓`)}</button>}
       {failed > 0 && !active && <p className="mono dim dl-note">{failed} couldn&apos;t be downloaded: open those one by one.</p>}
     </div>
   );

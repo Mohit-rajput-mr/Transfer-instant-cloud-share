@@ -23,6 +23,7 @@ const release = (id: string) => {
 };
 import { downloading } from "@/lib/downloads";
 import { enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
+import { LuFlag } from "react-icons/lu";
 
 /** Someone else's launch, announced over realtime the moment they press Launch (before it has landed). */
 type Incoming = { key: string; by: string | null; life: number; open: boolean; name: string; size: number; files: number; hue: number; createdAt: string; net: string | null; frac: number; seen: number };
@@ -342,7 +343,9 @@ export default function Void() {
     if (!spaceReady) return;
     me.current = deviceId();
     refresh();
-    const t = setInterval(refresh, 15_000);
+    // new / landed / destroyed balls arrive instantly over realtime; this is only the safety net
+    // (one request a minute per open page keeps the free hosting plan comfortable at scale)
+    const t = setInterval(() => document.visibilityState === "visible" && refresh(), 60_000);
     const onVis = () => document.visibilityState === "visible" && refresh();
     document.addEventListener("visibilitychange", onVis);
     const o = new URLSearchParams(window.location.search).get("o");
@@ -413,7 +416,8 @@ export default function Void() {
 
   useEffect(() => {
     sendPulse();
-    const t = setInterval(sendPulse, 25_000);
+    // within the server's 50 s "online" window, but fewer requests than every 25 s
+    const t = setInterval(sendPulse, 40_000);
     const onVis = () => document.visibilityState === "visible" && sendPulse();
     document.addEventListener("visibilitychange", onVis);
     return () => {
@@ -553,7 +557,7 @@ export default function Void() {
     setLive(new Set());
     if (!space) return;
     loadRoom();
-    const t = setInterval(loadRoom, 15_000);
+    const t = setInterval(() => document.visibilityState === "visible" && loadRoom(), 45_000);
     return () => clearInterval(t);
   }, [space, loadRoom]);
   const kick = useCallback(async (id: string, who: string) => {
@@ -625,7 +629,8 @@ export default function Void() {
       if (stale.current && idle()) window.location.reload();
     };
     check();
-    const t = setInterval(check, 60_000);
+    // also checked whenever the page comes back into view
+    const t = setInterval(check, 5 * 60_000);
     const onVis = () => document.visibilityState === "visible" && check();
     document.addEventListener("visibilitychange", onVis);
     return () => {
@@ -1083,7 +1088,7 @@ export default function Void() {
           ))}
           <div className="legal">
             <span>Files are end-to-end encrypted. Max 2 GB each. 30 uploads per network per hour.</span>
-            <span><Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · Abuse? Open the object and tap ⚑ Report</span>
+            <span><Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · Abuse? Open the object and tap <span className="glyph"><LuFlag aria-hidden />Report</span></span>
           </div>
         </section>
       </main>

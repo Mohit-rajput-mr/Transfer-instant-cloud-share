@@ -1,3 +1,4 @@
+import { LuArrowLeft } from "react-icons/lu";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -10,7 +11,7 @@ export default function Privacy() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/lockup.svg" alt="Orbi Transfer" width={220} height={32} />
       </Link>
-      <Link className="back" href="/">← Back to the void</Link>
+      <Link className="back glyph" href="/"><LuArrowLeft aria-hidden />Back to the void</Link>
       <h1 className="wide" style={{ marginTop: 24 }}>Privacy</h1>
       <p>Orbi Transfer is built to know as little as possible about you.</p>
       <h2>Files</h2>

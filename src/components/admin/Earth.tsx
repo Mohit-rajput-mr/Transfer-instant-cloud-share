@@ -54,6 +54,43 @@ function arc(a: [number, number], b: [number, number], steps = 64): [number, num
   return out;
 }
 
+/** A route as a visible curve. Between two places: the great circle, bowed to one side so routes read
+ *  as arcs (and two directions don't overlap). Within the same place (an office, a home: no precise
+ *  location, so both ends land on the same coordinates): a small loop that leaves the spot and comes
+ *  back, so local transfers still show. */
+export function route(from: [number, number], to: [number, number]): [number, number][] {
+  const [ax, ay] = from;
+  let bx = to[0];
+  const by = to[1];
+  if (bx - ax > 180) bx -= 360;
+  if (ax - bx > 180) bx += 360;
+  const dx = bx - ax;
+  const dy = by - ay;
+  const len = Math.hypot(dx, dy);
+  if (len < 0.05) {
+    // loop of ~3 km radius, rising north of the spot
+    const r = 0.03;
+    const out: [number, number][] = [];
+    for (let i = 0; i <= 48; i++) {
+      const t = (i / 48) * 2 * Math.PI;
+      out.push([ax + (r * Math.sin(t)) / Math.max(0.2, Math.cos((ay * Math.PI) / 180)), ay + r - r * Math.cos(t)]);
+    }
+    return out;
+  }
+  if (len > 60) return arc([ax, ay], [bx, by]);
+  // short and medium hops: a quadratic curve bowed 22% of its length to the left
+  const k = 0.22 * len;
+  const cx = (ax + bx) / 2 - (dy / len) * k;
+  const cy = (ay + by) / 2 + (dx / len) * k;
+  const out: [number, number][] = [];
+  for (let i = 0; i <= 40; i++) {
+    const f = i / 40;
+    const u = 1 - f;
+    out.push([u * u * ax + 2 * u * f * cx + f * f * bx, u * u * ay + 2 * u * f * cy + f * f * by]);
+  }
+  return out;
+}
+
 // Turn every colour in the base style into a neutral gray of the same brightness.
 const probe = typeof document !== "undefined" ? document.createElement("canvas").getContext("2d") : null;
 function gray(c: unknown, lift = 1): unknown {
@@ -74,7 +111,9 @@ function gray(c: unknown, lift = 1): unknown {
 }
 const COLOR_PROPS = ["background-color", "fill-color", "fill-outline-color", "line-color", "text-color", "text-halo-color", "icon-color", "fill-extrusion-color"];
 
-export default function Earth({ data, layers, spin }: { data: Overview | null; layers: Set<Layer>; spin: boolean }) {
+export type RouteLine = { a: number; b: number; c: number; d: number; n?: number; label?: string };
+
+export default function Earth({ data, layers, spin, routes }: { data: Overview | null; layers: Set<Layer>; spin: boolean; /** replaces the live routes (History) */ routes?: RouteLine[] | null }) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<MLMap | null>(null);
   const ready = useRef(false);
@@ -82,8 +121,8 @@ export default function Earth({ data, layers, spin }: { data: Overview | null; l
   const centred = useRef(false);
   const spinRef = useRef(spin);
   spinRef.current = spin;
-  const latest = useRef({ data, layers });
-  latest.current = { data, layers };
+  const latest = useRef({ data, layers, routes });
+  latest.current = { data, layers, routes };
 
   // build the map once
   useEffect(() => {
@@ -125,7 +164,8 @@ export default function Earth({ data, layers, spin }: { data: Overview | null; l
         source: "routes",
         layout: { "line-cap": "round" },
         paint: {
-          "line-width": 1.6,
+          // busier routes are thicker
+          "line-width": ["interpolate", ["linear"], ["get", "n"], 1, 1.6, 20, 3.5, 200, 6],
           "line-opacity": 0.9,
           "line-gradient": ["interpolate", ["linear"], ["line-progress"], 0, "#59b8ff", 1, "#ffa045"],
         },
@@ -204,7 +244,7 @@ export default function Earth({ data, layers, spin }: { data: Overview | null; l
   // push data + layer visibility into the map
   const sync = () => {
     const m = map.current;
-    const { data: d, layers: on } = latest.current;
+    const { data: d, layers: on, routes: hist } = latest.current;
     if (!m || !ready.current) return;
     const set = (id: string, fc: GeoJSON.FeatureCollection) => (m.getSource(id) as GeoJSONSource | undefined)?.setData(fc);
     set("visitors", points(d?.visitors ?? [], "visitors"));
@@ -212,10 +252,10 @@ export default function Earth({ data, layers, spin }: { data: Overview | null; l
     set("downloads", points((d?.points ?? []).filter((p) => p.k === "download"), "downloads"));
     set("routes", {
       type: "FeatureCollection",
-      features: (d?.arcs ?? []).map((a) => ({
+      features: ((hist ?? d?.arcs ?? []) as RouteLine[]).map((a) => ({
         type: "Feature",
-        geometry: { type: "LineString", coordinates: arc([a.b, a.a], [a.d, a.c]) },
-        properties: {},
+        geometry: { type: "LineString", coordinates: route([a.b, a.a], [a.d, a.c]) },
+        properties: { n: a.n ?? 1 },
       })),
     });
     for (const id of ["visitors", "uploads", "downloads", "routes"] as Layer[])
@@ -242,7 +282,7 @@ export default function Earth({ data, layers, spin }: { data: Overview | null; l
     }
   };
 
-  useEffect(sync, [data, layers]);
+  useEffect(sync, [data, layers, routes]);
 
   return <div ref={box} className="earth" />;
 }

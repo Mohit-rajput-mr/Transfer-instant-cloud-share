@@ -11,6 +11,8 @@ import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, filesBundle, isFol
 import { needsSavePicker, pickSaveTarget, receive, unlockOrb, UnlockError, type Unlocked, type Received, type Stage } from "@/lib/transfer";
 import { autoDownload, canPickSave, canShareFile, canShareFiles, deviceNoun, downloadWhere, downloadsShortcut, pickAndWrite, saveEnv, shareFile } from "@/lib/save";
 import "@/app/save.css";
+import { glyph } from "./Glyph";
+import { LuArrowRight, LuCheck, LuChevronDown, LuFlag, LuInfinity } from "react-icons/lu";
 
 // Screen point the card zooms out of (the tapped sphere / button). Set right before opening.
 let origin: { x: number; y: number } | null = null;
@@ -473,8 +475,8 @@ export function ShareBlock({ id }: { id: string }) {
         <span className="mono dim">Orbit code</span>
         <div className="wide share-code">{id}</div>
         <div className="share-btns">
-          <button className={`pill lg-press${copied ? " solid" : ""}`} onClick={copy}>{copied ? "Copied ✓" : "Copy link"}</button>
-          {canShare && <button className="pill lg-press" onClick={share}>Share ↗</button>}
+          <button className={`pill lg-press${copied ? " solid" : ""}`} onClick={copy}>{glyph(copied ? "Copied ✓" : "Copy link")}</button>
+          {canShare && <button className="pill lg-press" onClick={share}>{glyph("Share ↗")}</button>}
         </div>
       </div>
     </div>
@@ -536,7 +538,8 @@ export function SendPanel(props: {
   const [bubble, setBubble] = useState("");
   const [more, setMore] = useState(false);
   const [max, setMax] = useState<number | null>(null);
-  const [locked, setLocked] = useState(() => pref("locked", false));
+  // every send starts open (no password); a password is a deliberate choice each time
+  const [locked, setLocked] = useState(false);
   const [life, setLife] = useState(() => pref("life", 30));
   const [focusNow] = useState(finePointer);
 
@@ -545,7 +548,6 @@ export function SendPanel(props: {
   const go = () => {
     if (!ready) return;
     tick("success");
-    setPref("locked", locked);
     setPref("life", life);
     if (multi) setPref("split", split);
     const common = { passcode: locked ? code : "", maxDownloads: max, life, open: !locked };
@@ -642,11 +644,11 @@ export function SendPanel(props: {
           <div className="add-more">
             {props.onAddFolder && <button type="button" className="pill lg-press" onClick={props.onAddFolder}>+ Folder</button>}
             {props.onAddFiles && <button type="button" className="pill lg-press" onClick={props.onAddFiles}>+ Files</button>}
-            <span className="mono dim">{multi ? "keep this page open until received" : "or drop more here"}</span>
+            <span className="mono dim">{multi ? "keep this page open until saved" : "or drop more here"}</span>
           </div>
         )}
         <div className="grow" />
-        {!multi && <p className="mono dim">Encrypted · keep this page open until it&apos;s received</p>}
+        {!multi && <p className="mono dim">Encrypted · keep this page open until it says saved</p>}
       </div>
       <div className="col">
         <div className="field">
@@ -661,7 +663,7 @@ export function SendPanel(props: {
         <button type="button" className={`more-opts${more ? " open" : ""}`} onClick={() => setMore((m) => !m)} aria-expanded={more}>
           <span className="mono">More options</span>
           <span className="mono dim">{life} min · {max ? `${max} download${max > 1 ? "s" : ""}` : "unlimited"}</span>
-          <i aria-hidden>▾</i>
+          <i aria-hidden><LuChevronDown className="ic-inline" /></i>
         </button>
         {more && (
           <>
@@ -677,7 +679,7 @@ export function SendPanel(props: {
               <label><span className="mono">Download limit</span><span className="mono dim">{max ? `gone after ${max}` : "unlimited"}</span></label>
               <div className="chips" role="radiogroup" aria-label="Download limit">
                 {[null, 1, 2, 3, 5, 10].map((m) => (
-                  <button key={String(m)} role="radio" aria-checked={max === m} className={`chip lg-press${max === m ? " on" : ""}`} onClick={() => setMax(m)}>{m ?? "∞"}</button>
+                  <button key={String(m)} role="radio" aria-checked={max === m} className={`chip lg-press${max === m ? " on" : ""}`} onClick={() => setMax(m)}>{m ?? <LuInfinity className="ic-inline" aria-label="Unlimited" />}</button>
                 ))}
               </div>
             </div>
@@ -685,7 +687,7 @@ export function SendPanel(props: {
         )}
         {tooBig && <p className="err">{split ? "One of them is" : multi ? "Together they are" : folder ? `The ${folder.name} folder is` : `${first.name} is`} over the 2 GB limit</p>}
         <div className="grow" />
-        <button className="cta lg-press" disabled={!ready} onClick={go}>{locked && code.length > 0 && code.length < 4 ? "Password: 4+ characters" : split ? `Send ${n} ↗` : "Send ↗"}</button>
+        <button className="cta lg-press" disabled={!ready} onClick={go}>{glyph(locked && code.length > 0 && code.length < 4 ? "Password: 4+ characters" : split ? `Send ${n} ↗` : "Send ↗")}</button>
       </div>
     </Drawer>
   );
@@ -718,7 +720,7 @@ export function ComposePanel(props: { onClose: () => void; onReady: (file: File)
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => (e.metaKey || e.ctrlKey) && e.key === "Enter" && ok && props.onReady(textToFile(text))}
         />
-        <button className="cta lg-press" disabled={!ok} onClick={() => props.onReady(textToFile(text))}>Continue →</button>
+        <button className="cta lg-press" disabled={!ok} onClick={() => props.onReady(textToFile(text))}>{glyph("Continue →")}</button>
       </div>
     </Drawer>
   );
@@ -762,7 +764,7 @@ function RichText({ text }: { text: string }) {
         return (
           <span key={i} className={`rt rt-${k}`}>
             {href ? <a href={href} target="_blank" rel="noopener noreferrer nofollow">{p}</a> : <b>{p}</b>}
-            <button type="button" className="rt-copy" onClick={() => copy(p, i)} aria-label={`Copy ${k}`}>{copied === i ? "✓" : "copy"}</button>
+            <button type="button" className="rt-copy" onClick={() => copy(p, i)} aria-label={`Copy ${k}`}>{copied === i ? <LuCheck className="ic-inline" /> : "copy"}</button>
           </span>
         );
       })}
@@ -1083,12 +1085,12 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     if (a === "download")
       return (
         <a key={a} className={cls} href={url ?? undefined} download={file?.name} onClick={doDownload} aria-disabled={!url}>
-          {label(a, role)}
+          {glyph(label(a, role))}
         </a>
       );
     return (
       <button key={a} type="button" className={cls} disabled={working} onClick={a === "share" ? doShare : doPick}>
-        {label(a, role)}
+        {glyph(label(a, role))}
       </button>
     );
   };
@@ -1152,7 +1154,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
             <div><span className="mono">Live now</span><b>{watchers}</b></div>
           </div>
           <button className={`report mono${report === "arm" ? " arm" : ""}`} onClick={sendReport} disabled={report === "sent"}>
-            {report === "sent" ? "Reported · thank you" : report === "arm" ? "Tap again to report abuse" : "⚑ Report"}
+            {report === "sent" ? "Reported · thank you" : report === "arm" ? "Tap again to report abuse" : <span className="glyph"><LuFlag aria-hidden />Report</span>}
           </button>
         </div>
       )}
@@ -1176,9 +1178,9 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
                 } catch {}
               }}
             >
-              {copied ? "Copied ✓" : "Copy all"}
+              {glyph(copied ? "Copied ✓" : "Copy all")}
             </button>
-            {isLink && <a className="cta lg-press" href={got.text} target="_blank" rel="noopener noreferrer nofollow">Open link ↗</a>}
+            {isLink && <a className="cta lg-press" href={got.text} target="_blank" rel="noopener noreferrer nofollow">{glyph("Open link ↗")}</a>}
           </div>
         </div>
       ) : held && file ? (
@@ -1217,7 +1219,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
                 {order.length > 2 && <div className="row-btns">{order.slice(1).map((a) => action(a, "alt"))}</div>}
               </>
             )}
-            {order[0] !== "download" && !saved && <p className="save-where mono">Download → <b>{where}</b></p>}
+            {order[0] !== "download" && !saved && <p className="save-where mono"><span className="glyph">Download<LuArrowRight aria-hidden /></span> <b>{where}</b></p>}
           </div>
         </div>
       ) : got ? (
@@ -1286,7 +1288,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
                   </div>
                 </div>
               ) : (
-                <button className="cta lg-press" onClick={() => choose()}>{asDir ? "Choose folder + save ↓" : "Choose where to save ↓"}</button>
+                <button className="cta lg-press" onClick={() => choose()}>{glyph(asDir ? "Choose folder + save ↓" : "Choose where to save ↓")}</button>
               )}
             </>
           ) : (
@@ -1320,7 +1322,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
                 </p>
               ) : null}
               <button className="cta lg-press" disabled={!free && !code} onClick={() => go()}>
-                {free ? (isLink || inline ? "Open ↗" : isFolder ? "Get it ↓" : "Download ↓") : isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : env.mobile && !(asDir && canWriteFolders()) ? "Decrypt →" : loose ? "Decrypt + download all ↓" : isFolder ? "Unlock folder →" : needsSavePicker(orb) ? "Unlock →" : "Decrypt + download ↓"}
+                {glyph(free ? (isLink || inline ? "Open ↗" : isFolder ? "Get it ↓" : "Download ↓") : isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : env.mobile && !(asDir && canWriteFolders()) ? "Decrypt →" : loose ? "Decrypt + download all ↓" : isFolder ? "Unlock folder →" : needsSavePicker(orb) ? "Unlock →" : "Decrypt + download ↓")}
               </button>
             </>
           )}
@@ -1361,7 +1363,7 @@ export function GroupPanel(props: { members: Orb[]; now: number; onOpen: (o: Orb
           {members.map((o) => (
             <div key={o.id} className={hasGot(o.id) ? "got" : undefined}>
               <span>{o.name}</span>
-              <span className="mono dim">{hasGot(o.id) ? "✓ · " : ""}{o.open ? "open · " : "passcode · "}{formatBytes(o.size)}</span>
+              <span className="mono dim">{hasGot(o.id) ? <><LuCheck className="ic-inline" /> · </> : ""}{o.open ? "open · " : "passcode · "}{formatBytes(o.size)}</span>
               <button type="button" className="pill lg-press" onClick={() => props.onOpen(o)}>Open</button>
             </div>
           ))}
@@ -1378,7 +1380,7 @@ export function GroupPanel(props: { members: Orb[]; now: number; onOpen: (o: Orb
         <p className="note">Downloads run in the background: close this and keep browsing, progress shows bottom right.</p>
         <div className="grow" />
         <button className="cta lg-press" disabled={!ready} onClick={all}>
-          {locked.length && code.length < 4 ? "Enter the password" : `Download all ${members.length} ↓`}
+          {glyph(locked.length && code.length < 4 ? "Enter the password" : `Download all ${members.length} ↓`)}
         </button>
       </div>
     </Drawer>
@@ -1406,7 +1408,7 @@ export function OwnerPanel(props: { id: string; now: number; watchers: number; p
       else if (r.ok) setData(await r.json());
     };
     load();
-    const t = setInterval(load, 5000);
+    const t = setInterval(() => document.visibilityState === "visible" && load(), 10_000);
     return () => {
       alive = false;
       clearInterval(t);

@@ -3,23 +3,14 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatBytes } from "@/lib/client";
-import type { Layer } from "./Earth";
+import type { Layer, RouteLine } from "./Earth";
+import History, { loadHistory, routeLines } from "./History";
 import type { AdminSpace, AdminTransfer, Overview } from "./types";
+import { country, flag, n } from "./fmt";
 
 // three.js only loads for the admin, never for regular visitors
 const Earth = dynamic(() => import("./Earth"), { ssr: false, loading: () => <div className="earth earth-loading mono">Booting globe…</div> });
 
-const regionName = (() => {
-  try {
-    return new Intl.DisplayNames(["en"], { type: "region" });
-  } catch {
-    return null;
-  }
-})();
-const flag = (cc: string | null) =>
-  cc && /^[A-Z]{2}$/.test(cc) ? String.fromCodePoint(...[...cc].map((c) => 0x1f1a5 + c.charCodeAt(0))) : "🌐";
-const country = (cc: string | null) => (cc ? regionName?.of(cc) ?? cc : "Unknown");
-const n = (v: number | undefined) => (v ?? 0).toLocaleString("en-US");
 type Ev = Overview["feed"][number];
 const HIST_KEY = "hq:events";
 const HIST_MAX = 5000;
@@ -178,7 +169,7 @@ const LAYERS: { id: Layer; label: string; dot: string }[] = [
   { id: "routes", label: "Transfer routes", dot: "linear-gradient(90deg,#59b8ff,#ffa045)" },
 ];
 
-type Expand = "activity" | "countries" | "objects" | "containers" | "cities" | "spaces" | null;
+type Expand = "history" | "activity" | "countries" | "objects" | "containers" | "cities" | "spaces" | null;
 
 function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview | null; events: Ev[]; now: number; onRefresh: () => void; onLogout: () => void }) {
   const [layers, setLayers] = useState<Set<Layer>>(new Set(["live", "visitors", "uploads", "downloads", "routes"]));
@@ -197,6 +188,14 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
     return () => clearInterval(t);
   }, []);
   const [spin, setSpin] = useState(true);
+  // routes on the globe: the live ones, or a set picked in History (all time by default)
+  const [hist, setHist] = useState<{ lines: RouteLine[]; label: string } | null>(null);
+  const allTime = async () => {
+    if (hist) return setHist(null);
+    const d = await loadHistory(null, null);
+    if (d && typeof d === "object") setHist({ lines: routeLines(d.routes), label: "All-time routes" });
+    else alert(d === "setup" ? "Run supabase/migrations/003_history.sql in Supabase first (see History)." : "Couldn't load routes.");
+  };
   const toggle = (l: Layer) => setLayers((s) => {
     const x = new Set(s);
     if (x.has(l)) x.delete(l);
@@ -228,6 +227,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
         </Link>
         <nav className="hq-tabs" aria-label="HQ sections">
           <button className={!expand ? "on" : ""} onClick={() => setExpand(null)}>Globe</button>
+          <button className={expand === "history" ? "on" : ""} onClick={() => setExpand("history")}>History</button>
           <button className={expand === "activity" ? "on" : ""} onClick={() => (setFocusCc(""), setExpand("activity"))}>Activity</button>
           <button className={expand === "countries" ? "on" : ""} onClick={() => setExpand("countries")}>Countries <b>{data?.topCountries.length ?? 0}</b></button>
           <button className={expand === "objects" ? "on" : ""} onClick={() => setExpand("objects")}>Objects <b>{data?.transfers.length ?? 0}</b></button>
@@ -242,7 +242,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
 
       <main className="hq-main">
         <section className="hq-globe">
-          <Earth data={data} layers={layers} spin={spin} />
+          <Earth data={data} layers={layers} spin={spin} routes={hist?.lines ?? null} />
           <div className="hq-globe-title">
             <span className="mono dim">Universe view</span>
             <div className="wide">{n(data?.online)} <small>live</small></div>
@@ -255,6 +255,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
               </button>
             ))}
             <button className={`chip${spin ? " on" : ""}`} onClick={() => setSpin((s) => !s)}>⟳ Auto-spin</button>
+            <button className={`chip${hist ? " on" : ""}`} onClick={allTime} title="Routes on the globe: live, or every route ever">{hist ? `${hist.label} · ${hist.lines.length} ✕` : "All-time routes"}</button>
           </div>
           <p className="hq-hint mono">Drag to rotate · scroll to zoom to street level · right-drag to tilt · hover a dot</p>
         </section>
@@ -349,7 +350,20 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
           </Panel>
         </aside>
       </main>
-      {expand && data && <Expanded kind={expand} data={data} events={events} focusCc={focusCc} onCountry={openCountry} spaces={spaces ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} />}
+      {expand === "history" && (
+        <div className="hq-expand" role="dialog" aria-label="History">
+          <div className="hq-expand-head">
+            <b className="wide">History</b>
+            <button className="pill" onClick={() => setExpand(null)}>Close ✕</button>
+          </div>
+          <History onRoutes={(lines, label) => {
+            setHist({ lines, label });
+            setLayers((s) => new Set([...s, "routes"]));
+            setExpand(null);
+          }} />
+        </div>
+      )}
+      {expand && expand !== "history" && data && <Expanded kind={expand} data={data} events={events} focusCc={focusCc} onCountry={openCountry} spaces={spaces ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} />}
     </div>
   );
 }
@@ -457,7 +471,7 @@ function Expanded({ kind, data, events, focusCc, onCountry, spaces, now, onClose
   return (
     <div className="hq-expand" role="dialog" aria-label="Details">
       <div className="hq-expand-head">
-        <b className="wide">{({ activity: "Activity", countries: "Countries", objects: "Objects in orbit", containers: "Containers", cities: "Places", spaces: "Spaces" } as const)[kind]}</b>
+        <b className="wide">{({ history: "History", activity: "Activity", countries: "Countries", objects: "Objects in orbit", containers: "Containers", cities: "Places", spaces: "Spaces" } as const)[kind]}</b>
         <button className="pill" onClick={onClose}>Close ✕</button>
       </div>
       {kind === "objects" && (

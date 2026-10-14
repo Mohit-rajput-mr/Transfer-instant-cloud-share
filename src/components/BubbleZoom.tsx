@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import { ext, formatBytes, formatClock, hasGot, ownerKey, type Orb } from "@/lib/client";
 import { bubbleLayout, clampTo, fling, memberPos, stopFling, tracker } from "./OrbView";
 import { enqueue, useDownloads } from "@/lib/downloads";
-import { LuArrowLeft, LuCheck, LuDownload, LuEye, LuLock, LuLockOpen, LuTrash2 } from "react-icons/lu";
+import { LuArrowLeft, LuCheck, LuChevronLeft, LuChevronRight, LuDownload, LuEye, LuLock, LuLockOpen, LuTrash2 } from "react-icons/lu";
 
 /**
  * Zoomed into one sender's bubble: the bubble grows out of where it floats to fill the screen, its
@@ -201,7 +201,7 @@ export default function BubbleZoom(props: {
                   <span className={`bubble lg zbub${o.watchers ? " hot" : ""}`} aria-label={`${o.watchers ?? 0} live, ${o.views ?? 0} opened, ${o.downloads} downloads`}>
                     <span title="Live now"><i className="b-live" />{crowd(o.watchers ?? 0)}</span>
                     <span title="Opened by"><LuEye />{crowd(o.views ?? 0)}</span>
-                    <span title="Downloads">↓{crowd(o.downloads)}</span>
+                    <span title="Downloads"><LuDownload />{crowd(o.downloads)}</span>
                   </span>
                   {/* separate round icons pinned to the ball: grouped on the upper-left of the ring: download, lock, trash */}
                   <span className="zicons">
@@ -264,8 +264,8 @@ export default function BubbleZoom(props: {
 
       {bubbles.length > 1 && (
         <>
-          <button className="zoom-nav prev" onClick={() => surf(-1)} aria-label="Previous container">‹</button>
-          <button className="zoom-nav next" onClick={() => surf(1)} aria-label="Next container">›</button>
+          <button className="zoom-nav prev" onClick={() => surf(-1)} aria-label="Previous container"><LuChevronLeft /></button>
+          <button className="zoom-nav next" onClick={() => surf(1)} aria-label="Next container"><LuChevronRight /></button>
         </>
       )}
       <button

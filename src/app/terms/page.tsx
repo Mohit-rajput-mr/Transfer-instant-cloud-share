@@ -1,3 +1,4 @@
+import { LuArrowLeft } from "react-icons/lu";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -10,7 +11,7 @@ export default function Terms() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/lockup.svg" alt="Orbi Transfer" width={220} height={32} />
       </Link>
-      <Link className="back" href="/">← Back to the void</Link>
+      <Link className="back glyph" href="/"><LuArrowLeft aria-hidden />Back to the void</Link>
       <h1 className="wide" style={{ marginTop: 24 }}>Terms</h1>
       <p>Orbi Transfer is a free, no-account tool for moving files between devices. By using it you agree to these terms.</p>
       <h2>Fair use</h2>
@@ -24,7 +25,7 @@ export default function Terms() {
       <h2>Your responsibility</h2>
       <p>Files are encrypted on your device before upload, so Orbi Transfer cannot see or check their contents. You are fully responsible for what you upload, whether you send it open or with a passcode, and who you share the passcode with.</p>
       <h2>Reports and removal</h2>
-      <p>Anyone can flag an object with the ⚑ Report button. Objects reported by several devices are removed immediately. We may remove any object or block abusive traffic at any time.</p>
+      <p>Anyone can flag an object with the Report (flag) button. Objects reported by several devices are removed immediately. We may remove any object or block abusive traffic at any time.</p>
       <h2>No warranty</h2>
       <p>Orbi Transfer is provided as-is, for free, with no guarantee of availability or delivery. Keep your own copies of anything important. We are not liable for lost, delayed or intercepted files.</p>
       <h2>Changes</h2>

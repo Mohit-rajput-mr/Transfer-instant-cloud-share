@@ -1,5 +1,5 @@
 "use client";
-import { LuCheck, LuLock, LuLockOpen, LuTrash2 } from "react-icons/lu";
+import { LuArrowUp, LuCheck, LuDownload, LuLock, LuLockOpen, LuMaximize2, LuTrash2 } from "react-icons/lu";
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
 import { setCardOrigin } from "./Panels";
 import { ext, formatBytes, formatClock, type Orb } from "@/lib/client";
@@ -665,7 +665,7 @@ export default function OrbView(props: {
               {Array.from({ length: Math.min(watchers, 4) }, (_, k) => (
                 <span key={k} className="edge-sat" style={{ "--d": `${-k * 2.2}s` } as CSSProperties} aria-hidden />
               ))}
-              <span className="zoom-cue" aria-hidden>⤢ Click or scroll to open</span>
+              <span className="zoom-cue glyph" aria-hidden><LuMaximize2 />Click or scroll to open</span>
               {props.onDestroy && mine && <span className="destroy box" data-destroy="" role="button" aria-label="Destroy everything in this container" title="Destroy all"><LuTrash2 /></span>}
               <div className="members" style={{ "--md": `calc(${L.d}px * var(--k))` } as CSSProperties}>
                 {group.map((m, i) => {
@@ -697,11 +697,11 @@ export default function OrbView(props: {
                   );
                 })}
               </div>
-        {got && !up ? <span className="got-mark" aria-hidden>✓</span> : null}
+        {got && !up ? <span className="got-mark" aria-hidden><LuCheck /></span> : null}
         {!up && <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
           <span title="Live now"><i className="b-live" />{crowd(watchers)}</span>
           <span title="Opened by"><svg viewBox="0 0 16 16" aria-hidden><path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" strokeWidth="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>{crowd(orb.views ?? 0)}</span>
-          <span title="Downloads">↓{crowd(orb.downloads)}</span>
+          <span title="Downloads"><LuDownload />{crowd(orb.downloads)}</span>
         </span>}
             </div>
           );
@@ -718,11 +718,11 @@ export default function OrbView(props: {
         <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : ext(orb.fileName)}</span>
         {props.onDestroy && mine && !up && phase !== "burning" && <span className="destroy" data-destroy="" role="button" aria-label={`Destroy ${orb.name}`} title="Destroy"><LuTrash2 /></span>}
         {mine && badge ? <span className="mine-no" aria-hidden>{badge}</span> : null}
-        {got && !up ? <span className="got-mark" aria-hidden>✓</span> : null}
+        {got && !up ? <span className="got-mark" aria-hidden><LuCheck /></span> : null}
         {!up && <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
           <span title="Live now"><i className="b-live" />{crowd(watchers)}</span>
           <span title="Opened by"><svg viewBox="0 0 16 16" aria-hidden><path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" strokeWidth="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>{crowd(orb.views ?? 0)}</span>
-          <span title="Downloads">↓{crowd(orb.downloads)}</span>
+          <span title="Downloads"><LuDownload />{crowd(orb.downloads)}</span>
         </span>}
         {phase === "arriving" && <span className="shock" />}
         {Array.from({ length: Math.min(watchers, 4) }, (_, i) => (
@@ -738,7 +738,7 @@ export default function OrbView(props: {
       <div className="orb-meta mono">
         {orb.by ? <span className="orb-by">{orb.by}</span> : null}
         <span>{formatBytes(orb.size)}</span>
-        {up ? <span>↑ {Math.round(launching * 100)}%</span> : <span>{formatClock(left)}</span>}
+        {up ? <span className="glyph"><LuArrowUp aria-hidden />{Math.round(launching * 100)}%</span> : <span>{formatClock(left)}</span>}
         {orb.maxDownloads ? <span>max {orb.maxDownloads}</span> : null}
       </div>
       {(mine || nearby || sealed || incoming || !up || group) && (
