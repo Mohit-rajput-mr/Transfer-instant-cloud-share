@@ -4,7 +4,6 @@ import Link from "next/link";
 import Starfield from "./Starfield";
 import Uploader, { Icon } from "./Uploader";
 import LiquidGlass from "./LiquidGlass";
-import GlassJar from "./GlassJar";
 import OrbView, { ORB_CAP, inheritSlot, pickHue, layout, type VoidMode } from "./OrbView";
 import { ComposePanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin, type LaunchJob } from "./Panels";
 import LaunchDock, { isPending, pendingId, pendingOrb, type Launch } from "./LaunchDock";
@@ -895,7 +894,6 @@ export default function Void() {
               hue={g.hue}
             />
           ))}
-          {space && <GlassJar key={space.slug} />}
         </section>
 
         <section className="how" id="how">
