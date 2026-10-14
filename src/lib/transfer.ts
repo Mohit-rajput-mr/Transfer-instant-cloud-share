@@ -148,12 +148,12 @@ export async function unlockOrb(orb: Orb, passcode: string, signal?: AbortSignal
  */
 async function source(r: UnlockReply, signal?: AbortSignal) {
   const id = r.url.slice(P2P_PREFIX.length);
-  if (holding(id)) return pull(id, signal);
-  if (r.store && (await isStored(r.store, signal))) return fetchStored(r.store, r.size, signal);
+  if (holding(id)) return { body: await pull(id, signal), stored: false };
+  if (r.store && (await isStored(r.store, signal))) return { body: fetchStored(r.store, r.size, signal), stored: true };
   try {
-    return await pull(id, signal);
+    return { body: await pull(id, signal), stored: false };
   } catch (e) {
-    if (r.store && !signal?.aborted && (await waitStored(r.store, 3 * 60_000, signal))) return fetchStored(r.store, r.size, signal);
+    if (r.store && !signal?.aborted && (await waitStored(r.store, 3 * 60_000, signal))) return { body: fetchStored(r.store, r.size, signal), stored: true };
     throw e;
   }
 }
@@ -175,36 +175,54 @@ export async function receive(opts: {
   const { onProgress, signal } = opts;
   const { key, r } = opts.unlocked;
 
-  let sink: DownloadSink;
-  let mem: ReturnType<typeof memorySink> | null = null;
-  // set from callbacks, so kept on an object (TS does not narrow a callback-assigned `let`)
-  const got: { manifest?: Manifest; zip?: File; parts?: File[] } = {};
+  // set from callbacks / the sink factory, so kept on an object (TS does not narrow a callback-assigned `let`)
+  const got: { manifest?: Manifest; zip?: File; parts?: File[]; mem?: ReturnType<typeof memorySink> } = {};
   // phones, multi-file balls: also keep each file, so the share sheet can save them all (photos → Photos)
   const keepParts = r.size <= KEEP_PARTS_MAX;
   const dir = opts.folderTarget ?? null;
   const handle = r.mime === FOLDER_MIME ? null : await opts.target;
-  if (r.mime === FOLDER_MIME) {
-    sink = folderSink(
-      (m: Manifest) =>
-        dir ? directoryOutput(dir, m.name)
-          : zipOutput(m.name, (z) => (got.zip = z), keepParts && m.loose ? (f) => (got.parts ??= []).push(f) : undefined),
-      (m) => (got.manifest = m),
-    );
-  } else if (handle) {
-    const w = await handle.createWritable();
-    sink = { write: (c) => w.write(c as BufferSource), close: () => w.close(), abort: () => w.abort() };
-  } else {
-    mem = memorySink();
-    sink = mem;
-  }
-
-  onProgress("decrypting", 0);
-  try {
-    const body = isP2P(r.url) ? await source(r, signal) : undefined;
-    await streamDecrypt({
+  // a fresh place to write (again from scratch if a broken transfer is restarted)
+  const makeSink = async (): Promise<DownloadSink> => {
+    got.manifest = got.zip = got.parts = got.mem = undefined;
+    if (r.mime === FOLDER_MIME)
+      return folderSink(
+        (m: Manifest) =>
+          dir ? directoryOutput(dir, m.name)
+            : zipOutput(m.name, (z) => (got.zip = z), keepParts && m.loose ? (f) => (got.parts ??= []).push(f) : undefined),
+        (m) => (got.manifest = m),
+      );
+    if (handle) {
+      const w = await handle.createWritable();
+      return { write: (c) => w.write(c as BufferSource), close: () => w.close(), abort: () => w.abort() };
+    }
+    got.mem = memorySink();
+    return got.mem;
+  };
+  let sink = await makeSink();
+  const decrypt = (body?: ReadableStream<Uint8Array>) =>
+    streamDecrypt({
       url: r.url, body, key, nonce: fromB64(r.nonce), size: r.size, chunkSize: r.chunkSize, sink, signal,
       onProgress: (d) => onProgress("decrypting", d / Math.max(1, r.size)),
     });
+
+  onProgress("decrypting", 0);
+  try {
+    if (!isP2P(r.url)) await decrypt();
+    else {
+      const src = await source(r, signal);
+      try {
+        await decrypt(src.body);
+      } catch (e) {
+        // the direct connection broke partway (sender's phone slept, network changed): start again from
+        // the stored copy if there is one (or one finishing), instead of failing
+        if (src.stored || !r.store || signal?.aborted) throw e;
+        await sink.abort().catch(() => {});
+        onProgress("decrypting", 0);
+        if (!(await waitStored(r.store, 3 * 60_000, signal))) throw e;
+        sink = await makeSink();
+        await decrypt(fetchStored(r.store, r.size, signal));
+      }
+    }
   } catch (e) {
     await sink.abort().catch(() => {});
     throw e;
@@ -224,6 +242,7 @@ export async function receive(opts: {
     return { kind: "file", file: got.zip, held: hold, folder: { name, files: files.length }, parts: got.parts };
   }
   if (handle) return { kind: "picked", name: handle.name };
+  const mem = got.mem;
   if (!mem) throw new Error("Nothing was received");
   if (opts.inline) return { kind: "text", text: await mem.take("note.txt", "text/plain").text() };
   // never the sender's raw type: an html/svg blob: URL would run their script on our origin
