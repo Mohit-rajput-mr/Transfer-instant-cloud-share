@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Orbi Transfer",
     short_name: "Orbi",
-    description: "Instant, end-to-end encrypted transfer between any two browsers. No login.",
+    description: "Instant, end-to-end encrypted transfer between any two browsers. No login required.",
     start_url: "/",
     display: "standalone",
     background_color: "#000000",

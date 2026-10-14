@@ -21,12 +21,12 @@ export interface SeoCopy {
 export const SEO: Record<string, SeoCopy> = {
   en: {
     lang: "en", label: "English",
-    title: "Orbi Transfer — Free Instant File Transfer, No Login, Encrypted",
-    description: "Send files, folders, photos, videos and links instantly between any two devices. Free, no login, no signup, up to 2 GB, end-to-end encrypted, auto-deleted after 5–30 minutes.",
-    h1: "Free online file transfer. No login. Instant.",
+    title: "Orbi Transfer — Free Instant File Transfer, No Login Required, Encrypted",
+    description: "Send files, folders, photos, videos and links instantly between any two devices. Free, no login required, no signup, up to 2 GB, end-to-end encrypted, auto-deleted after 5–30 minutes.",
+    h1: "Free online file transfer. No login required. Instant.",
     intro: "Orbi Transfer moves files between your phone, laptop and any browser in seconds. Drop a file, it floats in the void, open it on the other device and it lands. No account, no app, no email.",
     points: [
-      "No login or signup, completely free",
+      "No login required, no signup, completely free",
       "Files, whole folders, photos, videos, text and links, up to 2 GB",
       "End-to-end encrypted in your browser (AES-256-GCM); optional passcode",
       "Burns automatically after 5 to 30 minutes or N downloads",

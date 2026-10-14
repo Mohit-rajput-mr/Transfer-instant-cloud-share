@@ -810,7 +810,7 @@ export default function Void() {
         </div>
         <div className="top-row">
           <div className="sub-left">
-            <span className="hl"><i />No login</span><span>End-to-end encrypted</span><span>Any size</span><span>Burns in 5–30 min</span>
+            <span className="hl"><i />No login required</span><span>End-to-end encrypted</span><span>Any size</span><span>Burns in 5–30 min</span>
           </div>
           <span />
           <div className="toggle" role="tablist" aria-label="Scope">

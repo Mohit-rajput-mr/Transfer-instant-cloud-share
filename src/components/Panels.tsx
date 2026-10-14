@@ -568,7 +568,7 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
           </div>
         )}
         <div className="grow" />
-        <p className="mono dim">AES-256-GCM on this device · no login</p>
+        <p className="mono dim">AES-256-GCM on this device · no login required</p>
       </div>
       <div className="col">
         <div className="field">
