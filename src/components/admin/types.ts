@@ -60,6 +60,9 @@ export interface AdminTransfer {
   by?: string | null;
   life?: number;
   open?: boolean;
+  /** sender group (same device = same value) and the container name it was sent in */
+  from?: string | null;
+  groupName?: string | null;
 }
 
 export interface AdminSpace {

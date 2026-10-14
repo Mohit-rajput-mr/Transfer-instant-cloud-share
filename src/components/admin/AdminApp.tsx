@@ -20,6 +20,59 @@ const flag = (cc: string | null) =>
   cc && /^[A-Z]{2}$/.test(cc) ? String.fromCodePoint(...[...cc].map((c) => 0x1f1a5 + c.charCodeAt(0))) : "🌐";
 const country = (cc: string | null) => (cc ? regionName?.of(cc) ?? cc : "Unknown");
 const n = (v: number | undefined) => (v ?? 0).toLocaleString("en-US");
+type Ev = Overview["feed"][number];
+const HIST_KEY = "hq:events";
+const HIST_MAX = 5000;
+const evKey = (e: Ev) => `${e.kind}|${e.at}|${e.label ?? ""}|${e.bytes ?? ""}|${e.city ?? ""}`;
+/** Every event HQ has seen (the overview sends only the latest), newest first, remembered on this browser for 30 days. */
+function remember(prev: Ev[], feed: Ev[]): Ev[] {
+  const seen = new Set(prev.map(evKey));
+  const fresh = feed.filter((e) => !seen.has(evKey(e)));
+  if (!fresh.length) return prev;
+  const cut = Date.now() - 30 * 86_400_000;
+  const all = [...fresh, ...prev].filter((e) => Date.parse(e.at) > cut).sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, HIST_MAX);
+  try {
+    localStorage.setItem(HIST_KEY, JSON.stringify(all));
+  } catch {}
+  return all;
+}
+function recalled(): Ev[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(HIST_KEY) || "[]");
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Per-country totals: devices and live from sessions, uploads/downloads/visits from the map's event points,
+ *  data moved from the event history, objects in orbit right now from the transfers. */
+type CountryRow = { cc: string; devices: number; live: number; up: number; down: number; visits: number; bytesUp: number; bytesDown: number; objects: number; inOrbit: number; cities: number };
+function countryRows(data: Overview, events: Ev[]): CountryRow[] {
+  const m = new Map<string, CountryRow>();
+  const row = (cc: string | null | undefined) => {
+    const k = cc && /^[A-Z]{2}$/.test(cc) ? cc : "??";
+    let r = m.get(k);
+    if (!r) m.set(k, (r = { cc: k, devices: 0, live: 0, up: 0, down: 0, visits: 0, bytesUp: 0, bytesDown: 0, objects: 0, inOrbit: 0, cities: 0 }));
+    return r;
+  };
+  for (const c of data.topCountries) Object.assign(row(c.country), { devices: c.devices, live: c.live });
+  for (const p of data.points) row(p.cc)[p.k === "upload" ? "up" : "down"] += p.n;
+  for (const p of data.visitors) row(p.cc).visits += p.n;
+  for (const e of events) {
+    if (e.kind === "upload") row(e.country).bytesUp += e.bytes ?? 0;
+    if (e.kind === "download") row(e.country).bytesDown += e.bytes ?? 0;
+  }
+  for (const t of data.transfers) {
+    row(t.country).objects++;
+    row(t.country).inOrbit += t.size;
+  }
+  const cities = new Map<string, Set<string>>();
+  for (const c of data.cities) (cities.get(c.country) ?? cities.set(c.country, new Set()).get(c.country)!).add(c.city);
+  for (const r of m.values()) r.cities = cities.get(r.cc)?.size ?? 0;
+  return [...m.values()];
+}
+
 const ago = (iso: string, now: number) => {
   const s = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000));
   return s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m` : `${Math.floor(s / 3600)}h`;
@@ -29,13 +82,17 @@ export default function AdminApp() {
   const [auth, setAuth] = useState<"checking" | "locked" | "in">("checking");
   const [data, setData] = useState<Overview | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [events, setEvents] = useState<Ev[]>([]);
+  useEffect(() => setEvents(recalled()), []);
 
   const load = useCallback(async () => {
     const r = await fetch("/api/admin/overview", { cache: "no-store" }).catch(() => null);
     if (!r) return;
     if (r.status === 401) return setAuth("locked");
     if (r.ok) {
-      setData(await r.json());
+      const d: Overview = await r.json();
+      setData(d);
+      if (d?.feed?.length) setEvents((prev) => remember(prev.length ? prev : recalled(), d.feed));
       setAuth("in");
     }
   }, []);
@@ -70,7 +127,7 @@ export default function AdminApp() {
 
   if (auth === "checking") return <div className="hq-boot mono">Establishing uplink…</div>;
   if (auth === "locked") return <Login onIn={load} />;
-  return <Dashboard data={data} now={now} onRefresh={load} onLogout={() => setAuth("locked")} />;
+  return <Dashboard data={data} events={events} now={now} onRefresh={load} onLogout={() => setAuth("locked")} />;
 }
 
 function Login({ onIn }: { onIn: () => void }) {
@@ -121,11 +178,17 @@ const LAYERS: { id: Layer; label: string; dot: string }[] = [
   { id: "routes", label: "Transfer routes", dot: "linear-gradient(90deg,#59b8ff,#ffa045)" },
 ];
 
-type Expand = "objects" | "cities" | "spaces" | null;
+type Expand = "activity" | "countries" | "objects" | "containers" | "cities" | "spaces" | null;
 
-function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; now: number; onRefresh: () => void; onLogout: () => void }) {
+function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview | null; events: Ev[]; now: number; onRefresh: () => void; onLogout: () => void }) {
   const [layers, setLayers] = useState<Set<Layer>>(new Set(["live", "visitors", "uploads", "downloads", "routes"]));
   const [expand, setExpand] = useState<Expand>(null);
+  // a click on a country anywhere opens Activity filtered to it
+  const [focusCc, setFocusCc] = useState("");
+  const openCountry = (cc: string) => {
+    setFocusCc(cc);
+    setExpand("activity");
+  };
   const [spaces, setSpaces] = useState<AdminSpace[] | null>(null);
   useEffect(() => {
     const get = () => fetch("/api/admin/spaces", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => d && setSpaces(d.spaces)).catch(() => {});
@@ -144,13 +207,15 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
     await fetch("/api/admin/logout", { method: "POST" }).catch(() => {});
     onLogout();
   };
-  const destroy = async (id: string) => {
-    if (!confirm("Destroy this object for everyone?")) return;
-    await fetch(`/api/admin/transfers/${id}`, { method: "DELETE" }).catch(() => {});
+  const destroy = async (id: string | string[]) => {
+    const ids = Array.isArray(id) ? id : [id];
+    if (!confirm(ids.length > 1 ? `Destroy all ${ids.length} objects for everyone?` : "Destroy this object for everyone?")) return;
+    await Promise.all(ids.map((x) => fetch(`/api/admin/transfers/${x}`, { method: "DELETE" }).catch(() => {})));
     onRefresh();
   };
 
   const today = data?.today ?? {};
+  const cByCc = useMemo(() => new Map((data ? countryRows(data, events) : []).map((r) => [r.cc, r])), [data, events]);
   const maxCountry = Math.max(1, ...(data?.topCountries.map((c) => c.devices) ?? [1]));
 
   return (
@@ -163,7 +228,10 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
         </Link>
         <nav className="hq-tabs" aria-label="HQ sections">
           <button className={!expand ? "on" : ""} onClick={() => setExpand(null)}>Globe</button>
+          <button className={expand === "activity" ? "on" : ""} onClick={() => (setFocusCc(""), setExpand("activity"))}>Activity</button>
+          <button className={expand === "countries" ? "on" : ""} onClick={() => setExpand("countries")}>Countries <b>{data?.topCountries.length ?? 0}</b></button>
           <button className={expand === "objects" ? "on" : ""} onClick={() => setExpand("objects")}>Objects <b>{data?.transfers.length ?? 0}</b></button>
+          <button className={expand === "containers" ? "on" : ""} onClick={() => setExpand("containers")}>Containers <b>{containers(data?.transfers ?? []).length}</b></button>
           <button className={expand === "spaces" ? "on" : ""} onClick={() => setExpand("spaces")}>Spaces <b>{spaces?.length ?? 0}</b></button>
           <button className={expand === "cities" ? "on" : ""} onClick={() => setExpand("cities")}>Places</button>
         </nav>
@@ -200,6 +268,7 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
             <Tile label="Devices all-time" value={n(data?.devices)} sub={`${n(data?.visits)} visits`} />
             <Tile label="Spaces" value={n(spaces?.length)} sub={`${n(spaces?.filter((x) => x.priv).length)} private · ${n(spaces?.reduce((a, x) => a + x.members.length, 0))} members`} />
             <Tile label="Open objects now" value={n(data?.transfers.filter((t) => t.open).length)} sub={`${n(data?.transfers.filter((t) => !t.open).length)} with passcode`} />
+            <Tile label="Containers now" value={n(containers(data?.transfers ?? []).length)} sub={`${n(containers(data?.transfers ?? []).reduce((a, c) => a + c.items.length, 0))} objects inside`} />
             <Tile label="In spaces now" value={n(data?.transfers.filter((t) => t.space).length)} sub={`${n(data?.transfers.filter((t) => !t.space).length)} in the public void`} />
             <Tile label="Data moved all-time" value={formatBytes((data?.totals.bytes_up ?? 0) + (data?.totals.bytes_down ?? 0))} sub={`${n(data?.totals.uploads)} up · ${n(data?.totals.downloads)} down`} />
           </div>
@@ -220,12 +289,12 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
             <Hourly data={data} />
           </Panel>
 
-          <Panel title="Countries" right={`${n(data?.countries)} total`}>
+          <Panel title="Countries" right={`${n(data?.countries)} total`} onExpand={() => setExpand("countries")}>
             <div className="hq-list">
               {data?.topCountries.length ? data.topCountries.map((c) => (
-                <div key={c.country} className="hq-row">
+                <div key={c.country} className="hq-row hq-click" role="button" tabIndex={0} onClick={() => openCountry(c.country)} title="Show this country's activity">
                   <span className="hq-flag">{flag(c.country)}</span>
-                  <span className="hq-name">{country(c.country)}</span>
+                  <span className="hq-name">{country(c.country)} <span className="mono dim">· ↑{n(cByCc.get(c.country)?.up)} ↓{n(cByCc.get(c.country)?.down)}</span></span>
                   <span className="hq-live">{c.live > 0 ? `● ${c.live}` : ""}</span>
                   <span className="hq-bar"><i style={{ width: `${(c.devices / maxCountry) * 100}%` }} /></span>
                   <b>{n(c.devices)}</b>
@@ -252,7 +321,7 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
             <Breakdown title="Form" map={data?.forms} />
           </Panel>
 
-          <Panel title="Live feed">
+          <Panel title="Live feed" right={`${n(events.length)} kept`} onExpand={() => (setFocusCc(""), setExpand("activity"))}>
             <div className="hq-feed">
               {data?.feed.length ? data.feed.map((e, i) => (
                 <div key={i} className={`hq-ev ${e.kind}`}>
@@ -280,15 +349,51 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
           </Panel>
         </aside>
       </main>
-      {expand && data && <Expanded kind={expand} data={data} spaces={spaces ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} />}
+      {expand && data && <Expanded kind={expand} data={data} events={events} focusCc={focusCc} onCountry={openCountry} spaces={spaces ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} />}
     </div>
   );
 }
 
+/** Objects one device sent together, as a named container (2+ items, same sender, same name). */
+type Container = { key: string; name: string; from: string; items: AdminTransfer[] };
+function containers(T: AdminTransfer[]): Container[] {
+  const m = new Map<string, Container>();
+  for (const t of T) {
+    if (!t.from) continue;
+    const key = `${t.from}|${t.groupName ?? ""}|${t.space ?? ""}`;
+    let c = m.get(key);
+    if (!c) m.set(key, (c = { key, name: t.groupName || "Unnamed container", from: t.from, items: [] }));
+    c.items.push(t);
+  }
+  return [...m.values()].filter((c) => c.items.length > 1).sort((a, b) => b.items.length - a.items.length);
+}
+
+const WINDOWS = [
+  { id: "15m", label: "Last 15 min", ms: 15 * 60_000 },
+  { id: "1h", label: "Last hour", ms: 3_600_000 },
+  { id: "24h", label: "Last 24 h", ms: 86_400_000 },
+  { id: "7d", label: "Last 7 days", ms: 7 * 86_400_000 },
+  { id: "all", label: "Everything kept", ms: Infinity },
+] as const;
+const SIZES = [
+  { id: "", label: "Any size", min: 0, max: Infinity },
+  { id: "s", label: "Under 10 MB", min: 0, max: 10 << 20 },
+  { id: "m", label: "10 – 100 MB", min: 10 << 20, max: 100 << 20 },
+  { id: "l", label: "100 MB – 1 GB", min: 100 << 20, max: 1 << 30 },
+  { id: "xl", label: "Over 1 GB", min: 1 << 30, max: Infinity },
+] as const;
+
 /** Full-screen detail for one panel, with filters. */
-function Expanded({ kind, data, spaces, now, onClose, onDestroy }: { kind: Exclude<Expand, null>; data: Overview; spaces: AdminSpace[]; now: number; onClose: () => void; onDestroy: (id: string) => void }) {
+function Expanded({ kind, data, events, focusCc, onCountry, spaces, now, onClose, onDestroy }: { kind: Exclude<Expand, null>; data: Overview; events: Ev[]; focusCc: string; onCountry: (cc: string) => void; spaces: AdminSpace[]; now: number; onClose: () => void; onDestroy: (id: string | string[]) => void }) {
   const [q, setQ] = useState("");
-  const [cc, setCc] = useState("");
+  const [cc, setCc] = useState(focusCc);
+  useEffect(() => setCc(focusCc), [focusCc, kind]);
+  const [evKind, setEvKind] = useState<"" | "upload" | "download" | "visit">("");
+  const [win, setWin] = useState<(typeof WINDOWS)[number]["id"]>("24h");
+  const [size, setSize] = useState<(typeof SIZES)[number]["id"]>("");
+  const [box, setBox] = useState("");
+  const [sort, setSort] = useState<"new" | "big" | "down" | "views" | "burn">("new");
+  const [cSort, setCSort] = useState<keyof CountryRow>("devices");
   const [city, setCity] = useState("");
   const [space, setSpace] = useState("");
   const [access, setAccess] = useState<"" | "open" | "locked">("");
@@ -300,11 +405,44 @@ function Expanded({ kind, data, spaces, now, onClose, onDestroy }: { kind: Exclu
   const T = data.transfers;
   const countries = [...new Set(T.map((t) => t.country).filter(Boolean))] as string[];
   const citiesIn = [...new Set(T.filter((t) => !cc || t.country === cc).map((t) => t.city).filter(Boolean))] as string[];
+  const boxes = containers(T);
+  const sz = SIZES.find((x) => x.id === size)!;
+  const inBox = box ? new Set(boxes.find((b) => b.key === box)?.items.map((t) => t.id)) : null;
   const rows = T.filter((t: AdminTransfer) =>
-    (!q || `${t.name} ${t.id} ${t.by ?? ""} ${t.fileName}`.toLowerCase().includes(q.toLowerCase())) &&
+    (!q || `${t.name} ${t.id} ${t.by ?? ""} ${t.fileName} ${t.groupName ?? ""}`.toLowerCase().includes(q.toLowerCase())) &&
     (!cc || t.country === cc) && (!city || t.city === city) &&
     (!space || (space === "public" ? !t.space : t.space === space)) &&
-    (!access || (access === "open" ? t.open : !t.open)));
+    (!access || (access === "open" ? t.open : !t.open)) &&
+    t.size >= sz.min && t.size < sz.max &&
+    (!inBox || inBox.has(t.id))).sort((a, b) =>
+    sort === "big" ? b.size - a.size : sort === "down" ? b.downloads - a.downloads : sort === "views" ? b.views - a.views
+      : sort === "burn" ? Date.parse(a.expiresAt) - Date.parse(b.expiresAt) : Date.parse(b.createdAt) - Date.parse(a.createdAt));
+
+  // activity: every kept event, filtered
+  const winMs = WINDOWS.find((w) => w.id === win)!.ms;
+  const evCountries = [...new Set(events.map((e) => e.country).filter(Boolean))] as string[];
+  const evCities = [...new Set(events.filter((e) => !cc || e.country === cc).map((e) => e.city).filter(Boolean))] as string[];
+  const evRows = events.filter((e) =>
+    now - Date.parse(e.at) <= winMs && (!evKind || e.kind === evKind) && (!cc || e.country === cc) && (!city || e.city === city) &&
+    (!q || `${e.label ?? ""} ${e.city ?? ""} ${country(e.country)}`.toLowerCase().includes(q.toLowerCase())));
+  const evBy = (k: string) => evRows.filter((e) => e.kind === k);
+  // the same events per country, for the summary table above the list
+  const evPerCc = Object.values(evRows.reduce<Record<string, { cc: string | null; up: number; down: number; visit: number; bu: number; bd: number }>>((m, e) => {
+    const k = e.country ?? "??";
+    m[k] ??= { cc: e.country, up: 0, down: 0, visit: 0, bu: 0, bd: 0 };
+    if (e.kind === "upload") {
+      m[k].up++;
+      m[k].bu += e.bytes ?? 0;
+    } else if (e.kind === "download") {
+      m[k].down++;
+      m[k].bd += e.bytes ?? 0;
+    } else m[k].visit++;
+    return m;
+  }, {})).sort((a, b) => b.up + b.down + b.visit - (a.up + a.down + a.visit));
+
+  const cRows = countryRows(data, events).filter((r) => !q || country(r.cc).toLowerCase().includes(q.toLowerCase()) || r.cc.toLowerCase() === q.toLowerCase())
+    .sort((a, b) => (Number(b[cSort]) || 0) - (Number(a[cSort]) || 0));
+  const cTot = cRows.reduce((t, r) => ({ up: t.up + r.up, down: t.down + r.down, visits: t.visits + r.visits, devices: t.devices + r.devices }), { up: 0, down: 0, visits: 0, devices: 0 });
   const bytes = rows.reduce((a, t) => a + t.size, 0);
   // data in orbit by place
   const byCity = Object.values(T.reduce<Record<string, { key: string; cc: string | null; city: string; n: number; bytes: number; down: number }>>((m, t) => {
@@ -319,7 +457,7 @@ function Expanded({ kind, data, spaces, now, onClose, onDestroy }: { kind: Exclu
   return (
     <div className="hq-expand" role="dialog" aria-label="Details">
       <div className="hq-expand-head">
-        <b className="wide">{kind === "objects" ? "Objects in orbit" : kind === "cities" ? "Places" : "Spaces"}</b>
+        <b className="wide">{({ activity: "Activity", countries: "Countries", objects: "Objects in orbit", containers: "Containers", cities: "Places", spaces: "Spaces" } as const)[kind]}</b>
         <button className="pill" onClick={onClose}>Close ✕</button>
       </div>
       {kind === "objects" && (
@@ -344,15 +482,30 @@ function Expanded({ kind, data, spaces, now, onClose, onDestroy }: { kind: Exclu
               <option value="open">Open only</option>
               <option value="locked">Passcode only</option>
             </select>
+            <select className="hq-input" value={size} onChange={(e) => setSize(e.target.value as typeof size)}>
+              {SIZES.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
+            </select>
+            <select className="hq-input" value={box} onChange={(e) => setBox(e.target.value)}>
+              <option value="">Any container</option>
+              {boxes.map((b) => <option key={b.key} value={b.key}>▣ {b.name} ({b.items.length})</option>)}
+            </select>
+            <select className="hq-input" value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
+              <option value="new">Newest first</option>
+              <option value="big">Largest first</option>
+              <option value="down">Most downloaded</option>
+              <option value="views">Most viewed</option>
+              <option value="burn">Burning soonest</option>
+            </select>
+            {(q || cc || city || space || access || size || box) && <button className="pill" onClick={() => (setQ(""), setCc(""), setCity(""), setSpace(""), setAccess(""), setSize(""), setBox(""))}>Clear</button>}
           </div>
           <p className="mono dim hq-sum">{rows.length} objects · {formatBytes(bytes)} · {rows.reduce((a, t) => a + t.downloads, 0)} downloads · {rows.reduce((a, t) => a + t.watchers, 0)} watching now</p>
           <div className="hq-grid-table">
-            <div className="hq-gt head"><span>Name</span><span>Where</span><span>Space · by</span><span>Size</span><span>Views</span><span>Down</span><span>Live</span><span>Burns</span><span /></div>
+            <div className="hq-gt head"><span>Name</span><span>Where</span><span>Space · container</span><span>Size</span><span>Views</span><span>Down</span><span>Live</span><span>Burns</span><span /></div>
             {rows.map((t) => (
               <div key={t.id} className="hq-gt">
                 <span><b>{t.name}</b><small className="mono dim">{t.id} · {t.open ? "open" : "passcode"} · {t.status}</small></span>
                 <span>{flag(t.country)} {t.city || country(t.country)}</span>
-                <span>{t.space ? `◎ ${t.space}${t.by ? ` · ${t.by}` : ""}` : "public"}</span>
+                <span>{t.space ? `◎ ${t.space}${t.by ? ` · ${t.by}` : ""}` : "public"}{t.groupName ? <small className="mono dim">▣ {t.groupName}</small> : null}</span>
                 <span>{formatBytes(t.size)}</span>
                 <span>{t.views}</span>
                 <span>{t.downloads}</span>
@@ -364,6 +517,119 @@ function Expanded({ kind, data, spaces, now, onClose, onDestroy }: { kind: Exclu
             {!rows.length && <Empty />}
           </div>
         </>
+      )}
+      {kind === "activity" && (
+        <>
+          <div className="hq-filters">
+            <div className="hq-seg" role="group" aria-label="Kind">
+              {([["", "All"], ["upload", "↑ Uploads"], ["download", "↓ Downloads"], ["visit", "Visits"]] as const).map(([k, l]) => (
+                <button key={k} className={evKind === k ? "on" : ""} onClick={() => setEvKind(k)}>{l}</button>
+              ))}
+            </div>
+            <select className="hq-input" value={win} onChange={(e) => setWin(e.target.value as typeof win)}>
+              {WINDOWS.map((w) => <option key={w.id} value={w.id}>{w.label}</option>)}
+            </select>
+            <select className="hq-input" value={cc} onChange={(e) => (setCc(e.target.value), setCity(""))}>
+              <option value="">All countries</option>
+              {evCountries.sort((a, b) => country(a).localeCompare(country(b))).map((c) => <option key={c} value={c}>{flag(c)} {country(c)}</option>)}
+            </select>
+            <select className="hq-input" value={city} onChange={(e) => setCity(e.target.value)}>
+              <option value="">All cities</option>
+              {evCities.sort().map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <input className="hq-input" placeholder="Search device, city" value={q} onChange={(e) => setQ(e.target.value)} />
+            {(q || cc || city || evKind) && <button className="pill" onClick={() => (setQ(""), setCc(""), setCity(""), setEvKind(""))}>Clear</button>}
+          </div>
+          <div className="hq-tiles hq-tiles-row">
+            <Tile label="Uploads" value={n(evBy("upload").length)} sub={formatBytes(evBy("upload").reduce((a, e) => a + (e.bytes ?? 0), 0))} />
+            <Tile label="Downloads" value={n(evBy("download").length)} sub={formatBytes(evBy("download").reduce((a, e) => a + (e.bytes ?? 0), 0))} />
+            <Tile label="Visits" value={n(evBy("visit").length)} />
+            <Tile label="Countries" value={n(evPerCc.length)} sub={`${n(new Set(evRows.map((e) => e.city).filter(Boolean)).size)} cities`} />
+          </div>
+          <div className="hq-split">
+            <section>
+              <span className="mono dim">By country</span>
+              <div className="hq-grid-table">
+                <div className="hq-gt cc head"><span>Country</span><span>↑ Up</span><span>↓ Down</span><span>Visits</span><span>Data up</span><span>Data down</span></div>
+                {evPerCc.map((r) => (
+                  <div key={r.cc ?? "?"} className="hq-gt cc hq-click" role="button" tabIndex={0} onClick={() => (setCc(r.cc ?? ""), setCity(""))}>
+                    <span>{flag(r.cc)} {country(r.cc)}</span><span>{n(r.up)}</span><span>{n(r.down)}</span><span>{n(r.visit)}</span><span>{formatBytes(r.bu)}</span><span>{formatBytes(r.bd)}</span>
+                  </div>
+                ))}
+                {!evPerCc.length && <Empty />}
+              </div>
+            </section>
+            <section>
+              <span className="mono dim">{n(evRows.length)} events</span>
+              <div className="hq-feed tall">
+                {evRows.slice(0, 400).map((e, i) => (
+                  <div key={i} className={`hq-ev ${e.kind}`}>
+                    <i />
+                    <span>{flag(e.country)} {e.city || country(e.country)} · {e.label || "someone"} {e.kind === "visit" ? "arrived" : e.kind === "upload" ? `launched ${formatBytes(e.bytes ?? 0)}` : `received ${formatBytes(e.bytes ?? 0)}`}</span>
+                    <time title={new Date(e.at).toLocaleString()}>{ago(e.at, now)}</time>
+                  </div>
+                ))}
+                {!evRows.length && <Empty />}
+              </div>
+            </section>
+          </div>
+          <p className="mono dim hq-sum">Events are kept on this browser for 30 days from the moment HQ first sees them; keep HQ open to collect more.</p>
+        </>
+      )}
+      {kind === "countries" && (
+        <>
+          <div className="hq-filters">
+            <input className="hq-input" placeholder="Find a country" value={q} onChange={(e) => setQ(e.target.value)} />
+            <select className="hq-input" value={cSort} onChange={(e) => setCSort(e.target.value as keyof CountryRow)}>
+              <option value="devices">Most devices</option>
+              <option value="live">Most live now</option>
+              <option value="up">Most uploads</option>
+              <option value="down">Most downloads</option>
+              <option value="visits">Most visits</option>
+              <option value="bytesUp">Most data sent</option>
+              <option value="bytesDown">Most data received</option>
+              <option value="inOrbit">Most in orbit now</option>
+            </select>
+          </div>
+          <p className="mono dim hq-sum">{cRows.length} countries · {n(cTot.devices)} devices · ↑{n(cTot.up)} uploads · ↓{n(cTot.down)} downloads · {n(cTot.visits)} visits · click a row for its activity</p>
+          <div className="hq-grid-table">
+            <div className="hq-gt ct head"><span>Country</span><span>Live</span><span>Devices</span><span>Visits</span><span>↑ Uploads</span><span>↓ Downloads</span><span>Data up</span><span>Data down</span><span>In orbit now</span><span>Cities</span></div>
+            {cRows.map((r) => (
+              <div key={r.cc} className="hq-gt ct hq-click" role="button" tabIndex={0} onClick={() => onCountry(r.cc)}>
+                <span>{flag(r.cc === "??" ? null : r.cc)} {r.cc === "??" ? "Unknown" : country(r.cc)}</span>
+                <span className={r.live ? "hq-live" : "dim"}>{r.live ? `● ${r.live}` : "0"}</span>
+                <span>{n(r.devices)}</span><span>{n(r.visits)}</span><span>{n(r.up)}</span><span>{n(r.down)}</span>
+                <span>{formatBytes(r.bytesUp)}</span><span>{formatBytes(r.bytesDown)}</span>
+                <span>{r.objects ? `${r.objects} · ${formatBytes(r.inOrbit)}` : "—"}</span><span>{r.cities || "—"}</span>
+              </div>
+            ))}
+            {!cRows.length && <Empty />}
+          </div>
+          <p className="mono dim hq-sum">Uploads, downloads and visits come from the map events (last 30 days); data sizes from the events HQ has kept.</p>
+        </>
+      )}
+      {kind === "containers" && (
+        <div className="hq-grid-table">
+          <div className="hq-gt bx head"><span>Container</span><span>Where</span><span>Objects</span><span>Size</span><span>Views</span><span>Down</span><span>Live</span><span>Burns</span><span /></div>
+          {boxes.map((b) => {
+            const first = b.items[0];
+            const burn = Math.min(...b.items.map((t) => Date.parse(t.expiresAt)));
+            return (
+              <div key={b.key} className="hq-gt bx">
+                <span><b>▣ {b.name}</b><small className="mono dim">sender {b.from} · {first.space ? `◎ ${first.space}` : "public"} · {b.items.map((t) => t.name).slice(0, 4).join(", ")}{b.items.length > 4 ? "…" : ""}</small></span>
+                <span>{flag(first.country)} {first.city || country(first.country)}</span>
+                <span>{b.items.length}</span>
+                <span>{formatBytes(b.items.reduce((a, t) => a + t.size, 0))}</span>
+                <span>{b.items.reduce((a, t) => a + t.views, 0)}</span>
+                <span>{b.items.reduce((a, t) => a + t.downloads, 0)}</span>
+                <span>{b.items.reduce((a, t) => a + t.watchers, 0)}</span>
+                <span>{Math.max(0, Math.round((burn - now) / 60000))}m</span>
+                <span><button className="danger-btn" onClick={() => onDestroy(b.items.map((t) => t.id))}>Destroy all</button></span>
+              </div>
+            );
+          })}
+          {!boxes.length && <Empty />}
+        </div>
       )}
       {kind === "cities" && (
         <div className="hq-split">

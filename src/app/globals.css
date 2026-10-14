@@ -1900,3 +1900,16 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
 .zicons .ic.lock, .zicons .ic.lock.open { left: 18%; top: -5.4%; }
 .zicons .ic.kill { left: -10%; top: 28%; }
 @media (prefers-reduced-motion: reduce) { .zhalo { animation: none; } }
+
+/* ---------------- HQ: activity, countries, containers ---------------- */
+.hq-click { cursor: pointer; }
+.hq-click:hover { background: rgba(255,255,255,0.04); }
+.hq-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.hq-seg button { padding: 7px 12px; font: 500 11px var(--mono); color: var(--dim); background: none; border: 0; cursor: pointer; }
+.hq-seg button.on { background: #fff; color: #000; }
+.hq-tiles-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+.hq-gt.cc { grid-template-columns: minmax(130px, 1.6fr) repeat(3, 0.6fr) repeat(2, 0.9fr); }
+.hq-gt.ct { grid-template-columns: minmax(150px, 1.6fr) 0.5fr 0.6fr 0.6fr 0.7fr 0.8fr 0.8fr 0.8fr 1fr 0.5fr; }
+.hq-gt.bx { grid-template-columns: minmax(200px, 2.4fr) 1.1fr 0.6fr 0.8fr 0.5fr 0.5fr 0.5fr 0.6fr 100px; }
+.hq-feed.tall { max-height: 62vh; overflow: auto; }
+@media (max-width: 860px) { .hq-tiles-row { grid-template-columns: 1fr 1fr; } .hq-gt.cc, .hq-gt.ct, .hq-gt.bx { grid-template-columns: 1fr 1fr; } }
