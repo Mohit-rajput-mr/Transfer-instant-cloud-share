@@ -188,6 +188,7 @@ export default function BubbleZoom(props: {
                 }}
               >
                 <span className="zsphere">
+                  <span className="zhalo" aria-hidden />
                   <svg className="zring" viewBox="0 0 100 100" aria-hidden>
                     <circle className="track" cx="50" cy="50" r="48" />
                     <circle className="life" cx="50" cy="50" r="48" strokeDasharray={301.6} strokeDashoffset={301.6 * (1 - frac)} />
@@ -195,8 +196,13 @@ export default function BubbleZoom(props: {
                   <span className="zext">{ext(o.fileName)}</span>
                   {/* one green dot orbiting per person looking at it right now */}
                   {Array.from({ length: Math.min(o.watchers ?? 0, 4) }, (_, k) => (
-                    <span key={k} className="sat" style={{ "--r": `${10 + k * 7}px`, "--t": `${5 + k * 1.7}s`, "--d": `-${k * 0.9}s` } as CSSProperties} aria-hidden />
+                    <span key={k} className="sat" style={{ "--r": `calc(var(--zd) * 0.19 + ${6 + k * 5}px)`, "--t": `${5 + k * 1.7}s`, "--d": `-${k * 0.9}s` } as CSSProperties} aria-hidden />
                   ))}
+                  <span className={`bubble lg zbub${o.watchers ? " hot" : ""}`} aria-label={`${o.watchers ?? 0} live, ${o.views ?? 0} opened, ${o.downloads} downloads`}>
+                    <span title="Live now"><i className="b-live" />{crowd(o.watchers ?? 0)}</span>
+                    <span title="Opened by"><LuEye />{crowd(o.views ?? 0)}</span>
+                    <span title="Downloads">↓{crowd(o.downloads)}</span>
+                  </span>
                   {/* separate round icons pinned to the ball: grouped on the upper-left of the ring: download, lock, trash */}
                   <span className="zicons">
                     {ownerKey(o.id) && props.onDestroy && (
@@ -247,8 +253,8 @@ export default function BubbleZoom(props: {
                 </span>
                 <span className="zname wide">{o.name}</span>
                 <span className="zmeta mono">
-                  {formatBytes(o.size)} · {formatClock(left)}
-                  <span className={`zst${o.watchers ? " hot" : ""}`}><i className="b-live" /><LuEye />{crowd(o.views ?? 0)}<LuDownload />{crowd(o.downloads)}</span>
+                  <span>{formatBytes(o.size)}</span>
+                  <span>{formatClock(left)}</span>
                 </span>
               </button>
             );

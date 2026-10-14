@@ -1883,3 +1883,20 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
 .zicons .ic.dl, .zicons .ic.dl.got, .zicons .ic.dl.fail, .zicons .ic.dl.busy { left: 60.8%; top: -11.1%; }
 .zicons .ic.lock, .zicons .ic.lock.open { left: 19%; top: -3.7%; }
 .zicons .ic.kill { left: -8.3%; top: 28.8%; }
+
+/* ---------------- Opened container: each ball looks exactly like a ball in the void ---------------- */
+/* same thin solid ring (no dashed spinning track), same slow dashed halo, same orbiting live dots,
+   same live · opened · downloads pill at the top-right, same meta line */
+.zring { inset: -16.7%; width: 133.4%; height: 133.4%; }
+.zring circle { stroke-width: 1.4; }
+.zring .track { stroke: hsl(var(--sh) 40% 20% / 0.6); stroke-dasharray: none; animation: none; }
+.zring .life { stroke: hsl(var(--sh) 80% 82%); }
+.zhalo { position: absolute; inset: -28%; border-radius: 50%; border: 1px dashed hsl(var(--sh) 50% 40% / 0.45); animation: spin 40s linear infinite; pointer-events: none; }
+.zball .bubble.zbub { display: flex; translate: none; left: 82%; top: -14%; font-size: 9px; padding: 3px 8px; gap: 7px; }
+.zball .bubble.zbub svg { width: 11px; height: 11px; }
+.zmeta { gap: 8px; font-size: 9.5px; color: var(--dim); font-variant-numeric: tabular-nums; }
+/* icons sit on the (slightly larger) ring */
+.zicons .ic.dl, .zicons .ic.dl.got, .zicons .ic.dl.fail, .zicons .ic.dl.busy { left: 61%; top: -13%; }
+.zicons .ic.lock, .zicons .ic.lock.open { left: 18%; top: -5.4%; }
+.zicons .ic.kill { left: -10%; top: 28%; }
+@media (prefers-reduced-motion: reduce) { .zhalo { animation: none; } }
