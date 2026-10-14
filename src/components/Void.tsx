@@ -4,7 +4,7 @@ import Link from "next/link";
 import Starfield from "./Starfield";
 import Uploader, { Icon } from "./Uploader";
 import LiquidGlass from "./LiquidGlass";
-import SpaceLens from "./SpaceLens";
+import GlassJar from "./GlassJar";
 import OrbView, { ORB_CAP, inheritSlot, pickHue, layout, type VoidMode } from "./OrbView";
 import { ComposePanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin, type LaunchJob } from "./Panels";
 import LaunchDock, { isPending, pendingId, pendingOrb, type Launch } from "./LaunchDock";
@@ -784,43 +784,6 @@ export default function Void() {
   const lastRow = flow ? Math.max(0, ...[...positions.values()].map((p) => p.y)) : 0;
   const rows = flow ? Math.max(lastRow + 1, ...ghosts.map((g) => Math.min(g.pos.y + 1, lastRow + 3))) : 1;
 
-  const spheres = (
-    <>
-      {visible.map((o, i) => (
-        <OrbView
-          key={o.id}
-          orb={o}
-          index={i}
-          pos={positions.get(o.id)!}
-          now={serverNow}
-          mine={!!ownerKey(o.id) || isPending(o.id)}
-          nearby={!!net && o.netHash === net}
-          watchers={watchers(o.id)}
-          onOpen={open}
-          phase={arriving.has(o.id) ? "arriving" : undefined}
-          hue={colors.get(o.id)}
-          launching={upFrac.get(o.id)}
-          incoming={isIncoming(o.id)}
-          badge={badges.get(o.id)}
-        />
-      ))}
-      {ghosts.map((g) => (
-        <OrbView
-          key={`ghost-${g.orb.id}`}
-          orb={g.orb}
-          pos={g.pos}
-          now={serverNow}
-          mine={g.mine}
-          nearby={false}
-          watchers={0}
-          onOpen={noop}
-          phase="burning"
-          hue={g.hue}
-        />
-      ))}
-    </>
-  );
-
   return (
     <>
       <Starfield />
@@ -900,7 +863,39 @@ export default function Void() {
             </div>
           )}
 
-          {space ? <SpaceLens key={space.slug}>{spheres}</SpaceLens> : spheres}
+          {visible.map((o, i) => (
+            <OrbView
+              key={o.id}
+              orb={o}
+              index={i}
+              pos={positions.get(o.id)!}
+              now={serverNow}
+              mine={!!ownerKey(o.id) || isPending(o.id)}
+              nearby={!!net && o.netHash === net}
+              watchers={watchers(o.id)}
+              onOpen={open}
+              phase={arriving.has(o.id) ? "arriving" : undefined}
+              hue={colors.get(o.id)}
+              launching={upFrac.get(o.id)}
+              incoming={isIncoming(o.id)}
+              badge={badges.get(o.id)}
+            />
+          ))}
+          {ghosts.map((g) => (
+            <OrbView
+              key={`ghost-${g.orb.id}`}
+              orb={g.orb}
+              pos={g.pos}
+              now={serverNow}
+              mine={g.mine}
+              nearby={false}
+              watchers={0}
+              onOpen={noop}
+              phase="burning"
+              hue={g.hue}
+            />
+          ))}
+          {space && <GlassJar key={space.slug} />}
         </section>
 
         <section className="how" id="how">
