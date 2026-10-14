@@ -1479,3 +1479,25 @@ html.lg-refract :is(.top, .drawer, .send-menu, .up-pill, .up-card, .send-fab).lg
 /* small controls keep a hint of frost so their text stays readable */
 .room-exit.glass, .join-bubble.glass { -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); background: linear-gradient(155deg, rgba(235,242,255,0.14), rgba(235,242,255,0.04) 50%, rgba(235,242,255,0.08)); }
 .join-bubble.glass { background: linear-gradient(155deg, rgba(235,242,255,0.16), rgba(10,12,16,0.55) 45%, rgba(235,242,255,0.10)); }
+
+/* ---------------- Glass cards: Spaces pop-up and every panel (send, open, mission control) ---------------- */
+/* same language as the space pane: bright hairline edge, top highlight, bottom glint; a light dark frost
+   behind the text only, so it stays readable without turning gray */
+.pop, .drawer.lg {
+  background:
+    radial-gradient(closest-side, rgba(255,255,255,0.95), rgba(255,255,255,0.3) 45%, transparent) 50% calc(100% + 7px) / min(40%, 240px) 14px no-repeat,
+    linear-gradient(135deg, rgba(255,255,255,0.13), rgba(255,255,255,0.02) 26%, transparent 42%),
+    linear-gradient(180deg, rgba(10,12,18,0.34), rgba(6,8,12,0.46));
+  border: 1px solid rgba(255,255,255,0.6);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.85),
+    inset 0 -1px 0 rgba(255,255,255,0.3),
+    inset 1px 0 0 rgba(255,255,255,0.18), inset -1px 0 0 rgba(255,255,255,0.18),
+    0 30px 80px rgba(0,0,0,0.5);
+  -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%);
+}
+html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px) saturate(165%); backdrop-filter: url(#lg-refract) blur(14px) saturate(165%); }
+.pop-head, .drawer-head { border-bottom-color: rgba(255,255,255,0.14); }
+/* inner pieces in the same clear glass */
+.pop .seg, .drawer .seg, .sp-search, .sp-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.32); box-shadow: inset 0 1px 0 rgba(255,255,255,0.35); }
+.sp-card { background: linear-gradient(160deg, hsl(var(--hue) 60% 60% / 0.12), rgba(255,255,255,0.02) 55%); }
