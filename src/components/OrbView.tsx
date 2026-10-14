@@ -192,6 +192,15 @@ type Drag = {
 
 const HOLD_MS = 280;
 
+// where the little spheres float inside a sender's bubble: [x%, y%, diameter%] by how many there are
+const SPOTS: Record<number, [number, number, number][]> = {
+  2: [[36, 46, 36], [64, 56, 32]],
+  3: [[34, 40, 32], [64, 38, 28], [50, 66, 30]],
+  4: [[34, 36, 28], [64, 36, 26], [36, 64, 26], [64, 64, 28]],
+  5: [[30, 40, 24], [56, 30, 24], [72, 54, 22], [50, 70, 24], [36, 60, 20]],
+  6: [[30, 38, 22], [52, 28, 22], [72, 44, 20], [66, 68, 22], [42, 70, 22], [46, 48, 20]],
+};
+
 export default function OrbView(props: {
   orb: Orb;
   pos: { x: number; y: number };
@@ -428,13 +437,16 @@ export default function OrbView(props: {
       <div className="orb-body">
         <div className="halo" />
         {mine && <span className="claim" />}
-        {group && group.slice(1, 3).map((h, i) => <span key={i} className={`stack s${i + 1}`} style={{ "--sh": h } as CSSProperties} aria-hidden />)}
+        {group && group.slice(0, 6).map((h, i, a) => {
+          const [x, y, d] = SPOTS[Math.min(a.length, 6)][i];
+          return <span key={i} className="mini" style={{ "--sh": h, "--mx": `${x}%`, "--my": `${y}%`, "--md": `${d}%`, "--mi": i } as CSSProperties} aria-hidden />;
+        })}
         <div className="sphere" />
         <svg className="ring" viewBox="0 0 100 100">
           <circle className="track" cx="50" cy="50" r={R} />
           <circle className="life" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - (up ? Math.max(0.03, launching) : frac))} />
         </svg>
-        <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : group ? `×${group.length}` : ext(orb.fileName)}</span>
+        {group ? <span className="grp-count">{group.length}</span> : <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : ext(orb.fileName)}</span>}
         {mine && badge ? <span className="mine-no" aria-hidden>{badge}</span> : null}
         {got && !up ? <span className="got-mark" aria-hidden>✓</span> : null}
         {!up && <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
