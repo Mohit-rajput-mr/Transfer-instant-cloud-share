@@ -66,6 +66,9 @@ async function run() {
   running = false;
 }
 
+/** Something is still downloading (a page refresh now would cut it). */
+export const downloading = () => state.jobs.some((j) => j.state === "queued" || j.state === "running");
+
 export function cancelAll() {
   abort?.abort();
 }

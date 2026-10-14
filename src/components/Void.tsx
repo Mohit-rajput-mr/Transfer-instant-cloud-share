@@ -15,6 +15,7 @@ import { supabase, type RealtimeChannel } from "@/lib/realtime";
 import SpacePanel, { SpaceRoom } from "./Spaces";
 import BubbleZoom from "./BubbleZoom";
 import { heldIds, release } from "@/lib/p2p";
+import { downloading } from "@/lib/downloads";
 import { enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
 
 /** Someone else's launch, announced over realtime the moment they press Launch (before it has landed). */
@@ -601,7 +602,9 @@ export default function Void() {
     });
   }, [viewing, sendPulse, refresh, broadcast]);
 
-  // auto-refresh stale tabs after a new deploy (never while a card is open)
+  // auto-refresh stale tabs after a new deploy. Never while a card is open, and never while this tab
+  // is the source of files in orbit (a reload would take them down for everyone) or still downloading.
+  const idle = () => !panelOpen.current && heldIds().length === 0 && !downloading();
   const version = useRef<string | null>(null);
   const stale = useRef(false);
   const panelOpen = useRef(false);
@@ -612,10 +615,8 @@ export default function Void() {
       const v = r?.ok ? ((await r.json()) as { v: string }).v : null;
       if (!v) return;
       if (version.current === null) version.current = v;
-      else if (v !== version.current) {
-        stale.current = true;
-        if (!panelOpen.current) window.location.reload();
-      }
+      else if (v !== version.current) stale.current = true;
+      if (stale.current && idle()) window.location.reload();
     };
     check();
     const t = setInterval(check, 60_000);
@@ -627,7 +628,7 @@ export default function Void() {
     };
   }, []);
   useEffect(() => {
-    if (!panel && stale.current) window.location.reload();
+    if (!panel && stale.current && idle()) window.location.reload();
   }, [panel]);
 
   // sync ?o= with open object

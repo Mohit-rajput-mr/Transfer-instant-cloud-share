@@ -105,7 +105,7 @@ export default function AdminApp() {
   useEffect(() => {
     let first: string | null = null;
     const check = async () => {
-      const v = await fetch("/api/version", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => d?.v as string | undefined).catch(() => undefined);
+      const v = await fetch("/api/version", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => (d?.build ?? d?.v) as string | undefined).catch(() => undefined);
       if (!v) return;
       if (first === null) first = v;
       else if (v !== first) window.location.reload();
