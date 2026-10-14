@@ -44,6 +44,9 @@ type Panel =
   | { kind: "space"; start?: string }
   | null;
 
+// more balls in the void, smaller balls, so they all have room
+const crowdScale = (n: number) => (n <= 5 ? 1 : n <= 8 ? 0.86 : n <= 12 ? 0.74 : 0.64);
+
 // One device's objects gather into a single bubble once it has sent more than one.
 const GROUP = "g-";
 const isGroup = (id: string) => id.startsWith(GROUP);
@@ -66,7 +69,7 @@ function groupOrbs(list: Orb[]) {
     out.push({
       ...m[0],
       id,
-      name: m[0].by ? `${m[0].by} · ${m.length} items` : `${m.length} items`,
+      name: m.find((x) => x.groupName)?.groupName ?? (m[0].by ? `${m[0].by} · ${m.length} items` : `${m.length} items`),
       fileName: `${m.length} items`,
       size: sum("size"),
       downloads: sum("downloads"),
@@ -290,7 +293,7 @@ export default function Void() {
       frac = st === "uploading" ? f : st === "finalizing" || st === "done" ? 1 : 0;
       if (Date.now() - beamed > 500) announce();
     };
-    launch({ file: job.file, name: job.name, passcode: job.passcode, maxDownloads: job.maxDownloads, life: job.life, open: job.open, hue: l.hue, signal: l.abort.signal, onProgress })
+    launch({ file: job.file, name: job.name, passcode: job.passcode, maxDownloads: job.maxDownloads, life: job.life, open: job.open, group: job.group, hue: l.hue, signal: l.abort.signal, onProgress })
       .then((orb) => {
         clearInterval(keepAlive);
         beam("landed", { k: key, id: orb.id });
@@ -862,6 +865,8 @@ export default function Void() {
     setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id });
   }, [toast]);
   const noop = useCallback(() => {}, []);
+  // one ball inside a sender's bubble
+  const openMember = useCallback((id: string) => setPanel(ownerKey(id) ? { kind: "owner", id } : { kind: "unlock", id }), []);
   const listedUnlock = panel?.kind === "unlock" ? orbs.find((o) => o.id === panel.id) ?? extra : null;
   if (listedUnlock) keptUnlock.current = listedUnlock;
   else if (panel?.kind !== "unlock") keptUnlock.current = null;
@@ -921,7 +926,7 @@ export default function Void() {
         <section
           className={`void${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
           id="void"
-          style={flow ? ({ "--n": rows } as React.CSSProperties) : undefined}
+          style={(flow ? { "--n": rows } : { "--k-auto": crowdScale(visible.length) }) as unknown as React.CSSProperties}
         >
           {space && <SpaceRoom space={space} info={room} online={live} onKick={kick} onExit={() => {
             switchSpace(null);
@@ -971,7 +976,8 @@ export default function Void() {
               incoming={isIncoming(o.id)}
               badge={badges.get(o.id)}
               got={gotIds.has(o.id)}
-              group={isGroup(o.id) ? groups.get(o.id)?.map((m) => m.hue) : undefined}
+              group={isGroup(o.id) ? groups.get(o.id)?.map((m) => ({ id: m.id, name: m.name, hue: m.hue, size: m.size, got: hasGot(m.id), fileName: m.fileName })) : undefined}
+              onOpenMember={isGroup(o.id) ? openMember : undefined}
             />
           ))}
           {ghosts.map((g) => (

@@ -482,7 +482,7 @@ export function ShareBlock({ id }: { id: string }) {
 
 /* ------------------------------ SEND ------------------------------ */
 
-export type LaunchJob = { file: File; name: string; files: number; passcode: string; maxDownloads: number | null; life: number; open: boolean };
+export type LaunchJob = { file: File; name: string; files: number; passcode: string; maxDownloads: number | null; life: number; open: boolean; group?: string };
 
 const LIVES = [5, 10, 15, 20, 25, 30];
 // the last choices stick (this device only): the next send is one tap
@@ -532,6 +532,7 @@ export function SendPanel(props: {
   const name = typed ?? autoName;
   const setName = setTyped;
   const [code, setCode] = useState("");
+  const [bubble, setBubble] = useState("");
   const [max, setMax] = useState<number | null>(null);
   const [locked, setLocked] = useState(() => pref("locked", false));
   const [life, setLife] = useState(() => pref("life", 30));
@@ -550,7 +551,7 @@ export function SendPanel(props: {
       // one ball per pick, each under its own name, all with the same settings
       for (const it of props.items) {
         const label = itemName(it).slice(0, 60) || "untitled";
-        props.onLaunch({ ...common, file: isFolder(it) ? packFolder(it) : it, name: label, files: isFolder(it) ? it.entries.length : 1 });
+        props.onLaunch({ ...common, file: isFolder(it) ? packFolder(it) : it, name: label, files: isFolder(it) ? it.entries.length : 1, group: bubble.trim() || undefined });
       }
       return;
     }
@@ -572,6 +573,23 @@ export function SendPanel(props: {
               <button role="radio" aria-checked={!split} className={`lg-press${!split ? " on" : ""}`} onClick={() => setSplit(false)}>Together · 1 ball</button>
               <button role="radio" aria-checked={split} className={`lg-press${split ? " on" : ""}`} onClick={() => setSplit(true)}>Separate · {n} balls</button>
             </div>
+          </div>
+        )}
+        {split && (
+          <div className="field">
+            <label><span className="mono">Name the bubble</span><span className="mono dim">{bubble.length}/40</span></label>
+            <input
+              className="line-input name-input"
+              value={bubble}
+              maxLength={40}
+              autoFocus={focusNow}
+              autoComplete="off"
+              onChange={(e) => setBubble(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !locked) go();
+              }}
+              placeholder={`${n} items`}
+            />
           </div>
         )}
         {!split && (
@@ -602,7 +620,7 @@ export function SendPanel(props: {
         </div>
         <p className="note ellip">
           {split
-            ? "Each one floats as its own ball, same settings."
+            ? "Each one is its own ball, together in one bubble."
             : folder
               ? multi ? "All in one ball, folders stay folders." : `${folder.name}/ · arrives as a real folder`
               : single ? first.name : "All of them in one ball. One tap gets them all."}
@@ -1377,7 +1395,7 @@ export function GroupPanel(props: { members: Orb[]; now: number; onOpen: (o: Orb
   return (
     <Drawer label="From one sender" onClose={props.onClose}>
       <div className="col">
-        <div className="sp-title wide">{by ? `${by}'s drop` : `${members.length} items`}</div>
+        <div className="sp-title wide">{members.find((o) => o.groupName)?.groupName ?? (by ? `${by}'s drop` : `${members.length} items`)}</div>
         <div className="send-meta">
           <span className="mono">{members.length} items · one sender</span>
           <span className="mono dim">{formatBytes(total)}</span>

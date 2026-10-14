@@ -1560,39 +1560,50 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
 .drawer .col > :not(.files):not(.grow) { flex-shrink: 0; }
 .drawer .col > .files { flex-shrink: 1; min-height: 56px; }
 
-/* ---------------- One sender's bubble: a clear soap bubble with their objects floating inside ---------------- */
-.orb.group .sphere {
-  inset: 2%;
+/* ---------------- One sender's bubble: a soft, wobbling bubble with their balls inside, side by side ---------------- */
+.bubble-body { position: relative; }
+.blob {
+  position: absolute; inset: 0; pointer-events: none;
+  border: 1.5px solid rgba(255,255,255,0.78);
   background:
-    radial-gradient(circle at 30% 24%, rgba(255,255,255,0.9), rgba(255,255,255,0.35) 5%, transparent 15%),
-    radial-gradient(circle at 72% 80%, rgba(255,255,255,0.22), transparent 18%),
-    radial-gradient(circle, transparent 60%, rgba(170,210,255,0.07) 72%, rgba(255,190,240,0.16) 86%, rgba(255,255,255,0.42) 98%);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35), inset 0 0 18px rgba(255,255,255,0.08), 0 10px 30px rgba(0,0,0,0.35);
+    radial-gradient(60% 50% at 28% 22%, rgba(255,255,255,0.10), transparent 70%),
+    radial-gradient(80% 70% at 70% 85%, rgba(170,200,255,0.06), transparent 70%),
+    rgba(255,255,255,0.025);
+  box-shadow: inset 0 0 24px rgba(255,255,255,0.05), 0 12px 40px rgba(0,0,0,0.35);
+  border-radius: 58% 42% 55% 45% / 48% 60% 40% 52%;
+  animation: blob 9s ease-in-out infinite;
+  transition: scale 0.5s var(--spring);
 }
-/* the oily rainbow film on the rim, slowly turning */
-.orb.group .sphere::before {
-  content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; opacity: 0.5;
-  background: conic-gradient(from 0deg, #ff9ad5, #9ad7ff, #b8ffcf, #ffe39a, #d3a8ff, #ff9ad5);
-  -webkit-mask: radial-gradient(circle, transparent 78%, #000 92%, transparent 100%); mask: radial-gradient(circle, transparent 78%, #000 92%, transparent 100%);
-  animation: film 9s linear infinite;
+@keyframes blob {
+  0%, 100% { border-radius: 58% 42% 55% 45% / 48% 60% 40% 52%; rotate: 0deg; }
+  25% { border-radius: 46% 54% 42% 58% / 60% 44% 56% 40%; rotate: 1.5deg; }
+  50% { border-radius: 54% 46% 61% 39% / 42% 55% 45% 58%; rotate: -1deg; }
+  75% { border-radius: 42% 58% 48% 52% / 55% 41% 59% 45%; rotate: 0.8deg; }
 }
-@keyframes film { to { rotate: 360deg; } }
-.orb.group.mine .sphere { box-shadow: 0 0 0 2px rgba(255,255,255,0.85), inset 0 0 0 1px rgba(255,255,255,0.35), 0 10px 30px rgba(0,0,0,0.35); }
-/* the objects inside: small spheres in their own colours, drifting gently */
-.orb.group .mini {
-  position: absolute; left: var(--mx); top: var(--my); width: var(--md); aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; pointer-events: none;
+/* touched: it wobbles faster and squashes like a real bubble */
+.orb.group:hover .blob { animation-duration: 3.2s; scale: 1.03 0.97; }
+.orb-anchor.dragging .orb.group .blob { animation-duration: 1.6s; scale: 1.07 0.93; }
+.orb-anchor.flung .orb.group .blob { animation-duration: 2.4s; scale: 0.95 1.05; }
+.members { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; row-gap: 6px; }
+.member { display: flex; flex-direction: column; align-items: center; gap: 4px; width: calc(var(--md) * 1.8); cursor: pointer;
+  animation: mini-float calc(6s + var(--mi) * 0.8s) ease-in-out calc(var(--mi) * -1.4s) infinite alternate; }
+.mball { position: relative; width: var(--md); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; transition: scale 0.3s var(--spring);
   background:
     radial-gradient(circle at 32% 26%, rgba(255,255,255,0.9), rgba(255,255,255,0.3) 9%, transparent 30%),
     radial-gradient(circle at 40% 36%, hsl(var(--sh) 62% 70%), hsl(var(--sh) 50% 44%) 46%, hsl(var(--sh) 55% 18%) 86%);
-  box-shadow: inset -3px -4px 8px rgba(0,0,0,0.45), 0 3px 8px rgba(0,0,0,0.35);
-  animation: mini-float calc(5s + var(--mi) * 0.7s) ease-in-out calc(var(--mi) * -1.3s) infinite alternate;
-}
-@keyframes mini-float { 0% { transform: translate(-4%, 3%); } 50% { transform: translate(5%, -4%); } 100% { transform: translate(-2%, -6%); } }
-.grp-count { position: absolute; right: 8%; bottom: 8%; z-index: 3; min-width: 26px; height: 26px; padding: 0 7px; border-radius: 13px; display: grid; place-items: center;
-  background: #fff; color: #000; font-family: var(--display); font-weight: 900; font-size: 13px; box-shadow: 0 3px 10px rgba(0,0,0,0.5); pointer-events: none; }
-.orb.got .grp-count { background: #9a9a9a; }
+  box-shadow: inset -4px -5px 10px rgba(0,0,0,0.45), 0 4px 12px rgba(0,0,0,0.4); }
+.mball > span { font-family: var(--display); font-weight: 900; font-size: calc(var(--md) * 0.2); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.6); letter-spacing: 0.02em; }
+.member:hover .mball { scale: 1.1; }
+.mname { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--display); font-weight: 800; font-size: calc(var(--md) * 0.2 + 2px); text-transform: uppercase; color: #fff; text-align: center; }
+.member.got .mball { filter: grayscale(1) brightness(0.62); }
+.member.got .mname { color: #8a8a8a; }
+@keyframes mini-float { 0% { transform: translate(-3px, 2px); } 50% { transform: translate(3px, -3px); } 100% { transform: translate(-1px, -4px); } }
+.orb.group .bubble { right: 4%; top: -4%; }
+.orb.group .got-mark { left: 4%; bottom: 4%; }
 .tag.grp { border-color: rgba(255,255,255,0.4); color: #fff; }
-@media (prefers-reduced-motion: reduce) { .orb.group .mini, .orb.group .sphere::before { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .blob, .member { animation: none; } }
+/* a crowded void: every ball gets a little smaller so they all have room (desktop; phones stack in rows) */
+.void:not(.flow) .orb { --k: var(--k-auto, 1); }
 /* the list inside the bubble */
 .grp-list { max-height: 220px !important; }
 .grp-list > div { display: grid !important; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; }

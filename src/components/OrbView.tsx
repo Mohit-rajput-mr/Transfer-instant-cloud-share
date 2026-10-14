@@ -192,14 +192,16 @@ type Drag = {
 
 const HOLD_MS = 280;
 
-// where the little spheres float inside a sender's bubble: [x%, y%, diameter%] by how many there are
-const SPOTS: Record<number, [number, number, number][]> = {
-  2: [[36, 46, 36], [64, 56, 32]],
-  3: [[34, 40, 32], [64, 38, 28], [50, 66, 30]],
-  4: [[34, 36, 28], [64, 36, 26], [36, 64, 26], [64, 64, 28]],
-  5: [[30, 40, 24], [56, 30, 24], [72, 54, 22], [50, 70, 24], [36, 60, 20]],
-  6: [[30, 38, 22], [52, 28, 22], [72, 44, 20], [66, 68, 22], [42, 70, 22], [46, 48, 20]],
-};
+export type GroupMember = { id: string; name: string; hue: number; size: number; got: boolean; fileName: string };
+
+/** A sender's bubble: how big its balls are and how they sit, so none overlap and the bubble stays compact. */
+function bubbleLayout(n: number) {
+  const d = n <= 2 ? 58 : n <= 4 ? 50 : n <= 6 ? 42 : n <= 9 ? 36 : 30;
+  const cols = n <= 3 ? n : n <= 4 ? 2 : n <= 9 ? 3 : 4;
+  const rows = Math.ceil(n / cols);
+  const cw = d * 1.9, ch = d + 32, pad = d * 0.5;
+  return { d, cols, w: cols * cw + pad * 2, h: rows * ch + pad * 2, pad };
+}
 
 export default function OrbView(props: {
   orb: Orb;
@@ -220,8 +222,10 @@ export default function OrbView(props: {
   badge?: number;
   /** this device already downloaded it */
   got?: boolean;
-  /** a bubble holding one sender's objects: their colours */
-  group?: number[];
+  /** a bubble holding one sender's objects */
+  group?: GroupMember[];
+  /** tap on one ball inside the bubble */
+  onOpenMember?: (id: string) => void;
 }) {
   const { orb, pos, now, mine, nearby, watchers, onOpen, phase, launching, incoming, badge, got, group } = props;
   const up = launching !== undefined;
@@ -238,6 +242,7 @@ export default function OrbView(props: {
   const button = useRef<HTMLButtonElement>(null);
   const drag = useRef<Drag | null>(null);
   const suppressClick = useRef(false);
+  const pressed = useRef<string | null>(null);
   const off = offsets.get(orb.id) ?? { x: 0, y: 0 };
   // stagger slot is fixed at mount: re-indexing later must not replay the entrance
   const [idx] = useState(() => Math.min(props.index ?? 0, 20));
@@ -285,6 +290,8 @@ export default function OrbView(props: {
 
   const onPointerDown = (e: RPointerEvent<HTMLButtonElement>) => {
     if (e.button !== 0 || phase === "burning") return;
+    // the button captures the pointer (for dragging), so the click reports the button: remember the ball pressed
+    pressed.current = ((e.target as Element).closest?.("[data-member]") as HTMLElement | null)?.dataset.member ?? null;
     const prev = drag.current;
     if (prev) {
       cancelAnimationFrame(prev.raf);
@@ -430,23 +437,50 @@ export default function OrbView(props: {
           suppressClick.current = false;
           return;
         }
+        const id = pressed.current ?? ((e.target as Element).closest?.("[data-member]") as HTMLElement | null)?.dataset.member;
+        pressed.current = null;
+        if (id && props.onOpenMember) {
+          const r = e.currentTarget.querySelector(`[data-member="${id}"]`)?.getBoundingClientRect();
+          if (r) setCardOrigin(r.left + r.width / 2, r.top + r.height / 2);
+          return props.onOpenMember(id);
+        }
         open(e.currentTarget);
       }}
       aria-label={`${up ? "Launching" : "Open"} ${group ? `a group of ${group.length} from one sender: ` : ""}${orb.name}${mine ? `, yours${badge ? ` number ${badge}` : ""}` : ""}${got && !up ? ", already downloaded" : ""}`}
     >
+      {group ? (
+        (() => {
+          const L = bubbleLayout(group.length);
+          return (
+            <div className="orb-body bubble-body" style={{ width: `calc(${L.w}px * var(--k))`, height: `calc(${L.h}px * var(--k))` }}>
+              <div className="blob" />
+              <div className="members" style={{ "--md": `calc(${L.d}px * var(--k))`, padding: `calc(${L.pad}px * var(--k))`, gridTemplateColumns: `repeat(${L.cols}, 1fr)` } as CSSProperties}>
+                {group.map((m, i) => (
+                  <span key={m.id} className={`member${m.got ? " got" : ""}`} data-member={m.id} style={{ "--sh": m.hue, "--mi": i } as CSSProperties} title={m.name}>
+                    <span className="mball"><span>{ext(m.fileName)}</span></span>
+                    <span className="mname">{m.name}</span>
+                  </span>
+                ))}
+              </div>
+        {got && !up ? <span className="got-mark" aria-hidden>✓</span> : null}
+        {!up && <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
+          <span title="Live now"><i className="b-live" />{crowd(watchers)}</span>
+          <span title="Opened by"><svg viewBox="0 0 16 16" aria-hidden><path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" strokeWidth="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>{crowd(orb.views ?? 0)}</span>
+          <span title="Downloads">↓{crowd(orb.downloads)}</span>
+        </span>}
+            </div>
+          );
+        })()
+      ) : (
       <div className="orb-body">
         <div className="halo" />
         {mine && <span className="claim" />}
-        {group && group.slice(0, 6).map((h, i, a) => {
-          const [x, y, d] = SPOTS[Math.min(a.length, 6)][i];
-          return <span key={i} className="mini" style={{ "--sh": h, "--mx": `${x}%`, "--my": `${y}%`, "--md": `${d}%`, "--mi": i } as CSSProperties} aria-hidden />;
-        })}
         <div className="sphere" />
         <svg className="ring" viewBox="0 0 100 100">
           <circle className="track" cx="50" cy="50" r={R} />
           <circle className="life" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - (up ? Math.max(0.03, launching) : frac))} />
         </svg>
-        {group ? <span className="grp-count">{group.length}</span> : <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : ext(orb.fileName)}</span>}
+        <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : ext(orb.fileName)}</span>
         {mine && badge ? <span className="mine-no" aria-hidden>{badge}</span> : null}
         {got && !up ? <span className="got-mark" aria-hidden>✓</span> : null}
         {!up && <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
@@ -463,6 +497,7 @@ export default function OrbView(props: {
           />
         ))}
       </div>
+      )}
       <div className="orb-label wide">{orb.name}</div>
       <div className="orb-meta mono">
         {orb.by ? <span className="orb-by">{orb.by}</span> : null}
@@ -470,7 +505,7 @@ export default function OrbView(props: {
         {up ? <span>↑ {Math.round(launching * 100)}%</span> : <span>{formatClock(left)}</span>}
         {orb.maxDownloads ? <span>max {orb.maxDownloads}</span> : null}
       </div>
-      {(mine || nearby || sealed || incoming || orb.open) && (
+      {(mine || nearby || sealed || incoming || orb.open || group) && (
         <div className="tags">
           {mine && <span className="tag me">{badge ? `YOURS · #${badge}` : "YOURS"}</span>}
           {incoming && <span className="tag in">INCOMING</span>}

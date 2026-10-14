@@ -25,6 +25,8 @@ export interface Orb {
   open?: boolean;
   /** anonymous sender group: everything one device sent shares it */
   from?: string | null;
+  /** the name the sender gave their bubble */
+  groupName?: string | null;
   createdAt: string;
   expiresAt: string;
 }
