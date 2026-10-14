@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateClientTokenFromReadWriteToken } from "@vercel/blob/client";
 import { MAX_FILE_BYTES } from "@/lib/limits";
-import { clean, geo, isB64, isHex, netHash, newId, randomHex, reap, rpc, sha256 } from "@/lib/server";
+import { clean, geo, isB64, isHex, netHash, newId, reap, rpc, sha256 } from "@/lib/server";
 import { LIVES, burnedUp, member, tagName, untag } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
@@ -49,9 +48,8 @@ export async function POST(req: NextRequest) {
   const mime = clean(b.mime, 120) || "application/octet-stream";
 
   const id = newId();
-  const pathname = `o/${id}-${randomHex(12)}.bin`;
-  const chunks = Math.max(1, Math.ceil(size / chunkSize));
-  const encryptedSize = size + chunks * 16;
+  // no storage: the sender's device serves the file directly (lib/p2p.ts)
+  const pathname = `p2p/${id}`;
 
   try {
     await rpc("orbit_create", {
@@ -72,15 +70,7 @@ export async function POST(req: NextRequest) {
     throw e;
   }
 
-  const token = await generateClientTokenFromReadWriteToken({
-    pathname,
-    maximumSizeInBytes: encryptedSize + 1024,
-    allowedContentTypes: ["application/octet-stream"],
-    validUntil: Date.now() + 6 * 60 * 60 * 1000,
-    cacheControlMaxAge: 60,
-  });
-
-  return NextResponse.json({ id, pathname, token });
+  return NextResponse.json({ id });
 }
 
 const bad = (what: string) => NextResponse.json({ error: `invalid ${what}` }, { status: 400 });

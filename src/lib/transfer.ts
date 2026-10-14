@@ -1,17 +1,15 @@
 "use client";
-import { completeMultipartUpload, createMultipartUpload, put, uploadPart } from "@vercel/blob/client";
 import {
-  CHUNK, ITERATIONS, chunkCount, deriveKeys, encryptChunk, fromB64, randomBytes, streamDecrypt, toB64, toHex,
+  CHUNK, ITERATIONS, deriveKeys, fromB64, randomBytes, streamDecrypt, toB64, toHex,
   type DownloadSink,
 } from "./crypto";
 import { deviceLabel, setOwnerKey, type Orb } from "./client";
 import { FOLDER_MIME, directoryOutput, folderSink, zipOutput, type DirHandle, type Manifest } from "./bundle";
 import { autoDownload, safeMime, saveName } from "./save";
 import { spaceBody } from "./space";
+import { P2P_PREFIX, hold, isP2P, pull } from "./p2p";
 
 export type Stage = "packing" | "deriving" | "encrypting" | "uploading" | "finalizing" | "decrypting" | "done";
-
-const PARALLEL = 8;
 
 /** Open objects (no passcode) are still encrypted, with this well-known code: the server stays blind to the
  *  content, and anyone who opens the object can decrypt it without typing anything. */
@@ -49,62 +47,13 @@ export async function launch(opts: {
     signal,
   });
   if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Could not open a slot in orbit");
-  const { id, pathname, token } = (await res.json()) as { id: string; pathname: string; token: string };
+  const { id } = (await res.json()) as { id: string };
   setOwnerKey(id, owner);
 
-  const total = chunkCount(file.size);
-  const encryptAt = async (i: number) => {
-    const plain = await file.slice(i * CHUNK, Math.min(file.size, (i + 1) * CHUNK)).arrayBuffer();
-    return encryptChunk(key, nonce, i, i === total - 1, plain);
-  };
-  const common = { access: "public" as const, token, contentType: "application/octet-stream", abortSignal: signal };
-
-  let url: string;
-  if (total === 1) {
-    onProgress("encrypting", 0);
-    const body = await encryptAt(0);
-    const r = await put(pathname, new Blob([body as BlobPart]), {
-      ...common,
-      onUploadProgress: (e) => onProgress("uploading", e.loaded / Math.max(1, e.total)),
-    });
-    url = r.url;
-  } else {
-    const { key: mpKey, uploadId } = await createMultipartUpload(pathname, common);
-    const loaded = new Array<number>(total).fill(0);
-    const report = () => onProgress("uploading", loaded.reduce((a, b) => a + b, 0) / Math.max(1, file.size));
-    const parts: { etag: string; partNumber: number }[] = [];
-    let next = 0;
-    const worker = async () => {
-      while (next < total) {
-        const i = next++;
-        const body = await encryptAt(i);
-        const plainLen = Math.min(CHUNK, file.size - i * CHUNK);
-        for (let attempt = 0; ; attempt++) {
-          try {
-            const part = await uploadPart(pathname, new Blob([body as BlobPart]), {
-              ...common, key: mpKey, uploadId, partNumber: i + 1,
-              onUploadProgress: (e) => {
-                loaded[i] = (e.loaded / Math.max(1, e.total)) * plainLen;
-                report();
-              },
-            });
-            parts.push(part);
-            loaded[i] = plainLen;
-            report();
-            break;
-          } catch (e) {
-            if (signal?.aborted || attempt >= 3) throw e;
-            await new Promise((r) => setTimeout(r, 800 * 2 ** attempt));
-          }
-        }
-      }
-    };
-    await Promise.all(Array.from({ length: Math.min(PARALLEL, total) }, worker));
-    parts.sort((a, b) => a.partNumber - b.partNumber);
-    onProgress("finalizing", 1);
-    const r = await completeMultipartUpload(pathname, parts, { ...common, key: mpKey, uploadId });
-    url = r.url;
-  }
+  // Nothing is uploaded: this device keeps the file and sends it, encrypted, straight to whoever
+  // opens it (lib/p2p.ts) until it burns.
+  hold(id, file, key, nonce, CHUNK, (opts.life ?? 30) * 60_000 + 60_000);
+  const url = `${P2P_PREFIX}${id}`;
 
   onProgress("finalizing", 1);
   const fin = await fetch(`/api/transfers/${id}/finalize`, {
@@ -229,8 +178,9 @@ export async function receive(opts: {
 
   onProgress("decrypting", 0);
   try {
+    const body = isP2P(r.url) ? await pull(r.url.slice(P2P_PREFIX.length), signal) : undefined;
     await streamDecrypt({
-      url: r.url, key, nonce: fromB64(r.nonce), size: r.size, chunkSize: r.chunkSize, sink, signal,
+      url: r.url, body, key, nonce: fromB64(r.nonce), size: r.size, chunkSize: r.chunkSize, sink, signal,
       onProgress: (d) => onProgress("decrypting", d / Math.max(1, r.size)),
     });
   } catch (e) {

@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { deviceId, deviceInfo, dropOwnerKey, hasGot, ownerKey, type Orb } from "@/lib/client";
 import { supabase, type RealtimeChannel } from "@/lib/realtime";
 import SpacePanel, { SpaceRoom } from "./Spaces";
+import { heldIds, release } from "@/lib/p2p";
 import { enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
 
 /** Someone else's launch, announced over realtime the moment they press Launch (before it has landed). */
@@ -659,9 +660,23 @@ export default function Void() {
       const key = ownerKey(o.id);
       if (!key) continue;
       purged.current.add(o.id);
+      release(o.id);
       fetch(`/api/transfers/${o.id}`, { method: "DELETE", headers: { "x-owner": key } }).finally(() => dropOwnerKey(o.id));
     }
   }, [orbs, serverNow]);
+  // Files live only on the sender's device: when this page goes away its spheres go too, so nobody
+  // waits on a file that can no longer be sent. keepalive lets the requests finish after unload.
+  useEffect(() => {
+    const bye = () => {
+      for (const id of heldIds()) {
+        const key = ownerKey(id);
+        release(id);
+        if (key) fetch(`/api/transfers/${id}`, { method: "DELETE", headers: { "x-owner": key }, keepalive: true }).catch(() => {});
+      }
+    };
+    window.addEventListener("pagehide", bye);
+    return () => window.removeEventListener("pagehide", bye);
+  }, []);
   // Membership only changes when something launches or expires, not on every clock tick, so the
   // layout / colour / choreography work below runs on change instead of every second.
   const aliveKey = useMemo(() => orbs.filter((o) => new Date(o.expiresAt).getTime() > serverNow).map((o) => o.id).join(","), [orbs, serverNow]);

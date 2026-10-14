@@ -68,7 +68,8 @@ export function geo(req: NextRequest): Geo {
 }
 
 export async function removeBlobs(urls: (string | null | undefined)[]) {
-  const list = urls.filter((u): u is string => !!u);
+  // peer-to-peer objects (p2p:…) were never stored: nothing to delete, no storage call made
+  const list = urls.filter((u): u is string => !!u && u.startsWith("https://"));
   if (!list.length) return;
   try {
     await del(list);

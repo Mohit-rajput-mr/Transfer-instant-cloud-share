@@ -56,6 +56,8 @@ export interface DownloadSink {
 // Streams the encrypted blob, decrypting chunk by chunk.
 export async function streamDecrypt(opts: {
   url: string;
+  /** the ciphertext from elsewhere (a peer connection) instead of fetching `url` */
+  body?: ReadableStream<Uint8Array>;
   key: CryptoKey;
   nonce: Uint8Array;
   size: number;
@@ -64,13 +66,17 @@ export async function streamDecrypt(opts: {
   onProgress: (done: number) => void;
   signal?: AbortSignal;
 }) {
-  const { url, key, nonce, size, chunkSize, sink, onProgress, signal } = opts;
+  const { url, body, key, nonce, size, chunkSize, sink, onProgress, signal } = opts;
   const total = chunkCount(size, chunkSize);
   const expected = (i: number) => (i < total - 1 ? chunkSize : size - (total - 1) * chunkSize) + TAG;
 
-  const res = await fetch(url, { signal, cache: "no-store" });
-  if (!res.ok || !res.body) throw new Error(`Download failed (${res.status})`);
-  const reader = res.body.getReader();
+  let stream = body;
+  if (!stream) {
+    const res = await fetch(url, { signal, cache: "no-store" });
+    if (!res.ok || !res.body) throw new Error(`Download failed (${res.status})`);
+    stream = res.body;
+  }
+  const reader = stream.getReader();
 
   let index = 0;
   let buf = new Uint8Array(expected(0));
@@ -99,6 +105,8 @@ export async function streamDecrypt(opts: {
       }
     }
   }
+  // everything is in: hang up (a peer connection closes here)
+  reader.cancel().catch(() => {});
   if (index < total) throw new Error("Transfer was cut short");
   await sink.close();
 }

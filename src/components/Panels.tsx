@@ -5,6 +5,7 @@ import {
   deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, markGot, ownerKey, timeAgo, type Orb, type OwnerView,
 } from "@/lib/client";
 import { MAX_FILE_BYTES } from "@/lib/limits";
+import { release } from "@/lib/p2p";
 import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, filesBundle, isLoose, isLinkText, packFolder, pickFolderTarget, textToFile, type DirHandle, type Folder } from "@/lib/bundle";
 import { needsSavePicker, pickSaveTarget, receive, unlockOrb, UnlockError, type Unlocked, type Received, type Stage } from "@/lib/transfer";
 import { autoDownload, canPickSave, canShareFile, canShareFiles, deviceNoun, downloadWhere, downloadsShortcut, pickAndWrite, saveEnv, shareFile } from "@/lib/save";
@@ -568,7 +569,7 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
           </div>
         )}
         <div className="grow" />
-        <p className="mono dim">AES-256-GCM on this device · no login required</p>
+        <p className="mono dim">Encrypted on this device · sent straight to the receiver, keep this page open · no login required</p>
       </div>
       <div className="col">
         <div className="field">
@@ -1288,6 +1289,7 @@ export function OwnerPanel(props: { id: string; now: number; watchers: number; p
     const r = await fetch(`/api/transfers/${id}`, { method: "DELETE", headers: { "x-owner": key } }).catch(() => null);
     if (r?.ok || r?.status === 403) {
       dropOwnerKey(id);
+      release(id);
       props.onDeleted(id);
     }
     setDeleting(false);
