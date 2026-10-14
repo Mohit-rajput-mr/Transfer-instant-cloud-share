@@ -5,6 +5,7 @@ import Starfield from "./Starfield";
 import Uploader, { Icon } from "./Uploader";
 import LiquidGlass from "./LiquidGlass";
 import SpaceLens from "./SpaceLens";
+import GlassEverywhere from "./GlassEverywhere";
 import OrbView, { ORB_CAP, inheritSlot, pickHue, layout, type VoidMode } from "./OrbView";
 import { ComposePanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin, type LaunchJob } from "./Panels";
 import LaunchDock, { isPending, pendingId, pendingOrb, type Launch } from "./LaunchDock";
@@ -825,6 +826,7 @@ export default function Void() {
     <>
       <Starfield />
       <LiquidGlass />
+      <GlassEverywhere />
 
       <header className={`top lg${compact ? " compact" : ""}`}>
         <div className="top-row">

@@ -102,10 +102,12 @@ export default function SpaceLens({ children }: { children: ReactNode }) {
         depth={Math.round(Math.max(26, Math.min(90, m * 0.14)))}
         curvature={0.3}
         splay={1}
-        chromaticAberration={0.35}
-        glow={0.16}
-        edgeHighlight={0.8}
-        edgeWidth={4}
+        chromaticAberration={0.5}
+        glow={0.3}
+        glowSpread={0.5}
+        edgeHighlight={1}
+        edgeWidth={6}
+        specular={1.5}
         specularAngle={45}
         quality={512}
       >
