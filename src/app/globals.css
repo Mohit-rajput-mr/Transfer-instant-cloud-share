@@ -1747,3 +1747,81 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
 .more-opts .dim { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
 .more-opts i { font-style: normal; transition: rotate 0.25s; }
 .more-opts.open i { rotate: 180deg; }
+
+/* ---------------- Liquid glass that really frosts what is behind it ---------------- */
+/* backdrop-filter only sees past ancestors that are not "backdrop roots": an element whose opacity is
+   being animated (an entrance with fill-mode both keeps animating forever) is one, and so is any element
+   with its own backdrop-filter. So entrances only fill backwards, and the zoom layer has no blur of its own. */
+.orb { animation: drift var(--dur) ease-in-out var(--delay) infinite alternate, enter 0.3s var(--ease-out) calc(var(--i, 0) * 20ms) backwards; }
+.orb-anchor.arriving .orb { animation: drift var(--dur) ease-in-out var(--delay) infinite alternate, enter 0.3s var(--ease-out) calc(var(--i, 0) * 20ms) backwards; }
+.zoom-layer { animation-fill-mode: backwards; -webkit-backdrop-filter: none; backdrop-filter: none;
+  background: radial-gradient(circle at var(--zo), rgba(0,0,0,0.25), rgba(0,0,0,0.6) 70%); }
+.zoom-layer.out { animation-fill-mode: both; }
+/* the glass itself: frost + a lift in colour, a bright rim and specular highlights on the top edge and
+   one corner, the way Apple's liquid glass reads */
+.blob, .blob.big {
+  -webkit-backdrop-filter: blur(16px) saturate(170%) brightness(1.06); backdrop-filter: blur(16px) saturate(170%) brightness(1.06);
+  background:
+    radial-gradient(120% 60% at 18% 0%, rgba(255,255,255,0.14), transparent 55%),
+    linear-gradient(160deg, rgba(255,255,255,0.09), rgba(255,255,255,0.02) 40%, rgba(255,255,255,0.05)),
+    rgba(18,20,26,0.28);
+  border: 1px solid rgba(255,255,255,0.42);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -1px 0 rgba(255,255,255,0.25),
+    inset 1px 0 0 rgba(255,255,255,0.22), inset -1px 0 0 rgba(255,255,255,0.14),
+    inset 0 0 30px rgba(255,255,255,0.05), 0 24px 60px rgba(0,0,0,0.45);
+}
+.zoom-hint { margin-top: 8px; }
+
+/* ---------------- Icons, not words ---------------- */
+/* round icon buttons around the top of a ball (opened view) */
+.zicons { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.ic { --sz: clamp(22px, calc(var(--zd) * 0.27), 34px); position: absolute; width: var(--sz); height: var(--sz); margin: calc(var(--sz) / -2) 0 0 calc(var(--sz) / -2);
+  border-radius: 50%; display: grid; place-items: center; pointer-events: auto; cursor: pointer;
+  background: rgba(12,14,18,0.72); border: 2px solid rgba(255,255,255,0.55); color: #fff;
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); box-shadow: 0 4px 12px rgba(0,0,0,0.45); transition: scale 0.2s var(--spring), background 0.2s; }
+.ic svg { width: 52%; height: 52%; }
+.ic:hover { scale: 1.12; }
+/* placed on an arc from the left side up to the top: kill, lock, download */
+.zicons .ic:nth-last-child(1) { left: 50%; top: -6%; }
+.zicons .ic:nth-last-child(2) { left: 13%; top: 7%; }
+.zicons .ic:nth-last-child(3) { left: -4%; top: 36%; }
+.ic.kill { border-color: #ff5a4e; color: #ff5a4e; }
+.ic.kill:hover { background: rgba(255,59,48,0.25); }
+.ic.lock { border-color: rgba(255,255,255,0.45); color: #cfcfcf; cursor: default; }
+.ic.lock.open { border-color: rgba(61,255,140,0.75); color: var(--live); }
+.ic.dl { border-color: #ffd23f; color: #ffd23f; }
+.ic.dl.got { border-color: rgba(255,255,255,0.5); color: #ddd; }
+.ic.dl.fail { border-color: #ff5a4e; color: #ff5a4e; }
+.ic.dl.busy { border-color: transparent; color: var(--live);
+  background: radial-gradient(closest-side, rgba(12,14,18,0.9) 78%, transparent 80%), conic-gradient(var(--live) calc(var(--p) * 360deg), rgba(255,255,255,0.15) 0); }
+/* inline stats under the name */
+.zmeta { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.zst { display: inline-flex; align-items: center; gap: 3px; color: #8f8f8f; }
+.zst svg { width: 11px; height: 11px; margin-left: 4px; }
+.zst .b-live { width: 5px; height: 5px; }
+.zst.hot .b-live { background: var(--live); box-shadow: 0 0 6px var(--live); }
+/* header buttons in the opened view */
+.ic-btn { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: #fff; flex: none;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.3); transition: scale 0.2s var(--spring), background 0.2s; }
+.ic-btn svg { width: 18px; height: 18px; }
+.ic-btn:hover { scale: 1.08; background: rgba(255,255,255,0.12); }
+.ic-btn.kill { color: #ff5a4e; border-color: rgba(255,90,78,0.7); }
+.ic-btn.kill:hover { background: rgba(255,59,48,0.2); }
+.zoom-all { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: auto; min-width: 180px; padding: 0 28px; }
+.zoom-all svg { width: 20px; height: 20px; }
+/* destroy icons on the void: trash glyph in a red ring */
+.destroy { background: rgba(12,14,18,0.78); border: 2px solid #ff5a4e; color: #ff5a4e; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+.destroy svg { width: 55%; height: 55%; }
+.destroy:hover { background: rgba(255,59,48,0.25); }
+/* tags that are icons */
+.ic-tag { display: inline-grid; place-items: center; padding: 2px 6px; }
+.ic-tag svg { width: 11px; height: 11px; }
+/* containers stay fully inside the void, whatever their size */
+.void:not(.flow) .orb-anchor.grp {
+  left: clamp(calc(var(--hw) + 24px + var(--safe-l)), var(--x), calc(100% - var(--hw) - 24px - var(--safe-r)));
+  top: clamp(calc(var(--hh) + 110px), calc(var(--band-t) + (var(--yn, 50) - 19) * (100% - var(--band-t) - var(--band-b)) / 68), calc(100% - var(--hh) - 110px));
+}
+/* the opened view: the page dims, strongest at the top so the header never shows through the title */
+.zoom-layer { background: linear-gradient(rgba(0,0,0,0.88), rgba(0,0,0,0.5) 22%, rgba(0,0,0,0.45) 80%, rgba(0,0,0,0.7)); }
+.zoom-layer { background: linear-gradient(rgba(0,0,0,0.96), rgba(0,0,0,0.92) 9%, rgba(0,0,0,0.5) 20%, rgba(0,0,0,0.45) 80%, rgba(0,0,0,0.7)); }

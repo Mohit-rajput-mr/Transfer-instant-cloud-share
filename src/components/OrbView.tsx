@@ -1,4 +1,5 @@
 "use client";
+import { LuCheck, LuLock, LuLockOpen, LuTrash2 } from "react-icons/lu";
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
 import { setCardOrigin } from "./Panels";
 import { ext, formatBytes, formatClock, type Orb } from "@/lib/client";
@@ -610,7 +611,17 @@ export default function OrbView(props: {
   } as CSSProperties;
 
   return (
-    <div className={`orb-anchor${phase ? ` ${phase}` : ""}`} data-orb={orb.id} ref={anchor} style={{ ...style, transform: `translate(${off.x}px, ${off.y}px)` }}>
+    <div
+      className={`orb-anchor${phase ? ` ${phase}` : ""}${group ? " grp" : ""}`}
+      data-orb={orb.id}
+      ref={anchor}
+      style={{
+        ...style,
+        // a container is far wider than a sphere: its half-size keeps it fully on screen
+        ...(group ? { "--hw": `calc(${bubbleLayout(group.length).W / 2}px * var(--k, 1))`, "--hh": `calc(${bubbleLayout(group.length).H / 2}px * var(--k, 1))` } : null),
+        transform: `translate(${off.x}px, ${off.y}px)`,
+      } as CSSProperties}
+    >
     <button
       ref={button}
       className={`orb${mine ? " mine" : ""}${up ? " launching" : ""}${dying && !up ? " dying" : ""}${sealed ? " sealed" : ""}${got && !up ? " got" : ""}${group ? " group" : ""}`}
@@ -655,7 +666,7 @@ export default function OrbView(props: {
                 <span key={k} className="edge-sat" style={{ "--d": `${-k * 2.2}s` } as CSSProperties} aria-hidden />
               ))}
               <span className="zoom-cue" aria-hidden>⤢ Click or scroll to open</span>
-              {props.onDestroy && mine && <span className="destroy box" data-destroy="" role="button" aria-label="Destroy everything in this container" title="Destroy all">×</span>}
+              {props.onDestroy && mine && <span className="destroy box" data-destroy="" role="button" aria-label="Destroy everything in this container" title="Destroy all"><LuTrash2 /></span>}
               <div className="members" style={{ "--md": `calc(${L.d}px * var(--k))` } as CSSProperties}>
                 {group.map((m, i) => {
                   const mleft = new Date(m.expiresAt).getTime() - now;
@@ -679,7 +690,7 @@ export default function OrbView(props: {
                           <span key={k} className="sat msat" style={{ "--r": `${5 + k * 4}px`, "--t": `${4 + k * 1.5}s`, "--d": `-${k * 0.8}s` } as CSSProperties} aria-hidden />
                         ))}
                       </span>
-                      {m.mine && props.onDestroyMember && <span className="destroy small" data-destroy={m.id} role="button" aria-label={`Destroy ${m.name}`} title="Destroy">×</span>}
+                      {m.mine && props.onDestroyMember && <span className="destroy small" data-destroy={m.id} role="button" aria-label={`Destroy ${m.name}`} title="Destroy"><LuTrash2 /></span>}
                       <span className="mname">{m.name}</span>
                       <span className="mmeta">{formatBytes(m.size)} · {formatClock(mleft)}</span>
                     </span>
@@ -705,7 +716,7 @@ export default function OrbView(props: {
           <circle className="life" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - (up ? Math.max(0.03, launching) : frac))} />
         </svg>
         <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : ext(orb.fileName)}</span>
-        {props.onDestroy && mine && !up && phase !== "burning" && <span className="destroy" data-destroy="" role="button" aria-label={`Destroy ${orb.name}`} title="Destroy">×</span>}
+        {props.onDestroy && mine && !up && phase !== "burning" && <span className="destroy" data-destroy="" role="button" aria-label={`Destroy ${orb.name}`} title="Destroy"><LuTrash2 /></span>}
         {mine && badge ? <span className="mine-no" aria-hidden>{badge}</span> : null}
         {got && !up ? <span className="got-mark" aria-hidden>✓</span> : null}
         {!up && <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
@@ -730,15 +741,16 @@ export default function OrbView(props: {
         {up ? <span>↑ {Math.round(launching * 100)}%</span> : <span>{formatClock(left)}</span>}
         {orb.maxDownloads ? <span>max {orb.maxDownloads}</span> : null}
       </div>
-      {(mine || nearby || sealed || incoming || orb.open || group) && (
+      {(mine || nearby || sealed || incoming || !up || group) && (
         <div className="tags">
           {mine && <span className="tag me">{badge ? `YOURS · #${badge}` : "YOURS"}</span>}
           {incoming && <span className="tag in">INCOMING</span>}
-          {orb.open && !incoming && <span className="tag open">OPEN</span>}
+          {orb.open && !incoming && <span className="tag open ic-tag" title="No password" aria-label="No password"><LuLockOpen /></span>}
+          {!orb.open && !incoming && !up && <span className="tag ic-tag" title="Password needed" aria-label="Password needed"><LuLock /></span>}
           {nearby && !mine && !incoming && <span className="tag near">NEARBY</span>}
           {sealed && <span className="tag dead">SEALED</span>}
-          {got && !up && <span className="tag got">DOWNLOADED</span>}
-          {group && <span className="tag grp">{group.length} ITEMS · ONE SENDER</span>}
+          {got && !up && <span className="tag got ic-tag" title="Downloaded" aria-label="Downloaded"><LuCheck /></span>}
+          {group && <span className="tag grp">{group.length} ITEMS</span>}
         </div>
       )}
     </button>

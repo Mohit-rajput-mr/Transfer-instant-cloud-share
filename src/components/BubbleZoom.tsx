@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import { ext, formatBytes, formatClock, hasGot, ownerKey, type Orb } from "@/lib/client";
 import { bubbleLayout, clampTo, fling, memberPos, stopFling, tracker } from "./OrbView";
 import { enqueue, useDownloads } from "@/lib/downloads";
+import { LuArrowLeft, LuCheck, LuDownload, LuEye, LuLock, LuLockOpen, LuTrash2 } from "react-icons/lu";
 
 /**
  * Zoomed into one sender's bubble: the bubble grows out of where it floats to fill the screen, its
@@ -10,9 +11,6 @@ import { enqueue, useDownloads } from "@/lib/downloads";
  * next bubble; Esc, the back button or a tap outside zooms back out.
  */
 const crowd = (n: number) => (n >= 1000 ? "1k+" : n >= 100 ? "100+" : n >= 10 ? "10+" : String(n));
-const EyeIcon = () => (
-  <svg viewBox="0 0 16 16" aria-hidden><path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" strokeWidth="1.4" /><circle cx="8" cy="8" r="2" fill="currentColor" /></svg>
-);
 
 export default function BubbleZoom(props: {
   /** every bubble in the void, in order: [id, name, members] */
@@ -156,13 +154,13 @@ export default function BubbleZoom(props: {
       aria-label={`${b.name}: ${n} items from one sender`}
     >
       <div className="zoom-top">
-        <button className="pill lg-press" onClick={close}>← Back to the void</button>
+        <button className="ic-btn" onClick={close} aria-label="Back to the void" title="Back"><LuArrowLeft /></button>
         <div className="zoom-title">
           <b className="wide">{b.name}</b>
           <span className="mono dim">{n} items · {formatBytes(b.members.reduce((a, o) => a + o.size, 0))}{bubbles.length > 1 ? ` · ${at + 1} of ${bubbles.length}` : ""}</span>
         </div>
         {props.onDestroy && b.members.some((o) => ownerKey(o.id)) ? (
-          <button className="pill lg-press destroy-all" onClick={() => props.onDestroy?.(b.members.map((o) => o.id))}>✕ Destroy all</button>
+          <button className="ic-btn kill" onClick={() => props.onDestroy?.(b.members.map((o) => o.id))} aria-label="Destroy everything in this container" title="Destroy all"><LuTrash2 /></button>
         ) : (
           <span className="zoom-spacer" />
         )}
@@ -195,59 +193,63 @@ export default function BubbleZoom(props: {
                     <circle className="life" cx="50" cy="50" r="48" strokeDasharray={301.6} strokeDashoffset={301.6 * (1 - frac)} />
                   </svg>
                   <span className="zext">{ext(o.fileName)}</span>
-                  <span className={`bubble lg zstat${o.watchers ? " hot" : ""}`} aria-label={`${o.watchers ?? 0} live, ${o.views} opened, ${o.downloads} downloads`}>
-                    <span><i className="b-live" />{crowd(o.watchers ?? 0)}</span>
-                    <span><EyeIcon />{crowd(o.views ?? 0)}</span>
-                    <span>↓{crowd(o.downloads)}</span>
-                  </span>
                   {/* one green dot orbiting per person looking at it right now */}
                   {Array.from({ length: Math.min(o.watchers ?? 0, 4) }, (_, k) => (
                     <span key={k} className="sat" style={{ "--r": `${10 + k * 7}px`, "--t": `${5 + k * 1.7}s`, "--d": `-${k * 0.9}s` } as CSSProperties} aria-hidden />
                   ))}
-                </span>
-                {ownerKey(o.id) && props.onDestroy && (
-                  <span
-                    className="destroy"
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Destroy ${o.name}`}
-                    title="Destroy"
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      props.onDestroy?.([o.id]);
-                    }}
-                  >
-                    ×
-                  </span>
-                )}
-                <span className="zname wide">{o.name}</span>
-                <span className="zmeta mono">{formatBytes(o.size)} · {formatClock(left)}</span>
-                <span className="ztags">
-                  {o.open ? <span className="tag open">NO PASSWORD</span> : <span className="tag">PASSWORD</span>}
-                  {got && <span className="tag got">DOWNLOADED</span>}
-                </span>
-                {(() => {
-                  const j = job(o.id);
-                  const busy = j && (j.state === "running" || j.state === "queued");
-                  return (
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      className={`zdl${busy ? " busy" : ""}`}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (busy) return;
-                        // open objects go straight to the background queue; locked ones ask for the code first
-                        if (o.open) enqueue([o]);
-                        else props.onOpen(o);
-                      }}
-                    >
-                      {busy ? (j.state === "running" ? `${Math.round(j.frac * 100)}%` : "Waiting…") : j?.state === "failed" ? `${j.err} · retry` : got ? "Again ↓" : "Download ↓"}
+                  {/* round icon buttons around the top of the ball, no words */}
+                  <span className="zicons">
+                    {ownerKey(o.id) && props.onDestroy && (
+                      <span
+                        className="ic kill"
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Destroy ${o.name}`}
+                        title="Destroy"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          props.onDestroy?.([o.id]);
+                        }}
+                      >
+                        <LuTrash2 />
+                      </span>
+                    )}
+                    <span className={`ic lock${o.open ? " open" : ""}`} title={o.open ? "No password" : "Password needed"} aria-label={o.open ? "No password" : "Password needed"}>
+                      {o.open ? <LuLockOpen /> : <LuLock />}
                     </span>
-                  );
-                })()}
+                    {(() => {
+                      const j = job(o.id);
+                      const busy = j && (j.state === "running" || j.state === "queued");
+                      const pct = busy ? (j.state === "running" ? j.frac : 0) : 0;
+                      return (
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          className={`ic dl${busy ? " busy" : ""}${got ? " got" : ""}${j?.state === "failed" ? " fail" : ""}`}
+                          style={{ "--p": pct } as CSSProperties}
+                          aria-label={busy ? `Downloading ${o.name}` : `Download ${o.name}`}
+                          title={j?.state === "failed" ? `${j.err}: tap to retry` : got ? "Downloaded · tap to get it again" : "Download"}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (busy) return;
+                            // open objects go straight to the background queue; locked ones ask for the password first
+                            if (o.open) enqueue([o]);
+                            else props.onOpen(o);
+                          }}
+                        >
+                          {got && !busy ? <LuCheck /> : <LuDownload />}
+                        </span>
+                      );
+                    })()}
+                  </span>
+                </span>
+                <span className="zname wide">{o.name}</span>
+                <span className="zmeta mono">
+                  {formatBytes(o.size)} · {formatClock(left)}
+                  <span className={`zst${o.watchers ? " hot" : ""}`}><i className="b-live" /><LuEye />{crowd(o.views ?? 0)}<LuDownload />{crowd(o.downloads)}</span>
+                </span>
               </button>
             );
           })}
@@ -268,13 +270,14 @@ export default function BubbleZoom(props: {
           else props.onDownloadAll(b.id);
         }}
       >
+        <LuDownload />
         {(() => {
           const mine = jobs.filter((j) => b.members.some((o) => o.id === j.id));
           const left = mine.filter((j) => j.state === "queued" || j.state === "running").length;
-          return left ? `Downloading… ${mine.length - left} of ${mine.length}` : `Download all ${n} ↓`;
+          return left ? `${mine.length - left}/${mine.length}` : `All ${n}`;
         })()}
       </button>
-      <p className="zoom-hint mono dim">Drag balls anywhere · tap one to download just that one · scroll down to zoom out · {bubbles.length > 1 ? "← → to surf senders · " : ""}Esc to zoom out</p>
+      <p className="zoom-hint mono dim">Drag · tap to open · scroll down to close</p>
     </div>
   );
 }
