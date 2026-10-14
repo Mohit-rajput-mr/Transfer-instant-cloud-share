@@ -64,7 +64,8 @@ export default function History({ onRoutes }: { onRoutes: (lines: RouteLine[], l
   const span = useMemo(() => {
     const r = RANGES.find((x) => x.id === range)!;
     if (r.days === -1) return { from: null, to: null };
-    if (r.days === -2) return { from: from ? new Date(from).toISOString() : null, to: to ? new Date(Date.parse(to) + 86_400_000).toISOString() : null };
+    // custom: whole days, inclusive (to = the last millisecond of the chosen end day)
+    if (r.days === -2) return { from: from ? new Date(from).toISOString() : null, to: to ? new Date(Date.parse(to) + 86_400_000 - 1).toISOString() : null };
     const start = dayStart(new Date(Date.now() - r.days * 86_400_000));
     return { from: start.toISOString(), to: null };
   }, [range, from, to]);
@@ -86,7 +87,7 @@ export default function History({ onRoutes }: { onRoutes: (lines: RouteLine[], l
     return (
       <div className="hq-setup">
         <b>One step left: switch on permanent history</b>
-        <p>Open Supabase → SQL Editor → New query, paste the file <code>supabase/migrations/003_history.sql</code> from the repo and press Run. History starts filling at once (the last 30 days are copied in).</p>
+        <p>The database is missing the history functions (<code>supabase/migrations/003_history.sql</code>). Run that file once in Supabase → SQL Editor.</p>
       </div>
     );
 
@@ -223,7 +224,7 @@ export default function History({ onRoutes }: { onRoutes: (lines: RouteLine[], l
             </section>
             <section className="hq-sec">
               <div className="hq-sec-head">
-                <span className="mono dim">{n(events.length)} events (latest 2,000 in range)</span>
+                <span className="mono dim">{n(events.length)} events (latest 2,000 · last 30 days kept raw)</span>
                 <div className="hq-seg" role="group" aria-label="Kind">
                   {([["", "All"], ["upload", "Up"], ["download", "Down"], ["visit", "Visits"]] as const).map(([k, l]) => (
                     <button key={k} className={kind === k ? "on" : ""} onClick={() => setKind(k)}>{l}</button>
