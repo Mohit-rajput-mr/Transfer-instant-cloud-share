@@ -49,17 +49,22 @@ const SQUISH: Keyframe[] = [
 
 /**
  * Liquid Glass runtime (iOS 26 style), shared by every `.lg` surface:
- *  - SVG filter #lg-goo melts shapes together (refraction itself is GlassEverywhere / liquid-glass-web-react)
+ *  - SVG filters: #lg-refract bends what's behind the glass, #lg-goo melts shapes together
  *  - a specular highlight that follows the pointer (and device tilt on Android)
  *  - press feedback: CSS compresses `.lg-press` while held, a squash-and-stretch plays on release
  *  - haptics, also on demand: `window.dispatchEvent(new CustomEvent("orbit:haptic", { detail: "warn" }))`
- * The glass material itself is rendered by liquid-glass-web-react (GlassEverywhere, SpaceLens).
+ * Refraction (backdrop-filter:url()) only runs on desktop Chromium with headroom; phones keep frosted glass.
  */
 export default function LiquidGlass() {
   useEffect(() => {
+    const root = document.documentElement;
     const mq = (q: string) => window.matchMedia(q).matches;
+    const ua = navigator.userAgent;
+    const chromium = /Chrome\/|Edg\//.test(ua) && !/Firefox\//.test(ua);
     const fine = mq("(hover: hover) and (pointer: fine)");
     const calm = !mq("(prefers-reduced-motion: reduce)") && !mq("(prefers-reduced-transparency: reduce)");
+    const cores = navigator.hardwareConcurrency ?? 4;
+    if (chromium && fine && calm && cores >= 4) root.classList.add("lg-refract");
 
     let raf = 0;
     let last: PointerEvent | null = null;
