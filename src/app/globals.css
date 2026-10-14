@@ -1654,6 +1654,9 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
     radial-gradient(circle at 40% 36%, hsl(var(--sh) 62% 70%), hsl(var(--sh) 50% 44%) 44%, hsl(var(--sh) 55% 20%) 80%, #070707);
   box-shadow: inset -10px -12px 26px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.5); }
 .zball:hover .zsphere { scale: 1.06; }
+.zball { cursor: grab; touch-action: none; }
+.zball.lifted { z-index: 5; cursor: grabbing; animation-play-state: paused; }
+.zball.lifted .zsphere { scale: 1.12; box-shadow: inset -10px -12px 26px rgba(0,0,0,0.5), 0 22px 50px rgba(0,0,0,0.7); }
 .zring { position: absolute; inset: -14%; width: 128%; height: 128%; rotate: -90deg; overflow: visible; }
 .zring circle { fill: none; stroke-width: 2; }
 .zring .track { stroke: rgba(255,255,255,0.14); stroke-dasharray: 3 5; animation: orbit-turn 24s linear infinite; transform-origin: 50% 50%; }

@@ -195,9 +195,9 @@ const HOLD_MS = 280;
 export type GroupMember = { id: string; name: string; hue: number; size: number; got: boolean; fileName: string; expiresAt: string; life: number };
 
 /** A sender's bubble: round-ish, its balls spread loosely around the middle (never in a row), none overlapping. */
-const clampTo = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
-/** where the user dragged each ball inside its bubble (kept across re-renders) */
-const memberPos = new Map<string, [number, number]>();
+export const clampTo = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+/** where the user dragged each ball inside its bubble (kept across re-renders, shared with the zoom) */
+export const memberPos = new Map<string, [number, number]>();
 
 export function bubbleLayout(n: number) {
   const d = n <= 2 ? 58 : n <= 3 ? 50 : n <= 4 ? 46 : n <= 5 ? 40 : n <= 7 ? 36 : n <= 10 ? 31 : 26;

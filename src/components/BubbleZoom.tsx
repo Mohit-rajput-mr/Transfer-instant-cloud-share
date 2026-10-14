@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { ext, formatBytes, formatClock, hasGot, type Orb } from "@/lib/client";
-import { bubbleLayout } from "./OrbView";
+import { bubbleLayout, clampTo, memberPos } from "./OrbView";
 
 /**
  * Zoomed into one sender's bubble: the bubble grows out of where it floats to fill the screen, its
@@ -76,6 +76,42 @@ export default function BubbleZoom(props: {
     };
   }, []);
 
+  // drag any ball anywhere inside the bubble; a drag never opens it
+  const ball = useRef<{ id: number; el: HTMLElement; oid: string; sx: number; sy: number; x: number; y: number; w: number; h: number; moved: boolean } | null>(null);
+  const skipClick = useRef(false);
+  const grab = (e: React.PointerEvent<HTMLButtonElement>, oid: string) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    const el = e.currentTarget;
+    const box = el.parentElement!.getBoundingClientRect();
+    const at = memberPos.get(oid) ?? [parseFloat(el.style.left) / 100, parseFloat(el.style.top) / 100];
+    ball.current = { id: e.pointerId, el, oid, sx: e.clientX, sy: e.clientY, x: at[0], y: at[1], w: box.width, h: box.height, moved: false };
+    el.setPointerCapture(e.pointerId);
+  };
+  const move = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const g = ball.current;
+    if (!g || g.id !== e.pointerId) return;
+    const dx = e.clientX - g.sx, dy = e.clientY - g.sy;
+    if (!g.moved && Math.hypot(dx, dy) < 6) return;
+    if (!g.moved) g.el.classList.add("lifted");
+    g.moved = true;
+    const x = clampTo(g.x + dx / g.w, 0.12, 0.88), y = clampTo(g.y + dy / g.h, 0.14, 0.8);
+    g.el.style.left = `${x * 100}%`;
+    g.el.style.top = `${y * 100}%`;
+    memberPos.set(g.oid, [x, y]);
+  };
+  const drop = (e: React.PointerEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    const g = ball.current;
+    if (!g || g.id !== e.pointerId) return;
+    g.el.classList.remove("lifted");
+    if (g.moved) {
+      skipClick.current = true;
+      setTimeout(() => (skipClick.current = false), 400);
+    }
+    ball.current = null;
+  };
+
   // swipe sideways on touch screens to surf
   const [sx, setSx] = useState<number | null>(null);
 
@@ -120,8 +156,15 @@ export default function BubbleZoom(props: {
               <button
                 key={o.id}
                 className={`zball${got ? " got" : ""}`}
-                style={{ "--sh": o.hue, "--mi": i, left: `${(L.spots[i]?.[0] ?? 0.5) * 100}%`, top: `${(L.spots[i]?.[1] ?? 0.5) * 100}%` } as CSSProperties}
-                onClick={() => props.onOpen(o)}
+                style={{ "--sh": o.hue, "--mi": i, left: `${(memberPos.get(o.id)?.[0] ?? L.spots[i]?.[0] ?? 0.5) * 100}%`, top: `${(memberPos.get(o.id)?.[1] ?? L.spots[i]?.[1] ?? 0.5) * 100}%` } as CSSProperties}
+                onPointerDown={(e) => grab(e, o.id)}
+                onPointerMove={move}
+                onPointerUp={drop}
+                onPointerCancel={drop}
+                onClick={() => {
+                  if (skipClick.current) return;
+                  props.onOpen(o);
+                }}
               >
                 <span className="zsphere">
                   <svg className="zring" viewBox="0 0 100 100" aria-hidden>
@@ -151,7 +194,7 @@ export default function BubbleZoom(props: {
         </>
       )}
       <button className="cta lg-press zoom-all" onClick={() => props.onDownloadAll(b.id)}>Download all {n} ↓</button>
-      <p className="zoom-hint mono dim">Tap a ball to download just that one · scroll down to zoom out · {bubbles.length > 1 ? "← → to surf bubbles · " : ""}Esc to zoom out</p>
+      <p className="zoom-hint mono dim">Drag balls anywhere · tap one to download just that one · scroll down to zoom out · {bubbles.length > 1 ? "← → to surf bubbles · " : ""}Esc to zoom out</p>
     </div>
   );
 }
