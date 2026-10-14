@@ -1857,3 +1857,25 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
 /* icon tags on balls: plain glyphs */
 .tag.ic-tag, .tag.open.ic-tag, .tag.got.ic-tag { border-color: rgba(255,255,255,0.18); color: #a8a8a8; }
 .zname { margin-top: calc(var(--zd) * 0.16 + 14px); }
+
+/* ---------------- Icons as separate round badges pinned to the ball's corners ---------------- */
+/* trash top-right, lock top-left, download bottom-right; each its own small dark disc on the ring */
+.zicons { inset: 0; translate: none; display: block; padding: 0; border: 0; border-radius: 0;
+  background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; pointer-events: none; }
+.zicons .ic, .zicons .ic:nth-last-child(1), .zicons .ic:nth-last-child(2), .zicons .ic:nth-last-child(3) {
+  --sz: clamp(22px, calc(var(--zd) * 0.24), 28px); position: absolute; width: var(--sz); height: var(--sz);
+  margin: calc(var(--sz) / -2) 0 0 calc(var(--sz) / -2); pointer-events: auto;
+  border-radius: 50%; background: rgba(14,15,19,0.92); border: 1px solid rgba(255,255,255,0.16);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.5); color: #c4c4c4; transition: scale 0.18s var(--spring), color 0.18s, background 0.18s, border-color 0.18s; }
+.zicons .ic svg { width: 46%; height: 46%; }
+.zicons .ic.kill { left: 85%; top: 15%; }
+.zicons .ic.lock, .zicons .ic.lock.open { left: 15%; top: 15%; }
+.zicons .ic.dl, .zicons .ic.dl.got, .zicons .ic.dl.fail, .zicons .ic.dl.busy { left: 85%; top: 85%; }
+.zicons .ic:hover { scale: 1.1; background: rgba(28,30,36,0.96); color: #fff; border-color: rgba(255,255,255,0.32); }
+.zicons .ic.lock, .zicons .ic.lock:hover { color: #8a8a8a; scale: 1; background: rgba(14,15,19,0.92); border-color: rgba(255,255,255,0.16); cursor: default; }
+.zicons .ic.kill:hover { color: #ff5a4e; border-color: rgba(255,90,78,0.55); background: rgba(40,14,14,0.95); }
+.zicons .ic.dl { color: #ececec; }
+.zicons .ic.dl.got { color: #7d7d7d; }
+.zicons .ic.dl.fail { color: #ff6b5f; }
+.zicons .ic.dl.busy { color: #fff; border-color: transparent;
+  background: radial-gradient(closest-side, rgba(14,15,19,1) 80%, transparent 84%), conic-gradient(#fff calc(var(--p) * 360deg), rgba(255,255,255,0.15) 0); }
