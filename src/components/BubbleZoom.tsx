@@ -95,7 +95,7 @@ export default function BubbleZoom(props: {
     if (!g.moved && Math.hypot(dx, dy) < 6) return;
     if (!g.moved) g.el.classList.add("lifted");
     g.moved = true;
-    const x = clampTo(g.x + dx / g.w, 0.12, 0.88), y = clampTo(g.y + dy / g.h, 0.14, 0.8);
+    const x = clampTo(g.x + dx / g.w, 0.08, 0.92), y = clampTo(g.y + dy / g.h, 0.12, 0.76);
     g.el.style.left = `${x * 100}%`;
     g.el.style.top = `${y * 100}%`;
     memberPos.set(g.oid, [x, y]);
@@ -140,14 +140,14 @@ export default function BubbleZoom(props: {
         <button className="pill lg-press" onClick={close}>← Back to the void</button>
         <div className="zoom-title">
           <b className="wide">{b.name}</b>
-          <span className="mono dim">{n} items · {formatBytes(b.members.reduce((a, o) => a + o.size, 0))}{bubbles.length > 1 ? ` · bubble ${at + 1} of ${bubbles.length}` : ""}</span>
+          <span className="mono dim">{n} items · {formatBytes(b.members.reduce((a, o) => a + o.size, 0))}{bubbles.length > 1 ? ` · ${at + 1} of ${bubbles.length}` : ""}</span>
         </div>
         <span className="zoom-spacer" />
       </div>
 
-      <div key={b.id} className={`zoom-bubble${dir === 1 ? " from-right" : dir === -1 ? " from-left" : ""}`}>
+      <div key={b.id} className={`zoom-bubble${dir === 1 ? " from-right" : dir === -1 ? " from-left" : ""}`} style={{ "--ar": L.W / L.H } as CSSProperties}>
         <div className="blob big" />
-        <div className="zoom-members" style={{ "--zr": (L.d / L.D) * 0.82 } as CSSProperties}>
+        <div className="zoom-members" style={{ "--zr": (L.d / L.W) * 0.86 } as CSSProperties}>
           {b.members.map((o, i) => {
             const left = new Date(o.expiresAt).getTime() - now;
             const frac = Math.max(0, Math.min(1, left / ((o.life ?? 30) * 60_000)));
@@ -189,12 +189,12 @@ export default function BubbleZoom(props: {
 
       {bubbles.length > 1 && (
         <>
-          <button className="zoom-nav prev" onClick={() => surf(-1)} aria-label="Previous bubble">‹</button>
-          <button className="zoom-nav next" onClick={() => surf(1)} aria-label="Next bubble">›</button>
+          <button className="zoom-nav prev" onClick={() => surf(-1)} aria-label="Previous container">‹</button>
+          <button className="zoom-nav next" onClick={() => surf(1)} aria-label="Next container">›</button>
         </>
       )}
       <button className="cta lg-press zoom-all" onClick={() => props.onDownloadAll(b.id)}>Download all {n} ↓</button>
-      <p className="zoom-hint mono dim">Drag balls anywhere · tap one to download just that one · scroll down to zoom out · {bubbles.length > 1 ? "← → to surf bubbles · " : ""}Esc to zoom out</p>
+      <p className="zoom-hint mono dim">Drag balls anywhere · tap one to download just that one · scroll down to zoom out · {bubbles.length > 1 ? "← → to surf senders · " : ""}Esc to zoom out</p>
     </div>
   );
 }

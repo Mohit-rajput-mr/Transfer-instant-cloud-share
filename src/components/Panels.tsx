@@ -577,7 +577,7 @@ export function SendPanel(props: {
         )}
         {split && (
           <div className="field">
-            <label><span className="mono">Name the bubble</span><span className="mono dim">{bubble.length}/40</span></label>
+            <label><span className="mono">Name the container</span><span className="mono dim">{bubble.length}/40</span></label>
             <input
               className="line-input name-input"
               value={bubble}
@@ -620,7 +620,7 @@ export function SendPanel(props: {
         </div>
         <p className="note ellip">
           {split
-            ? "Each one is its own ball, together in one bubble."
+            ? "Each one is its own ball, together in one glass container."
             : folder
               ? multi ? "All in one ball, folders stay folders." : `${folder.name}/ · arrives as a real folder`
               : single ? first.name : "All of them in one ball. One tap gets them all."}

@@ -194,35 +194,30 @@ const HOLD_MS = 280;
 
 export type GroupMember = { id: string; name: string; hue: number; size: number; got: boolean; fileName: string; expiresAt: string; life: number };
 
-/** A sender's bubble: round-ish, its balls spread loosely around the middle (never in a row), none overlapping. */
 export const clampTo = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
-/** where the user dragged each ball inside its bubble (kept across re-renders, shared with the zoom) */
+/** where the user dragged each ball inside its container (kept across re-renders, shared with the zoom) */
 export const memberPos = new Map<string, [number, number]>();
 
+/**
+ * A sender's glass container: a landscape rectangle sized to what it holds. Each ball gets its own
+ * cell, nudged off-centre by a fixed amount so they float loosely instead of standing in rows; the
+ * more balls, the smaller each one.
+ */
 export function bubbleLayout(n: number) {
-  const d = n <= 2 ? 58 : n <= 3 ? 50 : n <= 4 ? 46 : n <= 5 ? 40 : n <= 7 ? 36 : n <= 10 ? 31 : 26;
-  const D = n <= 2 ? 230 : n <= 3 ? 245 : n <= 4 ? 265 : n <= 5 ? 280 : n <= 7 ? 300 : Math.min(460, 100 * Math.sqrt(n) + 90);
-  // hand-placed clusters for small counts, a sunflower spiral beyond; [x, y] as a share of the bubble
-  const SET: Record<number, [number, number][]> = {
-    1: [[0.5, 0.46]],
-    2: [[0.34, 0.4], [0.64, 0.56]],
-    3: [[0.5, 0.28], [0.29, 0.58], [0.69, 0.6]],
-    4: [[0.34, 0.31], [0.67, 0.35], [0.31, 0.64], [0.65, 0.68]],
-    5: [[0.5, 0.24], [0.24, 0.45], [0.76, 0.46], [0.36, 0.72], [0.66, 0.73]],
-  };
-  const around = (k: number, r: number, from: number) =>
-    Array.from({ length: k }, (_, i) => [0.5 + r * Math.cos(from + (i * 2 * Math.PI) / k), 0.48 + r * Math.sin(from + (i * 2 * Math.PI) / k)] as [number, number]);
-  let spots = SET[n];
-  if (!spots && n <= 7) spots = [[0.5, 0.47], ...around(n - 1, 0.3, -Math.PI / 2 + 0.3)];
-  if (!spots)
-    spots = Array.from({ length: n }, (_, i) => {
-      const r = 0.3 * Math.sqrt((i + 0.6) / n), a = i * 2.39996 + 0.4;
-      return [0.5 + r * Math.cos(a), 0.47 + r * Math.sin(a)] as [number, number];
-    });
-  // spread a touch wider around the middle so names and details never run into the next ball
-  // (and never past the skin: a ball plus its label stays inside)
-  spots = spots.map(([x, y]) => [clampTo(0.5 + (x - 0.5) * 1.12, 0.2, 0.8), clampTo(0.47 + (y - 0.47) * 1.12, 0.2, 0.72)] as [number, number]);
-  return { d, D, spots };
+  const d = n <= 2 ? 58 : n <= 3 ? 52 : n <= 4 ? 48 : n <= 6 ? 42 : n <= 9 ? 36 : n <= 12 ? 32 : 28;
+  const cols = n <= 3 ? n : Math.ceil(Math.sqrt(n * 1.6));
+  const rows = Math.ceil(n / cols);
+  const cw = d * 2.2, ch = d * 2.15, px = d * 0.5, py = d * 0.45;
+  const W = cols * cw + px * 2, H = rows * ch + py * 2;
+  const spots: [number, number][] = [];
+  for (let i = 0; i < n; i++) {
+    const r = Math.floor(i / cols), inRow = r === rows - 1 ? n - r * cols : cols;
+    const c = i - r * cols + (cols - inRow) / 2; // a shorter last row sits in the middle
+    // a fixed per-ball nudge (same every render), so the arrangement looks loose, not gridded
+    const jx = Math.sin(i * 12.9898) * 0.16, jy = Math.cos(i * 78.233) * 0.12;
+    spots.push([(px + (c + 0.5 + jx) * cw) / W, (py + (r + 0.42 + jy) * ch) / H]);
+  }
+  return { d, W, H, spots };
 }
 
 export default function OrbView(props: {
@@ -427,7 +422,7 @@ export default function OrbView(props: {
       if (!md.moved && Math.hypot(dx, dy) < 5) return;
       if (!md.moved) md.el.classList.add("lifted");
       md.moved = true;
-      const x = clampTo(md.x + dx / md.w, 0.14, 0.86), y = clampTo(md.y + dy / md.h, 0.14, 0.78);
+      const x = clampTo(md.x + dx / md.w, 0.08, 0.92), y = clampTo(md.y + dy / md.h, 0.1, 0.74);
       md.el.style.left = `${x * 100}%`;
       md.el.style.top = `${y * 100}%`;
       memberPos.set(md.mid, [x, y]);
@@ -569,9 +564,9 @@ export default function OrbView(props: {
         (() => {
           const L = bubbleLayout(group.length);
           return (
-            <div className="orb-body bubble-body" style={{ width: `calc(${L.D}px * var(--k))`, height: `calc(${L.D}px * var(--k))` }}>
+            <div className="orb-body bubble-body" style={{ width: `calc(${L.W}px * var(--k))`, height: `calc(${L.H}px * var(--k))` }}>
               <div className="blob" />
-              <span className="zoom-cue" aria-hidden>⤢ Click or scroll to zoom</span>
+              <span className="zoom-cue" aria-hidden>⤢ Click or scroll to open</span>
               <div className="members" style={{ "--md": `calc(${L.d}px * var(--k))` } as CSSProperties}>
                 {group.map((m, i) => {
                   const mleft = new Date(m.expiresAt).getTime() - now;
