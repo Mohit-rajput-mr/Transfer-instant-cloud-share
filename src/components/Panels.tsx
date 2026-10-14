@@ -500,11 +500,23 @@ const setPref = (k: string, v: unknown) => {
   } catch {}
 };
 
-export function SendPanel(props: { items: Item[]; onClose: () => void; onLaunch: (job: LaunchJob) => void }) {
+export function SendPanel(props: {
+  items: Item[];
+  onClose: () => void;
+  onLaunch: (job: LaunchJob) => void;
+  /** the picker takes one folder at a time: add more to this send */
+  onAddFolder?: () => void;
+  onAddFiles?: () => void;
+  onRemove?: (index: number) => void;
+}) {
   const { onClose } = props;
   // several picks (files, folders or both): one ball for all of them, or one ball each
   const multi = props.items.length > 1;
   const [split, setSplit] = useState<boolean>(() => multi && pref("split", false));
+  // a second pick added from here: "Separate" only makes sense with two or more
+  useEffect(() => {
+    if (!multi && split) setSplit(false);
+  }, [multi, split]);
   const allFiles = props.items.every((x) => !isFolder(x));
   // together: a single folder stays itself; several things with a folder among them become one folder
   const folder = !multi ? (isFolder(props.items[0]) ? props.items[0] : null) : allFiles ? null : mergeItems("", props.items);
@@ -515,9 +527,10 @@ export function SendPanel(props: { items: Item[]; onClose: () => void; onLaunch:
   const count = folder ? folder.entries.length : files.length;
   const total = props.items.reduce((a, x) => a + itemSize(x), 0);
   const isLink = single && first?.type === LINK_MIME;
-  const [name, setName] = useState(
-    (!multi && folder ? folder.name : single ? first.name.replace(/\.[^.]+$/, "") : many ? `${count} files` : `${props.items.length} items`).slice(0, 60),
-  );
+  const autoName = (!multi && folder ? folder.name : single ? first.name.replace(/\.[^.]+$/, "") : many ? `${count} files` : `${props.items.length} items`).slice(0, 60);
+  const [typed, setTyped] = useState<string | null>(null);
+  const name = typed ?? autoName;
+  const setName = setTyped;
   const [code, setCode] = useState("");
   const [max, setMax] = useState<number | null>(null);
   const [locked, setLocked] = useState(() => pref("locked", false));
@@ -600,12 +613,20 @@ export function SendPanel(props: { items: Item[]; onClose: () => void; onLaunch:
               <div key={i}>
                 <span>{isFolder(it) ? `${it.name}/` : it.name}</span>
                 <span className="mono dim">{isFolder(it) ? `${it.entries.length} files · ` : ""}{formatBytes(itemSize(it))}</span>
+                {props.onRemove && <button type="button" className="add-x" onClick={() => props.onRemove?.(i)} aria-label={`Remove ${itemName(it)}`}>×</button>}
               </div>
             ))}
           </div>
         )}
+        {(props.onAddFolder || props.onAddFiles) && !isLink && (
+          <div className="add-more">
+            {props.onAddFolder && <button type="button" className="pill lg-press" onClick={props.onAddFolder}>+ Folder</button>}
+            {props.onAddFiles && <button type="button" className="pill lg-press" onClick={props.onAddFiles}>+ Files</button>}
+            <span className="mono dim">{multi ? "keep this page open until received" : "or drop more here"}</span>
+          </div>
+        )}
         <div className="grow" />
-        <p className="mono dim">Encrypted on this device · sent straight to the receiver, keep this page open · no login required</p>
+        {!multi && <p className="mono dim">Encrypted on this device · sent straight to the receiver, keep this page open · no login required</p>}
       </div>
       <div className="col">
         <div className="field">

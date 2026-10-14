@@ -628,7 +628,8 @@ export default function Void() {
       // folders keep their structure; plain files stay files
       fromDrop(e.dataTransfer)
         .then((items) => {
-          if (items.length) setPanel({ kind: "send", items });
+          // dropped onto an open send panel: added to it
+          if (items.length) setPanel((p) => (p?.kind === "send" ? { kind: "send", items: [...p.items, ...items] } : { kind: "send", items }));
         })
         .catch(() => {});
     };
@@ -783,12 +784,18 @@ export default function Void() {
 
   const pickFiles = () => {
     if (menu) closeMenu();
+    adding.current = false;
     fileInput.current?.click();
   };
   const pickFolder = () => {
     if (menu) closeMenu();
+    adding.current = false;
     folderInput.current?.click();
   };
+  // the browser's picker takes one folder at a time: the send panel's "+ Folder / + Files" add to it
+  const adding = useRef(false);
+  const addTo = (more: Item[]) =>
+    setPanel((p) => (adding.current && p?.kind === "send" ? { kind: "send", items: [...p.items, ...more] } : { kind: "send", items: more }));
   const compose = () => {
     setMenu(false);
     setMenuOut(false);
@@ -978,7 +985,7 @@ export default function Void() {
         hidden
         onChange={(e) => {
           const files = Array.from(e.target.files ?? []);
-          if (files.length) setPanel({ kind: "send", items: files });
+          if (files.length) addTo(files);
           e.target.value = "";
         }}
       />
@@ -992,9 +999,9 @@ export default function Void() {
         onChange={(e) => {
           const files = Array.from(e.target.files ?? []);
           const folder = folderFromInput(files);
-          if (folder?.entries.length) setPanel({ kind: "send", items: [folder] });
+          if (folder?.entries.length) addTo([folder]);
           // phones ignore webkitdirectory and hand back plain picks: send those as files instead of nothing
-          else if (files.length) setPanel({ kind: "send", items: files });
+          else if (files.length) addTo(files);
           e.target.value = "";
         }}
       />
@@ -1034,8 +1041,16 @@ export default function Void() {
       )}
       {panel?.kind === "send" && (
         <SendPanel
-          key={panel.items.length}
           items={panel.items}
+          onAddFolder={() => {
+            adding.current = true;
+            folderInput.current?.click();
+          }}
+          onAddFiles={() => {
+            adding.current = true;
+            fileInput.current?.click();
+          }}
+          onRemove={(i) => setPanel((p) => (p?.kind === "send" && p.items.length > 1 ? { kind: "send", items: p.items.filter((_, k) => k !== i) } : p))}
           onClose={() => setPanel(null)}
           onLaunch={startLaunch}
         />
