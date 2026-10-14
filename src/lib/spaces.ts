@@ -1,18 +1,16 @@
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import { del, get, list, put } from "@vercel/blob";
+import { rpc } from "./server";
 
-// Spaces: separate voids. Stored in the Blob store (no database change):
-//   sp/x/<slug>        meta, encrypted with a key derived from ORBIT_SECRET
-//   sp/m/<slug>/<dh>/<handle>   one empty marker per member (dh = keyed hash of the device id)
-//   sp/k/<slug>/<dh>   kicked
-// Objects launched inside a space carry a tag in their stored name: ⟪slug|handle⟫name.
-//
-// Every list() is a billed "advanced operation" (the Hobby plan allows a few thousand a month), and
-// members poll their space every 15 s: rosters and the space index are cached for minutes and
-// re-read only when this instance changes them, never per request.
-const ROSTER_TTL = 5 * 60_000;
-const META_TTL = 10 * 60_000;
-const INDEX_TTL = 5 * 60_000;
+// Spaces: separate voids, kept in Supabase (supabase/migrations/004_spaces.sql) behind the same
+// secret-gated functions as everything else:
+//   spaces         slug -> meta, sealed with a key derived from ORBIT_SECRET (title, private, password hash, owner hash)
+//   space_members  slug, dh (keyed hash of the device id), handle; leaving marks it gone
+//   space_kicked   slug, dh
+// Objects launched inside a space carry a tag in their stored name: ⟪s=slug;b=handle⟫name.
+// Short caches keep the database calls to a trickle while members poll.
+const ROSTER_TTL = 15_000;
+const META_TTL = 60_000;
+const INDEX_TTL = 60_000;
 
 const hmac = (s: string) => createHmac("sha256", process.env.ORBIT_SECRET!).update(s).digest();
 const key = () => hmac("spaces:key");
@@ -50,6 +48,14 @@ function seal(obj: unknown) {
   const body = Buffer.concat([c.update(JSON.stringify(obj)), c.final()]);
   return Buffer.concat([iv, c.getAuthTag(), body]);
 }
+const unseal = (sealed: unknown): SpaceMeta | null => {
+  if (typeof sealed !== "string" || !sealed) return null;
+  try {
+    return open<SpaceMeta>(Buffer.from(sealed, "base64"));
+  } catch {
+    return null;
+  }
+};
 function open<T>(buf: Buffer): T {
   const d = createDecipheriv("aes-256-gcm", key(), buf.subarray(0, 12));
   d.setAuthTag(buf.subarray(12, 28));
@@ -60,15 +66,8 @@ const metaCache = new Map<string, { at: number; meta: SpaceMeta | null }>();
 export async function getMeta(slug: string): Promise<SpaceMeta | null> {
   const c = metaCache.get(slug);
   if (c && Date.now() - c.at < META_TTL) return c.meta;
-  const r = await get(`sp/x/${slug}`, { access: "public", useCache: false }).catch(() => null);
-  let meta: SpaceMeta | null = null;
-  if (r && r.statusCode === 200) {
-    try {
-      meta = open<SpaceMeta>(Buffer.from(await new Response(r.stream).arrayBuffer()));
-    } catch {
-      meta = null;
-    }
-  }
+  const sealed = await rpc<string | null>("orbit_space_get", { p_slug: slug }).catch(() => null);
+  const meta = unseal(sealed);
   metaCache.set(slug, { at: Date.now(), meta });
   return meta;
 }
@@ -80,12 +79,9 @@ export async function createSpace(title: string, priv: boolean, pass: string | n
   if (await getMeta(slug)) return null;
   const owner = randomBytes(24).toString("base64url");
   const meta: SpaceMeta = { slug, title, priv, pass: priv && pass ? passHash(slug, pass) : null, owner: sha(owner), at: Date.now() };
-  // allowOverwrite false: two people racing for the same name, only one wins
-  try {
-    await put(`sp/x/${slug}`, seal(meta), { access: "public", addRandomSuffix: false, contentType: "application/octet-stream", cacheControlMaxAge: 60 });
-  } catch {
-    return null;
-  }
+  // two people racing for the same name: only one wins
+  const won = await rpc<boolean>("orbit_space_create", { p_slug: slug, p_meta: seal(meta).toString("base64") }).catch(() => false);
+  if (!won) return null;
   metaCache.set(slug, { at: Date.now(), meta });
   slugCache = null;
   return { meta, owner };
@@ -94,53 +90,26 @@ export async function createSpace(title: string, priv: boolean, pass: string | n
 export const checkPass = (meta: SpaceMeta, pass: unknown) => !meta.priv || (typeof pass === "string" && !!meta.pass && same(passHash(meta.slug, pass), meta.pass));
 export const isOwner = (meta: SpaceMeta, owner: unknown) => typeof owner === "string" && owner.length > 10 && same(sha(owner), meta.owner);
 
-async function listAll(prefix: string) {
-  const out: string[] = [];
-  let cursor: string | undefined;
-  do {
-    const r = await list({ prefix, cursor, limit: 1000 });
-    out.push(...r.blobs.map((b) => b.pathname));
-    cursor = r.hasMore ? r.cursor : undefined;
-  } while (cursor && out.length < 5000);
-  return out;
-}
-
 export interface Member { dh: string; handle: string }
 const memberCache = new Map<string, { at: number; members: Member[]; kicked: Set<string> }>();
 export async function roster(slug: string, fresh = false) {
   const c = memberCache.get(slug);
   if (!fresh && c && Date.now() - c.at < ROSTER_TTL) return c;
-  const [m, k] = await Promise.all([listAll(`sp/m/${slug}/`), listAll(`sp/k/${slug}/`)]);
-  const kicked = new Set(k.map((p) => p.split("/")[3]));
-  const members = m
-    .map((p) => {
-      const [, , , dh, h] = p.split("/");
-      let handle = h ?? "";
-      try {
-        handle = decodeURIComponent(handle);
-      } catch {}
-      return { dh, handle };
-    })
-    .filter((x) => x.dh && x.handle && !kicked.has(x.dh));
+  const r = await rpc<{ members: Member[]; kicked: string[] }>("orbit_space_roster", { p_slug: slug });
+  const kicked = new Set(r?.kicked ?? []);
+  const members = (r?.members ?? []).filter((x) => x.dh && x.handle && !kicked.has(x.dh));
   const v = { at: Date.now(), members, kicked };
   memberCache.set(slug, v);
   return v;
 }
 
 export async function addMember(slug: string, dh: string, handle: string) {
-  const r = await roster(slug, true);
-  const old = r.members.filter((m) => m.dh === dh);
-  await put(`sp/m/${slug}/${dh}/${encodeURIComponent(handle)}`, "1", { access: "public", addRandomSuffix: false, allowOverwrite: true, contentType: "text/plain" });
-  const stale = old.filter((m) => m.handle !== handle).map((m) => `sp/m/${slug}/${dh}/${encodeURIComponent(m.handle)}`);
-  if (stale.length) await del(stale).catch(() => {});
+  await rpc("orbit_space_join", { p_slug: slug, p_dh: dh, p_handle: handle });
   memberCache.delete(slug);
 }
 
 export async function removeMember(slug: string, dh: string, kick: boolean) {
-  const r = await roster(slug, true);
-  const paths = r.members.filter((m) => m.dh === dh).map((m) => `sp/m/${slug}/${dh}/${encodeURIComponent(m.handle)}`);
-  if (kick) await put(`sp/k/${slug}/${dh}`, "1", { access: "public", addRandomSuffix: false, allowOverwrite: true, contentType: "text/plain" });
-  if (paths.length) await del(paths).catch(() => {});
+  await rpc("orbit_space_leave", { p_slug: slug, p_dh: dh, p_kick: kick });
   memberCache.delete(slug);
 }
 
@@ -162,16 +131,20 @@ export async function member(slug: unknown, deviceId: unknown, token: unknown): 
 }
 const lastFresh = new Map<string, number>();
 
-let slugCache: { at: number; slugs: string[] } | null = null;
+type IndexRow = { slug: string; meta: string; members: string[]; kicked: number };
+let slugCache: { at: number; rows: IndexRow[] } | null = null;
+async function index() {
+  if (!slugCache || Date.now() - slugCache.at > INDEX_TTL)
+    slugCache = { at: Date.now(), rows: (await rpc<IndexRow[]>("orbit_space_index", {}).catch(() => null)) ?? [] };
+  return slugCache.rows;
+}
 export async function search(q: string) {
-  if (!slugCache || Date.now() - slugCache.at > INDEX_TTL) slugCache = { at: Date.now(), slugs: (await listAll("sp/x/")).map((p) => p.slice(5)) };
   const s = slugify(q);
-  const hits = slugCache.slugs
-    .filter((x) => !s || x.includes(s))
-    .sort((a, b) => Number(b.startsWith(s)) - Number(a.startsWith(s)) || a.length - b.length)
+  const hits = (await index())
+    .filter((x) => !s || x.slug.includes(s))
+    .sort((a, b) => Number(b.slug.startsWith(s)) - Number(a.slug.startsWith(s)) || a.slug.length - b.slug.length)
     .slice(0, 8);
-  const metas = await Promise.all(hits.map(getMeta));
-  return metas.filter((m): m is SpaceMeta => !!m).map((m) => ({ slug: m.slug, title: m.title, priv: m.priv }));
+  return hits.map((h) => unseal(h.meta)).filter((m): m is SpaceMeta => !!m).map((m) => ({ slug: m.slug, title: m.title, priv: m.priv }));
 }
 
 // ---- tags on transfer names ----
@@ -220,12 +193,12 @@ export const burnedUp = (o: { expiresAt?: unknown }) => typeof o.expiresAt === "
 
 /** Every space with its people (admin HQ). */
 export async function allSpaces(limit = 200) {
-  const slugs = (await listAll("sp/x/")).map((p) => p.slice(5)).slice(0, limit);
-  const out = await Promise.all(
-    slugs.map(async (slug) => {
-      const [meta, r] = await Promise.all([getMeta(slug), roster(slug)]);
-      return meta ? { slug, title: meta.title, priv: meta.priv, at: meta.at, members: r.members.map((m) => m.handle), kicked: r.kicked.size } : null;
-    }),
-  );
-  return out.filter((x): x is NonNullable<typeof x> => !!x).sort((a, b) => b.at - a.at);
+  slugCache = null;
+  return (await index())
+    .slice(0, limit)
+    .map((r) => {
+      const meta = unseal(r.meta);
+      return meta ? { slug: r.slug, title: meta.title, priv: meta.priv, at: meta.at, members: r.members, kicked: r.kicked } : null;
+    })
+    .filter((x): x is NonNullable<typeof x> => !!x);
 }
