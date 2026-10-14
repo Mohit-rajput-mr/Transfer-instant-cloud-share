@@ -1825,3 +1825,35 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
 /* the opened view: the page dims, strongest at the top so the header never shows through the title */
 .zoom-layer { background: linear-gradient(rgba(0,0,0,0.88), rgba(0,0,0,0.5) 22%, rgba(0,0,0,0.45) 80%, rgba(0,0,0,0.7)); }
 .zoom-layer { background: linear-gradient(rgba(0,0,0,0.96), rgba(0,0,0,0.92) 9%, rgba(0,0,0,0.5) 20%, rgba(0,0,0,0.45) 80%, rgba(0,0,0,0.7)); }
+
+/* ---------------- Icons, quietly: one small dark pill under each ball, monochrome glyphs ---------------- */
+.zicons { position: absolute; inset: auto; left: 50%; bottom: -10%; translate: -50% 0; z-index: 3; pointer-events: auto;
+  display: flex; align-items: center; gap: 2px; padding: 2px; border-radius: 999px;
+  background: rgba(10,11,14,0.78); border: 1px solid rgba(255,255,255,0.12); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.45); flex-direction: row-reverse; }
+.zicons .ic, .zicons .ic:nth-last-child(1), .zicons .ic:nth-last-child(2), .zicons .ic:nth-last-child(3) {
+  position: static; left: auto; top: auto; margin: 0; width: 22px; height: 22px; --sz: 22px;
+  border: 0; background: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; color: #bdbdbd; }
+.zicons .ic svg { width: 13px; height: 13px; }
+.zicons .ic:hover { scale: 1; background: rgba(255,255,255,0.1); color: #fff; }
+.zicons .ic.lock, .zicons .ic.lock.open { color: #7d7d7d; cursor: default; }
+.zicons .ic.lock:hover { background: transparent; color: #7d7d7d; }
+.zicons .ic.dl, .zicons .ic.dl.got, .zicons .ic.dl.fail { border: 0; color: #e8e8e8; }
+.zicons .ic.dl.got { color: #7d7d7d; }
+.zicons .ic.dl.fail { color: #ff6b5f; }
+.zicons .ic.kill { color: #9a9a9a; }
+.zicons .ic.kill:hover { background: rgba(255,59,48,0.16); color: #ff5a4e; }
+.zicons .ic.dl.busy { color: #fff; background: radial-gradient(closest-side, rgba(10,11,14,1) 80%, transparent 84%), conic-gradient(#fff calc(var(--p) * 360deg), rgba(255,255,255,0.15) 0); }
+/* header buttons: plain, round, monochrome */
+.ic-btn.kill { color: #bdbdbd; border-color: rgba(255,255,255,0.3); }
+.ic-btn.kill:hover { color: #ff5a4e; border-color: rgba(255,90,78,0.6); background: rgba(255,59,48,0.12); }
+/* destroy on the void: a small dark disc with a grey glyph, red only on hover */
+.destroy, .orb .orb-body > .destroy { width: 22px; height: 22px; background: rgba(10,11,14,0.8); border: 1px solid rgba(255,255,255,0.18); color: #a8a8a8; box-shadow: 0 3px 10px rgba(0,0,0,0.45); }
+.destroy svg { width: 12px; height: 12px; }
+.destroy:hover { background: rgba(255,59,48,0.18); color: #ff5a4e; border-color: rgba(255,90,78,0.5); scale: 1.08; }
+.destroy.small { width: 17px; height: 17px; }
+.destroy.small svg { width: 10px; height: 10px; }
+.orb .orb-body > .destroy.box { width: 24px; height: 24px; }
+/* icon tags on balls: plain glyphs */
+.tag.ic-tag, .tag.open.ic-tag, .tag.got.ic-tag { border-color: rgba(255,255,255,0.18); color: #a8a8a8; }
+.zname { margin-top: calc(var(--zd) * 0.16 + 14px); }
