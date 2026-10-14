@@ -12,6 +12,30 @@ export interface Folder {
   entries: Entry[];
 }
 
+/** One thing the user picked or dropped: a file, or a whole folder. */
+export type Item = File | Folder;
+export const isFolder = (x: Item): x is Folder => !(x instanceof File);
+export const itemSize = (x: Item) => (isFolder(x) ? x.entries.reduce((a, e) => a + e.file.size, 0) : x.size);
+export const itemName = (x: Item) => (isFolder(x) ? x.name : x.name.replace(/\.[^.]+$/, "") || x.name);
+
+/** Several picks in one ball: each folder keeps its own folder, loose files sit at the top. */
+export function mergeItems(name: string, items: Item[]): Folder {
+  const taken = new Map<string, number>();
+  const unique = (p: string) => {
+    const n = (taken.get(p) ?? 0) + 1;
+    taken.set(p, n);
+    return n === 1 ? p : p.replace(/(\.[^./]*)?$/, (x) => ` (${n})${x}`);
+  };
+  const entries: Entry[] = [];
+  for (const it of items) {
+    if (isFolder(it)) {
+      const top = unique(it.name || "folder");
+      for (const e of it.entries) entries.push({ path: `${top}/${e.path}`, file: e.file });
+    } else entries.push({ path: unique(it.name || "file"), file: it });
+  }
+  return { name, entries };
+}
+
 export const LINK_MIME = "text/x-orbit-link";
 export const INLINE_MAX = 256 * 1024; // text/links up to this size open in the card instead of downloading
 
@@ -291,22 +315,24 @@ async function walk(entry: FsEntry, prefix: string, out: Entry[]) {
 }
 
 // Dropped items: plain files stay files; any dropped directory is collected (recursively) as a folder.
-export async function fromDrop(dt: DataTransfer): Promise<{ files: File[]; folder: Folder | null }> {
+/** What was dropped: each top-level folder stays one folder, each loose file one file. */
+export async function fromDrop(dt: DataTransfer): Promise<Item[]> {
   const items = Array.from(dt.items ?? []).filter((i) => i.kind === "file");
   const entries: (FsEntry | null)[] = items.map((i) => (i.webkitGetAsEntry?.() as unknown as FsEntry | null) ?? null);
-  const dirs = entries.filter((e): e is FsEntry => !!e && e.isDirectory);
-  if (!dirs.length) return { files: Array.from(dt.files ?? []), folder: null };
-
-  const out: Entry[] = [];
-  for (const e of entries) if (e) await walk(e, "", out);
-  // strip the shared top-level folder name when exactly one folder was dropped
-  const single = dirs.length === 1 && entries.length === 1;
-  const name = single ? dirs[0].name : "orbit-bundle";
-  return {
-    files: [],
-    folder: {
-      name,
-      entries: out.map((e) => ({ ...e, path: single ? e.path.replace(`${name}/`, "") : e.path })),
-    },
-  };
+  // read everything synchronously: the drop's DataTransfer is emptied once this handler yields
+  const direct = items.map((i, k) => (entries[k]?.isDirectory ? null : i.getAsFile()));
+  if (!entries.some((e) => e?.isDirectory)) return Array.from(dt.files ?? []);
+  const out: Item[] = [];
+  for (let i = 0; i < entries.length; i++) {
+    const e = entries[i];
+    if (e?.isDirectory) {
+      const inside: Entry[] = [];
+      await walk(e, "", inside);
+      out.push({ name: e.name, entries: inside.map((x) => ({ ...x, path: x.path.replace(`${e.name}/`, "") })) });
+    } else {
+      const f = direct[i];
+      if (f) out.push(f);
+    }
+  }
+  return out.filter((x) => !isFolder(x) || x.entries.length);
 }

@@ -8,7 +8,7 @@ import OrbView, { ORB_CAP, inheritSlot, pickHue, layout, type VoidMode } from ".
 import { ComposePanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin, type LaunchJob } from "./Panels";
 import LaunchDock, { isPending, pendingId, pendingOrb, type Launch } from "./LaunchDock";
 import { launch, type Stage } from "@/lib/transfer";
-import { folderFromInput, fromDrop, textToFile, type Folder } from "@/lib/bundle";
+import { folderFromInput, fromDrop, textToFile, type Item } from "@/lib/bundle";
 import { useRouter } from "next/navigation";
 import { deviceId, deviceInfo, dropOwnerKey, hasGot, ownerKey, type Orb } from "@/lib/client";
 import { supabase, type RealtimeChannel } from "@/lib/realtime";
@@ -36,7 +36,7 @@ function incomingOrb(i: Incoming): Orb {
 }
 
 type Panel =
-  | { kind: "send"; files: File[]; folder?: Folder | null }
+  | { kind: "send"; items: Item[] }
   | { kind: "compose" }
   | { kind: "unlock"; id: string }
   | { kind: "owner"; id: string }
@@ -219,10 +219,15 @@ export default function Void() {
       setProg((p) => ({ ...p, ...q }));
     }, 120);
   }, []);
+  const freshHues = useRef<number[]>([]);
   const startLaunch = useCallback((job: LaunchJob) => {
     const key = Math.random().toString(36).slice(2, 10);
+    // several balls launched at once ("Separate") each get their own colour, not the same free one
+    const hue = pickHue([...orbsRef.current.map((o) => o.hue), ...freshHues.current]);
+    freshHues.current.push(hue);
+    setTimeout(() => (freshHues.current = freshHues.current.filter((h) => h !== hue)), 5000);
     const l: Launch = {
-      key, name: job.name, size: job.file.size, files: job.files, hue: pickHue(orbsRef.current.map((o) => o.hue)),
+      key, name: job.name, size: job.file.size, files: job.files, hue,
       createdAt: new Date(Date.now() + skew).toISOString(), stage: "deriving", frac: 0, abort: new AbortController(), open: false,
       life: job.life,
       free: job.open,
@@ -622,9 +627,8 @@ export default function Void() {
       if (!e.dataTransfer) return;
       // folders keep their structure; plain files stay files
       fromDrop(e.dataTransfer)
-        .then(({ files, folder }) => {
-          if (folder?.entries.length) setPanel({ kind: "send", files: [], folder });
-          else if (files.length) setPanel({ kind: "send", files });
+        .then((items) => {
+          if (items.length) setPanel({ kind: "send", items });
         })
         .catch(() => {});
     };
@@ -632,9 +636,9 @@ export default function Void() {
       const el = document.activeElement;
       if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) return;
       const files = Array.from(e.clipboardData?.files ?? []);
-      if (files.length) return setPanel({ kind: "send", files });
+      if (files.length) return setPanel({ kind: "send", items: files });
       const text = e.clipboardData?.getData("text");
-      if (text?.trim()) setPanel({ kind: "send", files: [textToFile(text)] });
+      if (text?.trim()) setPanel({ kind: "send", items: [textToFile(text)] });
     };
     window.addEventListener("dragenter", enter);
     window.addEventListener("dragover", over);
@@ -974,7 +978,7 @@ export default function Void() {
         hidden
         onChange={(e) => {
           const files = Array.from(e.target.files ?? []);
-          if (files.length) setPanel({ kind: "send", files });
+          if (files.length) setPanel({ kind: "send", items: files });
           e.target.value = "";
         }}
       />
@@ -988,9 +992,9 @@ export default function Void() {
         onChange={(e) => {
           const files = Array.from(e.target.files ?? []);
           const folder = folderFromInput(files);
-          if (folder?.entries.length) setPanel({ kind: "send", files: [], folder });
+          if (folder?.entries.length) setPanel({ kind: "send", items: [folder] });
           // phones ignore webkitdirectory and hand back plain picks: send those as files instead of nothing
-          else if (files.length) setPanel({ kind: "send", files });
+          else if (files.length) setPanel({ kind: "send", items: files });
           e.target.value = "";
         }}
       />
@@ -1001,7 +1005,7 @@ export default function Void() {
       </div>
 
       {panel?.kind === "compose" && (
-        <ComposePanel onClose={() => setPanel(null)} onReady={(file) => setPanel({ kind: "send", files: [file] })} />
+        <ComposePanel onClose={() => setPanel(null)} onReady={(file) => setPanel({ kind: "send", items: [file] })} />
       )}
       {panel?.kind === "space" && (
         <SpacePanel
@@ -1030,8 +1034,8 @@ export default function Void() {
       )}
       {panel?.kind === "send" && (
         <SendPanel
-          files={panel.files}
-          folder={panel.folder}
+          key={panel.items.length}
+          items={panel.items}
           onClose={() => setPanel(null)}
           onLaunch={startLaunch}
         />

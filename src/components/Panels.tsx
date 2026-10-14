@@ -6,7 +6,7 @@ import {
 } from "@/lib/client";
 import { MAX_FILE_BYTES } from "@/lib/limits";
 import { release } from "@/lib/p2p";
-import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, filesBundle, isLoose, isLinkText, packFolder, pickFolderTarget, textToFile, type DirHandle, type Folder } from "@/lib/bundle";
+import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, filesBundle, isFolder, isLoose, isLinkText, itemName, itemSize, mergeItems, packFolder, pickFolderTarget, textToFile, type DirHandle, type Item } from "@/lib/bundle";
 import { needsSavePicker, pickSaveTarget, receive, unlockOrb, UnlockError, type Unlocked, type Received, type Stage } from "@/lib/transfer";
 import { autoDownload, canPickSave, canShareFile, canShareFiles, deviceNoun, downloadWhere, downloadsShortcut, pickAndWrite, saveEnv, shareFile } from "@/lib/save";
 import "@/app/save.css";
@@ -500,16 +500,23 @@ const setPref = (k: string, v: unknown) => {
   } catch {}
 };
 
-export function SendPanel(props: { files: File[]; folder?: Folder | null; onClose: () => void; onLaunch: (job: LaunchJob) => void }) {
-  const { folder, onClose } = props;
-  const many = !folder && props.files.length > 1;
+export function SendPanel(props: { items: Item[]; onClose: () => void; onLaunch: (job: LaunchJob) => void }) {
+  const { onClose } = props;
+  // several picks (files, folders or both): one ball for all of them, or one ball each
+  const multi = props.items.length > 1;
+  const [split, setSplit] = useState<boolean>(() => multi && pref("split", false));
+  const allFiles = props.items.every((x) => !isFolder(x));
+  // together: a single folder stays itself; several things with a folder among them become one folder
+  const folder = !multi ? (isFolder(props.items[0]) ? props.items[0] : null) : allFiles ? null : mergeItems("", props.items);
+  const files = props.items.filter((x): x is File => !isFolder(x));
+  const many = multi && allFiles;
   const single = !folder && !many;
-  const first = props.files[0];
-  const count = folder ? folder.entries.length : props.files.length;
-  const total = folder ? folder.entries.reduce((a, e) => a + e.file.size, 0) : props.files.reduce((a, f) => a + f.size, 0);
+  const first = files[0];
+  const count = folder ? folder.entries.length : files.length;
+  const total = props.items.reduce((a, x) => a + itemSize(x), 0);
   const isLink = single && first?.type === LINK_MIME;
   const [name, setName] = useState(
-    folder ? folder.name.slice(0, 60) : single ? first.name.replace(/\.[^.]+$/, "").slice(0, 60) : `${count} files`,
+    (!multi && folder ? folder.name : single ? first.name.replace(/\.[^.]+$/, "") : many ? `${count} files` : `${props.items.length} items`).slice(0, 60),
   );
   const [code, setCode] = useState("");
   const [max, setMax] = useState<number | null>(null);
@@ -517,54 +524,83 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
   const [life, setLife] = useState(() => pref("life", 30));
   const [focusNow] = useState(finePointer);
 
-  const tooBig = total > MAX_FILE_BYTES;
+  const tooBig = split ? props.items.some((x) => itemSize(x) > MAX_FILE_BYTES) : total > MAX_FILE_BYTES;
   const ready = !tooBig && (!locked || code.length >= 4);
   const go = () => {
     if (!ready) return;
-    const label = name.trim() || (folder ? folder.name : single ? first.name : `${count} files`);
-    // several files travel as ONE ball (no zipping: streamed as-is behind a small manifest)
-    const file = folder ? packFolder(folder) : many ? packFolder(filesBundle(label.slice(0, 60), props.files), true) : first;
     tick("success");
     setPref("locked", locked);
     setPref("life", life);
-    props.onLaunch({ file, name: label.slice(0, 60), files: count, passcode: locked ? code : "", maxDownloads: max, life, open: !locked });
+    if (multi) setPref("split", split);
+    const common = { passcode: locked ? code : "", maxDownloads: max, life, open: !locked };
+    if (split) {
+      // one ball per pick, each under its own name, all with the same settings
+      for (const it of props.items) {
+        const label = itemName(it).slice(0, 60) || "untitled";
+        props.onLaunch({ ...common, file: isFolder(it) ? packFolder(it) : it, name: label, files: isFolder(it) ? it.entries.length : 1 });
+      }
+      return;
+    }
+    const label = (name.trim() || (folder && !multi ? folder.name : single ? first.name : `${count} files`)).slice(0, 60);
+    // several files travel as ONE ball (no zipping: streamed as-is behind a small manifest)
+    const file = folder ? packFolder(multi ? { ...folder, name: label } : folder) : many ? packFolder(filesBundle(label, files), true) : first;
+    props.onLaunch({ ...common, file, name: label, files: count });
   };
-  const kind = folder ? `Folder · ${count} files` : isLink ? "Link" : single ? `${ext(first.name)} · ${first.type || "file"}` : `${count} files · one ball`;
+  const n = props.items.length;
+  const kind = split ? `${n} balls` : folder ? (multi ? `${n} items · one ball` : `Folder · ${count} files`) : isLink ? "Link" : single ? `${ext(first.name)} · ${first.type || "file"}` : `${count} files · one ball`;
 
   return (
     <Drawer label="New object" onClose={onClose}>
       <div className="col">
-        <div className="field">
-          <label><span className="mono">Name it</span><span className="mono dim">{name.length}/60</span></label>
-          <input
-            className="line-input name-input"
-            value={name}
-            maxLength={60}
-            autoFocus={focusNow}
-            enterKeyHint="go"
-            autoComplete="off"
-            onFocus={(e) => e.currentTarget.select()}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key !== "Enter") return;
-              e.preventDefault();
-              if (locked) e.currentTarget.closest(".drawer")?.querySelector<HTMLInputElement>(".code-input")?.focus();
-              else go();
-            }}
-            placeholder="Give it a name"
-          />
-        </div>
+        {multi && (
+          <div className="field">
+            <label><span className="mono">Launch as</span><span className="mono dim">{n} picked</span></label>
+            <div className="seg" role="radiogroup" aria-label="Launch as">
+              <button role="radio" aria-checked={!split} className={`lg-press${!split ? " on" : ""}`} onClick={() => setSplit(false)}>Together · 1 ball</button>
+              <button role="radio" aria-checked={split} className={`lg-press${split ? " on" : ""}`} onClick={() => setSplit(true)}>Separate · {n} balls</button>
+            </div>
+          </div>
+        )}
+        {!split && (
+          <div className="field">
+            <label><span className="mono">Name it</span><span className="mono dim">{name.length}/60</span></label>
+            <input
+              className="line-input name-input"
+              value={name}
+              maxLength={60}
+              autoFocus={focusNow}
+              enterKeyHint="go"
+              autoComplete="off"
+              onFocus={(e) => e.currentTarget.select()}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                if (locked) e.currentTarget.closest(".drawer")?.querySelector<HTMLInputElement>(".code-input")?.focus();
+                else go();
+              }}
+              placeholder="Give it a name"
+            />
+          </div>
+        )}
         <div className="send-meta">
           <span className="mono">{kind}</span>
           <span className="mono dim">{formatBytes(total)}</span>
         </div>
         <p className="note ellip">
-          {folder ? `${folder.name}/ · arrives as a real folder` : single ? first.name : "All of them in one ball. One tap gets them all."}
+          {split
+            ? "Each one floats as its own ball, same settings."
+            : folder
+              ? multi ? "All in one ball, folders stay folders." : `${folder.name}/ · arrives as a real folder`
+              : single ? first.name : "All of them in one ball. One tap gets them all."}
         </p>
-        {many && (
+        {multi && (
           <div className="files">
-            {props.files.map((f, i) => (
-              <div key={i}><span>{f.name}</span><span className="mono dim">{formatBytes(f.size)}</span></div>
+            {props.items.map((it, i) => (
+              <div key={i}>
+                <span>{isFolder(it) ? `${it.name}/` : it.name}</span>
+                <span className="mono dim">{isFolder(it) ? `${it.entries.length} files · ` : ""}{formatBytes(itemSize(it))}</span>
+              </div>
             ))}
           </div>
         )}
@@ -596,9 +632,9 @@ export function SendPanel(props: { files: File[]; folder?: Folder | null; onClos
             ))}
           </div>
         </div>
-        {tooBig && <p className="err">{folder ? `The ${folder.name} folder is` : many ? "Together these files are" : `${first.name} is`} over the 2 GB limit</p>}
+        {tooBig && <p className="err">{split ? "One of them is" : multi ? "Together they are" : folder ? `The ${folder.name} folder is` : `${first.name} is`} over the 2 GB limit</p>}
         <div className="grow" />
-        <button className="cta lg-press" disabled={!ready} onClick={go}>{locked && code.length > 0 && code.length < 4 ? "Min 4 characters" : "Launch ↗"}</button>
+        <button className="cta lg-press" disabled={!ready} onClick={go}>{locked && code.length > 0 && code.length < 4 ? "Min 4 characters" : split ? `Launch ${n} balls ↗` : "Launch ↗"}</button>
       </div>
     </Drawer>
   );
