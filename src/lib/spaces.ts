@@ -6,6 +6,13 @@ import { del, get, list, put } from "@vercel/blob";
 //   sp/m/<slug>/<dh>/<handle>   one empty marker per member (dh = keyed hash of the device id)
 //   sp/k/<slug>/<dh>   kicked
 // Objects launched inside a space carry a tag in their stored name: ⟪slug|handle⟫name.
+//
+// Every list() is a billed "advanced operation" (the Hobby plan allows a few thousand a month), and
+// members poll their space every 15 s: rosters and the space index are cached for minutes and
+// re-read only when this instance changes them, never per request.
+const ROSTER_TTL = 5 * 60_000;
+const META_TTL = 10 * 60_000;
+const INDEX_TTL = 5 * 60_000;
 
 const hmac = (s: string) => createHmac("sha256", process.env.ORBIT_SECRET!).update(s).digest();
 const key = () => hmac("spaces:key");
@@ -52,7 +59,7 @@ function open<T>(buf: Buffer): T {
 const metaCache = new Map<string, { at: number; meta: SpaceMeta | null }>();
 export async function getMeta(slug: string): Promise<SpaceMeta | null> {
   const c = metaCache.get(slug);
-  if (c && Date.now() - c.at < 60_000) return c.meta;
+  if (c && Date.now() - c.at < META_TTL) return c.meta;
   const r = await get(`sp/x/${slug}`, { access: "public", useCache: false }).catch(() => null);
   let meta: SpaceMeta | null = null;
   if (r && r.statusCode === 200) {
@@ -102,7 +109,7 @@ export interface Member { dh: string; handle: string }
 const memberCache = new Map<string, { at: number; members: Member[]; kicked: Set<string> }>();
 export async function roster(slug: string, fresh = false) {
   const c = memberCache.get(slug);
-  if (!fresh && c && Date.now() - c.at < 3000) return c;
+  if (!fresh && c && Date.now() - c.at < ROSTER_TTL) return c;
   const [m, k] = await Promise.all([listAll(`sp/m/${slug}/`), listAll(`sp/k/${slug}/`)]);
   const kicked = new Set(k.map((p) => p.split("/")[3]));
   const members = m
@@ -144,13 +151,20 @@ export async function member(slug: unknown, deviceId: unknown, token: unknown): 
   if (!same(tokenFor(slug, dh), token)) return null;
   const r = await roster(slug);
   if (r.kicked.has(dh)) return null;
-  const me = r.members.find((m) => m.dh === dh) ?? (await roster(slug, true)).members.find((m) => m.dh === dh);
+  let me = r.members.find((m) => m.dh === dh);
+  // joined through another server instance since this one cached the roster: one fresh read,
+  // at most every 20 s per space, so a stream of unknown devices can't turn into a stream of lists
+  if (!me && Date.now() - (lastFresh.get(slug) ?? 0) > 20_000) {
+    lastFresh.set(slug, Date.now());
+    me = (await roster(slug, true)).members.find((m) => m.dh === dh);
+  }
   return me ? { slug, dh, handle: me.handle } : null;
 }
+const lastFresh = new Map<string, number>();
 
 let slugCache: { at: number; slugs: string[] } | null = null;
 export async function search(q: string) {
-  if (!slugCache || Date.now() - slugCache.at > 10_000) slugCache = { at: Date.now(), slugs: (await listAll("sp/x/")).map((p) => p.slice(5)) };
+  if (!slugCache || Date.now() - slugCache.at > INDEX_TTL) slugCache = { at: Date.now(), slugs: (await listAll("sp/x/")).map((p) => p.slice(5)) };
   const s = slugify(q);
   const hits = slugCache.slugs
     .filter((x) => !s || x.includes(s))
