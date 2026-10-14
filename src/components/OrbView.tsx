@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
 import { setCardOrigin } from "./Panels";
 import { ext, formatBytes, formatClock, type Orb } from "@/lib/client";
-import { burnAt } from "@/lib/burn";
 
 /** 7 → "7", 12 → "10+", 140 → "100+": a crowd stays readable */
 const crowd = (n: number) => (n >= 1000 ? "1k+" : n >= 100 ? "100+" : n >= 10 ? "10+" : String(n));
@@ -247,13 +246,6 @@ export default function OrbView(props: {
     const cy = Math.min(d.bh - m - d.by, Math.max(90 - d.by, y));
     return { x: cx, y: cy, hitX: cx !== x, hitY: cy !== y };
   };
-
-  // burning: tsParticles flames, smoke and sparks rise from where the sphere was
-  useEffect(() => {
-    if (phase !== "burning") return;
-    const r = anchor.current?.querySelector(".sphere")?.getBoundingClientRect();
-    if (r && r.width) burnAt(r.left + r.width / 2, r.top + r.height / 2, r.width / 2);
-  }, [phase]);
 
   // While a touch drag is armed the page must not scroll. React's touch listeners are passive,
   // so the blocking one is attached by hand.

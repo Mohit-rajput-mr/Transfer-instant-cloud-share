@@ -8,7 +8,6 @@ import OrbView, { ORB_CAP, inheritSlot, pickHue, layout, type VoidMode } from ".
 import { ComposePanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin, type LaunchJob } from "./Panels";
 import LaunchDock, { isPending, pendingId, pendingOrb, type Launch } from "./LaunchDock";
 import { launch, type Stage } from "@/lib/transfer";
-import { preloadBurn } from "@/lib/burn";
 import { folderFromInput, fromDrop, textToFile, type Folder } from "@/lib/bundle";
 import { useRouter } from "next/navigation";
 import { deviceId, deviceInfo, dropOwnerKey, ownerKey, type Orb } from "@/lib/client";
@@ -72,6 +71,9 @@ export default function Void() {
   const [launches, setLaunches] = useState<Launch[]>([]);
   // ids handed over from a stand-in sphere to its real one: no burn-up, no second entrance
   const swapped = useRef(new Set<string>());
+  // real id → the stand-in's id it replaced: the sphere keeps its React key, so it is the same
+  // element (no remount, no second entrance) when the upload lands
+  const alias = useRef(new Map<string, string>());
   const [scope, setScope] = useState<"all" | "near" | "mine">("all");
   const [dragging, setDragging] = useState(false);
   const [online, setOnline] = useState(1);
@@ -248,6 +250,7 @@ export default function Void() {
         const from = pendingId(key);
         inheritSlot(from, orb.id);
         swapped.current.add(from).add(orb.id);
+        alias.current.set(orb.id, alias.current.get(from) ?? from);
         setTimeout(() => (swapped.current.delete(from), swapped.current.delete(orb.id)), 5000);
         recent.current.set(orb.id, orb);
         setTimeout(() => recent.current.delete(orb.id), 20_000);
@@ -267,7 +270,6 @@ export default function Void() {
   }, [skew]);
   const dockLaunches = useMemo(() => launches.map((l) => (prog[l.key] && !l.orb ? { ...l, ...prog[l.key] } : l)), [launches, prog]);
 
-  useEffect(() => preloadBurn(), []);
 
   // clock
   useEffect(() => {
@@ -415,6 +417,7 @@ export default function Void() {
       const got = orb;
       inheritSlot(from, got.id);
       swapped.current.add(from).add(got.id);
+      alias.current.set(got.id, alias.current.get(from) ?? from);
       setTimeout(() => (swapped.current.delete(from), swapped.current.delete(got.id)), 5000);
       recent.current.set(got.id, got);
       setTimeout(() => recent.current.delete(got.id), 20_000);
@@ -715,13 +718,13 @@ export default function Void() {
       const fresh = visible.filter((o) => !p.ids.has(o.id) && !swapped.current.has(o.id)).map((o) => o.id);
       if (fresh.length) {
         setArriving((a) => new Set([...a, ...fresh]));
-        setTimeout(() => setArriving((a) => new Set([...a].filter((id) => !fresh.includes(id)))), 2600);
+        setTimeout(() => setArriving((a) => new Set([...a].filter((id) => !fresh.includes(id)))), 600);
       }
       const gone = [...p.ids].filter((id) => !ids.has(id) && !aliveIds.has(id) && !swapped.current.has(id));
       if (gone.length) {
         const g = gone.map((id) => ({ orb: p.orbs.get(id)!, pos: p.pos.get(id)!, mine: !!ownerKey(id), hue: p.hue.get(id) })).filter((x) => x.orb && x.pos);
         setGhosts((list) => [...list, ...g]);
-        setTimeout(() => setGhosts((list) => list.filter((x) => !gone.includes(x.orb.id))), 1700);
+        setTimeout(() => setGhosts((list) => list.filter((x) => !gone.includes(x.orb.id))), 320);
       }
     }
     prev.current = { ids, orbs: new Map(visible.map((o) => [o.id, o])), pos: new Map(positions), hue: colors };
@@ -782,6 +785,9 @@ export default function Void() {
   const flow = mode !== "desk" && (visible.length > 0 || ghosts.length > 0);
   const lastRow = flow ? Math.max(0, ...[...positions.values()].map((p) => p.y)) : 0;
   const rows = flow ? Math.max(lastRow + 1, ...ghosts.map((g) => Math.min(g.pos.y + 1, lastRow + 3))) : 1;
+
+  // a stand-in whose real sphere is already listed (the render of the swap): only the real one shows
+  const replaced = new Set(visible.map((o) => alias.current.get(o.id)).filter((x): x is string => !!x));
 
   return (
     <>
@@ -862,9 +868,9 @@ export default function Void() {
             </div>
           )}
 
-          {visible.map((o, i) => (
+          {visible.filter((o) => !replaced.has(o.id)).map((o, i) => (
             <OrbView
-              key={o.id}
+              key={alias.current.get(o.id) ?? o.id}
               orb={o}
               index={i}
               pos={positions.get(o.id)!}
