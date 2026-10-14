@@ -9,9 +9,9 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", displ
 const chip = Chakra_Petch({ subsets: ["latin"], weight: "500", variable: "--font-chip", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "ORBITRANSFER — drop. lock. beam. burn.",
+  title: "OrbitTransfer — drop. lock. beam. burn.",
   description: "Instant, end-to-end encrypted file transfer between any two browsers. No login. Objects float for 30 minutes, then burn up.",
-  appleWebApp: { capable: true, title: "ORBITRANSFER", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "OrbitTransfer", statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false, email: false, address: false },
 };
 

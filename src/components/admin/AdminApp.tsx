@@ -96,6 +96,8 @@ function Login({ onIn }: { onIn: () => void }) {
         </div>
         <div className="drawer-body" style={{ gridTemplateColumns: "1fr" }}>
           <div className="col">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="hq-emblem" src="/brand/emblem.svg" alt="" width={606} height={561} />
             <div className="wide d-title">Identify.</div>
             <div className="field">
               <label><span className="mono">Password</span></label>
@@ -156,7 +158,7 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
       <header className="hq-top">
         <Link href="/" className="brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="brand-logo" src="/logo.svg" alt="ORBITRANSFER" width={180} height={24} />
+          <img className="brand-logo" src="/logo.svg" alt="OrbitTransfer" width={194} height={28} />
           <span className="brand-by">Mission HQ</span>
         </Link>
         <nav className="hq-tabs" aria-label="HQ sections">

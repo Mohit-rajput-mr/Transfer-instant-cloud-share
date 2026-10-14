@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Privacy · ORBITRANSFER" };
+export const metadata: Metadata = { title: "Privacy · OrbitTransfer" };
 
 export default function Privacy() {
   return (
     <main className="doc">
+      <Link href="/" className="doc-logo" aria-label="OrbitTransfer home">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/lockup.svg" alt="OrbitTransfer" width={220} height={32} />
+      </Link>
       <Link className="back" href="/">← Back to the void</Link>
       <h1 className="wide" style={{ marginTop: 24 }}>Privacy</h1>
-      <p>ORBIT is built to know as little as possible about you.</p>
+      <p>OrbitTransfer is built to know as little as possible about you.</p>
       <h2>Files</h2>
       <ul>
         <li>Files are encrypted in your browser (AES-256-GCM) before upload. With a passcode, the key comes from it and never leaves your device.</li>
