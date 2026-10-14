@@ -7,7 +7,8 @@ import { deviceLabel, senderKey, setOwnerKey, type Orb } from "./client";
 import { FOLDER_MIME, directoryOutput, folderSink, zipOutput, type DirHandle, type Manifest } from "./bundle";
 import { autoDownload, safeMime, saveName } from "./save";
 import { spaceBody } from "./space";
-import { P2P_PREFIX, hold, isP2P, pull } from "./p2p";
+import { P2P_PREFIX, hold, holding, isP2P, pull } from "./p2p";
+import { fetchStored, isStored, storeCopy, waitStored } from "./cloud";
 
 export type Stage = "packing" | "deriving" | "encrypting" | "uploading" | "finalizing" | "decrypting" | "done";
 
@@ -64,6 +65,8 @@ export async function launch(opts: {
     body: JSON.stringify({ owner, url }),
   });
   if (!fin.ok) throw new Error("Could not place the object in orbit");
+  // and an encrypted copy into storage, so it stays downloadable after this page closes
+  void storeCopy(id, owner, file, key, nonce);
   onProgress("done", 1);
   return (await fin.json()) as Orb;
 }
@@ -121,7 +124,7 @@ export type Received =
   /** folder rebuilt inside a directory the user picked */
   | { kind: "dir"; folder: string; files: number; where: string };
 
-type UnlockReply = { url: string; nonce: string; size: number; chunkSize: number; fileName: string; mime: string };
+type UnlockReply = { url: string; nonce: string; size: number; chunkSize: number; fileName: string; mime: string; store?: string };
 /** Checked passcode: the key plus where the ciphertext lives. Nothing is saved or picked before this succeeds. */
 export type Unlocked = { key: Awaited<ReturnType<typeof deriveKeys>>["key"]; r: UnlockReply };
 
@@ -136,6 +139,23 @@ export async function unlockOrb(orb: Orb, passcode: string, signal?: AbortSignal
   const r = await res.json().catch(() => ({ ok: false, reason: "gone" }));
   if (!r.ok) throw new UnlockError(r.reason, r.left);
   return { key, r };
+}
+
+/**
+ * Where the ciphertext comes from: this tab (it sent it), the stored copy when it is complete (fast,
+ * parallel, and spares the sender's line), or straight from the sender's device. If the direct path
+ * can't connect (sender gone, or a network that blocks it), a copy that is still uploading is waited for.
+ */
+async function source(r: UnlockReply, signal?: AbortSignal) {
+  const id = r.url.slice(P2P_PREFIX.length);
+  if (holding(id)) return pull(id, signal);
+  if (r.store && (await isStored(r.store, signal))) return fetchStored(r.store, r.size, signal);
+  try {
+    return await pull(id, signal);
+  } catch (e) {
+    if (r.store && !signal?.aborted && (await waitStored(r.store, 3 * 60_000, signal))) return fetchStored(r.store, r.size, signal);
+    throw e;
+  }
 }
 
 export async function receive(opts: {
@@ -180,7 +200,7 @@ export async function receive(opts: {
 
   onProgress("decrypting", 0);
   try {
-    const body = isP2P(r.url) ? await pull(r.url.slice(P2P_PREFIX.length), signal) : undefined;
+    const body = isP2P(r.url) ? await source(r, signal) : undefined;
     await streamDecrypt({
       url: r.url, body, key, nonce: fromB64(r.nonce), size: r.size, chunkSize: r.chunkSize, sink, signal,
       onProgress: (d) => onProgress("decrypting", d / Math.max(1, r.size)),

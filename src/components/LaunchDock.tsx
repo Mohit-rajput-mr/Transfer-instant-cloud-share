@@ -1,6 +1,7 @@
 "use client";
 import DownloadCard from "./DownloadCard";
 import { useDownloads } from "@/lib/downloads";
+import { useCloud } from "@/lib/cloud";
 import { useState, type CSSProperties } from "react";
 import { formatBytes, type Orb } from "@/lib/client";
 import type { Stage } from "@/lib/transfer";
@@ -85,6 +86,7 @@ export default function LaunchDock(props: {
 
 function DockItem({ l, badges, onToggle, onDismiss, onOpenOwner }: { l: Launch } & Omit<Parameters<typeof LaunchDock>[0], "launches">) {
   const [copied, setCopied] = useState(false);
+  const cloud = useCloud().get(l.orb?.id ?? "");
   const n = badges.get(l.orb ? l.orb.id : pendingId(l.key));
   const dot = (live?: boolean) => <i className={`dock-dot${live ? " live" : ""}`}>{n ?? ""}</i>;
   const hue = { "--hue": l.hue } as CSSProperties;
@@ -130,7 +132,12 @@ function DockItem({ l, badges, onToggle, onDismiss, onOpenOwner }: { l: Launch }
         {dot()}
         <div className="dock-main">
           <b className="ellip">{l.name}</b>
-          <span className="mono">In orbit · <span className="dock-code">{l.orb.id}</span></span>
+          <span className="mono">In orbit · <span className="dock-code">{l.orb.id}</span>
+            {cloud?.state === "saving" && <span className="dock-cloud"> · saving {Math.round(cloud.frac * 100)}%, keep open</span>}
+            {cloud?.state === "saved" && <span className="dock-cloud ok"> · saved ✓ safe to close</span>}
+            {cloud?.state === "failed" && <span className="dock-cloud"> · keep this page open</span>}
+          </span>
+          {cloud?.state === "saving" && <span className="dock-bar"><i style={{ transform: `scaleX(${Math.max(0.03, cloud.frac)})` }} /></span>}
         </div>
         {!l.open && (
           <button className={`pill lg-press${copied ? " solid" : ""}`} onClick={copy}>{copied ? "Copied ✓" : "Copy link"}</button>

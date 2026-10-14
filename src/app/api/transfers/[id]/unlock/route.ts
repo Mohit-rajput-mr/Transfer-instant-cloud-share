@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { clean, geo, isHex, rpc, sha256, validId } from "@/lib/server";
 import { burnedUp, member, untag } from "@/lib/spaces";
+import { objectKey, presign, r2On } from "@/lib/r2";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -17,5 +18,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     p_label: clean(b.device, 60),
     p_geo: geo(req),
   });
+  // a signed link to the stored copy (it may still be uploading: the receiver checks before using it)
+  if (r?.ok && r2On()) r.store = await presign("GET", objectKey(id), {}, 3 * 3600).catch(() => undefined);
   return NextResponse.json(r, { status: r?.ok ? 200 : 403 });
 }

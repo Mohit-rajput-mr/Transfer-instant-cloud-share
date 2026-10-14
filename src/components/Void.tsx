@@ -14,7 +14,13 @@ import { deviceId, deviceInfo, dropOwnerKey, hasGot, ownerKey, type Orb } from "
 import { supabase, type RealtimeChannel } from "@/lib/realtime";
 import SpacePanel, { SpaceRoom } from "./Spaces";
 import BubbleZoom from "./BubbleZoom";
-import { heldIds, release } from "@/lib/p2p";
+import { heldIds, release as releaseP2P } from "@/lib/p2p";
+import { cloudSaved, cloudSaving, stopCopy } from "@/lib/cloud";
+// a ball leaving: stop offering it directly and stop any upload of its stored copy
+const release = (id: string) => {
+  releaseP2P(id);
+  stopCopy(id);
+};
 import { downloading } from "@/lib/downloads";
 import { enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
 
@@ -724,18 +730,31 @@ export default function Void() {
       fetch(`/api/transfers/${o.id}`, { method: "DELETE", headers: { "x-owner": key } }).finally(() => dropOwnerKey(o.id));
     }
   }, [orbs, serverNow]);
-  // Files live only on the sender's device: when this page goes away its spheres go too, so nobody
-  // waits on a file that can no longer be sent. keepalive lets the requests finish after unload.
+  // A file whose stored copy finished stays in orbit after this page closes (receivers fetch the copy).
+  // One that only lives on this device goes with the page, so nobody waits on a file that can no longer
+  // be sent; keepalive lets the requests finish after unload. While a copy is still saving, the browser
+  // asks before leaving.
   useEffect(() => {
     const bye = () => {
       for (const id of heldIds()) {
+        const saved = cloudSaved(id);
+        releaseP2P(id);
+        if (saved) continue;
         const key = ownerKey(id);
-        release(id);
         if (key) fetch(`/api/transfers/${id}`, { method: "DELETE", headers: { "x-owner": key }, keepalive: true }).catch(() => {});
       }
     };
+    const ask = (e: BeforeUnloadEvent) => {
+      if (!cloudSaving()) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
     window.addEventListener("pagehide", bye);
-    return () => window.removeEventListener("pagehide", bye);
+    window.addEventListener("beforeunload", ask);
+    return () => {
+      window.removeEventListener("pagehide", bye);
+      window.removeEventListener("beforeunload", ask);
+    };
   }, []);
   // Membership only changes when something launches or expires, not on every clock tick, so the
   // layout / colour / choreography work below runs on change instead of every second.
