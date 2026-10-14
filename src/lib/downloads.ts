@@ -8,8 +8,9 @@ import { markGot, type Orb } from "./client";
 import { receive, unlockOrb, UnlockError } from "./transfer";
 import { autoDownload, canShareFiles, saveEnv, shareFile } from "./save";
 import { stayAwake } from "./wake";
+import { Meter } from "./rate";
 
-export type DlJob = { id: string; name: string; state: "queued" | "running" | "done" | "failed"; frac: number; err?: string; orb: Orb; code: string };
+export type DlJob = { id: string; name: string; state: "queued" | "running" | "done" | "failed"; frac: number; speed?: string; err?: string; orb: Orb; code: string };
 type State = { jobs: DlJob[]; held: File[] };
 
 let state: State = { jobs: [], held: [] };
@@ -43,11 +44,12 @@ async function run() {
     if (!job) break;
     patch(job.id, { state: "running", frac: 0 });
     abort = new AbortController();
+    const meter = new Meter(job.orb.size);
     try {
       const un = await unlockOrb(job.orb, job.orb.open ? "" : job.code, abort.signal);
       const res = await receive({
         orb: job.orb, unlocked: un, target: Promise.resolve(null), folderTarget: null, signal: abort.signal, hold: env.mobile,
-        onProgress: (_s, f) => patch(job.id, { frac: f }),
+        onProgress: (_s, f) => patch(job.id, { frac: f, speed: meter.label(f * job.orb.size) }),
       });
       if (res.kind === "file" && res.held) emit({ held: [...state.held, ...(res.parts?.length ? res.parts : [res.file])] });
       if (res.kind === "text") autoDownload(new File([res.text], `${job.name || "note"}.txt`, { type: "text/plain" }));

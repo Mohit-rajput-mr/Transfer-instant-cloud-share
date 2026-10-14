@@ -2,10 +2,21 @@
 import { cancelAll, dismiss, saveHeld, useDownloads } from "@/lib/downloads";
 import { glyph } from "./Glyph";
 import { LuCheck } from "react-icons/lu";
+import { useEffect } from "react";
 
 /** Bottom-right: every background download with its progress; stays when panels and containers close. */
 export default function DownloadCard() {
   const { jobs, held } = useDownloads();
+  const running = jobs.find((j) => j.state === "running");
+  // the tab title shows progress, so a background tab still tells you how far it is
+  useEffect(() => {
+    if (!running) return;
+    const base = document.title.replace(/^\(\d+%\) /, "");
+    document.title = `(${Math.round(running.frac * 100)}%) ${base}`;
+    return () => {
+      document.title = document.title.replace(/^\(\d+%\) /, "");
+    };
+  }, [running]);
   if (!jobs.length) return null;
   const done = jobs.filter((j) => j.state === "done").length;
   const active = jobs.some((j) => j.state === "queued" || j.state === "running");
@@ -25,7 +36,7 @@ export default function DownloadCard() {
           <div key={j.id} className={`dl-row ${j.state}`}>
             <span className="dl-name">{j.name}</span>
             <span className="dl-state mono">
-              {j.state === "done" ? <LuCheck className="ic-inline" /> : j.state === "failed" ? j.err ?? "Failed" : j.state === "running" ? `${Math.round(j.frac * 100)}%` : "waiting"}
+              {j.state === "done" ? <LuCheck className="ic-inline" /> : j.state === "failed" ? j.err ?? "Failed" : j.state === "running" ? `${Math.round(j.frac * 100)}%${j.speed ? ` · ${j.speed}` : ""}` : "waiting"}
             </span>
             <i className="dl-bar" style={{ transform: `scaleX(${j.state === "done" ? 1 : j.frac})` }} />
           </div>

@@ -12,6 +12,7 @@ import { needsSavePicker, pickSaveTarget, receive, unlockOrb, UnlockError, type 
 import { autoDownload, canPickSave, canShareFile, canShareFiles, deviceNoun, downloadWhere, downloadsShortcut, pickAndWrite, saveEnv, shareFile } from "@/lib/save";
 import "@/app/save.css";
 import { glyph } from "./Glyph";
+import { Meter } from "@/lib/rate";
 import { LuArrowRight, LuCheck, LuChevronDown, LuFlag, LuInfinity } from "react-icons/lu";
 
 // Screen point the card zooms out of (the tapped sphere / button). Set right before opening.
@@ -465,7 +466,7 @@ export function ShareBlock({ id }: { id: string }) {
   };
   // phones: straight into the share sheet (Messages, AirDrop, WhatsApp …)
   const share = () => {
-    navigator.share({ title: "Orbi Transfer", text: `Object ${id} is in orbit for 30 minutes`, url: link }).catch(() => {});
+    navigator.share({ title: "Orbi Transfer", text: `Open ${id} on Orbi Transfer`, url: link }).catch(() => {});
   };
   return (
     <div className="share-mini">
@@ -779,6 +780,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
   const [busy, setBusy] = useState(false);
   const [stage, setStage] = useState<Stage>("deriving");
   const [frac, setFrac] = useState(0);
+  const [speed, setSpeed] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [got, setGot] = useState<Received | null>(null);
   const [copied, setCopied] = useState(false);
@@ -1040,11 +1042,14 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     setBusy(true);
     setErr(null);
     abort.current = new AbortController();
+    const meter = new Meter(orb.size);
+    setSpeed("");
     receive({
       orb, unlocked: un, target, folderTarget, signal: abort.current.signal, inline, hold: env.mobile,
       onProgress: (s, p) => {
         setStage(s);
         setFrac(p);
+        if (s === "decrypting") setSpeed(meter.label(p * orb.size));
       },
     })
       .then((res) => {
@@ -1259,7 +1264,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
             <div className="sealed-msg mono">{err ? `${err} · ` : ""}Sealed: the sender&apos;s download limit was reached. It will burn up shortly.</div>
           ) : busy ? (
             <>
-              <Progress stage={stage} frac={frac} extra={formatBytes(orb.size * frac)} />
+              <Progress stage={stage} frac={frac} extra={speed || formatBytes(orb.size * frac)} />
               <div className="grow" />
               <button className="ghost-btn lg-press" onClick={() => abort.current?.abort()}>Abort</button>
             </>

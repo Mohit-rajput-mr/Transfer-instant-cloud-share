@@ -7,8 +7,9 @@ import { useSyncExternalStore } from "react";
 import { encryptChunk } from "./crypto";
 import { PART_CHUNKS, STORE_CHUNK, STORE_TAG, storeChunks } from "./limits";
 import { stayAwake } from "./wake";
+import { Meter } from "./rate";
 
-export type CloudState = { state: "saving" | "saved" | "failed"; frac: number };
+export type CloudState = { state: "saving" | "saved" | "failed"; frac: number; speed?: string };
 const states = new Map<string, CloudState>();
 const aborts = new Map<string, AbortController>();
 const subs = new Set<() => void>();
@@ -70,7 +71,11 @@ export async function storeCopy(id: string, owner: string, file: File, key: Cryp
   const total = storeChunks(file.size);
   const sent = new Map<number, number>();
   const encTotal = file.size + total * STORE_TAG;
-  const progress = () => set(id, { state: "saving", frac: Math.min(0.99, [...sent.values()].reduce((a, b) => a + b, 0) / encTotal) });
+  const meter = new Meter(encTotal);
+  const progress = () => {
+    const done = [...sent.values()].reduce((a, b) => a + b, 0);
+    set(id, { state: "saving", frac: Math.min(0.99, done / encTotal), speed: meter.label(done) });
+  };
   let uploadId: string | null = null;
   try {
     set(id, { state: "saving", frac: 0 });
