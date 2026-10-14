@@ -158,7 +158,7 @@ function Dashboard({ data, now, onRefresh, onLogout }: { data: Overview | null; 
       <header className="hq-top">
         <Link href="/" className="brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="brand-logo" src="/logo.svg" alt="OrbitTransfer" width={194} height={28} />
+          <img className="brand-logo" src="/logo.svg" alt="Orbi Transfer" width={194} height={28} />
           <span className="brand-by">Mission HQ</span>
         </Link>
         <nav className="hq-tabs" aria-label="HQ sections">

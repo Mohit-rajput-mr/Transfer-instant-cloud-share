@@ -792,7 +792,7 @@ export default function Void() {
         <div className="top-row">
           <div className="brand" onClick={tapLogo} role="presentation">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="brand-logo" src="/logo.svg" alt="OrbitTransfer" width={194} height={28} draggable={false} />
+            <img className="brand-logo" src="/logo.svg" alt="Orbi Transfer" width={194} height={28} draggable={false} />
             <span className="brand-by">Instant transfer</span>
           </div>
           <nav className="nav">
@@ -900,7 +900,7 @@ export default function Void() {
           <div className="how-top"><span>Protocol</span><span>Objects in orbit right now</span></div>
           <div className="how-hero">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="how-wordmark" src="/brand/wordmark.svg" alt="OrbitTransfer" width={1391} height={124} />
+            <img className="how-wordmark" src="/brand/wordmark.svg" alt="Orbi Transfer" width={1391} height={124} />
             <span className="wide count num">{alive.length}</span>
           </div>
           <div className="how-cols">
@@ -919,7 +919,7 @@ export default function Void() {
           {[
             ["Upload", "Drop", "Drag any file onto the page, or paste it. Name it whatever you like. It becomes an object drifting in the void."],
             ["Encrypt", "Lock", "Send it open (one tap for anyone) or with a passcode. Either way it is chunk-encrypted with AES-256-GCM inside your browser."],
-            ["Receive", "Beam", "Open OrbitTransfer on the other device. Tap the object, enter the passcode, and it decrypts and lands. Live stats show who is accessing it."],
+            ["Receive", "Beam", "Open Orbi Transfer on the other device. Tap the object, enter the passcode, and it decrypts and lands. Live stats show who is accessing it."],
             ["Destroy", "Burn", "After the lifetime the sender picked (5 to 30 minutes), after N downloads, or the moment the sender hits destroy, it is erased for good."],
           ].map(([a, b, c], i) => (
             <div className="table-row" key={b}>

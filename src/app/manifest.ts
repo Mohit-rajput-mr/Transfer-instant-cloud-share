@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "OrbitTransfer",
-    short_name: "OrbitTransfer",
+    name: "Orbi Transfer",
+    short_name: "Orbi",
     description: "Instant, end-to-end encrypted transfer between any two browsers. No login.",
     start_url: "/",
     display: "standalone",

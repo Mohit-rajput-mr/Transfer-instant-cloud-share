@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Privacy · OrbitTransfer" };
+export const metadata: Metadata = { title: "Privacy", description: "How Orbi Transfer keeps your files private: encrypted in the browser, deleted after 5–30 minutes, no accounts." };
 
 export default function Privacy() {
   return (
     <main className="doc">
-      <Link href="/" className="doc-logo" aria-label="OrbitTransfer home">
+      <Link href="/" className="doc-logo" aria-label="Orbi Transfer home">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/lockup.svg" alt="OrbitTransfer" width={220} height={32} />
+        <img src="/brand/lockup.svg" alt="Orbi Transfer" width={220} height={32} />
       </Link>
       <Link className="back" href="/">← Back to the void</Link>
       <h1 className="wide" style={{ marginTop: 24 }}>Privacy</h1>
-      <p>OrbitTransfer is built to know as little as possible about you.</p>
+      <p>Orbi Transfer is built to know as little as possible about you.</p>
       <h2>Files</h2>
       <ul>
         <li>Files are encrypted in your browser (AES-256-GCM) before upload. With a passcode, the key comes from it and never leaves your device.</li>

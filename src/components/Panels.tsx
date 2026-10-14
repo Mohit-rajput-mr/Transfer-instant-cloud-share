@@ -461,7 +461,7 @@ export function ShareBlock({ id }: { id: string }) {
   };
   // phones: straight into the share sheet (Messages, AirDrop, WhatsApp …)
   const share = () => {
-    navigator.share({ title: "OrbitTransfer", text: `Object ${id} is in orbit for 30 minutes`, url: link }).catch(() => {});
+    navigator.share({ title: "Orbi Transfer", text: `Object ${id} is in orbit for 30 minutes`, url: link }).catch(() => {});
   };
   return (
     <div className="share-mini">
