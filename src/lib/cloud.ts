@@ -106,6 +106,7 @@ export async function storeCopy(id: string, owner: string, file: File, key: Cryp
     };
     if (s.put) {
       await tryPut(s.put, 0, 0, total);
+      await call(id, { owner, action: "saved" }).catch(() => null);
     } else if (s.uploadId && s.urls) {
       uploadId = s.uploadId;
       const urls = s.urls;

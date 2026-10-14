@@ -1936,3 +1936,5 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
 .hq-setup code { font-family: var(--mono); font-size: 12px; }
 em.hq-tag { font-style: normal; }
 @media (max-width: 860px) { .hq-tiles-row.six { grid-template-columns: 1fr 1fr; } .hq-gt.rt, .hq-gt.hc, .hq-gt.dv { grid-template-columns: 1fr 1fr; } }
+.hq-tag.cloud { color: #59b8ff; border-color: rgba(89,184,255,0.45); }
+@media (max-width: 720px) { .hq-hint { display: none; } .hq-tabs { scrollbar-width: none; } .hq-tabs button { flex: none; } }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isHex, rpc, sha256, validId } from "@/lib/server";
 import { storeParts } from "@/lib/limits";
-import { abortMultipart, completeMultipart, objectKey, presign, r2On, startMultipart } from "@/lib/r2";
+import { abortMultipart, completeMultipart, objectKey, presign, r2On, startMultipart, storedSize } from "@/lib/r2";
 
 export const dynamic = "force-dynamic";
 
@@ -30,11 +30,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       );
       return NextResponse.json({ uploadId, urls });
     }
+    // a single-part copy was uploaded straight from the browser: record it once it is really there
+    if (b.action === "saved") {
+      await markSaved(id, key);
+      return NextResponse.json({ ok: true });
+    }
     if (typeof b.uploadId !== "string" || b.uploadId.length > 1024) return NextResponse.json({ error: "bad request" }, { status: 400 });
     if (b.action === "complete") {
       if (!Array.isArray(b.etags) || b.etags.length !== parts || !b.etags.every((e: unknown) => typeof e === "string" && e.length < 200))
         return NextResponse.json({ error: "bad parts" }, { status: 400 });
       await completeMultipart(key, b.uploadId, b.etags);
+      await markSaved(id, key);
       return NextResponse.json({ ok: true });
     }
     if (b.action === "abort") {
@@ -46,4 +52,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "storage failed" }, { status: 502 });
   }
   return NextResponse.json({ error: "bad request" }, { status: 400 });
+}
+
+/** HQ: which objects have a cloud copy, and how much is saved there per day. */
+async function markSaved(id: string, key: string) {
+  const bytes = await storedSize(key);
+  if (bytes != null) await rpc("orbit_cloud_saved", { p_id: id, p_bytes: bytes }).catch(() => {});
 }

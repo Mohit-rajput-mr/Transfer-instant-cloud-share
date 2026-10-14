@@ -18,7 +18,8 @@ export default function Privacy() {
       <ul>
         <li>Files are encrypted in your browser (AES-256-GCM) before upload. With a passcode, the key comes from it and never leaves your device.</li>
         <li><b>Open objects</b> (sent without a passcode) are still encrypted in transit and at rest, but anyone who can see them can open them. Only send something open if you are happy for anyone to take it.</li>
-        <li>We store only the encrypted bytes, and remove them when the lifetime the sender picked runs out (5 to 30 minutes), after the download limit, or when the sender destroys them.</li>
+        <li>We store only the encrypted bytes (with Cloudflare R2), and remove them when the lifetime the sender picked runs out (5 to 30 minutes), after the download limit, or when the sender destroys them.</li>
+        <li>While the sender&apos;s page is open, receivers may also get the encrypted bytes straight from the sender&apos;s device (peer to peer, WebRTC). Public STUN servers (Google, Cloudflare) help the two devices find each other; no file data passes through them.</li>
       </ul>
       <h2>What we keep, briefly</h2>
       <ul>
@@ -29,9 +30,9 @@ export default function Privacy() {
         <li><b>Spaces</b>: a space&apos;s name, whether it is private, a keyed hash of its passcode, the names members chose and a keyed hash of each member&apos;s device ID, kept encrypted until the space is removed. Your saved spaces live in your own browser (IndexedDB).</li>
       </ul>
       <h2>Usage statistics</h2>
-      <p>To keep the service running we keep anonymous usage stats: your approximate location (country, city, coordinates rounded to about 1 km, derived by our host from your connection), browser, OS, device type, and when you visit, upload or download. Detailed events are kept for 30 days; daily totals longer. This is never linked to your name, never sold and never shared.</p>
+      <p>To keep the service running we keep anonymous usage stats: your approximate location (country, city, coordinates rounded to about 1 km, derived by our host from your connection), browser, OS, device type, and when you visit, upload or download. Detailed events are kept for 30 days; daily totals per country, city, device type and route (city to city) are kept longer. This is never linked to your name, never sold and never shared.</p>
       <h2>No accounts, no ads</h2>
-      <p>There are no accounts, no ads and no third-party trackers. Hosting is provided by Vercel and Supabase.</p>
+      <p>There are no accounts, no ads and no third-party trackers. Hosting is provided by Vercel, Supabase and Cloudflare.</p>
       <h2>Tip</h2>
       <p>Don&apos;t put sensitive information in the object name. Only the contents are encrypted.</p>
     </main>

@@ -20,6 +20,8 @@ export interface Overview {
   arcs: { a: number; b: number; c: number; d: number }[];
   feed: { kind: string; label: string | null; country: string | null; city: string | null; bytes: number | null; at: string }[];
   transfers: AdminTransfer[];
+  /** objects with a complete copy in cloud storage (R2) */
+  cloud?: { ids: string[]; bytes: number; today: { copies: number; bytes: number }; total: { copies: number; bytes: number } } | null;
 }
 
 export interface Day {

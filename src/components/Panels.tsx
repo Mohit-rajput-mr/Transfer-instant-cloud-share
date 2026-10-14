@@ -685,7 +685,7 @@ export function SendPanel(props: {
             </div>
           </>
         )}
-        {tooBig && <p className="err">{split ? "One of them is" : multi ? "Together they are" : folder ? `The ${folder.name} folder is` : `${first.name} is`} over the 2 GB limit</p>}
+        {tooBig && <p className="err">{split ? "One of them is" : multi ? "Together they are" : folder ? `The ${folder.name} folder is` : `${first.name} is`} over the 5 GB limit</p>}
         <div className="grow" />
         <button className="cta lg-press" disabled={!ready} onClick={go}>{glyph(locked && code.length > 0 && code.length < 4 ? "Password: 4+ characters" : split ? `Send ${n} ↗` : "Send ↗")}</button>
       </div>

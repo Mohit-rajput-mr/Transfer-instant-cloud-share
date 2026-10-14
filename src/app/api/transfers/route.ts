@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   const chunkSize = Number(b.chunkSize);
   const iterations = Number(b.iterations);
   const maxDownloads = b.maxDownloads == null ? null : Number(b.maxDownloads);
-  if (!Number.isSafeInteger(size) || size < 0 || size > MAX_FILE_BYTES) return NextResponse.json({ error: "File is larger than 2 GB" }, { status: 413 });
+  if (!Number.isSafeInteger(size) || size < 0 || size > MAX_FILE_BYTES) return NextResponse.json({ error: "File is larger than 5 GB" }, { status: 413 });
   if (!Number.isSafeInteger(chunkSize) || chunkSize < 1 << 20 || chunkSize > 64 << 20) return bad("chunk");
   if (!Number.isSafeInteger(iterations) || iterations < 100_000 || iterations > 2_000_000) return bad("iterations");
   if (maxDownloads !== null && (!Number.isSafeInteger(maxDownloads) || maxDownloads < 1 || maxDownloads > 999)) return bad("max");

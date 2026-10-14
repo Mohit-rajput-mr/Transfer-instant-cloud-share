@@ -1087,7 +1087,7 @@ export default function Void() {
             </div>
           ))}
           <div className="legal">
-            <span>Files are end-to-end encrypted. Max 2 GB each. 30 uploads per network per hour.</span>
+            <span>Files are end-to-end encrypted. Max 5 GB each. 300 uploads per network per hour.</span>
             <span><Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · Abuse? Open the object and tap <span className="glyph"><LuFlag aria-hidden />Report</span></span>
           </div>
         </section>

@@ -214,6 +214,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
   };
 
   const today = data?.today ?? {};
+  const cloudIds = useMemo(() => new Set(data?.cloud?.ids ?? []), [data]);
   const cByCc = useMemo(() => new Map((data ? countryRows(data, events) : []).map((r) => [r.cc, r])), [data, events]);
   const maxCountry = Math.max(1, ...(data?.topCountries.map((c) => c.devices) ?? [1]));
 
@@ -269,6 +270,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
             <Tile label="Devices all-time" value={n(data?.devices)} sub={`${n(data?.visits)} visits`} />
             <Tile label="Spaces" value={n(spaces?.length)} sub={`${n(spaces?.filter((x) => x.priv).length)} private · ${n(spaces?.reduce((a, x) => a + x.members.length, 0))} members`} />
             <Tile label="Open objects now" value={n(data?.transfers.filter((t) => t.open).length)} sub={`${n(data?.transfers.filter((t) => !t.open).length)} with passcode`} />
+            <Tile label="Saved in cloud now" value={n(data?.cloud?.ids.length)} sub={`${formatBytes(data?.cloud?.bytes ?? 0)} · today ${n(data?.cloud?.today.copies)} (${formatBytes(data?.cloud?.today.bytes ?? 0)})`} />
             <Tile label="Containers now" value={n(containers(data?.transfers ?? []).length)} sub={`${n(containers(data?.transfers ?? []).reduce((a, c) => a + c.items.length, 0))} objects inside`} />
             <Tile label="In spaces now" value={n(data?.transfers.filter((t) => t.space).length)} sub={`${n(data?.transfers.filter((t) => !t.space).length)} in the public void`} />
             <Tile label="Data moved all-time" value={formatBytes((data?.totals.bytes_up ?? 0) + (data?.totals.bytes_down ?? 0))} sub={`${n(data?.totals.uploads)} up · ${n(data?.totals.downloads)} down`} />
@@ -339,7 +341,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
               {data?.transfers.length ? data.transfers.map((t) => (
                 <div key={t.id} className="hq-tr">
                   <div>
-                    <b>{t.name}{t.space ? <span className="hq-tag">◎ {t.space}{t.by ? ` · ${t.by}` : ""}</span> : null}{t.open ? <span className="hq-tag open">open</span> : null}</b>
+                    <b>{t.name}{t.space ? <span className="hq-tag">◎ {t.space}{t.by ? ` · ${t.by}` : ""}</span> : null}{t.open ? <span className="hq-tag open">open</span> : null}{cloudIds.has(t.id) ? <span className="hq-tag cloud">cloud</span> : null}</b>
                     <span className="mono dim">{t.id} · {formatBytes(t.size)} · {t.status} · {flag(t.country)} {t.city || ""}</span>
                     <span className="mono dim">👁 {t.views} · ↓ {t.downloads} · ● {t.watchers} live · ✕ {t.failed} wrong{t.reports ? ` · ⚑ ${t.reports}` : ""} · burns in {Math.max(0, Math.round((new Date(t.expiresAt).getTime() - now) / 60000))}m</span>
                   </div>
@@ -407,6 +409,8 @@ function Expanded({ kind, data, events, focusCc, onCountry, spaces, now, onClose
   const [size, setSize] = useState<(typeof SIZES)[number]["id"]>("");
   const [box, setBox] = useState("");
   const [sort, setSort] = useState<"new" | "big" | "down" | "views" | "burn">("new");
+  const [where, setWhere] = useState<"" | "cloud" | "device">("");
+  const inCloud = new Set(data.cloud?.ids ?? []);
   const [cSort, setCSort] = useState<keyof CountryRow>("devices");
   const [city, setCity] = useState("");
   const [space, setSpace] = useState("");
@@ -428,6 +432,7 @@ function Expanded({ kind, data, events, focusCc, onCountry, spaces, now, onClose
     (!space || (space === "public" ? !t.space : t.space === space)) &&
     (!access || (access === "open" ? t.open : !t.open)) &&
     t.size >= sz.min && t.size < sz.max &&
+    (!where || (where === "cloud" ? inCloud.has(t.id) : !inCloud.has(t.id))) &&
     (!inBox || inBox.has(t.id))).sort((a, b) =>
     sort === "big" ? b.size - a.size : sort === "down" ? b.downloads - a.downloads : sort === "views" ? b.views - a.views
       : sort === "burn" ? Date.parse(a.expiresAt) - Date.parse(b.expiresAt) : Date.parse(b.createdAt) - Date.parse(a.createdAt));
@@ -503,6 +508,11 @@ function Expanded({ kind, data, events, focusCc, onCountry, spaces, now, onClose
               <option value="">Any container</option>
               {boxes.map((b) => <option key={b.key} value={b.key}>▣ {b.name} ({b.items.length})</option>)}
             </select>
+            <select className="hq-input" value={where} onChange={(e) => setWhere(e.target.value as typeof where)}>
+              <option value="">Cloud + device only</option>
+              <option value="cloud">Saved in cloud</option>
+              <option value="device">Only on the sender&apos;s device</option>
+            </select>
             <select className="hq-input" value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
               <option value="new">Newest first</option>
               <option value="big">Largest first</option>
@@ -510,14 +520,14 @@ function Expanded({ kind, data, events, focusCc, onCountry, spaces, now, onClose
               <option value="views">Most viewed</option>
               <option value="burn">Burning soonest</option>
             </select>
-            {(q || cc || city || space || access || size || box) && <button className="pill" onClick={() => (setQ(""), setCc(""), setCity(""), setSpace(""), setAccess(""), setSize(""), setBox(""))}>Clear</button>}
+            {(q || cc || city || space || access || size || box || where) && <button className="pill" onClick={() => (setQ(""), setCc(""), setCity(""), setSpace(""), setAccess(""), setSize(""), setBox(""), setWhere(""))}>Clear</button>}
           </div>
           <p className="mono dim hq-sum">{rows.length} objects · {formatBytes(bytes)} · {rows.reduce((a, t) => a + t.downloads, 0)} downloads · {rows.reduce((a, t) => a + t.watchers, 0)} watching now</p>
           <div className="hq-grid-table">
             <div className="hq-gt head"><span>Name</span><span>Where</span><span>Space · container</span><span>Size</span><span>Views</span><span>Down</span><span>Live</span><span>Burns</span><span /></div>
             {rows.map((t) => (
               <div key={t.id} className="hq-gt">
-                <span><b>{t.name}</b><small className="mono dim">{t.id} · {t.open ? "open" : "passcode"} · {t.status}</small></span>
+                <span><b>{t.name}</b><small className="mono dim">{t.id} · {t.open ? "open" : "passcode"} · {inCloud.has(t.id) ? "in cloud" : "device only"} · {t.status}</small></span>
                 <span>{flag(t.country)} {t.city || country(t.country)}</span>
                 <span>{t.space ? `◎ ${t.space}${t.by ? ` · ${t.by}` : ""}` : "public"}{t.groupName ? <small className="mono dim">▣ {t.groupName}</small> : null}</span>
                 <span>{formatBytes(t.size)}</span>
