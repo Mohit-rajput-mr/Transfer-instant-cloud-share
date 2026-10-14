@@ -6,6 +6,7 @@
 import { useSyncExternalStore } from "react";
 import { encryptChunk } from "./crypto";
 import { PART_CHUNKS, STORE_CHUNK, STORE_TAG, storeChunks } from "./limits";
+import { stayAwake } from "./wake";
 
 export type CloudState = { state: "saving" | "saved" | "failed"; frac: number };
 const states = new Map<string, CloudState>();
@@ -17,6 +18,7 @@ const set = (id: string, s: CloudState | null) => {
   else states.delete(id);
   snap = new Map(states);
   subs.forEach((f) => f());
+  stayAwake("cloud", [...states.values()].some((x) => x.state === "saving"));
 };
 
 export const cloudSaved = (id: string) => states.get(id)?.state === "saved";

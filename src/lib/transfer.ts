@@ -9,6 +9,7 @@ import { autoDownload, safeMime, saveName } from "./save";
 import { spaceBody } from "./space";
 import { P2P_PREFIX, hold, holding, isP2P, pull } from "./p2p";
 import { fetchStored, isStored, storeCopy, waitStored } from "./cloud";
+import { stayAwake } from "./wake";
 
 export type Stage = "packing" | "deriving" | "encrypting" | "uploading" | "finalizing" | "decrypting" | "done";
 
@@ -158,7 +159,18 @@ async function source(r: UnlockReply, signal?: AbortSignal) {
   }
 }
 
-export async function receive(opts: {
+/** Download and decrypt one object; the screen stays on meanwhile (see receiveNow). */
+export async function receive(opts: Parameters<typeof receiveNow>[0]): Promise<Received> {
+  const why = `recv-${opts.orb.id}`;
+  stayAwake(why, true);
+  try {
+    return await receiveNow(opts);
+  } finally {
+    stayAwake(why, false);
+  }
+}
+
+async function receiveNow(opts: {
   orb: Orb;
   /** already-verified passcode (see unlockOrb) */
   unlocked: Unlocked;

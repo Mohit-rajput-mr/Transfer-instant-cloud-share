@@ -8,6 +8,7 @@
 // tell each browser its own public address; nothing passes through them either.
 import { supabase, type RealtimeChannel } from "./realtime";
 import { chunkCount, encryptChunk } from "./crypto";
+import { stayAwake } from "./wake";
 
 const ICE: RTCIceServer[] = [
   { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] },
@@ -133,6 +134,7 @@ export function hold(id: string, file: File, key: CryptoKey, nonce: Uint8Array, 
   release(id);
   const ch = chan(id);
   const peers = new Set<RTCPeerConnection>();
+  const sending = new Set<RTCPeerConnection>();
   ch.on("broadcast", { event: "want" }, async ({ payload }) => {
     const peer = typeof payload?.peer === "string" ? payload.peer : null;
     if (!peer || !payload?.sdp) return;
@@ -144,6 +146,8 @@ export function hold(id: string, file: File, key: CryptoKey, nonce: Uint8Array, 
     const done = () => {
       if (!peers.has(pc)) return;
       peers.delete(pc);
+      sending.delete(pc);
+      stayAwake(`send-${id}`, sending.size > 0);
       if (sid && laneOpen) {
         const s = sessions.get(sid);
         if (s && --s.open <= 0) {
@@ -163,6 +167,9 @@ export function hold(id: string, file: File, key: CryptoKey, nonce: Uint8Array, 
       dc.onopen = () => {
         const h = held.get(id);
         if (!h) return dc.close();
+        // someone is downloading from this device right now: keep the screen on until they're done
+        sending.add(pc);
+        stayAwake(`send-${id}`, true);
         const frame = frameFor(pc);
         if (sid) {
           let s = sessions.get(sid);
@@ -215,6 +222,7 @@ export function release(id: string) {
   if (!h) return;
   held.delete(id);
   clearTimeout(h.timer);
+  stayAwake(`send-${id}`, false);
   h.peers.forEach((pc) => pc.close());
   supabase.removeChannel(h.ch).catch(() => {});
 }

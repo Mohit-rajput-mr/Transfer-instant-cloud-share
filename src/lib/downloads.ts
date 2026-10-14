@@ -7,6 +7,7 @@ import { useSyncExternalStore } from "react";
 import { markGot, type Orb } from "./client";
 import { receive, unlockOrb, UnlockError } from "./transfer";
 import { autoDownload, canShareFiles, saveEnv, shareFile } from "./save";
+import { stayAwake } from "./wake";
 
 export type DlJob = { id: string; name: string; state: "queued" | "running" | "done" | "failed"; frac: number; err?: string; orb: Orb; code: string };
 type State = { jobs: DlJob[]; held: File[] };
@@ -16,6 +17,7 @@ const subs = new Set<() => void>();
 const emit = (next: Partial<State>) => {
   state = { ...state, ...next };
   subs.forEach((f) => f());
+  stayAwake("downloads", state.jobs.some((j) => j.state === "queued" || j.state === "running"));
 };
 const patch = (id: string, p: Partial<DlJob>) => emit({ jobs: state.jobs.map((j) => (j.id === id ? { ...j, ...p } : j)) });
 
