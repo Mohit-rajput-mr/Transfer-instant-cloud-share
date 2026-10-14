@@ -10,7 +10,7 @@ import LaunchDock, { isPending, pendingId, pendingOrb, type Launch } from "./Lau
 import { launch, type Stage } from "@/lib/transfer";
 import { folderFromInput, fromDrop, textToFile, type Folder } from "@/lib/bundle";
 import { useRouter } from "next/navigation";
-import { deviceId, deviceInfo, dropOwnerKey, ownerKey, type Orb } from "@/lib/client";
+import { deviceId, deviceInfo, dropOwnerKey, hasGot, ownerKey, type Orb } from "@/lib/client";
 import { supabase, type RealtimeChannel } from "@/lib/realtime";
 import SpacePanel, { SpaceRoom } from "./Spaces";
 import { enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
@@ -729,6 +729,15 @@ export default function Void() {
     }
     prev.current = { ids, orbs: new Map(visible.map((o) => [o.id, o])), pos: new Map(positions), hue: colors };
   }, [visible, alive, positions, colors, loaded]);
+  // spheres this device already downloaded: dimmed, so what's new stands out
+  const [gotTick, setGotTick] = useState(0);
+  useEffect(() => {
+    const on = () => setGotTick((t) => t + 1);
+    window.addEventListener("orbit:got", on);
+    return () => window.removeEventListener("orbit:got", on);
+  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const gotIds = useMemo(() => new Set(visible.filter((o) => hasGot(o.id)).map((o) => o.id)), [visible, gotTick]);
   const watchers = useCallback((id: string) => orbs.find((o) => o.id === id)?.watchers ?? 0, [orbs]);
   const nearbyCount = alive.filter((o) => o.netHash === net).length;
   const mineCount = badges.size;
@@ -884,6 +893,7 @@ export default function Void() {
               launching={upFrac.get(o.id)}
               incoming={isIncoming(o.id)}
               badge={badges.get(o.id)}
+              got={gotIds.has(o.id)}
             />
           ))}
           {ghosts.map((g) => (

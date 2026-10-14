@@ -209,8 +209,10 @@ export default function OrbView(props: {
   incoming?: boolean;
   /** yours: its number, the same one the launch dock shows */
   badge?: number;
+  /** this device already downloaded it */
+  got?: boolean;
 }) {
-  const { orb, pos, now, mine, nearby, watchers, onOpen, phase, launching, incoming, badge } = props;
+  const { orb, pos, now, mine, nearby, watchers, onOpen, phase, launching, incoming, badge, got } = props;
   const up = launching !== undefined;
   const h = hash(orb.id);
   const left = new Date(orb.expiresAt).getTime() - now;
@@ -406,7 +408,7 @@ export default function OrbView(props: {
     <div className={`orb-anchor${phase ? ` ${phase}` : ""}`} ref={anchor} style={{ ...style, transform: `translate(${off.x}px, ${off.y}px)` }}>
     <button
       ref={button}
-      className={`orb${mine ? " mine" : ""}${up ? " launching" : ""}${dying && !up ? " dying" : ""}${sealed ? " sealed" : ""}`}
+      className={`orb${mine ? " mine" : ""}${up ? " launching" : ""}${dying && !up ? " dying" : ""}${sealed ? " sealed" : ""}${got && !up ? " got" : ""}`}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -419,7 +421,7 @@ export default function OrbView(props: {
         }
         open(e.currentTarget);
       }}
-      aria-label={`${up ? "Launching" : "Open"} ${orb.name}${mine ? `, yours${badge ? ` number ${badge}` : ""}` : ""}`}
+      aria-label={`${up ? "Launching" : "Open"} ${orb.name}${mine ? `, yours${badge ? ` number ${badge}` : ""}` : ""}${got && !up ? ", already downloaded" : ""}`}
     >
       <div className="orb-body">
         <div className="halo" />
@@ -431,6 +433,7 @@ export default function OrbView(props: {
         </svg>
         <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : ext(orb.fileName)}</span>
         {mine && badge ? <span className="mine-no" aria-hidden>{badge}</span> : null}
+        {got && !up ? <span className="got-mark" aria-hidden>✓</span> : null}
         {!up && <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
           <span title="Live now"><i className="b-live" />{crowd(watchers)}</span>
           <span title="Opened by"><svg viewBox="0 0 16 16" aria-hidden><path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" strokeWidth="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>{crowd(orb.views ?? 0)}</span>
@@ -459,6 +462,7 @@ export default function OrbView(props: {
           {orb.open && !incoming && <span className="tag open">OPEN</span>}
           {nearby && !mine && !incoming && <span className="tag near">NEARBY</span>}
           {sealed && <span className="tag dead">SEALED</span>}
+          {got && !up && <span className="tag got">DOWNLOADED</span>}
         </div>
       )}
     </button>

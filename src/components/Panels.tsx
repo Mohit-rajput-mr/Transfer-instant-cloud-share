@@ -2,7 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import QRCode from "qrcode";
 import {
-  deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, ownerKey, timeAgo, type Orb, type OwnerView,
+  deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, markGot, ownerKey, timeAgo, type Orb, type OwnerView,
 } from "@/lib/client";
 import { MAX_FILE_BYTES } from "@/lib/limits";
 import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, filesBundle, isLoose, isLinkText, packFolder, pickFolderTarget, textToFile, type DirHandle, type Folder } from "@/lib/bundle";
@@ -809,6 +809,12 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     window.addEventListener("beforeunload", h);
     return () => window.removeEventListener("beforeunload", h);
   }, [unsaved]);
+
+  // Received on this device: text read, saved straight to disk / a folder, handed to the downloads, or saved / shared from the hold.
+  const received = !!got && (got.kind !== "file" || !got.held || !!done);
+  useEffect(() => {
+    if (received) markGot(orb.id);
+  }, [received, orb.id]);
 
   // Both call the platform API synchronously inside the tap (no await before it: transient activation).
   const doShare = () => {

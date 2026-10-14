@@ -70,6 +70,12 @@ export function deviceLabel() {
 export const ownerKey = (id: string) => safe(() => localStorage.getItem(`orbit:own:${id}`), null);
 export const setOwnerKey = (id: string, key: string) => safe(() => localStorage.setItem(`orbit:own:${id}`, key), undefined);
 export const dropOwnerKey = (id: string) => safe(() => localStorage.removeItem(`orbit:own:${id}`), undefined);
+/** this device already received the object (saved, shared or read): its sphere is shown dimmed */
+export const hasGot = (id: string) => safe(() => localStorage.getItem(`orbit:got:${id}`) === "1", false);
+export function markGot(id: string) {
+  safe(() => localStorage.setItem(`orbit:got:${id}`, "1"), undefined);
+  window.dispatchEvent(new CustomEvent("orbit:got", { detail: id }));
+}
 
 export function formatBytes(n: number) {
   if (n < 1024) return `${n} B`;

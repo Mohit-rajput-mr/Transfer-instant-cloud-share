@@ -1538,3 +1538,13 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
 .orb-anchor.burning .orb * { animation: none !important; }
 .orb-anchor.burning .sphere::before { display: none; }
 @keyframes gone { to { opacity: 0; scale: 1.7; } }
+
+/* ---------------- Already downloaded on this device: the sphere goes grey and quiet ---------------- */
+.orb.got .sphere, .orb.got .halo, .orb.got .ring { filter: grayscale(1) brightness(0.62); }
+.orb.got .orb-body { opacity: 0.62; }
+.orb.got .orb-label { color: #9a9a9a; }
+.orb.got:hover .orb-body, .orb.got:focus-visible .orb-body { opacity: 0.9; }
+.got-mark { position: absolute; left: 6%; bottom: 6%; z-index: 3; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  background: #fff; color: #000; font-size: 13px; font-weight: 700; box-shadow: 0 3px 10px rgba(0,0,0,0.5); }
+.tag.got { border-color: #444; color: #9a9a9a; }
+@media (max-width: 720px) { .got-mark { width: 20px; height: 20px; font-size: 11px; } }
