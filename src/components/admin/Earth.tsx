@@ -113,6 +113,9 @@ const COLOR_PROPS = ["background-color", "fill-color", "fill-outline-color", "li
 
 export type RouteLine = { a: number; b: number; c: number; d: number; n?: number; label?: string };
 
+const esc = (v: unknown) => String(v ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+const same = (r: RouteLine) => Math.abs(r.a - r.c) < 0.05 && Math.abs(r.b - r.d) < 0.05;
+
 export default function Earth({ data, layers, spin, routes }: { data: Overview | null; layers: Set<Layer>; spin: boolean; /** replaces the live routes (History) */ routes?: RouteLine[] | null }) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<MLMap | null>(null);
@@ -134,10 +137,31 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
       zoom: 2.15,
       attributionControl: { compact: true },
       maxPitch: 70,
+      // load faster: no tile fade-in, a big tile cache so spinning back never refetches, and at most 2x
+      // pixels on high-density screens (3x phones would fetch and draw far more for no visible gain)
+      fadeDuration: 0,
+      maxTileCacheSize: 600,
+      pixelRatio: Math.min(2, typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1),
     });
     map.current = m;
 
     const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: "globe-pop", offset: 10 });
+
+    // A tile that fails to load (slow network, a busy tile server) would leave a dark hole in the map
+    // for good. Retry: reload that source a moment later, at most every 3 s, up to 20 times.
+    let retries = 0;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    m.on("error", (e) => {
+      const id = (e as unknown as { sourceId?: string }).sourceId;
+      if (!id || retry || retries >= 20) return;
+      retry = setTimeout(() => {
+        retry = undefined;
+        retries++;
+        try {
+          (m.style as unknown as { _reloadSource?: (id: string) => void })._reloadSource?.(id);
+        } catch {}
+      }, 3000);
+    });
 
     m.on("style.load", () => {
       m.setProjection({ type: "globe" });
@@ -165,11 +189,42 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
         layout: { "line-cap": "round" },
         paint: {
           // busier routes are thicker
-          "line-width": ["interpolate", ["linear"], ["get", "n"], 1, 1.6, 20, 3.5, 200, 6],
+          "line-width": ["interpolate", ["linear"], ["get", "n"], 1, 2.2, 20, 4, 200, 6.5],
           "line-opacity": 0.9,
           "line-gradient": ["interpolate", ["linear"], ["line-progress"], 0, "#59b8ff", 1, "#ffa045"],
         },
       });
+      // transfers within one place (same office, same city): a glowing ring sized by how many, so they
+      // stay visible from space, where a loop of a few km is smaller than a pixel
+      m.addSource("local", { type: "geojson", data: empty });
+      m.addLayer({
+        id: "local",
+        type: "circle",
+        source: "local",
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["get", "n"], 1, 7, 10, 11, 60, 16, 300, 22],
+          "circle-color": "rgba(255,160,69,0.10)",
+          "circle-stroke-color": "#ffa045",
+          "circle-stroke-width": 2,
+          "circle-stroke-opacity": 0.9,
+          "circle-pitch-alignment": "viewport",
+        },
+      });
+      const tip = (id: string, html: (p: Record<string, unknown>, e: maplibregl.MapLayerMouseEvent) => [number, number, string]) => {
+        m.on("mousemove", id, (e) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          m.getCanvas().style.cursor = "pointer";
+          const [lon, lat, h] = html(f.properties as Record<string, unknown>, e);
+          popup.setLngLat([lon, lat]).setHTML(h).addTo(m);
+        });
+        m.on("mouseleave", id, () => {
+          m.getCanvas().style.cursor = "";
+          popup.remove();
+        });
+      };
+      tip("routes", (p, e) => [e.lngLat.lng, e.lngLat.lat, `<b>${p.n}</b> transfer${p.n === 1 ? "" : "s"}<br/><span>${esc(p.label) || "route"}</span>`]);
+      tip("local", (p) => [Number(p.lon), Number(p.lat), `<b>${p.n}</b> transfer${p.n === 1 ? "" : "s"} in the same place<br/><span>${esc(p.label)}</span>`]);
       for (const k of Object.keys(DOT) as (keyof typeof DOT)[]) {
         m.addSource(k, { type: "geojson", data: empty });
         m.addLayer({
@@ -181,7 +236,7 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
             "circle-color": DOT[k],
             "circle-stroke-color": "#000",
             "circle-stroke-width": 1,
-            "circle-pitch-alignment": "map",
+            "circle-pitch-alignment": "viewport", // round from every angle
           },
         });
         m.on("mouseenter", k, (e) => {
@@ -191,7 +246,7 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
           const p = f.properties as { n: number; where: string; lat: number; lon: number };
           popup
             .setLngLat([p.lon, p.lat])
-            .setHTML(`<b>${p.n}</b> ${LABEL[k][p.n === 1 ? 0 : 1]}<br/><span>${p.where || ""} · ${Number(p.lat).toFixed(2)}, ${Number(p.lon).toFixed(2)}</span>`)
+            .setHTML(`<b>${p.n}</b> ${LABEL[k][p.n === 1 ? 0 : 1]}<br/><span>${esc(p.where)} · ${Number(p.lat).toFixed(2)}, ${Number(p.lon).toFixed(2)}</span>`)
             .addTo(m);
         });
         m.on("mouseleave", k, () => {
@@ -250,16 +305,30 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
     set("visitors", points(d?.visitors ?? [], "visitors"));
     set("uploads", points((d?.points ?? []).filter((p) => p.k === "upload"), "uploads"));
     set("downloads", points((d?.points ?? []).filter((p) => p.k === "download"), "downloads"));
+    const lines = (hist ?? d?.arcs ?? []) as RouteLine[];
     set("routes", {
       type: "FeatureCollection",
-      features: ((hist ?? d?.arcs ?? []) as RouteLine[]).map((a) => ({
+      features: lines.map((a) => ({
         type: "Feature",
         geometry: { type: "LineString", coordinates: route([a.b, a.a], [a.d, a.c]) },
-        properties: { n: a.n ?? 1 },
+        properties: { n: a.n ?? 1, label: a.label ?? "" },
       })),
+    });
+    // one ring per place, adding up every same-place route there
+    const rings = new Map<string, { lat: number; lon: number; n: number; label: string }>();
+    for (const a of lines.filter(same)) {
+      const k = `${a.a.toFixed(2)},${a.b.toFixed(2)}`;
+      const r = rings.get(k) ?? { lat: a.a, lon: a.b, n: 0, label: a.label ?? "" };
+      r.n += a.n ?? 1;
+      rings.set(k, r);
+    }
+    set("local", {
+      type: "FeatureCollection",
+      features: [...rings.values()].map((r) => ({ type: "Feature", geometry: { type: "Point", coordinates: [r.lon, r.lat] }, properties: r })),
     });
     for (const id of ["visitors", "uploads", "downloads", "routes"] as Layer[])
       m.setLayoutProperty(id, "visibility", on.has(id) ? "visible" : "none");
+    m.setLayoutProperty("local", "visibility", on.has("routes") ? "visible" : "none");
 
     // live users: DOM markers so they can pulse
     liveMarkers.current.forEach((mk) => mk.remove());
@@ -277,7 +346,7 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
       const f = d.live[0] ?? d.visitors[0];
       if (f) {
         centred.current = true;
-        m.flyTo({ center: [f.lon, f.lat], zoom: Math.min(14, Math.max(m.getZoom() + 4, 6)), duration: 2200, essential: true });
+        m.flyTo({ center: [f.lon, f.lat], zoom: 3.2, duration: 1800, essential: true });
       }
     }
   };

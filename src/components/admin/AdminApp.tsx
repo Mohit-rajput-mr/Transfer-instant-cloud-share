@@ -1,7 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatBytes } from "@/lib/client";
 import type { Layer, RouteLine } from "./Earth";
 import History, { loadHistory, routeLines } from "./History";
@@ -190,12 +190,26 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
   const [spin, setSpin] = useState(true);
   // routes on the globe: the live ones, or a set picked in History (all time by default)
   const [hist, setHist] = useState<{ lines: RouteLine[]; label: string } | null>(null);
-  const allTime = async () => {
-    if (hist) return setHist(null);
+  const routesLoaded = useRef(false);
+  const allTime = async (quiet = false) => {
+    if (hist && !quiet) return setHist(null);
     const d = await loadHistory(null, null);
-    if (d && typeof d === "object") setHist({ lines: routeLines(d.routes), label: "All-time routes" });
-    else alert(d === "setup" ? "Run supabase/migrations/003_history.sql in Supabase first (see History)." : "Couldn't load routes.");
+    if (d && typeof d === "object") {
+      // a background refresh only updates the all-time view (or opens it the first time); it never
+      // replaces a set picked in History or brings back routes you closed
+      const first = !routesLoaded.current;
+      routesLoaded.current = true;
+      setHist((h) => (quiet && !first && h?.label !== "All-time routes" ? h : { lines: routeLines(d.routes), label: "All-time routes" }));
+    }
+    else if (!quiet) alert(d === "setup" ? "Run supabase/migrations/003_history.sql in Supabase first (see History)." : "Couldn't load routes.");
   };
+  // the globe opens on every route ever (the live view only has the last 24 h), refreshed every 2 min
+  useEffect(() => {
+    void allTime(true);
+    const t = setInterval(() => document.visibilityState === "visible" && void allTime(true), 120_000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const toggle = (l: Layer) => setLayers((s) => {
     const x = new Set(s);
     if (x.has(l)) x.delete(l);
@@ -256,7 +270,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
               </button>
             ))}
             <button className={`chip${spin ? " on" : ""}`} onClick={() => setSpin((s) => !s)}>⟳ Auto-spin</button>
-            <button className={`chip${hist ? " on" : ""}`} onClick={allTime} title="Routes on the globe: live, or every route ever">{hist ? `${hist.label} · ${hist.lines.length} ✕` : "All-time routes"}</button>
+            <button className={`chip${hist ? " on" : ""}`} onClick={() => allTime()} title="Routes on the globe: every route ever, or only the last 24 hours">{hist ? `${hist.label} · ${hist.lines.length} ✕` : "Last 24 h routes · show all time"}</button>
           </div>
           <p className="hq-hint mono">Drag to rotate · scroll to zoom to street level · right-drag to tilt · hover a dot</p>
         </section>

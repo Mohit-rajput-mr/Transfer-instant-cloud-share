@@ -36,7 +36,7 @@ const place = (cc: string | null, city: string | null) => (city ? `${city}, ${co
 export function routeLines(routes: HistoryData["routes"]): RouteLine[] {
   return routes
     .filter((r) => r.from_lat != null && r.from_lon != null && r.to_lat != null && r.to_lon != null)
-    .map((r) => ({ a: r.from_lat!, b: r.from_lon!, c: r.to_lat!, d: r.to_lon!, n: r.n }));
+    .map((r) => ({ a: r.from_lat!, b: r.from_lon!, c: r.to_lat!, d: r.to_lon!, n: r.n, label: r.from_city === r.to_city && r.from_cc === r.to_cc ? [r.from_city, r.from_cc].filter(Boolean).join(", ") : `${r.from_city || r.from_cc} → ${r.to_city || r.to_cc}` }));
 }
 
 export async function loadHistory(from: string | null, to: string | null): Promise<HistoryData | "setup" | null> {
