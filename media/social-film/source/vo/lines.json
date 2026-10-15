@@ -1,0 +1,45 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "POV: you need this file on your phone. Right now.",
+   "dur": 2.645
+  },
+  {
+   "key": "pain",
+   "text": "Email it to yourself? Find a cable? Nope.",
+   "dur": 2.496
+  },
+  {
+   "key": "meet",
+   "text": "Open Orbi Transfer.",
+   "dur": 1.387
+  },
+  {
+   "key": "send",
+   "text": "Drop it in. Hit send.",
+   "dur": 1.387
+  },
+  {
+   "key": "land",
+   "text": "It lands on your phone. One tap. Saved.",
+   "dur": 2.453
+  },
+  {
+   "key": "free",
+   "text": "No app. No login. Free.",
+   "dur": 1.621
+  },
+  {
+   "key": "team",
+   "text": "Works with your whole team, too.",
+   "dur": 1.515
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. Link in bio.",
+   "dur": 2.581
+  }
+ ]
+}
