@@ -3,7 +3,7 @@ import { LuArrowUp, LuCheck, LuDownload, LuLock, LuLockOpen, LuMaximize2, LuTras
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
 import { setCardOrigin } from "./Panels";
 import { ext, formatBytes, formatClock, type Orb } from "@/lib/client";
-import { typeHue } from "@/lib/skin-list";
+import { toneOf, typeHue } from "@/lib/skin-list";
 
 /** 7 → "7", 12 → "10+", 140 → "100+": a crowd stays readable */
 const crowd = (n: number) => (n >= 1000 ? "1k+" : n >= 100 ? "100+" : n >= 10 ? "10+" : String(n));
@@ -292,6 +292,8 @@ export default function OrbView(props: {
   onOpen: (orb: Orb) => void;
   phase?: "arriving" | "burning";
   hue?: number;
+  /** how it looks: the sender's style (or this viewer's, for objects without one) */
+  skin?: string;
   index?: number;
   /** still on its way up (0..1): the ring shows the upload instead of the lifetime */
   launching?: number;
@@ -616,6 +618,8 @@ export default function OrbView(props: {
     <div
       className={`orb-anchor${phase ? ` ${phase}` : ""}${group ? " grp" : ""}`}
       data-orb={orb.id}
+      data-skin={props.skin ?? "orbit"}
+      data-tone={toneOf(props.skin ?? "orbit")}
       ref={anchor}
       style={{
         ...style,
@@ -664,9 +668,13 @@ export default function OrbView(props: {
             <div className="orb-body bubble-body" style={{ width: `calc(${L.W}px * var(--k))`, height: `calc(${L.H}px * var(--k))` }}>
               <div className="blob" />
               {/* the container's own live viewers: green dots travelling round its edge */}
-              {Array.from({ length: Math.min(watchers, 4) }, (_, k) => (
-                <span key={k} className="edge-sat" style={{ "--d": `${-k * 2.2}s` } as CSSProperties} aria-hidden />
-              ))}
+              {watchers > 0 && (
+                <svg className="edge-run" aria-hidden>
+                  {Array.from({ length: Math.min(watchers, 4) }, (_, k) => (
+                    <rect key={k} pathLength={100} style={{ "--d": `${-k * 2.2}s` } as CSSProperties} />
+                  ))}
+                </svg>
+              )}
               <span className="zoom-cue glyph" aria-hidden><LuMaximize2 />Click or scroll to open</span>
               {props.onDestroy && mine && <span className="destroy box" data-destroy="" role="button" aria-label="Destroy everything in this container" title="Destroy all"><LuTrash2 /></span>}
               <div className="members" style={{ "--md": `calc(${L.d}px * var(--k))` } as CSSProperties}>

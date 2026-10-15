@@ -1,4 +1,5 @@
 "use client";
+import { pickedSkin } from "./skins";
 import {
   CHUNK, ITERATIONS, deriveKeys, fromB64, randomBytes, streamDecrypt, toB64, toHex,
   type DownloadSink,
@@ -46,7 +47,7 @@ export async function launch(opts: {
     body: JSON.stringify({
       name, fileName: file.name || "file", mime: file.type || "application/octet-stream", size: file.size,
       chunkSize: CHUNK, iterations, salt: toB64(salt), nonce: toB64(nonce), auth, owner,
-      maxDownloads, device: deviceLabel(), hue: opts.hue, life: opts.life ?? 30, open: !!opts.open, from: await senderKey(), group: opts.group, ...spaceBody(),
+      maxDownloads, device: deviceLabel(), hue: opts.hue, life: opts.life ?? 30, open: !!opts.open, from: await senderKey(), group: opts.group, skin: pickedSkin() ?? undefined, ...spaceBody(),
     }),
     signal,
   });

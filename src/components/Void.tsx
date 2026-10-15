@@ -23,7 +23,8 @@ const release = (id: string) => {
 };
 import { downloading } from "@/lib/downloads";
 import { enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
-import { LuFlag, LuPalette } from "react-icons/lu";
+import { LuFlag, LuLayers, LuMenu, LuOrbit, LuPalette, LuUser, LuWifi } from "react-icons/lu";
+import MobileMenu from "./MobileMenu";
 import StylePicker from "./StylePicker";
 import { autoRemember, findDeviceSkin, skinName, toneOf, useLook } from "@/lib/skins";
 
@@ -54,6 +55,7 @@ type Panel =
   | { kind: "group"; id: string }
   | { kind: "space"; start?: string }
   | { kind: "style" }
+  | { kind: "menu" }
   | null;
 
 // more balls in the void, smaller balls, so they all have room
@@ -787,6 +789,23 @@ export default function Void() {
   );
   const groups = grouped.groups;
   const bubbles = useMemo(() => grouped.list.filter((o) => isGroup(o.id)).map((o) => ({ id: o.id, name: o.name, members: groups.get(o.id) ?? [] })), [grouped, groups]);
+  // a container zoomed in keeps its sender's style
+  const zoomSkin = (zoom && bubbles.find((b) => b.id === zoom.id)?.members[0]?.skin) || skin;
+  // opening a container counts as looking at it: its viewer dot shows for everyone right away
+  const zoomFirst = (zoom && bubbles.find((b) => b.id === zoom.id)?.members[0]?.id) || null;
+  viewingRef.current = viewing ?? zoomFirst;
+  const firstZoom = useRef(true);
+  useEffect(() => {
+    if (firstZoom.current) {
+      firstZoom.current = false;
+      return;
+    }
+    if (viewing) return; // an open card already reports itself
+    sendPulse().then(() => {
+      refresh();
+      broadcast();
+    });
+  }, [zoomFirst, viewing, sendPulse, refresh, broadcast]);
   const shown = useMemo(
     () => [
       ...grouped.list,
@@ -951,6 +970,21 @@ export default function Void() {
       <LiquidGlass />
 
       <header className={`top lg${compact ? " compact" : ""}`}>
+        {/* phones: one slim bar of icons; the rest lives in the menu card */}
+        <div className="m-bar">
+          <button className="m-brand" onClick={tapLogo} aria-label="Orbi Transfer">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/emblem.svg" alt="" width={30} height={30} draggable={false} />
+          </button>
+          <span className="m-live" aria-label={`${online} ${online > 1 ? "devices" : "device"} ${space ? "in this space" : "in orbit"}`}><i />{online}</span>
+          <div className="m-scope" role="tablist" aria-label="Show">
+            <button role="tab" aria-selected={scope === "all"} className={scope === "all" ? "on" : ""} onClick={() => setScope("all")} aria-label="Everything"><LuLayers /></button>
+            {!space && <button role="tab" aria-selected={scope === "near"} className={scope === "near" ? "on" : ""} onClick={() => setScope("near")} aria-label={`Nearby, ${nearbyCount}`}><LuWifi />{nearbyCount ? <b>{nearbyCount}</b> : null}</button>}
+            {mineCount > 0 && <button role="tab" aria-selected={scope === "mine"} className={scope === "mine" ? "on" : ""} onClick={() => setScope(scope === "mine" ? "all" : "mine")} aria-label={`Mine, ${mineCount}`}><LuUser /><b>{mineCount}</b></button>}
+          </div>
+          <button className={`m-ic lg-press${space ? " in" : ""}`} onClick={() => setPanel({ kind: "space" })} aria-label={space ? `Space: ${space.title}` : "Spaces"}><LuOrbit /></button>
+          <button className="m-ic lg-press" onClick={() => setPanel({ kind: "menu" })} aria-label="Menu"><LuMenu /></button>
+        </div>
         <div className="top-row">
           <div className="brand" onClick={tapLogo} role="presentation">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -988,7 +1022,7 @@ export default function Void() {
         </div>
       </header>
 
-      <main className={menu && !menuOut ? "menu-open" : undefined} data-skin={skin} data-tone={toneOf(skin)} data-pal={pal}>
+      <main className={menu && !menuOut ? "menu-open" : undefined} data-pal={pal}>
         <section
           className={`void${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
           id="void"
@@ -1038,6 +1072,7 @@ export default function Void() {
               onOpen={open}
               phase={arriving.has(o.id) ? "arriving" : undefined}
               hue={colors.get(o.id)}
+              skin={o.skin ?? skin}
               launching={upFrac.get(o.id)}
               incoming={isIncoming(o.id)}
               badge={badges.get(o.id)}
@@ -1059,6 +1094,7 @@ export default function Void() {
               onOpen={noop}
               phase="burning"
               hue={g.hue}
+              skin={g.orb.skin ?? skin}
             />
           ))}
         </section>
@@ -1165,7 +1201,7 @@ export default function Void() {
         />
       )}
       {zoom && bubbles.some((b) => b.id === zoom.id) && (
-        <div data-skin={skin} data-tone={toneOf(skin)} data-pal={pal} style={{ display: "contents" }}>
+        <div data-skin={zoomSkin} data-tone={toneOf(zoomSkin)} data-pal={pal} style={{ display: "contents" }}>
         <BubbleZoom
           bubbles={bubbles}
           id={zoom.id}
@@ -1180,6 +1216,16 @@ export default function Void() {
         </div>
       )}
       {panel?.kind === "style" && <StylePicker onClose={() => setPanel(null)} toast={toast} />}
+      {panel?.kind === "menu" && (
+        <MobileMenu
+          space={space?.title ?? null}
+          onSend={openMenu}
+          onSpaces={() => setPanel({ kind: "space" })}
+          onStyle={() => setPanel({ kind: "style" })}
+          onHow={() => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" })}
+          onClose={() => setPanel((p) => (p?.kind === "menu" ? null : p))}
+        />
+      )}
       {panel?.kind === "group" && groups.get(panel.id) && (
         <GroupPanel
           key={panel.id}

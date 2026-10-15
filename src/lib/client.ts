@@ -27,6 +27,8 @@ export interface Orb {
   from?: string | null;
   /** the name the sender gave their bubble */
   groupName?: string | null;
+  /** the sender's style: every device draws the object this way */
+  skin?: string | null;
   createdAt: string;
   expiresAt: string;
 }

@@ -169,6 +169,15 @@ export default function BubbleZoom(props: {
 
       <div key={b.id} className={`zoom-bubble${dir === 1 ? " from-right" : dir === -1 ? " from-left" : ""}`} style={{ "--ar": L.W / L.H } as CSSProperties}>
         <div className="blob big" />
+        {/* live viewers: green dots running exactly along the glass edge */}
+        {(() => {
+          const live = b.members.reduce((n, o) => n + (o.watchers ?? 0), 0);
+          return live > 0 ? (
+            <svg className="edge-run big" aria-hidden>
+              {Array.from({ length: Math.min(live, 4) }, (_, k) => <rect key={k} pathLength={100} style={{ "--d": `${-k * 2.2}s` } as CSSProperties} />)}
+            </svg>
+          ) : null;
+        })()}
         <div className="zoom-members" style={{ "--zr": (L.d / L.W) * 0.86 } as CSSProperties}>
           {b.members.map((o, i) => {
             const left = new Date(o.expiresAt).getTime() - now;

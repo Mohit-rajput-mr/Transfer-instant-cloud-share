@@ -2169,3 +2169,97 @@ em.hq-tag { font-style: normal; }
 .pal-dot.accent { background: hsl(212 75% 55%); }
 .pal-dot.muted { background: conic-gradient(#9b8a7a, #7d8c99, #8d9b85, #a28b98, #9b8a7a); }
 .pal-dot.mono { background: linear-gradient(135deg, #fff, #777 55%, #111); }
+
+/* ---- live viewers on a container: green dots running exactly along the rounded glass edge ---- */
+.edge-run { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 3; }
+.edge-run rect { x: 0; y: 0; width: 100%; height: 100%; rx: 34px; ry: 34px; fill: none; stroke: var(--live); stroke-width: 7px; stroke-linecap: round;
+  stroke-dasharray: 0 100; filter: drop-shadow(0 0 4px var(--live)); animation: edge-run 9s linear infinite; animation-delay: var(--d, 0s); }
+.edge-run.big rect { rx: 44px; ry: 44px; stroke-width: 8px; }
+@keyframes edge-run { to { stroke-dashoffset: -100; } }
+@media (prefers-reduced-motion: reduce) { .edge-run rect { animation: none; } }
+
+/* the Style button: a real round icon button, centred */
+.style-chip { display: inline-grid; place-items: center; width: 30px; height: 26px; padding: 0; }
+.style-chip svg { width: 15px; height: 15px; display: block; }
+
+/* =====================================================================
+   PHONES — designed for the phone, not a shrunk desktop:
+   one slim icon bar on top (logo mark · live · what to show · space · menu),
+   every card a compact card in the middle of the screen, containers without
+   per-ball buttons (tap a ball: its card has every action).
+   ===================================================================== */
+.m-bar { display: none; }
+@media (max-width: 720px) {
+  .top.lg .top-row { display: none; }
+  .top.lg, .top.lg.compact { padding: 0 8px 0 6px; border-radius: 22px; }
+  .m-bar { display: flex; align-items: center; gap: 8px; height: 54px; }
+  .m-brand { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 14px; }
+  .m-brand img { width: 30px; height: 30px; display: block; }
+  .m-live { display: inline-flex; align-items: center; gap: 6px; font: 600 13px/1 var(--mono); color: #e6e6e6; font-variant-numeric: tabular-nums; }
+  .m-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--live); box-shadow: 0 0 8px var(--live); }
+  .m-scope { margin-left: auto; display: inline-flex; padding: 3px; gap: 2px; border-radius: 15px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); }
+  .m-scope button { position: relative; width: 40px; height: 34px; display: grid; place-items: center; border-radius: 12px; color: #a8a8a8; transition: background var(--dur-1), color var(--dur-1); }
+  .m-scope button svg { width: 18px; height: 18px; display: block; }
+  .m-scope button.on { background: #fff; color: #000; }
+  .m-scope b { position: absolute; top: -6px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--live); color: #000; font: 700 10px/17px var(--sans); text-align: center; box-shadow: 0 0 0 2px #0b0c0f; }
+  .m-ic { flex: none; width: 42px; height: 42px; display: grid; place-items: center; border-radius: 14px; border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.06); color: #fff; }
+  .m-ic svg { width: 20px; height: 20px; display: block; }
+  .m-ic.in { border-color: rgba(61,255,140,0.6); color: var(--live); }
+  .toast { top: calc(78px + var(--safe-t)); }
+
+  /* the menu card: big icon tiles */
+  .m-menu { width: min(360px, calc(100vw - 28px)); }
+  .m-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .m-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 14px; border-radius: 18px; text-align: left; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); min-height: 104px; }
+  .m-tile svg { width: 22px; height: 22px; margin-bottom: auto; }
+  .m-tile b { font-family: var(--display); font-weight: 900; font-variation-settings: "wdth" 125; text-transform: uppercase; font-size: 15px; line-height: 1.05; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+  .m-tile small { font-size: 11px; color: #9a9a9a; }
+  .m-tile.solid { background: #fff; color: #000; border-color: #fff; }
+  .m-tile.solid small { color: #555; }
+  .m-facts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .m-facts span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.14); font-size: 11px; color: #cfcfcf; }
+  .m-facts svg { width: 13px; height: 13px; color: var(--live); }
+
+  /* every card (open a ball, Mission control, sending…) is a compact card in the middle, not a sheet */
+  .drawer {
+    left: 50%; right: auto; bottom: auto; top: calc(var(--vvh, 100dvh) / 2);
+    width: min(400px, calc(100vw - 24px)); max-width: none;
+    max-height: min(80dvh, calc(var(--vvh, 100dvh) - 40px));
+    border-radius: 28px; border-bottom-width: 1px;
+    translate: -50% -50%;
+    animation: card-in 0.42s var(--spring) both;
+  }
+  .drawer.out { animation: card-out 0.22s var(--ease-in) both; }
+  .drawer-head { height: 46px; padding: 0 8px 0 18px; cursor: default; }
+  .drawer-head::before { display: none; }
+  .drawer-body { padding: 14px 16px 16px; gap: 14px; }
+  .drawer .d-title { font-size: min(22px, 6.4vw); }
+  .drawer .big-num { font-size: 38px; }
+  .drawer .cta { height: 48px; }
+  .pop { width: min(400px, calc(100vw - 24px)); max-height: min(82dvh, calc(var(--vvh, 100dvh) - 32px)); }
+
+  /* containers: no per-ball buttons or meta on the glass; tap a ball to open its card */
+  .member .destroy, .mmeta { display: none; }
+  .zball .zicons, .zball .bubble.zbub { display: none; }
+  .zmeta { flex-wrap: nowrap; white-space: nowrap; font-size: 9px; gap: 5px; }
+  .zmeta > :nth-child(n + 2) { display: none; }
+  .zname { margin-top: calc(var(--zd) * 0.14 + 4px); font-size: 11px; }
+
+  /* Style picker, sized for a phone */
+  .style-pop .pop-body { gap: 12px; padding: 12px 14px 16px; }
+  .style-now { gap: 12px; padding: 0; }
+  .style-now .skin-sample { --md: 40px !important; }
+  .style-name { font-size: 20px; }
+  .style-pal { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 2px 14px; }
+  .style-pal::-webkit-scrollbar { display: none; }
+  .style-pal button { flex: none; height: 30px; padding: 0 11px; font-size: 11px; }
+  .style-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .style-tile { padding: 10px 2px 8px; gap: 8px; border-radius: 14px; }
+  .style-tile .skin-sample { --md: 30px !important; }
+  .style-tile b { font-size: 9px; letter-spacing: 0.04em; }
+  .style-check { width: 15px; height: 15px; right: 4px; top: 4px; }
+  .style-row { padding: 10px 12px; }
+  .style-row small { font-size: 11px; }
+}
+@keyframes card-in { from { opacity: 0; scale: 0.9; } }
+@keyframes card-out { from { transform: translate3d(0, var(--drag, 0px), 0); } to { opacity: 0; scale: 0.94; transform: translate3d(0, var(--drag, 0px), 0); } }
