@@ -1,0 +1,55 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Nine A.M. The studio is busy. Design, video, sales, everyone working on the same project.",
+   "dur": 6.443
+  },
+  {
+   "key": "pain",
+   "text": "But files still travel the slow way. Emails, chats, cables.",
+   "dur": 3.861
+  },
+  {
+   "key": "meet",
+   "text": "Meet Orbi Transfer.",
+   "dur": 1.429
+  },
+  {
+   "key": "send",
+   "text": "Maya finishes the cut. She drops it in, and hits Send.",
+   "dur": 3.115
+  },
+  {
+   "key": "fly",
+   "text": "It flies straight across the room, encrypted, from her screen to the team.",
+   "dur": 3.883
+  },
+  {
+   "key": "recv",
+   "text": "Leo sees it land on his phone. One tap, and it's saved. No account. No app.",
+   "dur": 4.992
+  },
+  {
+   "key": "nearby",
+   "text": "Everyone on the office Wi-Fi can tap Nearby, and see what's shared right here.",
+   "dur": 4.181
+  },
+  {
+   "key": "space",
+   "text": "Working with a bigger team? Make your own private space, and invite everyone with one link.",
+   "dur": 4.907
+  },
+  {
+   "key": "facts",
+   "text": "Free. No sign up. Works on every device.",
+   "dur": 2.688
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer. Your whole office, in orbit.",
+   "dur": 2.795
+  }
+ ]
+}
