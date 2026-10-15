@@ -677,7 +677,7 @@ export default function OrbView(props: {
                       key={m.id}
                       className={`member${m.got ? " got" : ""}`}
                       data-member={m.id}
-                      style={{ "--sh": m.hue, "--mi": i, left: `${x * 100}%`, top: `${y * 100}%` } as CSSProperties}
+                      style={{ "--sh": m.hue, "--mi": i, "--life": mf, left: `${x * 100}%`, top: `${y * 100}%` } as CSSProperties}
                       title={`${m.name} · ${formatBytes(m.size)} · ${formatClock(mleft)}`}
                     >
                       <span className="mball">
@@ -707,7 +707,7 @@ export default function OrbView(props: {
           );
         })()
       ) : (
-      <div className="orb-body">
+      <div className="orb-body" style={{ "--life": up ? Math.max(0.03, launching) : frac } as CSSProperties}>
         <div className="halo" />
         {mine && <span className="claim" />}
         <div className="sphere" />

@@ -177,7 +177,7 @@ export default function BubbleZoom(props: {
               <button
                 key={o.id}
                 className={`zball${got ? " got" : ""}`}
-                style={{ "--sh": o.hue, "--mi": i, left: `${(memberPos.get(o.id)?.[0] ?? L.spots[i]?.[0] ?? 0.5) * 100}%`, top: `${(memberPos.get(o.id)?.[1] ?? L.spots[i]?.[1] ?? 0.5) * 100}%` } as CSSProperties}
+                style={{ "--sh": o.hue, "--mi": i, "--life": frac, left: `${(memberPos.get(o.id)?.[0] ?? L.spots[i]?.[0] ?? 0.5) * 100}%`, top: `${(memberPos.get(o.id)?.[1] ?? L.spots[i]?.[1] ?? 0.5) * 100}%` } as CSSProperties}
                 onPointerDown={(e) => grab(e, o.id)}
                 onPointerMove={move}
                 onPointerUp={drop}

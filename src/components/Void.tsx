@@ -23,7 +23,9 @@ const release = (id: string) => {
 };
 import { downloading } from "@/lib/downloads";
 import { enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
-import { LuFlag } from "react-icons/lu";
+import { LuFlag, LuPalette } from "react-icons/lu";
+import StylePicker from "./StylePicker";
+import { findDeviceSkin, skinName, toneOf, useSkin } from "@/lib/skins";
 
 /** Someone else's launch, announced over realtime the moment they press Launch (before it has landed). */
 type Incoming = { key: string; by: string | null; life: number; open: boolean; name: string; size: number; files: number; hue: number; createdAt: string; net: string | null; frac: number; seen: number };
@@ -51,6 +53,7 @@ type Panel =
   | { kind: "owner"; id: string }
   | { kind: "group"; id: string }
   | { kind: "space"; start?: string }
+  | { kind: "style" }
   | null;
 
 // more balls in the void, smaller balls, so they all have room
@@ -195,11 +198,16 @@ export default function Void() {
   }, []);
   const me = useRef<string>("");
 
+  // how dropped objects look (Style picker); a browser that never picked one asks for this computer's
+  const skin = useSkin();
   const toast = useCallback((text: string) => {
     const id = Math.random();
     setToasts((t) => [...t.slice(-2), { id, text }]);
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4000);
   }, []);
+  useEffect(() => {
+    findDeviceSkin().then((id) => id && toast(`Your style from this computer: ${skinName(id)}`)).catch(() => {});
+  }, [toast]);
 
   const recent = useRef(new Map<string, Orb>());
   const removedRef = useRef<(sp: SpaceSession) => void>(() => {});
@@ -955,6 +963,7 @@ export default function Void() {
           </nav>
           <div className="top-right">
             <span className="live" aria-label={`${online} ${online > 1 ? "devices" : "device"} in orbit`}><span className="dot" /><b>{online}</b><span className="live-txt">{space ? "in this space" : online > 1 ? "devices in orbit" : "device in orbit"}</span></span>
+            <button className="pill lg-press style-chip" onClick={() => setPanel({ kind: "style" })} aria-label={`Style: ${skinName(skin)}. Change how files look`} title="Style"><LuPalette aria-hidden /></button>
             <button className={`pill lg-press space-chip${space ? " in" : ""}`} onClick={() => setPanel({ kind: "space" })} aria-label={space ? `Space: ${space.title}. Change space` : "Public void. Open spaces"}>
               <i className="space-dot" />{space ? space.title : "Public void"}
             </button>
@@ -978,7 +987,7 @@ export default function Void() {
         </div>
       </header>
 
-      <main className={menu && !menuOut ? "menu-open" : undefined}>
+      <main className={menu && !menuOut ? "menu-open" : undefined} data-skin={skin} data-tone={toneOf(skin)}>
         <section
           className={`void${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
           id="void"
@@ -1155,6 +1164,7 @@ export default function Void() {
         />
       )}
       {zoom && bubbles.some((b) => b.id === zoom.id) && (
+        <div data-skin={skin} data-tone={toneOf(skin)} style={{ display: "contents" }}>
         <BubbleZoom
           bubbles={bubbles}
           id={zoom.id}
@@ -1166,7 +1176,9 @@ export default function Void() {
           onDestroy={destroy}
           onClose={() => setZoom(null)}
         />
+        </div>
       )}
+      {panel?.kind === "style" && <StylePicker onClose={() => setPanel(null)} toast={toast} />}
       {panel?.kind === "group" && groups.get(panel.id) && (
         <GroupPanel
           key={panel.id}
