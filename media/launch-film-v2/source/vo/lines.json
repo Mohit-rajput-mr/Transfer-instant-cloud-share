@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Sending a file shouldn't need an account, an app, or a cable.",
+   "dur": 3.285
+  },
+  {
+   "key": "meet",
+   "text": "Meet Orbi Transfer. Open it in any browser, and you're ready.",
+   "dur": 3.733
+  },
+  {
+   "key": "pick",
+   "text": "Pick your files, give them a name, and hit send.",
+   "dur": 2.581
+  },
+  {
+   "key": "orbit",
+   "text": "They float into orbit, and show up on every nearby screen. Instantly.",
+   "dur": 4.181
+  },
+  {
+   "key": "tap",
+   "text": "On your phone, just tap, and it's yours. No password, unless you want one.",
+   "dur": 4.459
+  },
+  {
+   "key": "batch",
+   "text": "Sending a whole batch? It lands as one tidy container, with a single download all.",
+   "dur": 5.056
+  },
+  {
+   "key": "space",
+   "text": "Working with a team? Open a private space. Only the people in your office see what you share.",
+   "dur": 5.141
+  },
+  {
+   "key": "cloud",
+   "text": "Close your laptop. Your file stays safe in the cloud, end-to-end encrypted, until its timer runs out.",
+   "dur": 6.379
+  },
+  {
+   "key": "burn",
+   "text": "Then it's gone. No traces.",
+   "dur": 1.792
+  },
+  {
+   "key": "facts",
+   "text": "Free. No login. Up to five gigabytes, on any device.",
+   "dur": 3.627
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer. Send it into orbit.",
+   "dur": 2.325
+  }
+ ]
+}
