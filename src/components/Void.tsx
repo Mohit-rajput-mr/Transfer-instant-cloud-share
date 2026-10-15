@@ -25,7 +25,7 @@ import { downloading } from "@/lib/downloads";
 import { enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
 import { LuFlag, LuPalette } from "react-icons/lu";
 import StylePicker from "./StylePicker";
-import { findDeviceSkin, skinName, toneOf, useSkin } from "@/lib/skins";
+import { autoRemember, findDeviceSkin, skinName, toneOf, useLook } from "@/lib/skins";
 
 /** Someone else's launch, announced over realtime the moment they press Launch (before it has landed). */
 type Incoming = { key: string; by: string | null; life: number; open: boolean; name: string; size: number; files: number; hue: number; createdAt: string; net: string | null; frac: number; seen: number };
@@ -199,7 +199,7 @@ export default function Void() {
   const me = useRef<string>("");
 
   // how dropped objects look (Style picker); a browser that never picked one asks for this computer's
-  const skin = useSkin();
+  const { skin, pal } = useLook();
   const toast = useCallback((text: string) => {
     const id = Math.random();
     setToasts((t) => [...t.slice(-2), { id, text }]);
@@ -207,6 +207,7 @@ export default function Void() {
   }, []);
   useEffect(() => {
     findDeviceSkin().then((id) => id && toast(`Your style from this computer: ${skinName(id)}`)).catch(() => {});
+    return autoRemember();
   }, [toast]);
 
   const recent = useRef(new Map<string, Orb>());
@@ -987,7 +988,7 @@ export default function Void() {
         </div>
       </header>
 
-      <main className={menu && !menuOut ? "menu-open" : undefined} data-skin={skin} data-tone={toneOf(skin)}>
+      <main className={menu && !menuOut ? "menu-open" : undefined} data-skin={skin} data-tone={toneOf(skin)} data-pal={pal}>
         <section
           className={`void${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
           id="void"
@@ -1164,7 +1165,7 @@ export default function Void() {
         />
       )}
       {zoom && bubbles.some((b) => b.id === zoom.id) && (
-        <div data-skin={skin} data-tone={toneOf(skin)} style={{ display: "contents" }}>
+        <div data-skin={skin} data-tone={toneOf(skin)} data-pal={pal} style={{ display: "contents" }}>
         <BubbleZoom
           bubbles={bubbles}
           id={zoom.id}

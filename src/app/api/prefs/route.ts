@@ -1,7 +1,7 @@
 import { createHmac, randomInt } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { rpc } from "@/lib/server";
-import { validSkin } from "@/lib/skin-list";
+import { validPalette, validSkin } from "@/lib/skin-list";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 //    plus a few traits every browser on one computer shares (screen, time zone, platform, cores, touch),
 //    so the raw values are never stored. Another browser on the same computer finds the same key.
 //  - style codes: ORBI-XXXXXX, for any browser or device.
-// Only the look is stored ({ skin }), nothing about the person.
+// Only the look is stored ({ skin, pal }), nothing about the person.
 const key = (s: string) => createHmac("sha256", process.env.ORBIT_SECRET!).update(s).digest("hex").slice(0, 40);
 const ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -26,8 +26,9 @@ function deviceKey(req: NextRequest, t: unknown) {
   return key(`pref:dev:${ip}|${str(o.screen, 20)}|${str(o.tz, 40)}|${str(o.platform, 30)}|${num(o.cores)}|${num(o.touch)}`);
 }
 const prefsOf = (p: unknown) => {
-  const skin = (p as { skin?: unknown } | null)?.skin;
-  return validSkin(skin) ? { skin } : null;
+  const o = p as { skin?: unknown; pal?: unknown } | null;
+  if (!validSkin(o?.skin)) return null;
+  return validPalette(o?.pal) ? { skin: o.skin, pal: o.pal } : { skin: o.skin };
 };
 
 export async function POST(req: NextRequest) {

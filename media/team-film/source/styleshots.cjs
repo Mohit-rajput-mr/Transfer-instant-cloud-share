@@ -14,15 +14,15 @@ const ITEMS = [
   const b = await L.chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--headless=new"] });
   for (const sk of skins) {
     const phone = sk.startsWith("phone:");
-    const id = sk.replace("phone:", "").replace("picker:", "");
+    const [id, pal] = sk.replace("phone:", "").replace("picker:", "").split("@");
     const opts = phone ? { ...L.devices["iPhone 13"], viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 } : { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 };
-    const { page, ctx } = await L.open(b, opts, { items: [...ITEMS], init: async (p) => p.addInitScript((s) => localStorage.setItem("orbit:skin", s), id) });
+    const { page, ctx } = await L.open(b, opts, { items: [...ITEMS], init: async (p) => p.addInitScript(([s, c]) => { localStorage.setItem("orbit:skin", s); if (c) localStorage.setItem("orbit:pal", c); }, [id, pal]) });
     await L.step(page, 1200, 100);
     if (sk.startsWith("picker:")) {
       await page.click(".style-chip");
       await L.step(page, 900, 100);
     }
-    await page.screenshot({ path: `${OUT}/${sk.replace(":", "-")}.png` });
+    await page.screenshot({ path: `${OUT}/${sk.replace(":", "-").replace("@", "-")}.png` });
     await ctx.close();
   }
   await b.close();

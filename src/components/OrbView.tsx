@@ -3,6 +3,7 @@ import { LuArrowUp, LuCheck, LuDownload, LuLock, LuLockOpen, LuMaximize2, LuTras
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
 import { setCardOrigin } from "./Panels";
 import { ext, formatBytes, formatClock, type Orb } from "@/lib/client";
+import { typeHue } from "@/lib/skin-list";
 
 /** 7 → "7", 12 → "10+", 140 → "100+": a crowd stays readable */
 const crowd = (n: number) => (n >= 1000 ? "1k+" : n >= 100 ? "100+" : n >= 10 ? "10+" : String(n));
@@ -603,6 +604,7 @@ export default function OrbView(props: {
     "--row": pos.y,
     "--s": `${size}px`,
     "--hue": props.hue ?? orb.hue,
+    "--th": typeHue(orb.fileName, orb.mime),
     "--dur": `${14 + (h % 9)}s`,
     "--delay": `-${h % 12}s`,
     "--dx": `${10 + (h % 18)}px`,
@@ -677,7 +679,7 @@ export default function OrbView(props: {
                       key={m.id}
                       className={`member${m.got ? " got" : ""}`}
                       data-member={m.id}
-                      style={{ "--sh": m.hue, "--mi": i, "--life": mf, left: `${x * 100}%`, top: `${y * 100}%` } as CSSProperties}
+                      style={{ "--sh": m.hue, "--th": typeHue(m.fileName), "--mi": i, "--life": mf, left: `${x * 100}%`, top: `${y * 100}%` } as CSSProperties}
                       title={`${m.name} · ${formatBytes(m.size)} · ${formatClock(mleft)}`}
                     >
                       <span className="mball">
