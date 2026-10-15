@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Sharing a file with your team usually means handing out your email, or your personal WhatsApp.",
+   "dur": 5.547
+  },
+  {
+   "key": "meet",
+   "text": "Not anymore. Meet Orbi Transfer.",
+   "dur": 2.368
+  },
+  {
+   "key": "create",
+   "text": "Create your own space in seconds. Name it, and lock it with a passcode.",
+   "dur": 4.096
+  },
+  {
+   "key": "invite",
+   "text": "Then share one invite link. No emails. No phone numbers. No accounts.",
+   "dur": 4.608
+  },
+  {
+   "key": "join",
+   "text": "Your teammates just pick a name, and they're in.",
+   "dur": 2.283
+  },
+  {
+   "key": "room",
+   "text": "Everything you drop inside stays inside. Only your team can see it, live, on every screen.",
+   "dur": 5.675
+  },
+  {
+   "key": "nearby",
+   "text": "In the office? Tap Nearby, and see only what's shared on your Wi-Fi.",
+   "dur": 3.968
+  },
+  {
+   "key": "link",
+   "text": "Sending something to a client? Share a link, or let them scan the code. It opens right on their phone.",
+   "dur": 5.696
+  },
+  {
+   "key": "control",
+   "text": "And you stay in control. Remove anyone with a tap, or leave whenever you like.",
+   "dur": 4.373
+  },
+  {
+   "key": "facts",
+   "text": "Free. No login. Private by design.",
+   "dur": 2.645
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer. Your team, in orbit.",
+   "dur": 2.496
+  }
+ ]
+}

@@ -1,0 +1,374 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Orbi Transfer · teams film</title>
+<!--V2STYLE-->
+<style>
+  /* ---------- team film additions ---------- */
+  #chat { position: absolute; left: 50%; top: 250px; width: 760px; margin-left: -380px; z-index: 20; }
+  .bub { position: relative; display: flex; align-items: center; gap: 18px; margin: 0 0 22px; padding: 20px 26px; border-radius: 26px; background: rgba(28,31,38,0.92); border: 1px solid rgba(255,255,255,0.14); box-shadow: 0 20px 60px rgba(0,0,0,0.55); font-size: 30px; }
+  .bub .ic { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; flex: none; font: 800 26px/1 Arial, sans-serif; }
+  .bub small { display: block; font-size: 17px; color: #9a9a9a; margin-bottom: 4px; letter-spacing: 0.02em; }
+  .bub .x { position: absolute; left: -2%; top: 50%; height: 8px; width: 104%; border-radius: 6px; background: #ff4d4d; box-shadow: 0 0 22px rgba(255,77,77,0.6); transform-origin: 0 50%; }
+  #invite { position: absolute; z-index: 47; padding: 16px 26px 16px 20px; border-radius: 999px; background: #fff; color: #000; font: 700 24px/1 "Inter", Arial, sans-serif; box-shadow: 0 20px 60px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 12px; opacity: 0; white-space: nowrap; }
+  #invite i { width: 34px; height: 34px; border-radius: 50%; background: #111; display: grid; place-items: center; }
+  .nocontact { position: absolute; z-index: 47; display: flex; gap: 16px; opacity: 0; }
+  .nocontact span { padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.22); background: rgba(20,22,27,0.9); font: 600 18px/1 "Inter", Arial, sans-serif; color: #ddd; position: relative; }
+  .nocontact span b { position: absolute; left: 8%; right: 8%; top: 50%; height: 3px; background: #ff4d4d; border-radius: 3px; }
+  #wifi { position: absolute; z-index: 46; width: 120px; height: 120px; opacity: 0; }
+  #wifi .r { position: absolute; left: 50%; top: 50%; border-radius: 50%; border: 3px solid rgba(61,255,140,0.75); transform: translate(-50%, -50%); }
+  #wifi .dot { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 18px; background: rgba(18,22,26,0.95); border: 1px solid rgba(61,255,140,0.6); display: grid; place-items: center; box-shadow: 0 0 30px rgba(61,255,140,0.35); }
+  #wifitxt { position: absolute; z-index: 46; font-size: 17px; color: #bfe9cf; opacity: 0; white-space: nowrap; }
+  #scan { position: absolute; inset: 0; z-index: 25; opacity: 0; background: #07080a; overflow: hidden; }
+  #scan .qr { position: absolute; left: 50%; top: 42%; width: 190px; height: 190px; margin: -95px 0 0 -95px; background-size: cover; border-radius: 10px; }
+  #scan .br { position: absolute; left: 50%; top: 42%; width: 236px; height: 236px; margin: -118px 0 0 -118px; }
+  #scan .line { position: absolute; left: calc(50% - 110px); width: 220px; height: 3px; background: linear-gradient(90deg, transparent, #3dff8c, transparent); box-shadow: 0 0 18px #3dff8c; }
+  #scan .hint { position: absolute; left: 0; right: 0; top: 68%; text-align: center; font-size: 15px; color: #cfcfcf; }
+  #scan .found { position: absolute; left: 50%; top: 76%; transform: translateX(-50%); padding: 12px 18px; border-radius: 14px; background: rgba(255,255,255,0.95); color: #000; font: 700 15px/1.2 "Inter", Arial, sans-serif; white-space: nowrap; }
+  .person { position: absolute; z-index: 46; opacity: 0; display: flex; align-items: center; gap: 14px; padding: 14px 22px 14px 14px; border-radius: 18px; background: rgba(22,24,30,0.92); border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .person .av { width: 50px; height: 50px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 20px; }
+  .person b { display: block; font-size: 21px; }
+  .person span { font-size: 16px; color: #a9a9a9; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="stars" width="1920" height="1080"></canvas>
+  <div class="glow" id="g1" style="left:-200px;top:-260px;width:900px;height:900px;background:#2b3cff"></div>
+  <div class="glow" id="g2" style="left:1200px;top:520px;width:900px;height:900px;background:#00d39a"></div>
+
+  <div class="dev monitor" id="mon"><div class="frame"></div><div class="screen"><img class="cap" id="monImg" /></div><div class="stand"></div><div class="foot"></div></div>
+  <div class="dev laptop" id="lap">
+    <div class="base"></div>
+    <div class="lid" id="lid"><div class="cam"></div><div class="screen" id="lapScreen"><img class="cap" id="lapImg" />
+      <div class="ripple" id="rip"></div>
+      <svg class="cursor" id="cur" viewBox="0 0 34 34"><path d="M6 3 L6 27 L12.2 21.2 L16.4 30.6 L20.6 28.8 L16.5 19.6 L25 19.6 Z" fill="#fff" stroke="#000" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    </div></div>
+  </div>
+  <div class="dev phone" id="ph"><div class="body"></div><div class="island"></div><div class="screen" id="phScreen"><img class="cap" id="phImg" />
+    <div id="scan"><div class="qr" id="scanQr"></div>
+      <svg class="br" viewBox="0 0 236 236" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"><path d="M4 50V4h46M186 4h46v46M232 186v46h-46M50 232H4v-46"/></svg>
+      <div class="line" id="scanLine"></div><div class="hint mono">Point the camera at the code</div><div class="found" id="scanFound">orbitransfer.com/?o=site42</div></div>
+    <div class="ripple" id="prip"></div>
+    <svg class="finger" id="fin" viewBox="0 0 120 168"><defs><linearGradient id="sk" x1="0" x2="1"><stop offset="0" stop-color="#f3d2bd"/><stop offset="1" stop-color="#d9a98d"/></linearGradient></defs>
+      <path d="M22 10 c0-9 16-9 16 0 v58 c4-6 16-6 18 2 c4-6 16-5 18 3 c5-5 16-3 17 6 v34 c0 28-16 46-44 46 c-24 0-34-12-44-30 l-16-30 c-5-9 6-16 13-9 l10 12 z" fill="url(#sk)" stroke="rgba(0,0,0,0.25)" stroke-width="1.5"/>
+      <path d="M24 6 c2-3 10-3 12 0" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2"/></svg>
+  </div></div>
+
+  <div class="lens" id="lens"></div>
+  <svg id="fx" width="1920" height="1080"></svg>
+  <div id="invite"><i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></i>orbitransfer.com/?space=studio-north</div>
+  <div class="nocontact" id="noc"><span>email<b></b></span><span>phone number<b></b></span><span>account<b></b></span></div>
+  <div id="wifi"><div class="r" id="r1"></div><div class="r" id="r2"></div><div class="r" id="r3"></div><div class="dot"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#3dff8c" stroke-width="2.2" stroke-linecap="round"><path d="M2 8.8a15 15 0 0 1 20 0"/><path d="M5 12.6a10 10 0 0 1 14 0"/><path d="M8.5 16.3a5 5 0 0 1 7 0"/><circle cx="12" cy="20" r="1.2" fill="#3dff8c"/></svg></div></div>
+  <div id="wifitxt" class="mono">Office Wi-Fi · same network</div>
+  <div class="person" id="pLeo"><div class="av" style="background:linear-gradient(135deg,#c45cff,#6b2bb5)">L</div><div><b>Leo</b><span>dropped Logo v2</span></div></div>
+
+  <div id="chat">
+    <div class="bub" id="b1"><div class="ic" style="background:#2a6bff">@</div><div><small>Teammate</small>Send it to my personal email?</div><i class="x" id="x1"></i></div>
+    <div class="bub" id="b2"><div class="ic" style="background:#1fb85a">✆</div><div><small>New hire</small>Just WhatsApp me: +1 555 014 2…</div><i class="x" id="x2"></i></div>
+  </div>
+  <img id="emblem" src="emblem.svg" />
+  <img id="logo" src="logo.svg" />
+  <div id="meetline" class="mono">Team sharing · no emails · no phone numbers</div>
+  <div class="caption" id="cap"><div class="n mono" id="capN"></div><div class="t wide" id="capT"></div><div class="s mono" id="capS"></div></div>
+  <div class="facts wide" id="facts"><span class="f" id="f1">Free.</span><span class="f" id="f2">No login.</span><br /><span class="f" id="f3">Private by design.</span></div>
+  <div id="end"><img src="logo.svg" /><div class="url mono">orbitransfer.com</div><div class="sub mono">Spaces for teams · invite by link · nearby on your Wi-Fi · free</div><div class="ph">Now live on Product Hunt</div></div>
+  <div class="tag" id="tagL"></div><div class="tag" id="tagP"></div><div class="tag" id="tagM"></div>
+  <div class="fade" id="fade"></div>
+</div>
+
+<script>
+// ===================== timeline (seconds) =====================
+const VO = { hook: 0.5, meet: 6.7, create: 10.4, invite: 16.6, join: 21.8, room: 26.3, nearby: 33.4, link: 39.2, control: 48.1, facts: 53.9, end: 58.0 };
+window.VO = VO;
+const DURATION = 63;
+window.DURATION = DURATION;
+let MARKS = {};
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, k) => a + (b - a) * k;
+const win = (t, a, b, fi = 0.4, fo = 0.4) => clamp((t - a) / fi) * clamp((b - t) / fo);
+function pw(t, pts) {
+  if (t <= pts[0][0]) return pts[0][1];
+  for (let i = 1; i < pts.length; i++) if (t <= pts[i][0]) { const [t0, v0] = pts[i - 1], [t1, v1] = pts[i]; return v0 + ((t - t0) / (t1 - t0)) * (v1 - v0); }
+  return pts[pts.length - 1][1];
+}
+function pwInv(f, pts) {
+  for (let i = 1; i < pts.length; i++) { const [t0, v0] = pts[i - 1], [t1, v1] = pts[i]; if (f >= v0 && f <= v1 && v1 !== v0) return t0 + ((f - v0) / (v1 - v0)) * (t1 - t0); }
+  return pts[pts.length - 1][0];
+}
+function kf(t, keys) {
+  if (t <= keys[0][0]) return keys[0][1];
+  for (let i = 1; i < keys.length; i++) {
+    if (t <= keys[i][0]) {
+      const [t0, a] = keys[i - 1], [t1, b] = keys[i];
+      const k = ease((t - t0) / (t1 - t0));
+      const o = {};
+      for (const key of Object.keys(b)) o[key] = lerp(a[key] ?? b[key], b[key], k);
+      return o;
+    }
+  }
+  return keys[keys.length - 1][1];
+}
+const mk = (shot, name) => (MARKS[shot]?.marks || []).find((m) => m.name === name) || { f: 0, x: 0, y: 0 };
+const last = (shot) => (MARKS[shot]?.frames ?? 1) - 1;
+const frameSrc = (shot, f) => `cap/${shot}/${String(Math.max(0, Math.min(last(shot), Math.round(f)))).padStart(5, "0")}.png`;
+const $ = (id) => document.getElementById(id);
+const pending = [];
+function setImg(el, src) { if (el.dataset.src === src) return; el.dataset.src = src; el.src = src; pending.push(el.decode().catch(() => {})); }
+
+const stars = [];
+let seed = 11; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+for (let i = 0; i < 420; i++) stars.push({ x: rnd() * 1920, y: rnd() * 1080, r: rnd() * 1.4 + 0.2, z: rnd() * 0.8 + 0.2, tw: rnd() * 6.28 });
+function drawStars(t) {
+  const c = $("stars").getContext("2d");
+  c.clearRect(0, 0, 1920, 1080);
+  for (const s of stars) {
+    const x = (s.x - t * 6 * s.z + 1920 * 4) % 1920;
+    c.fillStyle = `rgba(255,255,255,${0.25 + 0.55 * s.z * (0.75 + 0.25 * Math.sin(t * 1.3 + s.tw))})`;
+    c.beginPath(); c.arc(x, s.y, s.r, 0, 6.283); c.fill();
+  }
+}
+
+// ===================== shots → film time =====================
+const MAP = {
+  create: () => [[10.0, 10], [10.6, mk("create", "chip").f], [11.4, mk("create", "createTab").f], [12.0, mk("create", "name").f], [12.9, mk("create", "private").f], [13.5, mk("create", "pass").f], [14.2, mk("create", "handle").f], [14.9, mk("create", "create").f], [16.2, 190], [16.9, mk("create", "chip2").f], [17.8, mk("create", "invite").f], [21.4, last("create")]],
+  join: () => [[20.8, 18], [21.9, mk("join", "card").f], [22.6, mk("join", "name").f], [23.4, mk("join", "pass").f], [24.3, mk("join", "go").f], [26.4, last("join")]],
+  room: () => [[26.0, 0], [27.6, mk("room", "arrive0").f], [29.2, mk("room", "arrive1").f], [30.8, mk("room", "arrive2").f], [33.2, 155]],
+  roomphone: () => [[26.0, 0], [27.6, mk("roomphone", "arrive0").f], [29.2, mk("roomphone", "arrive1").f], [30.8, mk("roomphone", "arrive2").f], [33.2, last("roomphone")]],
+  roommon: () => [[26.0, 0], [27.6, mk("roommon", "arrive0").f], [29.2, mk("roommon", "arrive1").f], [30.8, mk("roommon", "arrive2").f], [33.2, last("roommon")]],
+  nearby: () => [[33.0, 0], [35.4, mk("nearby", "near").f], [38.9, last("nearby")]],
+  share: () => [[38.9, 8], [39.6, mk("share", "send").f], [41.4, mk("share", "expand").f], [42.4, mk("share", "copy").f], [44.0, 170], [48.0, last("share")]],
+  open: () => [[44.4, 18], [45.0, mk("open", "ball").f], [45.8, mk("open", "download").f], [46.9, mk("open", "ready").f], [48.2, last("open")]],
+  control: () => [[48.0, 150], [49.0, mk("room", "guest").f], [50.3, mk("room", "remove").f], [51.9, mk("room", "exit").f], [53.8, last("room")]],
+  facts: () => [[53.6, 120], [58.4, 190]],
+};
+
+// placements: laptop (lx,ly,ls,lo), phone (px,py,ps,po), monitor (mx,my,ms,mo)
+const OFF = { lx: 140, ly: 1300, ls: 1, lo: 0, px: 1440, py: 1300, ps: 1, po: 0, mx: 300, my: 1300, ms: 0.9, mo: 0 };
+const BOTH = { lx: 170, ly: 300, ls: 0.95, lo: 1, px: 1400, py: 290, ps: 1, po: 1, mx: 300, my: 1300, ms: 0.9, mo: 0 };
+const LAP = { lx: 600, ly: 215, ls: 1.1, lo: 1, px: 2150, py: 300, ps: 0.9, po: 0, mx: 300, my: 1300, ms: 0.9, mo: 0 };
+const INVITE = { lx: 80, ly: 300, ls: 0.86, lo: 1, px: 1480, py: 300, ps: 0.98, po: 1, mx: 300, my: 1300, ms: 0.9, mo: 0 };
+const PHO = { lx: -620, ly: 300, ls: 0.82, lo: 0.25, px: 1060, py: 112, ps: 1.27, po: 1, mx: 300, my: 1300, ms: 0.9, mo: 0 };
+const OFFICE = { lx: 60, ly: 420, ls: 0.68, lo: 1, px: 1560, py: 340, ps: 0.9, po: 1, mx: 800, my: 110, ms: 0.6, mo: 1 };
+const SHARE = { lx: 380, ly: 220, ls: 1.0, lo: 1, px: 2150, py: 260, ps: 1.0, po: 0, mx: 800, my: 1300, ms: 0.6, mo: 0 };
+const SCAN = { lx: 120, ly: 300, ls: 0.86, lo: 1, px: 1300, py: 150, ps: 1.18, po: 1, mx: 800, my: 1300, ms: 0.6, mo: 0 };
+const GONE = { ...LAP, lo: 0 };
+const LAYOUT = [
+  [0, OFF], [8.4, OFF], [9.6, BOTH], [10.0, BOTH], [10.7, LAP], [17.9, LAP], [18.6, INVITE], [20.6, INVITE], [21.3, PHO], [25.7, PHO],
+  [26.4, OFFICE], [32.6, OFFICE], [33.3, LAP], [38.6, LAP], [39.2, SHARE], [43.0, SHARE], [43.7, SCAN], [47.6, SCAN], [48.3, LAP], [53.2, LAP], [53.9, GONE],
+];
+
+async function render(t) {
+  pending.length = 0;
+  drawStars(t);
+  $("g1").style.opacity = 0.22 + 0.1 * Math.sin(t * 0.4);
+  $("g2").style.opacity = 0.16 + 0.08 * Math.sin(t * 0.33 + 1);
+  const L = kf(t, LAYOUT);
+  $("lap").style.transform = `translate(${L.lx}px,${L.ly}px) scale(${L.ls})`; $("lap").style.opacity = L.lo;
+  $("ph").style.transform = `translate(${L.px}px,${L.py}px) scale(${L.ps})`; $("ph").style.opacity = L.po;
+  $("mon").style.transform = `translate(${L.mx}px,${L.my}px) scale(${L.ms})`; $("mon").style.opacity = L.mo;
+  const bob = Math.sin(t * 1.1) * 4;
+  $("ph").style.marginTop = bob + "px";
+
+  // ---- screens ----
+  let lap = ["create", 0], ph = ["join", 0], mon = ["roommon", 0];
+  if (t < 10.0) { lap = ["create", 2 + (t % 1)]; ph = ["join", 2]; }
+  else if (t < 26.0) { lap = ["create", pw(t, MAP.create())]; ph = ["join", pw(t, MAP.join())]; }
+  else if (t < 33.0) { lap = ["room", pw(t, MAP.room())]; ph = ["roomphone", pw(t, MAP.roomphone())]; mon = ["roommon", pw(t, MAP.roommon())]; }
+  else if (t < 38.9) { lap = ["nearby", pw(t, MAP.nearby())]; }
+  else if (t < 48.0) { lap = ["share", pw(t, MAP.share())]; ph = ["open", pw(t, MAP.open())]; }
+  else { lap = ["room", pw(t, MAP.control())]; }
+  setImg($("lapImg"), frameSrc(...lap));
+  setImg($("phImg"), frameSrc(...ph));
+  setImg($("monImg"), frameSrc(...mon));
+  $("lid").style.transform = "";
+
+  // ---- cursor (laptop) ----
+  const S = 1100 / 1440;
+  const cur = $("cur"), rip = $("rip");
+  let cv = 0, cx = 700, cy = 420, press = 0, rp = -1, rx = 0, ry = 0;
+  const path = [];
+  const clicks = (shot, names, m) => names.map((n) => [pwInv(mk(shot, n).f - 1, m), mk(shot, n).x, mk(shot, n).y, 1]);
+  if (t >= 10.0 && t < 18.4) { path.push([10.0, 820, 500], ...clicks("create", ["chip", "createTab", "name", "private", "pass", "handle", "create", "chip2", "invite"], MAP.create()), [18.4, 980, 640]); cv = win(t, 10.0, 18.4, 0.3, 0.3); }
+  else if (t >= 33.2 && t < 38.6) { path.push([33.2, 820, 520], ...clicks("nearby", ["near"], MAP.nearby()), [38.6, 1100, 300]); cv = win(t, 33.2, 38.6, 0.3, 0.3); }
+  else if (t >= 39.0 && t < 43.2) { path.push([39.0, 700, 560], ...clicks("share", ["send", "expand", "copy"], MAP.share()), [43.2, 1000, 700]); cv = win(t, 39.0, 43.2, 0.3, 0.3); }
+  else if (t >= 48.2 && t < 53.2) { const ex = mk("room", "exit"); path.push([48.2, 900, 500], ...clicks("room", ["guest", "remove"], MAP.control()), [51.9, ex.x, ex.y], [53.2, ex.x - 40, ex.y + 120]); cv = win(t, 48.2, 53.2, 0.3, 0.3); }
+  if (path.length) {
+    let i = 1; while (i < path.length - 1 && t > path[i][0]) i++;
+    const [t0, x0, y0] = path[i - 1], [t1, x1, y1] = path[i];
+    const k = ease(clamp((t - t0) / Math.max(0.05, (t1 - t0) * 0.78)));
+    const arc = Math.sin(k * Math.PI) * Math.min(60, Math.hypot(x1 - x0, y1 - y0) * 0.12);
+    cx = lerp(x0, x1, k); cy = lerp(y0, y1, k) - arc;
+    for (const [tc, x, y, c] of path) if (c) {
+      const d = t - tc;
+      if (d > -0.12 && d < 0.1) press = Math.max(press, 1 - Math.abs(d + 0.01) / 0.12);
+      if (d >= 0 && d < 0.5) { rp = d / 0.5; rx = x; ry = y; }
+    }
+  }
+  cur.style.opacity = cv;
+  cur.style.transform = `translate(${cx * S - 6}px,${cy * S - 4}px) scale(${1 - press * 0.18})`;
+  rip.style.opacity = rp >= 0 ? (1 - rp) * 0.9 : 0;
+  rip.style.transform = `translate(${rx * S}px,${ry * S}px) scale(${0.3 + rp * 1.1})`;
+
+  // ---- finger (phone) ----
+  const P = 300 / 390;
+  const fin = $("fin"), prip = $("prip");
+  let fv = 0, fx = 300, fy = 760, fp = 0, pr = -1, px = 0, py = 0;
+  const taps = [];
+  const tp = (shot, names, m) => names.map((n) => [pwInv(mk(shot, n).f - 1, m), mk(shot, n).x, mk(shot, n).y]);
+  if (t >= 21.3 && t < 25.4) { taps.push(...tp("join", ["card", "name", "pass", "go"], MAP.join())); fv = win(t, 21.3, 25.4, 0.35, 0.4); }
+  else if (t >= 44.3 && t < 46.6) { taps.push(...tp("open", ["ball", "download"], MAP.open())); fv = win(t, 44.3, 46.6, 0.3, 0.4); }
+  if (taps.length) {
+    let tgt = taps[0]; for (const x of taps) if (t > x[0] + 0.35) tgt = taps[Math.min(taps.length - 1, taps.indexOf(x) + 1)];
+    const prev = taps[Math.max(0, taps.indexOf(tgt) - 1)];
+    const k = tgt === prev ? 1 : ease(clamp((t - (prev[0] + 0.35)) / Math.max(0.1, tgt[0] - prev[0] - 0.55)));
+    fx = lerp(prev[1], tgt[1], k); fy = lerp(prev[2], tgt[2], k);
+    for (const [tc, x, y] of taps) {
+      const d = t - tc;
+      if (d > -0.15 && d < 0.15) fp = Math.max(fp, 1 - Math.abs(d) / 0.15);
+      if (d >= 0 && d < 0.55) { pr = d / 0.55; px = x; py = y; }
+    }
+    fy += clamp(Math.min(...taps.map(([tc]) => Math.abs(t - tc))) / 0.35) * 26;
+  }
+  fin.style.opacity = fv;
+  fin.style.transform = `translate(${fx * P - 30}px,${fy * P - 8}px) scale(${0.62 * (1 - fp * 0.07)}) rotate(-8deg)`;
+  prip.style.opacity = pr >= 0 ? (1 - pr) * 0.85 : 0;
+  prip.style.transform = `translate(${px * P}px,${py * P}px) scale(${0.3 + pr * 1.0})`;
+
+  // ---- QR scan on the phone ----
+  const sv = win(t, 43.6, 44.5, 0.3, 0.25);
+  $("scan").style.opacity = sv;
+  if (sv > 0) {
+    const q = mk("share", "qrbox");
+    $("scanQr").style.backgroundImage = `url(${frameSrc("share", 150)})`;
+    // crop the QR out of the laptop frame (capture px → 190 px square)
+    const z = 190 / q.width;
+    $("scanQr").style.backgroundSize = `${1440 * z}px ${900 * z}px`;
+    $("scanQr").style.backgroundPosition = `${-q.x * z}px ${-q.y * z}px`;
+    const u = ((t - 43.6) / 0.6) % 1;
+    $("scanLine").style.top = `calc(42% - 105px + ${u * 210}px)`;
+    $("scanFound").style.opacity = clamp((t - 44.0) / 0.15);
+  }
+
+  // ---- beams ----
+  const fxv = $("fx"); let svg = "";
+  const lapPt = (x, y) => [L.lx + (20 + x * S) * L.ls, L.ly + (20 + y * S) * L.ls];
+  const phPt = (x, y) => [L.px + (18 + x * P) * L.ps, L.py + bob + (18 + y * P) * L.ps];
+  const monPt = (x, y) => [L.mx + (14 + x * 952 / 1440) * L.ms, L.my + (14 + y * 952 / 1440) * L.ms];
+  const beam = (a, b, k, hue = "61,255,140", bend = -180) => {
+    if (k <= 0 || k >= 1.35) return "";
+    const [x0, y0] = a, [x1, y1] = b;
+    const cx_ = (x0 + x1) / 2, cy_ = Math.min(y0, y1) + bend;
+    const q = (u) => [(1 - u) ** 2 * x0 + 2 * (1 - u) * u * cx_ + u * u * x1, (1 - u) ** 2 * y0 + 2 * (1 - u) * u * cy_ + u * u * y1];
+    const head = clamp(k), tail = clamp(k - 0.35);
+    let d = ""; for (let i = 0; i <= 24; i++) { const u = tail + (head - tail) * (i / 24); const [x, y] = q(u); d += (i ? "L" : "M") + x.toFixed(1) + " " + y.toFixed(1); }
+    const [hx, hy] = q(head);
+    return `<path d="${d}" stroke="rgba(${hue},0.9)" stroke-width="4" fill="none" stroke-linecap="round" style="filter:drop-shadow(0 0 8px rgba(${hue},0.9))"/><circle cx="${hx}" cy="${hy}" r="9" fill="#fff" style="filter:drop-shadow(0 0 14px rgba(${hue},1))"/>`;
+  };
+  // the invite link travels from the laptop to the teammate's phone
+  if (t > 18.6 && t < 20.8) svg += beam(lapPt(720, 507), phPt(195, 400), (t - 19.0) / 0.9, "255,255,255", -160);
+  // the room: Ana's phone → laptop + desktop; Ravi's desktop → laptop + phone; Leo (off screen) → all
+  if (t > 26.6 && t < 31.6) {
+    const a = (t - 27.0) / 0.7, r = (t - 28.6) / 0.7, l = (t - 30.2) / 0.7;
+    svg += beam(phPt(195, 420), lapPt(300, 320), a, "61,255,140", -160) + beam(phPt(195, 420), monPt(300, 320), a - 0.06, "61,255,140", -120);
+    svg += beam(monPt(700, 320), lapPt(980, 560), r, "61,255,140", -80) + beam(monPt(700, 320), phPt(200, 520), r - 0.06, "61,255,140", -80);
+    const src = [960, 960];
+    svg += beam(src, lapPt(240, 300), l, "61,255,140", -140) + beam(src, phPt(240, 300), l - 0.05, "61,255,140", -140) + beam(src, monPt(240, 300), l - 0.03, "61,255,140", -260);
+  }
+  fxv.innerHTML = svg;
+  const leo = $("pLeo"); leo.style.left = "770px"; leo.style.top = (930 - 30 * out(clamp((t - 29.7) / 0.5))) + "px"; leo.style.opacity = win(t, 29.7, 32.4, 0.35, 0.5);
+
+  // invite pill + "no email / number / account"
+  const iv = win(t, 18.2, 21.2, 0.35, 0.4);
+  const inv = $("invite");
+  inv.style.opacity = iv; inv.style.left = "760px"; inv.style.top = (110 - 20 * out(clamp((t - 18.2) / 0.5))) + "px";
+  inv.style.transform = `scale(${0.9 + 0.1 * back(clamp((t - 18.2) / 0.5))})`;
+  const noc = $("noc"); noc.style.left = "800px"; noc.style.top = "190px"; noc.style.opacity = win(t, 18.9, 21.2, 0.3, 0.4);
+  [...noc.querySelectorAll("b")].forEach((b, i) => (b.style.transform = `scaleX(${out(clamp((t - (19.6 + i * 0.45)) / 0.25))})`));
+
+  // wifi rings over the office void
+  const wv = win(t, 33.4, 38.6, 0.4, 0.4);
+  const wf = $("wifi"); wf.style.opacity = wv; wf.style.left = "440px"; wf.style.top = "430px";
+  [["r1", 0], ["r2", 0.33], ["r3", 0.66]].forEach(([id, o]) => { const u = (t * 0.7 + o) % 1; const el = $(id); el.style.width = el.style.height = 60 + u * 260 + "px"; el.style.opacity = (1 - u) * 0.8; });
+  const wt = $("wifitxt"); wt.style.opacity = wv; wt.style.left = "385px"; wt.style.top = "540px";
+
+  // ---- labels ----
+  const tag = (el, txt, x, y, v) => { el.innerHTML = txt; el.style.left = x + "px"; el.style.top = y + "px"; el.style.opacity = v; };
+  tag($("tagL"), "<i></i>Mohit · laptop", L.lx + 40, L.ly - 50, win(t, 9.6, 10.6) + win(t, 26.6, 32.6));
+  tag($("tagP"), "<i></i>" + (t > 26 && t < 33 ? "Ana · phone" : t > 43 ? "Client · phone" : "Ana · phone"), L.px + 40, L.py - 50, win(t, 9.6, 10.6) + win(t, 18.6, 20.8) + win(t, 26.6, 32.6) + win(t, 43.7, 47.6));
+  tag($("tagM"), "<i></i>Ravi · office desktop", L.mx + 30, L.my - 50, win(t, 26.6, 32.6));
+
+  // ---- type ----
+  const cv0 = win(t, 0.3, 7.2, 0.4, 0.5);
+  $("chat").style.opacity = cv0;
+  [["b1", 1.6, 6.7], ["b2", 3.9, 6.95]].forEach(([id, at, strike]) => {
+    const el = $(id); const k = clamp((t - at) / 0.4);
+    el.style.opacity = k; el.style.transform = `translateY(${(1 - out(k)) * 30}px) scale(${0.96 + 0.04 * out(k)})`;
+    $(id === "b1" ? "x1" : "x2").style.transform = `scaleX(${out(clamp((t - strike) / 0.25))})`;
+  });
+  $("chat").style.filter = `blur(${clamp((t - 7.0) / 0.4) * 6}px)`;
+  const em = $("emblem"), ep = clamp((t - 7.4) / 0.45);
+  em.style.opacity = win(t, 7.4, 8.4, 0.15, 0.3);
+  em.style.transform = `scale(${0.4 + 0.6 * back(ep)}) rotate(${(1 - ep) * -40}deg)`;
+  const lg = $("logo");
+  lg.style.opacity = win(t, 8.1, 9.9, 0.2, 0.4);
+  lg.style.clipPath = `inset(0 ${100 - 100 * out(clamp((t - 8.1) / 0.6))}% 0 0)`;
+  lg.style.transform = `translateY(${-out(clamp((t - 9.1) / 0.7)) * 330}px) scale(${1 - 0.35 * out(clamp((t - 9.1) / 0.7))})`;
+  $("meetline").style.opacity = win(t, 8.5, 9.8, 0.3, 0.3);
+
+  const CAPS = [
+    [10.6, 18.0, "01", "Your own<br>space.", "Name it · lock it with a passcode"],
+    [18.6, 21.0, "02", "One invite<br>link.", "No emails · no numbers · no accounts"],
+    [21.3, 25.8, "03", "Pick a name.<br>You're in.", "Teammates join from any browser"],
+    [26.4, 32.6, "04", "Only your team<br>sees it.", "Live on every screen in the space"],
+    [33.3, 38.6, "05", "Same Wi-Fi?<br>Tap Nearby.", "Only what's shared on your network"],
+    [39.2, 47.6, "06", "Share a link.<br>Or scan it.", "Opens right on their phone"],
+    [48.3, 53.4, "07", "You stay in<br>control.", "Remove anyone · leave anytime"],
+  ];
+  let cv2 = 0;
+  for (const [a, b, n, tt, s] of CAPS) {
+    const v = win(t, a, b, 0.45, 0.4);
+    if (v > 0) { cv2 = v; $("capN").textContent = n; $("capT").innerHTML = tt; $("capS").textContent = s; $("cap").style.transform = `translateY(${(1 - out(clamp((t - a) / 0.6))) * 24}px)`; }
+  }
+  $("cap").style.opacity = cv2;
+  $("facts").style.opacity = win(t, 53.9, 58.0, 0.2, 0.5);
+  [["f1", 54.0], ["f2", 54.7], ["f3", 55.6]].forEach(([id, at]) => { const el = $(id); const k = clamp((t - at) / 0.3); el.style.opacity = k; el.style.transform = `scale(${0.8 + 0.2 * back(k)})`; });
+  const vb = win(t, 53.7, 58.2, 0.5, 0.6);
+  $("stage").style.backgroundImage = vb > 0 ? `linear-gradient(rgba(0,0,0,${1 - vb * 0.45}),rgba(0,0,0,${1 - vb * 0.45})), url(${frameSrc("room", pw(t, MAP.facts()))})` : "";
+  $("stage").style.backgroundSize = "cover";
+  const ev = clamp((t - 57.9) / 0.6);
+  $("end").style.opacity = ev;
+  $("end").style.transform = `scale(${0.96 + 0.04 * out(ev)})`;
+  $("fade").style.opacity = Math.max(1 - clamp(t / 0.6), clamp((t - (DURATION - 1.2)) / 1.0));
+  await Promise.all(pending);
+}
+window.render = render;
+window.setMarks = (m) => { MARKS = m; };
+window.ready = Promise.all([...document.images].map((i) => i.decode().catch(() => {})));
+window.events = () => {
+  const ev = [];
+  const C = (shot, names, m, k) => names.forEach((n) => ev.push({ t: pwInv(mk(shot, n).f - 1, m), k }));
+  C("create", ["chip", "createTab", "name", "private", "pass", "handle", "create", "chip2", "invite"], MAP.create(), "click");
+  C("nearby", ["near"], MAP.nearby(), "click");
+  C("share", ["send", "expand", "copy"], MAP.share(), "click");
+  C("room", ["guest", "remove"], MAP.control(), "click");
+  C("join", ["card", "name", "pass", "go"], MAP.join(), "tap");
+  C("open", ["ball", "download"], MAP.open(), "tap");
+  ev.push({ t: pwInv(mk("create", "create").f, MAP.create()) + 0.2, k: "arrive" }, { t: 19.0, k: "launch" }, { t: pwInv(mk("join", "go").f, MAP.join()) + 0.2, k: "arrive" });
+  for (const at of [27.6, 29.2, 30.8]) ev.push({ t: at, k: "arrive" });
+  ev.push({ t: pwInv(mk("share", "send").f, MAP.share()) + 0.35, k: "launch" }, { t: 44.0, k: "done" }, { t: pwInv(mk("open", "ready").f, MAP.open()), k: "done" });
+  ev.push({ t: pwInv(mk("room", "remove").f, MAP.control()) + 0.05, k: "burn" });
+  ev.push({ t: 6.7, k: "strike" }, { t: 6.95, k: "strike" }, { t: 7.4, k: "logo" }, { t: 57.9, k: "end" });
+  for (const at of [1.6, 3.9]) ev.push({ t: at, k: "tap" });
+  for (const at of [54.0, 54.7, 55.6]) ev.push({ t: at, k: "word" });
+  for (const [a] of LAYOUT) ev.push({ t: a, k: "move" });
+  return ev.sort((a, b) => a.t - b.t);
+};
+</script>
+</body>
+</html>
