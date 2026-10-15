@@ -337,7 +337,7 @@ async function render(t) {
   };
   // the invite link travels from the laptop to the teammate's phone
   if (t > 18.6 && t < 20.8) svg += beam(lapPt(720, 507), phPt(195, 400), (t - 19.0) / 0.9, "255,255,255", -160);
-  // the room: Ana's phone → laptop + desktop; Ravi's desktop → laptop + phone; Leo (off screen) → all
+  // the room: Ana's phone → laptop + desktop; Noah's desktop → laptop + phone; Leo (off screen) → all
   if (t > 26.6 && t < 31.6) {
     const a = (t - 27.0) / 0.7, r = (t - 28.6) / 0.7, l = (t - 30.2) / 0.7;
     svg += beam(phPt(195, 420), lapPt(300, 320), a, "61,255,140", -160) + beam(phPt(195, 420), monPt(300, 320), a - 0.06, "61,255,140", -120);
@@ -364,9 +364,9 @@ async function render(t) {
 
   // ---- labels ----
   const tag = (el, txt, x, y, v) => { el.innerHTML = txt; el.style.left = x + "px"; el.style.top = y + "px"; el.style.opacity = v; };
-  tag($("tagL"), "<i></i>Mohit · laptop", L.lx + 40, L.ly - 50, win(t, 9.6, 10.6) + win(t, 26.6, 32.6));
+  tag($("tagL"), "<i></i>Lucas · laptop", L.lx + 40, L.ly - 50, win(t, 9.6, 10.6) + win(t, 26.6, 32.6));
   tag($("tagP"), "<i></i>" + (t > 26 && t < 33 ? "Ana · phone" : t > 43 ? "Client · phone" : "Ana · phone"), L.px + 40, L.py - 50, win(t, 9.6, 10.6) + win(t, 18.6, 20.8) + win(t, 26.6, 32.6) + win(t, 43.7, 47.6));
-  tag($("tagM"), "<i></i>Ravi · office desktop", L.mx + 30, L.my - 50, win(t, 26.6, 32.6));
+  tag($("tagM"), "<i></i>Noah · office desktop", L.mx + 30, L.my - 50, win(t, 26.6, 32.6));
 
   // ---- type ----
   const cv0 = win(t, 0.3, 7.2, 0.4, 0.5);

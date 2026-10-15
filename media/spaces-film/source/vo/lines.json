@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Your studio. Your family. Your Sunday league. Every circle shares files somewhere different.",
+   "dur": 5.312
+  },
+  {
+   "key": "meet",
+   "text": "With Orbi Transfer, each one gets a space of its own.",
+   "dur": 3.136
+  },
+  {
+   "key": "create",
+   "text": "Create one in seconds. Give it a name, keep it open, or lock it with a passcode.",
+   "dur": 4.757
+  },
+  {
+   "key": "invite",
+   "text": "Invite your people with one link. They pick a name, and they're in. No emails. No phone numbers.",
+   "dur": 5.739
+  },
+  {
+   "key": "drop",
+   "text": "Now everyone shares in one place. Drop a file once, and it lands on every screen in the space, live.",
+   "dur": 6.165
+  },
+  {
+   "key": "find",
+   "text": "Open spaces can be found by name. Search, pick a name, and join the team.",
+   "dur": 4.523
+  },
+  {
+   "key": "league",
+   "text": "Mateo's match photos? The whole league has them, instantly.",
+   "dur": 3.563
+  },
+  {
+   "key": "family",
+   "text": "And private spaces stay private. Only the family sees the family.",
+   "dur": 3.904
+  },
+  {
+   "key": "galaxy",
+   "text": "One space for every circle you're part of.",
+   "dur": 2.261
+  },
+  {
+   "key": "facts",
+   "text": "Free. No login. Private by design.",
+   "dur": 2.645
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer. Make your own space.",
+   "dur": 2.197
+  }
+ ]
+}

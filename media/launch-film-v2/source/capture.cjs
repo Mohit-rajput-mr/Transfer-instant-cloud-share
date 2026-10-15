@@ -164,13 +164,13 @@ const shots = {
 
   /** a private space for a team: laptop view, a colleague's file arriving */
   async space(b) {
-    for (const [name, opts, handle] of [["space", DESK, "Mohit"], ["spacephone", PHONE, "Sam"]]) {
+    for (const [name, opts, handle] of [["space", DESK, "Lucas"], ["spacephone", PHONE, "Sam"]]) {
       const s = L.shot(OUT + "/" + name);
-      const members = ["Mohit", "Priya", "Leo", "Sam"].map((h, i) => ({ id: "m" + i, handle: h, you: h === handle }));
+      const members = ["Lucas", "Sofia", "Leo", "Sam"].map((h, i) => ({ id: "m" + i, handle: h, you: h === handle }));
       const space = {
         slug: "design-team",
         session: { slug: "design-team", title: "Design team", priv: true, handle, token: "tok", chan: "chan1" },
-        info: { slug: "design-team", title: "Design team", priv: true, handle, chan: "chan1", owner: handle === "Mohit", members },
+        info: { slug: "design-team", title: "Design team", priv: true, handle, chan: "chan1", owner: handle === "Lucas", members },
       };
       const inSpace = (o, by) => ({ ...o, space: "design-team", by });
       const base = [
@@ -179,7 +179,7 @@ const shots = {
       ];
       const { page, st } = await L.open(b, opts, { items: [...base], space });
       await L.cap(page, s, 1500);
-      st.items = [...base, inSpace(L.mkOrb("sp03", "Moodboard", "Moodboard.png", "image/png", 14e6, 175, 30, { watchers: 1 }), "Priya")];
+      st.items = [...base, inSpace(L.mkOrb("sp03", "Moodboard", "Moodboard.png", "image/png", 14e6, 175, 30, { watchers: 1 }), "Sofia")];
       await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
       L.note(s, "arrive");
       await L.cap(page, s, 3000);

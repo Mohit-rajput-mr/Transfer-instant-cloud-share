@@ -17,7 +17,8 @@ LINES = [
 ]
 out = []
 for key, text in LINES:
-    s, sr = k.create(text, voice="af_heart", speed=1.0, lang="en-us")
+    # spoken as "Or-bee" (like "orbit" without the t); on screen it stays "Orbi"
+    s, sr = k.create(text.replace("Orbi", "Orbee"), voice="af_heart", speed=1.0, lang="en-us")
     sf.write(f"vo/{key}.wav", s, sr)
     out.append({"key": key, "text": text, "dur": round(len(s) / sr, 3)})
     print(key, round(len(s) / sr, 2))

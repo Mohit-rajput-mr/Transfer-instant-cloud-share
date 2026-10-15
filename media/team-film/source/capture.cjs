@@ -32,7 +32,7 @@ const roomInfo = (you, names, owner) => ({ slug: SLUG, title: "Studio North", pr
 const inRoom = (o, by) => ({ ...o, space: SLUG, by });
 const ROOM_ITEMS = [
   inRoom(L.mkOrb("tn01", "Site photos", "Site photos.files", "application/x-orbit-folder", 84e6, 205, 28, { views: 2, watchers: 1 }), "Ana"),
-  inRoom(L.mkOrb("tn02", "Invoice March", "Invoice March.pdf", "application/pdf", 1.2e6, 40, 26, { views: 1 }), "Ravi"),
+  inRoom(L.mkOrb("tn02", "Invoice March", "Invoice March.pdf", "application/pdf", 1.2e6, 40, 26, { views: 1 }), "Noah"),
   inRoom(L.mkOrb("tn03", "Logo v2", "Logo v2.svg", "image/svg+xml", 3.4e6, 300, 29, { watchers: 2 }), "Leo"),
 ];
 // the public void, some of it from this office's network ("n1" = same Wi-Fi as the viewer)
@@ -79,8 +79,8 @@ const shots = {
     const { page, st } = await L.open(b, DESK, {
       items: PUBLIC.slice(0, 4),
       init: async (page, st) => {
-        st.crew = ["Mohit"];
-        st.custom = spaceApi(st, { handle: "Mohit", owner: true });
+        st.crew = ["Lucas"];
+        st.custom = spaceApi(st, { handle: "Lucas", owner: true });
       },
     });
     await L.cap(page, s, 700);
@@ -106,7 +106,7 @@ const shots = {
     const handleInput = page.locator(".sp-pane input").nth(2);
     await L.mark(page, s, "handle", await handleInput.boundingBox());
     await handleInput.click();
-    await typeInto(page, s, "Mohit");
+    await typeInto(page, s, "Lucas");
     await L.cap(page, s, 350);
     await L.mark(page, s, "create", ".sp-pane .cta");
     await page.click(".sp-pane .cta");
@@ -130,7 +130,7 @@ const shots = {
       url: `/?space=${SLUG}`,
       items: [],
       init: async (page, st) => {
-        st.crew = ["Mohit", "Ana"];
+        st.crew = ["Lucas", "Ana"];
         st.custom = spaceApi(st, { handle: "Ana", owner: false, findable: true });
       },
     });
@@ -155,11 +155,11 @@ const shots = {
     s.save();
   },
 
-  /** the team room on three devices: things arrive from Ana, Ravi and Leo; the owner removes a guest */
+  /** the team room on three devices: things arrive from Ana, Noah and Leo; the owner removes a guest */
   async room(b) {
-    for (const [name, opts, you, owner] of [["room", DESK, "Mohit", true], ["roomphone", PHONE, "Ana", false], ["roommon", { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }, "Ravi", false]]) {
+    for (const [name, opts, you, owner] of [["room", DESK, "Lucas", true], ["roomphone", PHONE, "Ana", false], ["roommon", { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }, "Noah", false]]) {
       const s = L.shot(OUT + "/" + name);
-      const names = ["Mohit", "Ana", "Ravi", "Leo", "Guest"];
+      const names = ["Lucas", "Ana", "Noah", "Leo", "Guest"];
       const { page, st } = await L.open(b, opts, {
         items: [],
         space: { slug: SLUG, session: session(you, owner), info: roomInfo(you, names, owner) },

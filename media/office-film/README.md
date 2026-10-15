@@ -13,7 +13,7 @@ Every screen in the office (desk monitors, the meeting-room TV, Leo's phone) pla
 | 0:14 | Maya (design) drops a photo and hits Send — cursor clicks on her real screen |
 | 0:19 | The file flies across the office to Leo on the sofa |
 | 0:22 | Leo's phone: taps it, downloads, saved — no app, no account |
-| 0:29 | Wi-Fi rings from the router; Ravi taps Nearby — only files shared on this network |
+| 0:29 | Wi-Fi rings from the router; Noah taps Nearby — only files shared on this network |
 | 0:34 | Meeting room TV: the team's own space, invite link `orbitransfer.com/?space=studio-north` |
 | 0:40 | Free. No sign-up. Every device. |
 | 0:44 | End card · Now live on Product Hunt |
@@ -44,3 +44,7 @@ node render.cjs 0 1490 frames         # frames (cap/ links to the launch-film-v2
 node events.cjs && python3 synth.py   # sound cues → score.wav
 ffmpeg -framerate 30 -i frames/%05d.png -i score.wav -c:v libx264 -crf 17 -pix_fmt yuv420p -c:a aac -b:a 256k -shortest ../OrbiTransfer-office.mp4
 ```
+
+## Voice
+
+Kokoro, voice af_heart. "Orbi" is spoken as "Or-bee" (like "orbit" without the t): `vo.py` hands the voice "Orbee", and on-screen text stays "Orbi".

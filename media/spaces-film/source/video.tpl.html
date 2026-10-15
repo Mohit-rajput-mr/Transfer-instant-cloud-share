@@ -1,0 +1,432 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Orbi Transfer · spaces film</title>
+<!--V2STYLE-->
+<style>
+  /* ---------- spaces film ---------- */
+  #sky { position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: visible; }
+  #over { position: absolute; inset: 0; z-index: 44; pointer-events: none; overflow: visible; }
+  .circle { position: absolute; z-index: 20; width: 380px; padding: 28px 30px; border-radius: 28px; background: rgba(22,24,31,0.9); border: 1px solid rgba(255,255,255,0.14); box-shadow: 0 30px 80px rgba(0,0,0,0.55); opacity: 0; }
+  .circle .ic { width: 64px; height: 64px; border-radius: 20px; display: grid; place-items: center; margin-bottom: 18px; }
+  .circle b { display: block; font-size: 34px; }
+  .circle .ways { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .circle .ways span { position: relative; padding: 7px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.2); font: 600 15px/1 "Inter", Arial, sans-serif; color: #c9c9c9; }
+  .circle .ways span i { position: absolute; left: 6%; right: 6%; top: 50%; height: 3px; border-radius: 2px; background: #ff4d4d; transform-origin: 0 50%; transform: scaleX(0); }
+  #invite { position: absolute; z-index: 47; padding: 14px 24px 14px 18px; border-radius: 999px; background: #fff; color: #000; font: 700 22px/1 "Inter", Arial, sans-serif; box-shadow: 0 20px 60px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 12px; opacity: 0; white-space: nowrap; }
+  #invite i { width: 32px; height: 32px; border-radius: 50%; background: #111; display: grid; place-items: center; }
+  .nocontact { position: absolute; z-index: 47; display: flex; gap: 14px; opacity: 0; }
+  .nocontact span { padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.22); background: rgba(20,22,27,0.9); font: 600 18px/1 "Inter", Arial, sans-serif; color: #ddd; position: relative; }
+  .nocontact span b { position: absolute; left: 8%; right: 8%; top: 50%; height: 3px; background: #ff4d4d; border-radius: 3px; transform-origin: 0 50%; }
+  #galaxyT { position: absolute; left: 0; right: 0; top: 90px; text-align: center; z-index: 46; opacity: 0; }
+  #galaxyT .t { font-size: 64px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="stars" width="1920" height="1080"></canvas>
+  <div class="glow" id="g1" style="left:-200px;top:-260px;width:900px;height:900px;background:#2b3cff"></div>
+  <div class="glow" id="g2" style="left:1200px;top:520px;width:900px;height:900px;background:#00d39a"></div>
+  <svg id="sky" width="1920" height="1080"></svg>
+
+  <div class="circle" id="c1" style="left:150px;top:380px"><div class="ic" style="background:linear-gradient(135deg,#59b8ff,#2a5bd7)"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div><b>Your studio</b><div class="ways"><span>email threads<i></i></span><span>work chat<i></i></span></div></div>
+  <div class="circle" id="c2" style="left:770px;top:380px"><div class="ic" style="background:linear-gradient(135deg,#ff9a6b,#d8504a)"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg></div><b>Your family</b><div class="ways"><span>family chat<i></i></span><span>cloud links<i></i></span></div></div>
+  <div class="circle" id="c3" style="left:1390px;top:380px"><div class="ic" style="background:linear-gradient(135deg,#5ee08f,#1f9a5a)"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7l4 3-1.5 5h-5L8 10z"/></svg></div><b>Your league</b><div class="ways"><span>group chat<i></i></span><span>phone numbers<i></i></span></div></div>
+
+  <div class="dev monitor" id="mon"><div class="frame"></div><div class="screen"><img class="cap" id="monImg" /></div><div class="stand"></div><div class="foot"></div></div>
+  <div class="dev laptop" id="lap">
+    <div class="base"></div>
+    <div class="lid" id="lid"><div class="cam"></div><div class="screen"><img class="cap" id="lapImg" />
+      <div class="ripple" id="rip"></div>
+      <svg class="cursor" id="cur" viewBox="0 0 34 34"><path d="M6 3 L6 27 L12.2 21.2 L16.4 30.6 L20.6 28.8 L16.5 19.6 L25 19.6 Z" fill="#fff" stroke="#000" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    </div></div>
+  </div>
+  <div class="dev phone" id="ph"><div class="body"></div><div class="island"></div><div class="screen"><img class="cap" id="phImg" />
+    <div class="ripple" id="prip"></div>
+    <svg class="finger" id="fin" viewBox="0 0 120 168"><defs><linearGradient id="sk" x1="0" x2="1"><stop offset="0" stop-color="#f3d2bd"/><stop offset="1" stop-color="#d9a98d"/></linearGradient></defs>
+      <path d="M22 10 c0-9 16-9 16 0 v58 c4-6 16-6 18 2 c4-6 16-5 18 3 c5-5 16-3 17 6 v34 c0 28-16 46-44 46 c-24 0-34-12-44-30 l-16-30 c-5-9 6-16 13-9 l10 12 z" fill="url(#sk)" stroke="rgba(0,0,0,0.25)" stroke-width="1.5"/>
+      <path d="M24 6 c2-3 10-3 12 0" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2"/></svg>
+  </div></div>
+
+  <svg id="over" width="1920" height="1080"></svg>
+  <div id="invite"><i><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></i>orbitransfer.com/?space=studio-north</div>
+  <div class="nocontact" id="noc"><span>email<b></b></span><span>phone number<b></b></span><span>account<b></b></span></div>
+  <div id="galaxyT"><div class="t wide">One for every circle.</div></div>
+
+  <img id="emblem" src="emblem.svg" />
+  <img id="logo" src="logo.svg" />
+  <div id="meetline" class="mono">Spaces · your own private corner of orbit</div>
+  <div class="caption" id="cap"><div class="n mono" id="capN"></div><div class="t wide" id="capT"></div><div class="s mono" id="capS"></div></div>
+  <div class="facts wide" id="facts"><span class="f" id="f1">Free.</span><span class="f" id="f2">No login.</span><br /><span class="f" id="f3">Private by design.</span></div>
+  <div id="end"><img src="logo.svg" /><div class="url mono">orbitransfer.com</div><div class="sub mono">Spaces for every circle · invite by link · public or private · free</div><div class="ph">Now live on Product Hunt</div></div>
+  <div class="tag" id="tagL"></div><div class="tag" id="tagP"></div><div class="tag" id="tagM"></div>
+  <div class="fade" id="fade"></div>
+</div>
+
+<script>
+// ===================== timeline (seconds) =====================
+const VO = { hook: 0.5, meet: 6.4, create: 10.2, invite: 16.2, drop: 22.6, find: 29.4, league: 34.6, family: 39.0, galaxy: 43.6, facts: 46.4, end: 50.0 };
+window.VO = VO;
+const DURATION = 54.5;
+window.DURATION = DURATION;
+let MARKS = {};
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, k) => a + (b - a) * k;
+const win = (t, a, b, fi = 0.4, fo = 0.4) => clamp((t - a) / fi) * clamp((b - t) / fo);
+function pw(t, pts) {
+  if (t <= pts[0][0]) return pts[0][1];
+  for (let i = 1; i < pts.length; i++) if (t <= pts[i][0]) { const [t0, v0] = pts[i - 1], [t1, v1] = pts[i]; return v0 + ((t - t0) / (t1 - t0)) * (v1 - v0); }
+  return pts[pts.length - 1][1];
+}
+function pwInv(f, pts) {
+  for (let i = 1; i < pts.length; i++) { const [t0, v0] = pts[i - 1], [t1, v1] = pts[i]; if (f >= v0 && f <= v1 && v1 !== v0) return t0 + ((f - v0) / (v1 - v0)) * (t1 - t0); }
+  return pts[pts.length - 1][0];
+}
+function kf(t, keys) {
+  if (t <= keys[0][0]) return keys[0][1];
+  for (let i = 1; i < keys.length; i++) {
+    if (t <= keys[i][0]) {
+      const [t0, a] = keys[i - 1], [t1, b] = keys[i];
+      const k = ease((t - t0) / (t1 - t0));
+      const o = {};
+      for (const key of Object.keys(b)) o[key] = lerp(a[key] ?? b[key], b[key], k);
+      return o;
+    }
+  }
+  return keys[keys.length - 1][1];
+}
+const mk = (shot, name) => (MARKS[shot]?.marks || []).find((m) => m.name === name) || { f: 0, x: 0, y: 0 };
+const last = (shot) => (MARKS[shot]?.frames ?? 1) - 1;
+const frameSrc = (shot, f) => `cap/${shot}/${String(Math.max(0, Math.min(last(shot), Math.round(f)))).padStart(5, "0")}.png`;
+const $ = (id) => document.getElementById(id);
+const pending = [];
+function setImg(el, src) { if (el.dataset.src === src) return; el.dataset.src = src; el.src = src; pending.push(el.decode().catch(() => {})); }
+
+const stars = [];
+let seed = 5; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+for (let i = 0; i < 460; i++) stars.push({ x: rnd() * 1920, y: rnd() * 1080, r: rnd() * 1.4 + 0.2, z: rnd() * 0.8 + 0.2, tw: rnd() * 6.28 });
+function drawStars(t, zoom = 1) {
+  const c = $("stars").getContext("2d");
+  c.clearRect(0, 0, 1920, 1080);
+  for (const s of stars) {
+    let x = (s.x - t * 6 * s.z + 1920 * 4) % 1920, y = s.y;
+    x = 960 + (x - 960) * zoom; y = 540 + (y - 540) * zoom;
+    c.fillStyle = `rgba(255,255,255,${0.25 + 0.55 * s.z * (0.75 + 0.25 * Math.sin(t * 1.3 + s.tw))})`;
+    c.beginPath(); c.arc(x, y, s.r, 0, 6.283); c.fill();
+  }
+}
+
+// ===================== art: planets and people =====================
+const PEOPLE = {
+  Lucas: "#59b8ff", Ana: "#3dff8c", Noah: "#ffb347", Leo: "#c45cff", Yuki: "#ff6f91",
+  Kim: "#ffd166", Emma: "#4dd4c6", Mateo: "#ff8a5c", Amara: "#9b8cff", Sofia: "#ff7aa8", Rosa: "#f4a261", Diego: "#2ec4b6", Mia: "#e9c46a",
+};
+let uid = 0;
+function planet(cx, cy, r, hue, label, o = {}) {
+  const id = "pl" + uid++;
+  const a = o.alpha ?? 1;
+  let s = `<g opacity="${a}"><defs><radialGradient id="${id}" cx="0.36" cy="0.32" r="0.75"><stop offset="0" stop-color="hsl(${hue},90%,82%)"/><stop offset="0.45" stop-color="hsl(${hue},75%,52%)"/><stop offset="1" stop-color="hsl(${hue},70%,14%)"/></radialGradient></defs>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${r * 1.7}" fill="hsla(${hue},90%,60%,${0.1 * (o.glow ?? 1)})"/>`;
+  if (o.ring !== false) s += `<ellipse cx="${cx}" cy="${cy}" rx="${r * 1.75}" ry="${r * 0.42}" fill="none" stroke="hsla(${hue},90%,80%,0.35)" stroke-width="${Math.max(1.5, r * 0.04)}" transform="rotate(-14 ${cx} ${cy})"/>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${id})"/>`;
+  s += `<path d="M${cx - r * 0.8} ${cy + r * 0.1} Q${cx} ${cy + r * 0.32} ${cx + r * 0.82} ${cy - r * 0.06}" stroke="rgba(255,255,255,0.12)" stroke-width="${r * 0.12}" fill="none"/>`;
+  if (o.ring !== false) s += `<path d="M${cx - r * 1.7} ${cy + r * 0.42} A${r * 1.75} ${r * 0.42} 0 0 0 ${cx + r * 1.7} ${cy - r * 0.42}" transform="rotate(-14 ${cx} ${cy})" fill="none" stroke="hsla(${hue},90%,85%,0.6)" stroke-width="${Math.max(1.5, r * 0.04)}"/>`;
+  if (o.lock) {
+    const lr = r * 0.32;
+    s += `<g transform="translate(${cx + r * 0.62},${cy - r * 0.62})"><circle r="${lr}" fill="#0d0e12" stroke="rgba(255,255,255,0.6)" stroke-width="2"/><rect x="${-lr * 0.42}" y="${-lr * 0.05}" width="${lr * 0.84}" height="${lr * 0.62}" rx="${lr * 0.12}" fill="#fff"/><path d="M${-lr * 0.26} ${-lr * 0.05} V${-lr * 0.3} A${lr * 0.26} ${lr * 0.26} 0 0 1 ${lr * 0.26} ${-lr * 0.3} V${-lr * 0.05}" stroke="#fff" stroke-width="${lr * 0.14}" fill="none"/></g>`;
+  }
+  if (label) s += `<text x="${cx}" y="${cy + r + (o.labelGap ?? 34) + (o.fs ?? 22) * 0.4}" text-anchor="middle" font-family="Archivo Black, Arial Black, Arial" font-weight="900" font-size="${o.fs ?? 22}" letter-spacing="1" fill="#fff">${label.toUpperCase()}</text>`;
+  if (o.sub) s += `<text x="${cx}" y="${cy + r + (o.labelGap ?? 34) + (o.fs ?? 22) * 0.4 + 26}" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="14" letter-spacing="3" fill="#9a9a9a">${o.sub.toUpperCase()}</text>`;
+  return s + `</g>`;
+}
+function avatar(x, y, r, name, o = {}) {
+  const c = PEOPLE[name] || "#888";
+  let s = `<g opacity="${o.alpha ?? 1}">`;
+  s += `<circle cx="${x}" cy="${y}" r="${r + 5}" fill="none" stroke="${c}" stroke-opacity="0.5" stroke-width="2"/>`;
+  s += `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/>`;
+  s += `<text x="${x}" y="${y + r * 0.36}" text-anchor="middle" font-family="Inter, Arial" font-weight="800" font-size="${r * 0.95}" fill="#0b0b0f">${o.initial ?? name[0]}</text>`;
+  if (o.label !== false) s += `<text x="${x}" y="${y + r + 26}" text-anchor="middle" font-family="DejaVu Sans Mono, monospace" font-size="15" letter-spacing="2" fill="#dcdcdc">${(o.text ?? name).toUpperCase()}</text>`;
+  return s + `</g>`;
+}
+function beam(a, b, k, hue = "61,255,140", bend = -160) {
+  if (k <= 0 || k >= 1.35) return "";
+  const [x0, y0] = a, [x1, y1] = b;
+  const cx_ = (x0 + x1) / 2, cy_ = Math.min(y0, y1) + bend;
+  const q = (u) => [(1 - u) ** 2 * x0 + 2 * (1 - u) * u * cx_ + u * u * x1, (1 - u) ** 2 * y0 + 2 * (1 - u) * u * cy_ + u * u * y1];
+  const head = clamp(k), tail = clamp(k - 0.35);
+  let d = ""; for (let i = 0; i <= 24; i++) { const u = tail + (head - tail) * (i / 24); const [x, y] = q(u); d += (i ? "L" : "M") + x.toFixed(1) + " " + y.toFixed(1); }
+  const [hx, hy] = q(head);
+  return `<path d="${d}" stroke="rgba(${hue},0.9)" stroke-width="4" fill="none" stroke-linecap="round" style="filter:drop-shadow(0 0 8px rgba(${hue},0.9))"/><circle cx="${hx}" cy="${hy}" r="8" fill="#fff" style="filter:drop-shadow(0 0 14px rgba(${hue},1))"/>`;
+}
+
+// ===================== shots → film time =====================
+const MAP = {
+  create: () => [[10.0, 10], [10.5, mk("create", "chip").f], [11.1, mk("create", "createTab").f], [11.6, mk("create", "name").f], [12.7, mk("create", "private").f], [13.2, mk("create", "pass").f], [14.0, mk("create", "handle").f], [14.7, mk("create", "create").f], [16.4, mk("create", "create").f + 50]],
+  room: () => [[22.4, 0], [24.0, mk("room", "arrive0").f], [25.6, mk("room", "arrive1").f], [27.2, mk("room", "arrive2").f], [29.2, mk("room", "arrive2").f + 55]],
+  roomphone: () => [[22.4, 0], [24.0, mk("roomphone", "arrive0").f], [25.6, mk("roomphone", "arrive1").f], [27.2, mk("roomphone", "arrive2").f], [29.2, last("roomphone")]],
+  roommon: () => [[22.4, 0], [24.0, mk("roommon", "arrive0").f], [25.6, mk("roommon", "arrive1").f], [27.2, mk("roommon", "arrive2").f], [29.2, last("roommon")]],
+  browse: () => [[29.0, 8], [29.5, mk("browse", "chip").f], [30.2, mk("browse", "browse").f], [30.8, mk("browse", "search").f], [32.3, mk("browse", "card").f], [33.0, mk("browse", "name").f], [33.8, mk("browse", "go").f], [35.6, mk("browse", "dropped").f], [38.8, last("browse")]],
+  league: () => [[34.8, 20], [35.9, mk("league", "arrive").f], [38.8, last("league")]],
+  family: () => [[39.0, 12], [39.6, mk("family", "arrive0").f], [40.7, mk("family", "arrive1").f], [41.8, mk("family", "arrive2").f], [43.8, last("family")]],
+};
+
+// placements: laptop (lx,ly,ls,lo), phone (px,py,ps,po), monitor (mx,my,ms,mo)
+const OFF = { lx: 700, ly: 1300, ls: 1, lo: 0, px: 2150, py: 300, ps: 1, po: 0, mx: 300, my: 1300, ms: 0.9, mo: 0 };
+const CREATE = { ...OFF, lx: 690, ly: 210, ls: 1.0, lo: 1 };
+const PLANET = { ...OFF, lx: 900, ly: 1250, ls: 0.7, lo: 0 };
+const DROP = { lx: 70, ly: 360, ls: 0.68, lo: 1, px: 1580, py: 320, ps: 0.94, po: 1, mx: 1000, my: 110, ms: 0.6, mo: 1 };
+const FIND = { ...OFF, px: 1180, py: 110, ps: 1.25, po: 1, mx: 300, my: 1300, ms: 0.9 };
+const LEAGUE = { ...OFF, px: 1440, py: 190, ps: 1.08, po: 1, mx: 360, my: 370, ms: 0.92, mo: 1 };
+const FAMILY = { ...OFF, lx: 680, ly: 230, ls: 1.0, lo: 1 };
+const LAYOUT = [
+  [0, OFF], [9.6, OFF], [10.0, CREATE], [15.4, CREATE], [16.1, PLANET], [21.8, PLANET], [22.4, DROP], [28.8, DROP], [29.0, FIND], [34.2, FIND], [34.8, LEAGUE], [38.6, LEAGUE], [39.0, FAMILY], [43.2, FAMILY], [43.7, OFF],
+];
+
+// the Studio North crew in orbit (invite scene)
+const CREW = [["Ana", 18.4, 0.2], ["Noah", 19.1, 1.5], ["Leo", 19.8, 2.8], ["Yuki", 20.5, 4.2]];
+const GALAXY = [
+  ["Studio North", 205, 0, 0, 70, true], ["Lopez Family", 340, 1, 0.3, 52, true], ["Class 7B", 270, 1, 2.4, 40, true], ["Climbing Crew", 160, 1, 4.5, 34, false],
+  ["Sunday League", 130, 2, 1.0, 58, false], ["Sunset Choir", 15, 2, 2.6, 36, true], ["Night Shift", 240, 2, 4.2, 32, true], ["Book Club", 45, 2, 5.6, 34, false],
+];
+
+async function render(t) {
+  pending.length = 0;
+  const gz = 1 + 0.35 * clamp((t - 43.6) / 3);
+  drawStars(t, t > 43.6 ? 1 / gz + 0.3 * (1 - 1 / gz) : 1);
+  $("g1").style.opacity = 0.22 + 0.1 * Math.sin(t * 0.4);
+  $("g2").style.opacity = 0.16 + 0.08 * Math.sin(t * 0.33 + 1);
+  const L = kf(t, LAYOUT);
+  $("lap").style.transform = `translate(${L.lx}px,${L.ly}px) scale(${L.ls})`; $("lap").style.opacity = L.lo;
+  $("ph").style.transform = `translate(${L.px}px,${L.py}px) scale(${L.ps})`; $("ph").style.opacity = L.po;
+  $("mon").style.transform = `translate(${L.mx}px,${L.my}px) scale(${L.ms})`; $("mon").style.opacity = L.mo;
+  const bob = Math.sin(t * 1.1) * 4;
+  $("ph").style.marginTop = bob + "px";
+
+  // ---- screens ----
+  let lap = ["create", 2], ph = ["browse", 8], mon = ["roommon", 0];
+  if (t < 22.2) lap = ["create", t < 10 ? 2 : pw(t, MAP.create())];
+  else if (t < 29.0) { lap = ["room", pw(t, MAP.room())]; ph = ["roomphone", pw(t, MAP.roomphone())]; mon = ["roommon", pw(t, MAP.roommon())]; }
+  else if (t < 38.9) { ph = ["browse", pw(t, MAP.browse())]; mon = ["league", pw(t, MAP.league())]; }
+  else lap = ["family", pw(t, MAP.family())];
+  setImg($("lapImg"), frameSrc(...lap));
+  setImg($("phImg"), frameSrc(...ph));
+  setImg($("monImg"), frameSrc(...mon));
+
+  // ---- cursor on the laptop (create) ----
+  const S = 1100 / 1440;
+  const cur = $("cur"), rip = $("rip");
+  let cv = 0, cx = 700, cy = 420, press = 0, rp = -1, rx = 0, ry = 0;
+  const path = [];
+  if (t >= 10.0 && t < 15.6) {
+    path.push([10.0, 820, 500], ...["chip", "createTab", "name", "private", "pass", "handle", "create"].map((n) => [pwInv(mk("create", n).f - 1, MAP.create()), mk("create", n).x, mk("create", n).y, 1]), [15.6, 980, 640]);
+    cv = win(t, 10.0, 15.6, 0.3, 0.3);
+  }
+  if (path.length) {
+    let i = 1; while (i < path.length - 1 && t > path[i][0]) i++;
+    const [t0, x0, y0] = path[i - 1], [t1, x1, y1] = path[i];
+    const k = ease(clamp((t - t0) / Math.max(0.05, (t1 - t0) * 0.78)));
+    const arc = Math.sin(k * Math.PI) * Math.min(60, Math.hypot(x1 - x0, y1 - y0) * 0.12);
+    cx = lerp(x0, x1, k); cy = lerp(y0, y1, k) - arc;
+    for (const [tc, x, y, c] of path) if (c) {
+      const d = t - tc;
+      if (d > -0.12 && d < 0.1) press = Math.max(press, 1 - Math.abs(d + 0.01) / 0.12);
+      if (d >= 0 && d < 0.5) { rp = d / 0.5; rx = x; ry = y; }
+    }
+  }
+  cur.style.opacity = cv;
+  cur.style.transform = `translate(${cx * S - 6}px,${cy * S - 4}px) scale(${1 - press * 0.18})`;
+  rip.style.opacity = rp >= 0 ? (1 - rp) * 0.9 : 0;
+  rip.style.transform = `translate(${rx * S}px,${ry * S}px) scale(${0.3 + rp * 1.1})`;
+
+  // ---- finger on the phone (browse) ----
+  const P = 300 / 390;
+  const fin = $("fin"), prip = $("prip");
+  let fv = 0, fx = 300, fy = 760, fp = 0, pr = -1, px = 0, py = 0;
+  const taps = [];
+  if (t >= 29.2 && t < 34.3) { taps.push(...["chip", "browse", "search", "card", "name", "go"].map((n) => [pwInv(mk("browse", n).f - 1, MAP.browse()), mk("browse", n).x, mk("browse", n).y])); fv = win(t, 29.2, 34.3, 0.3, 0.4); }
+  if (taps.length) {
+    let tgt = taps[0]; for (const x of taps) if (t > x[0] + 0.3) tgt = taps[Math.min(taps.length - 1, taps.indexOf(x) + 1)];
+    const prev = taps[Math.max(0, taps.indexOf(tgt) - 1)];
+    const k = tgt === prev ? 1 : ease(clamp((t - (prev[0] + 0.3)) / Math.max(0.1, tgt[0] - prev[0] - 0.45)));
+    fx = lerp(prev[1], tgt[1], k); fy = lerp(prev[2], tgt[2], k);
+    for (const [tc, x, y] of taps) {
+      const d = t - tc;
+      if (d > -0.15 && d < 0.15) fp = Math.max(fp, 1 - Math.abs(d) / 0.15);
+      if (d >= 0 && d < 0.55) { pr = d / 0.55; px = x; py = y; }
+    }
+    fy += clamp(Math.min(...taps.map(([tc]) => Math.abs(t - tc))) / 0.3) * 26;
+  }
+  fin.style.opacity = fv;
+  fin.style.transform = `translate(${fx * P - 30}px,${fy * P - 8}px) scale(${0.62 * (1 - fp * 0.07)}) rotate(-8deg)`;
+  prip.style.opacity = pr >= 0 ? (1 - pr) * 0.85 : 0;
+  prip.style.transform = `translate(${px * P}px,${py * P}px) scale(${0.3 + pr * 1.0})`;
+
+  // device anchor points on film
+  const lapPt = (x, y) => [L.lx + (20 + x * S) * L.ls, L.ly + (20 + y * S) * L.ls];
+  const phPt = (x, y) => [L.px + (18 + x * P) * L.ps, L.py + bob + (18 + y * P) * L.ps];
+  const monPt = (x, y) => [L.mx + (14 + x * 952 / 1440) * L.ms, L.my + (14 + y * 952 / 1440) * L.ms];
+
+  // ---- the sky: planets, crews, beams ----
+  let sky = "", over = "";
+  uid = 0;
+  // create: the space is born next to the laptop as soon as "Create" is pressed
+  const born = pwInv(mk("create", "create").f, MAP.create());
+  const pk = clamp((t - born - 0.1) / 0.8);
+  // invite scene: the planet moves to the centre and the crew flies into orbit
+  if (t > born && t < 22.6) {
+    const mv = ease(clamp((t - 15.4) / 0.9));
+    const pcx = lerp(400, 960, mv), pcy = lerp(800, 560, mv), r = lerp(70, 130, mv) * back(pk);
+    const fade = clamp((22.6 - t) / 0.5);
+    // orbit path
+    if (mv > 0) sky += `<ellipse cx="${pcx}" cy="${pcy}" rx="${330}" ry="${150}" fill="none" stroke="rgba(255,255,255,${0.14 * mv * fade})" stroke-dasharray="4 10" stroke-width="2"/>`;
+    sky += planet(pcx, pcy, Math.max(1, r), 205, mv > 0.5 ? "Studio North" : "", { lock: pk > 0.5, alpha: fade, fs: 26, labelGap: 40, sub: mv > 0.5 ? "private space" : "" });
+    // Lucas (creator) always on the orbit; the others fly in
+    const orbitPt = (ph0) => { const a = ph0 + t * 0.32; return [pcx + Math.cos(a) * 330, pcy + Math.sin(a) * 150]; };
+    if (mv > 0) {
+      const [lx_, ly_] = orbitPt(5.4);
+      sky += avatar(lx_, ly_, 26, "Lucas", { alpha: mv * fade, text: "Lucas · owner" });
+      for (const [name, at, ph0] of CREW) {
+        const k = clamp((t - at) / 0.8);
+        if (k <= 0) continue;
+        const [ox, oy] = orbitPt(ph0);
+        const sx = ox + Math.cos(ph0) * 900, sy = oy + Math.sin(ph0) * 500;
+        const e = out(k);
+        sky += avatar(lerp(sx, ox, e), lerp(sy, oy, e), 26, name, { alpha: fade * clamp(k * 2) });
+        if (k < 1) sky += `<line x1="${lerp(sx, ox, e)}" y1="${lerp(sy, oy, e)}" x2="${lerp(sx, ox, Math.max(0, e - 0.25))}" y2="${lerp(sy, oy, Math.max(0, e - 0.25))}" stroke="${PEOPLE[name]}" stroke-width="4" stroke-linecap="round" opacity="0.6"/>`;
+        if (k >= 1 && t - at < 1.4) sky += `<circle cx="${ox}" cy="${oy}" r="${30 + (t - at - 0.8) * 60}" fill="none" stroke="${PEOPLE[name]}" stroke-opacity="${clamp(1 - (t - at - 0.8) / 0.6)}" stroke-width="3"/>`;
+      }
+    }
+  }
+  // drop: one planet between the three devices; every drop goes in once and comes out on every screen
+  if (t > 22.2 && t < 29.2) {
+    const v = win(t, 22.3, 29.0, 0.4, 0.3);
+    const pc = [1200, 790];
+    sky += planet(pc[0], pc[1], 62, 205, "Studio North", { lock: true, alpha: v, fs: 18, labelGap: 26 });
+    const L_ = lapPt(560, 450), M_ = monPt(720, 450), P_ = phPt(195, 420);
+    const drop = (src, at, targets) => { let s = beam(src, pc, (t - at) / 0.5, "61,255,140", -80); for (const d of targets) s += beam(pc, d, (t - at - 0.45) / 0.55, "61,255,140", -120); if (t > at + 0.45 && t < at + 1.1) s += `<circle cx="${pc[0]}" cy="${pc[1]}" r="${62 + (t - at - 0.45) * 120}" fill="none" stroke="rgba(61,255,140,${clamp(1 - (t - at - 0.45) / 0.65)})" stroke-width="3"/>`; return s; };
+    over += drop(P_, 23.2, [L_, M_]) + drop(M_, 24.8, [L_, P_]);
+    // Leo is out of the office: his drop comes from off screen
+    const leo = [1290, 1090];
+    over += drop(leo, 26.4, [L_, M_, P_]);
+    if (t > 26.0 && t < 27.4) over += avatar(1290, 1020, 22, "Leo", { alpha: win(t, 26.0, 27.4, 0.25, 0.3), text: "Leo · on the train" });
+  }
+  // league: Mateo's photos go from his phone to the coach's desktop
+  if (t > 35.2 && t < 37.0) over += beam(phPt(195, 300), monPt(160, 160), (t - 35.4) / 0.55, "61,255,140", -180);
+  // family: a private planet; a stranger without the passcode bounces off
+  if (t > 39.0 && t < 43.4) {
+    const v = win(t, 39.1, 43.3, 0.4, 0.4);
+    const pc = [330, 760];
+    sky += planet(pc[0], pc[1], 70, 340, "Lopez Family", { lock: true, alpha: v, fs: 20, labelGap: 30, sub: "private · 4 members" });
+    const fam = ["Sofia", "Rosa", "Diego", "Mia"];
+    fam.forEach((n, i) => { const a = i * 1.57 + t * 0.5; sky += avatar(pc[0] + Math.cos(a) * 170, pc[1] + Math.sin(a) * 62, 15, n, { alpha: v, label: false }); });
+    // shield ring + the stranger
+    const sk = clamp((t - 40.6) / 1.6);
+    const sx = lerp(-60, 170, sk < 0.55 ? out(sk / 0.55) : 1) - (sk >= 0.55 ? out((sk - 0.55) / 0.45) * 230 : 0);
+    const sy = 600 - (sk >= 0.55 ? out((sk - 0.55) / 0.45) * 120 : 0);
+    if (sk > 0 && sk < 1) sky += avatar(sx, sy, 18, "Stranger", { alpha: v * clamp((1 - sk) * 4), label: false, initial: "?" });
+    const hit = clamp(1 - Math.abs(sk - 0.55) / 0.12);
+    sky += `<circle cx="${pc[0]}" cy="${pc[1]}" r="200" fill="hsla(340,90%,70%,${0.04 + 0.12 * hit})" stroke="hsla(340,90%,75%,${(0.25 + 0.7 * hit) * v})" stroke-width="${2 + 4 * hit}"/>`;
+  }
+  // galaxy: every circle gets its own planet
+  if (t > 43.4) {
+    const v = clamp((t - 43.5) / 0.6) * clamp((47.6 - t) / 0.6);
+    const z = 1 / (1 + 0.12 * (t - 43.5));
+    GALAXY.forEach(([name, hue, ring, ph0, r, lock], i) => {
+      const R = [0, 330, 620][ring] * 1.0, ry = R * 0.5;
+      const a = ph0 + (t - 43.5) * (0.12 - ring * 0.025);
+      const x = 960 + Math.cos(a) * R * (1.25 - 0.2 * z), y = 600 + Math.sin(a) * ry * (1.25 - 0.2 * z);
+      const k = clamp((t - 43.5 - i * 0.12) / 0.5);
+      sky += planet(x, y, r * back(k), hue, name, { lock, alpha: v * clamp(k * 2), fs: Math.max(14, r * 0.32), labelGap: 18 + r * 0.25 });
+    });
+    for (const R of [330, 620]) sky += `<ellipse cx="960" cy="600" rx="${R * 1.1}" ry="${R * 0.5 * 1.1}" fill="none" stroke="rgba(255,255,255,${0.08 * v})" stroke-dasharray="3 9"/>`;
+  }
+  $("sky").innerHTML = sky;
+  $("over").innerHTML = over;
+
+  // ---- hook cards ----
+  [["c1", 0.8], ["c2", 1.6], ["c3", 2.5]].forEach(([id, at], i) => {
+    const el = $(id); const k = clamp((t - at) / 0.45);
+    el.style.opacity = k * clamp((6.2 - t) / 0.4);
+    el.style.transform = `translateY(${(1 - out(k)) * 40 + Math.sin(t * 0.9 + i) * 5}px) scale(${0.9 + 0.1 * back(k)}) rotate(${(i - 1) * 1.5}deg)`;
+    [...el.querySelectorAll(".ways i")].forEach((b, j) => (b.style.transform = `scaleX(${out(clamp((t - (4.0 + i * 0.25 + j * 0.12)) / 0.25))})`));
+    el.style.filter = `blur(${clamp((t - 5.8) / 0.4) * 6}px)`;
+  });
+
+  // invite link + "no email / number / account"
+  const iv = win(t, 16.6, 21.8, 0.35, 0.4);
+  const inv = $("invite");
+  inv.style.opacity = iv; inv.style.left = "755px"; inv.style.top = (130 - 20 * out(clamp((t - 16.6) / 0.5))) + "px";
+  inv.style.transform = `scale(${0.9 + 0.1 * back(clamp((t - 16.6) / 0.5))})`;
+  const noc = $("noc"); noc.style.left = "720px"; noc.style.top = "900px"; noc.style.opacity = win(t, 20.2, 21.9, 0.3, 0.4);
+  [...noc.querySelectorAll("b")].forEach((b, i) => (b.style.transform = `scaleX(${out(clamp((t - (20.6 + i * 0.3)) / 0.25))})`));
+  $("galaxyT").style.opacity = win(t, 43.9, 46.2, 0.4, 0.4);
+
+  // ---- labels on devices ----
+  const tag = (el, txt, x, y, v) => { el.innerHTML = txt; el.style.left = x + "px"; el.style.top = y + "px"; el.style.opacity = v; };
+  const tl = t < 22 ? "Lucas · laptop" : t < 30 ? "Lucas · laptop" : "Sofia · laptop";
+  tag($("tagL"), "<i></i>" + tl, L.lx + 40, L.ly - 50, win(t, 10.2, 15.2) + win(t, 22.6, 28.8) + win(t, 39.2, 43.0));
+  tag($("tagP"), "<i></i>" + (t < 30 ? "Ana · phone" : "Mateo · phone"), L.px + 40, L.py - 50, win(t, 22.6, 28.8) + win(t, 34.9, 38.5));
+  tag($("tagM"), "<i></i>" + (t < 30 ? "Noah · office desktop" : "Kim · coach"), L.mx + 30, L.my - 50, win(t, 22.6, 28.8) + win(t, 34.9, 38.5));
+
+  // ---- logo ----
+  const em = $("emblem"), ep = clamp((t - 6.3) / 0.45);
+  em.style.opacity = win(t, 6.3, 7.3, 0.15, 0.3);
+  em.style.transform = `scale(${0.4 + 0.6 * back(ep)}) rotate(${(1 - ep) * -40}deg)`;
+  const lg = $("logo");
+  lg.style.opacity = win(t, 7.0, 9.8, 0.2, 0.4);
+  lg.style.clipPath = `inset(0 ${100 - 100 * out(clamp((t - 7.0) / 0.6))}% 0 0)`;
+  lg.style.transform = `translateY(${-out(clamp((t - 9.0) / 0.7)) * 330}px) scale(${1 - 0.35 * out(clamp((t - 9.0) / 0.7))})`;
+  $("meetline").style.opacity = win(t, 7.5, 9.6, 0.3, 0.3);
+
+  const CAPS = [
+    [10.2, 15.4, "01", "Make your<br>own space.", "Name it · open or private"],
+    [16.2, 21.9, "02", "Invite with<br>one link.", "They pick a name · they're in"],
+    [22.6, 28.8, "03", "Drop once.<br>Everyone has it.", "Live on every screen in the space"],
+    [29.2, 34.2, "04", "Find open<br>spaces by name.", "Search · pick a name · join"],
+    [34.8, 38.6, "05", "The whole league.<br>Instantly.", "Mateo's photos → coach Kim"],
+    [39.1, 43.2, "06", "Private stays<br>private.", "No passcode · no way in"],
+  ];
+  let cv2 = 0;
+  for (const [a, b, n, tt, s] of CAPS) {
+    const v = win(t, a, b, 0.45, 0.4);
+    if (v > 0) { cv2 = v; $("capN").textContent = n; $("capT").innerHTML = tt; $("capS").textContent = s; $("cap").style.transform = `translateY(${(1 - out(clamp((t - a) / 0.6))) * 24}px)`; }
+  }
+  $("cap").style.opacity = cv2;
+  $("facts").style.opacity = win(t, 46.4, 49.8, 0.2, 0.5);
+  [["f1", 46.5], ["f2", 47.1], ["f3", 47.8]].forEach(([id, at]) => { const el = $(id); const k = clamp((t - at) / 0.3); el.style.opacity = k; el.style.transform = `scale(${0.8 + 0.2 * back(k)})`; });
+  const ev = clamp((t - 49.9) / 0.6);
+  $("end").style.opacity = ev;
+  $("end").style.transform = `scale(${0.96 + 0.04 * out(ev)})`;
+  $("fade").style.opacity = Math.max(1 - clamp(t / 0.6), clamp((t - (DURATION - 1.2)) / 1.0));
+  await Promise.all(pending);
+}
+window.render = render;
+window.setMarks = (m) => { MARKS = m; };
+window.ready = Promise.all([...document.images].map((i) => i.decode().catch(() => {})));
+window.events = () => {
+  const ev = [];
+  const C = (shot, names, m, k) => names.forEach((n) => ev.push({ t: pwInv(mk(shot, n).f - 1, m), k }));
+  C("create", ["chip", "createTab", "name", "private", "pass", "handle", "create"], MAP.create(), "click");
+  C("browse", ["chip", "browse", "search", "card", "name", "go"], MAP.browse(), "tap");
+  ev.push({ t: pwInv(mk("create", "create").f, MAP.create()) + 0.1, k: "done" });
+  for (const [, at] of CREW) ev.push({ t: at + 0.8, k: "arrive" });
+  for (const at of [23.2, 24.8, 26.4]) ev.push({ t: at, k: "launch" }, { t: at + 0.5, k: "arrive" });
+  ev.push({ t: 35.4, k: "launch" }, { t: 35.9, k: "arrive" });
+  for (const at of [39.6, 40.7, 41.8]) ev.push({ t: at, k: "arrive" });
+  ev.push({ t: 41.5, k: "burn" });
+  ev.push({ t: 16.6, k: "launch" });
+  for (const at of [0.8, 1.6, 2.5]) ev.push({ t: at, k: "tap" });
+  for (const at of [4.0, 4.25, 4.5]) ev.push({ t: at, k: "strike" });
+  ev.push({ t: 6.3, k: "logo" }, { t: 43.6, k: "lid" }, { t: 49.9, k: "end" });
+  for (const at of [46.5, 47.1, 47.8]) ev.push({ t: at, k: "word" });
+  for (const [a] of LAYOUT) ev.push({ t: a, k: "move" });
+  return ev.sort((a, b) => a.t - b.t);
+};
+</script>
+</body>
+</html>

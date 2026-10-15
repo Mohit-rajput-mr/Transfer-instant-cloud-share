@@ -19,7 +19,7 @@
 | 0:12 | 02 · The ball launches; a beam carries it to the phone, which shows it instantly | "They float into orbit, and show up on every nearby screen. Instantly." |
 | 0:17 | 03 · A finger taps the ball → Download → progress → the real photo → Save to Photos | "On your phone, just tap, and it's yours. No password, unless you want one." |
 | 0:24 | 04 · Six files as separate balls → one "Brand kit" container → open → All 6 | "Sending a whole batch? It lands as one tidy container, with a single download all." |
-| 0:34 | 05 · Office: laptop, desktop and phone in a private "Design team" space; Priya's file beams to all | "Working with a team? Open a private space…" |
+| 0:34 | 05 · Office: laptop, desktop and phone in a private "Design team" space; Sofia's file beams to all | "Working with a team? Open a private space…" |
 | 0:42 | 06 · "Saved · safe to close", the lid shuts, the cloud hands the file to the phone | "Close your laptop. Your file stays safe in the cloud…" |
 | 0:50 | 07 · The ball's timer ends and it vanishes | "Then it's gone. No traces." |
 | 0:55 | Free. No login. 5 GB. Any device. | "Free. No login. Up to five gigabytes, on any device." |
@@ -61,3 +61,7 @@ Try it: https://orbitransfer.com
      -pix_fmt yuv420p -profile:v high -c:a aac -b:a 256k -shortest -movflags +faststart OrbiTransfer-launch.mp4
    ```
 Timings live in `VO`, `MAP` and `LAYOUT` at the top of the script in `video.html`.
+
+## Voice
+
+Kokoro, voice af_heart. "Orbi" is spoken as "Or-bee" (like "orbit" without the t): `vo.py` hands the voice "Orbee", and on-screen text stays "Orbi".

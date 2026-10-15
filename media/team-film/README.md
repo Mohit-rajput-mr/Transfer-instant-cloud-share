@@ -18,7 +18,7 @@
 | 0:10 | 01 · Cursor: Spaces → Create → "Studio North" → Private → passcode → name → Create | "Create your own space in seconds. Name it, and lock it with a passcode." |
 | 0:16 | 02 · Copy invite link; the link flies to a teammate's phone; email / phone number / account struck out | "Then share one invite link. No emails. No phone numbers. No accounts." |
 | 0:21 | 03 · Finger: the invite opens, "Ana", passcode, enter | "Your teammates just pick a name, and they're in." |
-| 0:26 | 04 · Laptop, office desktop and phone in the space; Ana's, Ravi's and Leo's files beam to everyone | "Everything you drop inside stays inside…" |
+| 0:26 | 04 · Laptop, office desktop and phone in the space; Ana's, Noah's and Leo's files beam to everyone | "Everything you drop inside stays inside…" |
 | 0:33 | 05 · Wi-Fi rings; cursor taps Nearby; only this network's files stay | "In the office? Tap Nearby, and see only what's shared on your Wi-Fi." |
 | 0:39 | 06 · Send a file, open its card, Copy link; a phone scans the QR, opens it, downloads | "Sending something to a client? Share a link, or let them scan the code…" |
 | 0:48 | 07 · The creator taps Guest → "Remove?" → removed; Exit | "And you stay in control…" |
@@ -48,3 +48,7 @@ https://orbitransfer.com
 `node capture.cjs all` (app on :3160) → `python3 build.py` → `node events.cjs` → `python3 synth.py` →
 `node render.cjs 0 1890 frames` (in parallel ranges) → ffmpeg as in `../launch-film-v2/README.md`.
 Voice: `vo.py` (Kokoro, `af_heart`).
+
+## Voice
+
+Kokoro, voice af_heart. "Orbi" is spoken as "Or-bee" (like "orbit" without the t): `vo.py` hands the voice "Orbee", and on-screen text stays "Orbi".
