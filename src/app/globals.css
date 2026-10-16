@@ -2583,6 +2583,12 @@ em.hq-tag { font-style: normal; }
 
 /* a task's route */
 .tb-stage { font-style: normal; color: #e8ecf0; margin-right: 6px; }
+.tb-files { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; padding: 2px 4px 4px 42px; }
+.tb-file { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; min-width: 0; padding: 6px 10px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); text-align: left; font-size: 12.5px; color: #e9e9e9; transition: background .2s, border-color .2s; }
+.tb-file:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.18); }
+.tb-file i { width: 8px; height: 8px; border-radius: 50%; background: hsl(var(--wh) 85% 62%); }
+.tb-file span { min-width: 0; }
+.tb-file em { font-style: normal; font-size: 9.5px; color: #8f8f8f; }
 .tb-rbar { grid-column: 1 / -1; display: flex; gap: 3px; margin-top: 5px; }
 .tb-rbar i { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,0.12); }
 .tb-rbar i.past { background: linear-gradient(90deg, #9aa3ad, #c8ced5); }

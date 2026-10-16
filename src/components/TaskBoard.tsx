@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { LuArrowDown, LuArrowUp, LuRows3, LuCheck, LuChevronDown, LuFolderUp, LuLock, LuPaperclip, LuPencil, LuPlus, LuRoute, LuTrash2, LuUserCheck, LuX } from "react-icons/lu";
 import { PRO_FOR_ALL, STAGES, TASK_LIVES, TASK_MAX, dropPro, forMe, isMyTask, parseTask, proCode, redeemPro, type Task } from "@/lib/tasks";
 import { hueFor } from "@/lib/bubbles";
-import type { Orb } from "@/lib/client";
+import { formatBytes, type Orb } from "@/lib/client";
 
 export type TaskActs = {
   onAdd: (line: string, life: number) => Promise<void>;
@@ -14,6 +14,9 @@ export type TaskActs = {
   onAttach: (t: Task, what: "files" | "folder") => void;
   onEdit: (t: Task, change: { text?: string; route?: string[]; stage?: number }) => Promise<void>;
   onMove: (t: Task, dir: -1 | 1) => void;
+  /** a file listed under its task: tap opens its card, double-tap previews it */
+  onOpenFile?: (o: Orb) => void;
+  onPreviewFile?: (o: Orb) => void;
   /** public void only: make a private space and take the team (and these tasks) there */
   onGoPrivate?: () => void;
 };
@@ -84,6 +87,13 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
   };
 
   const wired = useMemo(() => new Map(props.tasks.map((t) => [t.id, wiredBy(t.id, props.orbs)])), [props.tasks, props.orbs]);
+  // every file attached to a task, listed right under it (newest first)
+  const files = useMemo(() => {
+    const m = new Map<string, Orb[]>();
+    for (const o of props.orbs) if (o.task) m.set(o.task, [...(m.get(o.task) ?? []), o]);
+    for (const l of m.values()) l.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return m;
+  }, [props.orbs]);
 
   return (
     <aside className={`task-board lg${open || props.wiring ? " open" : ""}${props.wiring ? " wiring" : ""}${props.laneH ? " lanes" : ""}`} style={props.laneH ? ({ "--lane-h": `${props.laneH}px` } as CSSProperties) : undefined} aria-label="Tasks">
@@ -153,6 +163,17 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                     {isMyTask(t.id) && i < props.tasks.length - 1 && <button onClick={() => props.onMove(t, 1)} aria-label={`Move task ${t.num} down`} title="Move down"><LuArrowDown /></button>}
                     {isMyTask(t.id) && <button className="kill" onClick={() => props.onBurn(t)} aria-label={`Remove task ${t.num}`} title="Remove"><LuTrash2 /></button>}
                   </span>
+                  {files.get(t.id)?.length ? (
+                    <div className="tb-files">
+                      {files.get(t.id)!.map((o) => (
+                        <button key={o.id} className="tb-file" style={{ "--wh": hueFor(o.from ?? o.id) } as CSSProperties} onClick={() => props.onOpenFile?.(o)} onDoubleClick={() => props.onPreviewFile?.(o)} title={`${o.name}${o.by ? ` · from ${o.by}` : ""} · ${formatBytes(o.size)}`}>
+                          <i aria-hidden />
+                          <span className="ellip">{o.name}</span>
+                          <em className="mono">{formatBytes(o.size)}</em>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                   {routing === t.id && <RoutePanel t={t} mine={isMyTask(t.id)} onEdit={(c) => props.onEdit(t, c)} />}
                   {taking === t.id && (
                     <form className="tb-take" onSubmit={(e) => { e.preventDefault(); props.onTake(t, who.trim()); setTaking(null); }}>

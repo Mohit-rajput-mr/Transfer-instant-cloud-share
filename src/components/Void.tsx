@@ -1278,6 +1278,8 @@ export default function Void() {
               me={bubbleName() || room?.handle || ""}
               focus={taskFocus}
               onFocus={setTaskFocus}
+              onOpenFile={open}
+              onPreviewFile={(o) => preview(o.id)}
               wiring={wiring}
               arranged={laneTasks}
               laneH={laneTasks ? laneH : undefined}
