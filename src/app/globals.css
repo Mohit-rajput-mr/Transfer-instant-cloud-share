@@ -2532,6 +2532,10 @@ em.hq-tag { font-style: normal; }
 .tb-add input::placeholder { color: #8a8a8a; }
 .tb-for { font-size: 10px; color: #c3c9d0; text-transform: none; }
 .tb-showall { margin: 0 10px 10px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.07); color: #d6dbe0; font-size: 9.5px; text-align: left; flex: none; }
+.tb-opts { flex: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; color: #8d8d8d; margin-right: -4px; transition: color .2s, background .2s; }
+.tb-opts:hover, .tb-opts.on { color: #fff; background: rgba(255,255,255,.08); }
+.tb-opts svg { width: 15px; height: 15px; }
+.tb-more { display: flex; flex-direction: column; animation: acts-in .18s var(--ease-out, ease-out) both; }
 .tb-private { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 10px 10px; height: 36px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.16); color: #e2e6ea; font-size: 10px; flex: none; }
 .tb-private:hover { background: rgba(255,255,255,0.07); }
 .tb-private svg { width: 13px; height: 13px; }

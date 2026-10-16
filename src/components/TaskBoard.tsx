@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { LuArrowDown, LuArrowUp, LuRows3, LuCheck, LuChevronDown, LuFolderUp, LuLock, LuPaperclip, LuPencil, LuPlus, LuRoute, LuTrash2, LuUserCheck, LuX } from "react-icons/lu";
+import { LuArrowDown, LuArrowUp, LuRows3, LuCheck, LuChevronDown, LuFolderUp, LuLock, LuPaperclip, LuPencil, LuPlus, LuRoute, LuSettings2, LuTrash2, LuUserCheck, LuX } from "react-icons/lu";
 import { PRO_FOR_ALL, STAGES, TASK_LIVES, TASK_MAX, dropPro, forMe, isMyTask, parseTask, proCode, redeemPro, type Task } from "@/lib/tasks";
 import { hueFor } from "@/lib/bubbles";
 import { formatBytes, type Orb } from "@/lib/client";
@@ -50,6 +50,8 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
   const [taking, setTaking] = useState<string | null>(null);
   const [who, setWho] = useState("");
   const [routing, setRouting] = useState<string | null>(null);
+  // the extras (how long tasks stay, go private) stay out of the way until asked for
+  const [more, setMore] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   // Pro (a code from Mission HQ on this device): tasks stay up to 8 hours
@@ -242,7 +244,10 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
               enterKeyHint="done"
             />
             {parsed.assignee && <span className="tb-for mono">@{parsed.assignee}</span>}
+            <button type="button" className={`tb-opts${more ? " on" : ""}`} onClick={() => setMore((m) => !m)} aria-expanded={more} aria-label="Task options" title="Options: how long tasks stay, go private"><LuSettings2 /></button>
           </form>
+          {more && (
+          <div className="tb-more">
           {pro ? (
             <div className="tb-keep" role="radiogroup" aria-label="New tasks stay">
               <span className="mono">Pro · keep for</span>
@@ -274,7 +279,8 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
           {props.onGoPrivate && (
             <button className="tb-private mono" onClick={props.onGoPrivate}><LuLock aria-hidden /> Go private with the team</button>
           )}
-          {props.focus && <button className="tb-showall mono" onClick={() => props.onFocus(null)}>Showing task {props.tasks.find((t) => t.id === props.focus)?.num}&apos;s files · show everything</button>}
+          </div>
+          )}
         </>
       )}
     </aside>
