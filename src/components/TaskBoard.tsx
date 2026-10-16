@@ -60,6 +60,47 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
   useEffect(() => setPro(!!proCode()), []);
   const input = useRef<HTMLInputElement>(null);
   const done = props.tasks.filter((t) => t.doneAt).length;
+  // the row's tools: on a computer they float just outside the board, beside the row, so they never cover
+  // the line (or the box you are typing in); on a phone they sit under the row
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia("(max-width: 720px)");
+    const on = () => setNarrow(m.matches);
+    on();
+    m.addEventListener("change", on);
+    return () => m.removeEventListener("change", on);
+  }, []);
+  const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null);
+  const hideT = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const keep = () => hideT.current && (clearTimeout(hideT.current), (hideT.current = null));
+  const showFor = (id: string, el: HTMLElement) => {
+    keep();
+    const r = el.getBoundingClientRect();
+    const board = el.closest(".task-board")?.getBoundingClientRect();
+    setHover({ id, x: (board?.right ?? r.right) + 8, y: r.top + 6 });
+  };
+  const hideSoon = () => {
+    keep();
+    hideT.current = setTimeout(() => setHover(null), 260);
+  };
+  useEffect(() => {
+    if (!hover) return;
+    const off = (e: Event) => (e.target as Element)?.classList?.contains("tb-list") && setHover(null);
+    document.addEventListener("scroll", off, true);
+    return () => document.removeEventListener("scroll", off, true);
+  }, [hover]);
+  const acts = (t: Task, i: number) => (
+    <>
+                    <button onClick={() => props.onAttach(t, "files")} aria-label={`Attach files to task ${t.num}`} title="Attach files"><LuPaperclip /></button>
+                    <button onClick={() => props.onAttach(t, "folder")} aria-label={`Attach a folder to task ${t.num}`} title="Attach a folder"><LuFolderUp /></button>
+                    {isMyTask(t.id) && !t.doneAt && <button onClick={() => (setTaking(taking === t.id ? null : t.id), setWho(t.assignee ?? props.me))} aria-label={`Assign task ${t.num}`} title={t.assignee ? "Reassign" : "Take it / assign"}><LuUserCheck /></button>}
+                    <button className={routing === t.id ? "on" : ""} onClick={() => setRouting(routing === t.id ? null : t.id)} aria-label={`Route of task ${t.num}`} title={isMyTask(t.id) ? "Route: edit and update" : "Route: see progress"}><LuRoute /></button>
+                    {isMyTask(t.id) && <button onClick={() => (setEditing(t.id), setDraft(t.text))} aria-label={`Edit task ${t.num}`} title="Edit"><LuPencil /></button>}
+                    {isMyTask(t.id) && i > 0 && <button onClick={() => props.onMove(t, -1)} aria-label={`Move task ${t.num} up`} title="Move up"><LuArrowUp /></button>}
+                    {isMyTask(t.id) && i < props.tasks.length - 1 && <button onClick={() => props.onMove(t, 1)} aria-label={`Move task ${t.num} down`} title="Move down"><LuArrowDown /></button>}
+                    {isMyTask(t.id) && <button className="kill" onClick={() => props.onBurn(t)} aria-label={`Remove task ${t.num}`} title="Remove"><LuTrash2 /></button>}
+    </>
+  );
   // the tick walks the route: grey → orange (first step) → blue → green (done). Only the writer can move it;
   // everyone else ticks it done / undone as before.
   const tap = (t: Task) => {
@@ -122,6 +163,8 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                 <li
                   key={t.id}
                   data-task-row={t.id}
+                  onPointerEnter={(e) => !narrow && editing !== t.id && routing !== t.id && showFor(t.id, e.currentTarget)}
+                  onPointerLeave={() => !narrow && hideSoon()}
                   className={`tb-row${stepOf(t) === 3 ? " done" : ""}${props.focus === t.id ? " focus" : ""}${mine && !t.doneAt ? " forme" : ""}`}
                 >
                   <button className="tb-tick" disabled={!isMyTask(t.id)} onClick={() => tap(t)} aria-label={t.doneAt ? `Untick task ${t.num}` : `Move task ${t.num} to its next step`} title={!isMyTask(t.id) ? `${t.stage >= 0 && t.route[t.stage] ? t.route[t.stage] : t.doneAt ? "Done" : "Not started"} · only its writer moves it` : t.doneAt ? `Done${t.doneBy ? ` by ${t.doneBy}` : ""}` : t.stage >= 0 && t.route[t.stage] ? `${t.route[t.stage]} · tap for the next step` : "Tap: first step"}>
@@ -154,16 +197,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                     {w.slice(0, 4).map((x, i) => <i key={i} style={{ "--wh": x.hue } as CSSProperties} />)}
                     {n > 0 && <b className="mono">{n}</b>}
                   </span>
-                  <span className="tb-acts">
-                    <button onClick={() => props.onAttach(t, "files")} aria-label={`Attach files to task ${t.num}`} title="Attach files"><LuPaperclip /></button>
-                    <button onClick={() => props.onAttach(t, "folder")} aria-label={`Attach a folder to task ${t.num}`} title="Attach a folder"><LuFolderUp /></button>
-                    {isMyTask(t.id) && !t.doneAt && <button onClick={() => (setTaking(taking === t.id ? null : t.id), setWho(t.assignee ?? props.me))} aria-label={`Assign task ${t.num}`} title={t.assignee ? "Reassign" : "Take it / assign"}><LuUserCheck /></button>}
-                    <button className={routing === t.id ? "on" : ""} onClick={() => setRouting(routing === t.id ? null : t.id)} aria-label={`Route of task ${t.num}`} title={isMyTask(t.id) ? "Route: edit and update" : "Route: see progress"}><LuRoute /></button>
-                    {isMyTask(t.id) && <button onClick={() => (setEditing(t.id), setDraft(t.text))} aria-label={`Edit task ${t.num}`} title="Edit"><LuPencil /></button>}
-                    {isMyTask(t.id) && i > 0 && <button onClick={() => props.onMove(t, -1)} aria-label={`Move task ${t.num} up`} title="Move up"><LuArrowUp /></button>}
-                    {isMyTask(t.id) && i < props.tasks.length - 1 && <button onClick={() => props.onMove(t, 1)} aria-label={`Move task ${t.num} down`} title="Move down"><LuArrowDown /></button>}
-                    {isMyTask(t.id) && <button className="kill" onClick={() => props.onBurn(t)} aria-label={`Remove task ${t.num}`} title="Remove"><LuTrash2 /></button>}
-                  </span>
+                  {narrow ? <span className="tb-acts">{acts(t, i)}</span> : null}
                   {files.get(t.id)?.length ? (
                     <div className="tb-files">
                       {files.get(t.id)!.map((o) => (
@@ -187,6 +221,16 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
               );
             })}
           </ol>
+          {!narrow && hover && editing !== hover.id && routing !== hover.id && (() => {
+            const i = props.tasks.findIndex((x) => x.id === hover.id);
+            if (i < 0) return null;
+            return createPortal(
+              <span className="tb-acts float" style={{ left: hover.x, top: hover.y }} onPointerEnter={keep} onPointerLeave={hideSoon}>
+                {acts(props.tasks[i], i)}
+              </span>,
+              document.body,
+            );
+          })()}
           <form className="tb-add" onSubmit={(e) => { e.preventDefault(); add(); }}>
             <i className="task-dot ghost" aria-hidden />
             <input

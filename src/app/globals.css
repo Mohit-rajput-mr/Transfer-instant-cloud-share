@@ -2515,7 +2515,9 @@ em.hq-tag { font-style: normal; }
 .tb-wired i:first-child { margin-left: 0; }
 .tb-wired b { font-size: 10px; color: #ccc; margin-left: 4px; font-weight: 400; }
 .tb-acts { position: absolute; right: 6px; top: 7px; display: none; gap: 0; padding: 2px; border-radius: 10px; background: rgba(24,24,26,0.95); box-shadow: 0 6px 18px rgba(0,0,0,0.5); }
-.tb-row:hover .tb-acts, .tb-row:focus-within .tb-acts { display: flex; }
+@media (max-width: 720px) { .tb-row:hover .tb-acts, .tb-row:focus-within .tb-acts { display: flex; } }
+.tb-acts.float { display: flex; position: fixed; right: auto; z-index: 60; border: 1px solid rgba(255,255,255,0.1); animation: acts-in .16s var(--ease-out, ease-out) both; }
+@keyframes acts-in { from { opacity: 0; transform: translateX(-6px); } }
 .tb-acts button { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; color: #d7d7d7; }
 .tb-acts button:hover { background: rgba(255,255,255,0.1); color: #fff; }
 .tb-acts button.kill:hover { color: var(--danger); }
