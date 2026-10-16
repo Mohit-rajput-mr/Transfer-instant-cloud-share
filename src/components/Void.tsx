@@ -165,6 +165,20 @@ export default function Void() {
   const [taskOpen, setTaskOpen] = useState(false);
   // new tasks are written from the Tasks button in the bar
   const [composing, setComposing] = useState(false);
+  // archived (this device): the task panels, their files and wires all step out; the void looks as it always did
+  const [archived, setArchivedS] = useState(false);
+  useEffect(() => {
+    try {
+      setArchivedS(localStorage.getItem("orbit:tasks-archived") === "1");
+    } catch {}
+  }, []);
+  const setArchived = (on: boolean) => {
+    setArchivedS(on);
+    try {
+      localStorage.setItem("orbit:tasks-archived", on ? "1" : "0");
+    } catch {}
+  };
+  const openTasks = () => (setArchived(false), setTaskOpen(true), setComposing(true));
   // a cable is being plugged into a task right now
   const [wiring, setWiring] = useState(false);
   // someone on this Wi-Fi is taking the team into a private space
@@ -880,11 +894,12 @@ export default function Void() {
       groupOrbs(
         alive.filter(
           (o) =>
+            !(archived && o.task) &&
             (scope === "all" || (scope === "near" ? o.netHash === net || !!ownerKey(o.id) : !!ownerKey(o.id))) &&
             (kind === "all" || fileKind(o.fileName, o.mime) === kind),
         ),
       ),
-    [alive, scope, net, kind],
+    [alive, scope, net, kind, archived],
   );
   const groups = grouped.groups;
   const bubbleActs = {
@@ -947,7 +962,10 @@ export default function Void() {
   }, [shown, net, cap]);
   // the task board is solid ground: a ball that drifts, is dragged or lands behind it is nudged out to its right
   useEffect(() => {
-    if (!tasks.length) return;
+    if (!tasks.length || archived) {
+      document.querySelectorAll<HTMLElement>(".orb-anchor[data-push]").forEach((a) => ((a.style.translate = ""), delete a.dataset.push));
+      return;
+    }
     const t = setInterval(() => {
       // phones stack the board above the sky instead (nothing to push sideways into)
       const board = window.innerWidth > 720 ? document.querySelector<HTMLElement>(".task-boards")?.getBoundingClientRect() : undefined;
@@ -968,7 +986,7 @@ export default function Void() {
       });
     }, 300);
     return () => clearInterval(t);
-  }, [tasks.length]);
+  }, [tasks.length, archived]);
   // small open files: decrypted quietly in the background so a double-click previews instantly
   useEffect(() => {
     const t = setTimeout(() => warm(visible.filter((o) => !isPending(o.id))), 400);
@@ -998,7 +1016,7 @@ export default function Void() {
   // Arranged lanes: every task row on the board is a lane; that task's files sit on the SAME line as the row
   // (so its cable runs dead straight), unwired files get one lane below. The rows grow to share the height,
   // and the balls shrink when a lane is crowded, so nothing overlaps.
-  const laneTasks = arranged && mode === "desk" && tasks.length > 0 && visible.length > 0;
+  const laneTasks = !archived && arranged && mode === "desk" && tasks.length > 0 && visible.length > 0;
   const loose = laneTasks ? visible.filter((o) => !o.task || !tasks.some((t) => t.id === o.task)) : [];
   const laneCount = tasks.length + (loose.length ? 1 : 0);
   // every lane fits on screen (the board never scrolls in Arranged): its height is the board's room split by the lanes
@@ -1272,7 +1290,7 @@ export default function Void() {
           <nav className="nav">
             <a href="#void">Void</a>
             <a href="#how">How it works</a>
-            <button onClick={() => (setTaskOpen(true), setComposing(true))}>Tasks{tasks.length ? ` ${tasks.filter((t) => !t.doneAt).length}` : ""}</button>
+            <button onClick={openTasks}>Tasks{tasks.length ? ` ${tasks.filter((t) => !t.doneAt).length}` : ""}</button>
             <Link href="/about">About</Link>
             <button onClick={openMenu}>Launch</button>
           </nav>
@@ -1312,7 +1330,7 @@ export default function Void() {
 
       <main className={menu && !menuOut ? "menu-open" : undefined} data-pal={pal}>
         <section
-          className={`void${notes.length ? " has-bubbles" : ""}${new Set(notes.map(senderOf)).size > 1 || tasks.length ? " bub-two" : ""}${tasks.length ? " has-tasks" : ""}${taskFocus ? " task-focus" : ""}${grid ? ` arranged${grid.tight ? " tight" : ""}` : ""}${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
+          className={`void${notes.length ? " has-bubbles" : ""}${new Set(notes.map(senderOf)).size > 1 || (tasks.length && !archived) ? " bub-two" : ""}${tasks.length && !archived ? " has-tasks" : ""}${taskFocus ? " task-focus" : ""}${grid ? ` arranged${grid.tight ? " tight" : ""}` : ""}${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
           id="void"
           style={(flow ? { "--n": rows } : { "--k-auto": grid ? grid.k : crowdScale(visible.length), ...(grid ? { "--cell": `${grid.cell}px` } : null) }) as unknown as React.CSSProperties}
         >
@@ -1320,7 +1338,7 @@ export default function Void() {
             switchSpace(null);
             toast("Back in the public void");
           }} />}
-          {(tasks.length > 0 || taskOpen) && (
+          {!archived && (tasks.length > 0 || taskOpen) && (
             <TaskBoard
               tasks={tasks}
               orbs={alive}
@@ -1358,6 +1376,7 @@ export default function Void() {
               onAttach={(t, what) => (what === "folder" ? pickFolder(t.id) : pickFiles(t.id))}
               onClose={() => (setTaskOpen(false), setComposing(false))}
               composing={composing}
+              onArchive={() => (setArchived(true), setComposing(false), setArranged(false), toast("Tasks archived with their files · Tasks in the bar brings them back"))}
               onComposed={() => setComposing(false)}
               onGoPrivate={space ? undefined : () => setPanel({ kind: "private" })}
               onMove={(t, dir) => moveTask(t.id, dir).then(() => (refresh(), broadcast())).catch((e) => toast(e.message))}
@@ -1372,7 +1391,7 @@ export default function Void() {
               }}
             />
           )}
-          {tasks.length > 0 && (
+          {!archived && tasks.length > 0 && (
             <TaskWires
               tasks={tasks}
               orbs={visible}
@@ -1391,7 +1410,7 @@ export default function Void() {
           )}
           {taskFocus && /^t[a-z0-9]{9}$/.test(taskFocus) && visible.some((o) => o.task === taskFocus) && <style>{`.void.task-focus .orb-anchor:not([data-task="${taskFocus}"]){opacity:.38;transition:opacity .3s}`}</style>}
           {notes.length > 0 && (
-            <BubbleBoard bubbles={notes} {...bubbleActs} oneSide={tasks.length > 0} onOpenBoard={(f) => setBoard(f)} />
+            <BubbleBoard bubbles={notes} {...bubbleActs} oneSide={tasks.length > 0 && !archived} onOpenBoard={(f) => setBoard(f)} />
           )}
           <div className="ghost-type" aria-hidden>
             <span className="wide">Drop</span>
@@ -1591,7 +1610,7 @@ export default function Void() {
           onSpaces={() => setPanel({ kind: "space" })}
           onStyle={() => setPanel({ kind: "style" })}
           onHow={() => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" })}
-          onTasks={() => (setTaskOpen(true), setComposing(true))}
+          onTasks={openTasks}
           taskCount={tasks.filter((t) => !t.doneAt).length}
           onClose={() => setPanel((p) => (p?.kind === "menu" ? null : p))}
         />

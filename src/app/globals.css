@@ -2703,6 +2703,10 @@ em.hq-tag { font-style: normal; }
 .tb-redeem .mono { width: 100%; font-size: 9.5px; color: var(--danger); text-transform: none; }
 
 /* Arrange: tasks in lanes, files lined up in them, no drifting */
+.tb-archive { position: absolute; right: 152px; top: 10px; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18); color: #d6dbe0; z-index: 2; }
+.tb-archive:hover { background: rgba(255,255,255,.1); color: #fff; }
+.tb-archive svg { width: 13px; height: 13px; }
+.task-board:has(.tb-archive) .tb-bar { display: none; }
 .tb-arrange { position: absolute; right: 44px; top: 10px; height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18); font-size: 9.5px; color: #d6dbe0; z-index: 2; }
 .tb-arrange svg { width: 13px; height: 13px; }
 .tb-arrange:hover { background: rgba(255,255,255,0.08); }

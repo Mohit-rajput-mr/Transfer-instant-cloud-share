@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { LuArrowDown, LuArrowUp, LuRows3, LuCheck, LuChevronDown, LuFolderUp, LuLock, LuPaperclip, LuPencil, LuPlus, LuRoute, LuSettings2, LuTrash2, LuUserCheck, LuX } from "react-icons/lu";
+import { LuArchive, LuArrowDown, LuArrowUp, LuRows3, LuCheck, LuChevronDown, LuFolderUp, LuLock, LuPaperclip, LuPencil, LuPlus, LuRoute, LuSettings2, LuTrash2, LuUserCheck, LuX } from "react-icons/lu";
 import { PRO_FOR_ALL, STAGES, TASK_LIVES, TASK_MAX, dropPro, forMe, isCancel, isMyTask, parseTask, proCode, redeemPro, type Task } from "@/lib/tasks";
 import { hueFor } from "@/lib/bubbles";
 import { formatBytes, type Orb } from "@/lib/client";
@@ -43,7 +43,7 @@ export function wiredBy(task: string, orbs: Orb[]) {
  * Tasks, one line each: a big orange dot, "TASK 1", the line, who it is for, and a tick anyone can set.
  * Files wired to a task hang off its dot (TaskWires). Tapping a task shows only its files.
  */
-export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: string; focus: string | null; onFocus: (id: string | null) => void; onClose: () => void; /** a cable is being plugged in: the tasks light up as targets */ wiring?: boolean; arranged?: boolean; onArrange?: () => void; /** arranged: each row is a lane this tall, its files on the same line */ laneH?: number; /** the Tasks button in the bar opened the new-task box */ composing?: boolean; onComposed?: () => void } & TaskActs) {
+export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: string; focus: string | null; onFocus: (id: string | null) => void; onClose: () => void; /** a cable is being plugged in: the tasks light up as targets */ wiring?: boolean; arranged?: boolean; onArrange?: () => void; /** arranged: each row is a lane this tall, its files on the same line */ laneH?: number; /** the Tasks button in the bar opened the new-task box */ composing?: boolean; onComposed?: () => void; /** hide every task panel with its files (this device) */ onArchive?: () => void } & TaskActs) {
   const [line, setLine] = useState("");
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(true);
@@ -286,6 +286,9 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
               <span className="tb-bar" aria-hidden><i style={{ transform: `scaleX(${g.tasks.length ? gDone / g.tasks.length : 0})` }} /></span>
               <LuChevronDown className={`tb-chev${isOpen ? " up" : ""}`} aria-hidden />
             </button>
+            {gi === 0 && props.onArchive && (
+              <button className="tb-archive" onClick={props.onArchive} aria-label="Archive tasks" title="Archive: hide the tasks and their files (Tasks in the bar brings them back)"><LuArchive /></button>
+            )}
             {gi === 0 && props.onArrange && (
               <button className={`tb-arrange mono${props.arranged ? " on" : ""}`} onClick={props.onArrange} aria-pressed={!!props.arranged} title={props.arranged ? "Back to the free-floating void" : "Line every file up in its task's lane"}>
                 <LuRows3 aria-hidden />{props.arranged ? "Arranged" : "Arrange"}
