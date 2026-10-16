@@ -2598,6 +2598,17 @@ em.hq-tag { font-style: normal; }
 .tb-rbar i.past { background: linear-gradient(90deg, #9aa3ad, #c8ced5); }
 .tb-rbar i.now { background: linear-gradient(90deg, #dfe4e9, #ffffff); }
 .tb-acts button.on { background: rgba(255,255,255,0.14); color: #fff; }
+.tb-row:has(.tb-route) .tb-acts { display: none; }
+.tb-tick:disabled { cursor: default; }
+.tb-tick:disabled:hover .task-dot { transform: none; }
+.tr-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tr-head .mono { font-size: 9.5px; color: #9a9a9a; letter-spacing: .06em; text-transform: uppercase; }
+.tr-close { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; color: #aaa; }
+.tr-close:hover { background: rgba(255,255,255,.1); color: #fff; }
+.tr-close svg { width: 14px; height: 14px; }
+.tr-title-in { width: 100%; padding: 10px 12px; border-radius: 11px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); color: #fff; font-size: 15px; font-weight: 600; outline: none; transition: border-color .2s; }
+.tr-title-in:focus { border-color: rgba(255,255,255,.4); }
+.tr-presets > .mono.dim { flex-basis: 100%; font-size: 9.5px; }
 .tb-route { grid-column: 1 / -1; margin: 4px 2px 6px 42px; padding: 12px; border-radius: 14px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 10px; }
 .tr-title { display: flex; flex-direction: column; gap: 5px; }
 .tr-title .mono { font-size: 9px; color: #c3c9d0; }
@@ -2615,6 +2626,10 @@ em.hq-tag { font-style: normal; }
 .tr-line li.past > i, .tr-line li.past > button > i { border-color: #c8ced5; background: radial-gradient(circle at 32% 26%, #fff, #c8ced5 40%, #6b727b); }
 .tr-line li.now > i, .tr-line li.now > button > i { border-color: #f4f6f8; background: radial-gradient(circle, #f4f6f8 38%, #15181c 44%); }
 .tr-line li i svg { width: 11px; height: 11px; color: #15181c; stroke-width: 3.4; }
+.tr-line li.now[data-step="1"] > i, .tr-line li.now[data-step="1"] > button > i { background: #f08a24; border-color: #ffb36b; }
+.tr-line li.now[data-step="2"] > i, .tr-line li.now[data-step="2"] > button > i { background: #2f86f2; border-color: #8cc0ff; }
+.tr-line li.now[data-step="3"] > i, .tr-line li.now[data-step="3"] > button > i { background: #27c463; border-color: #8ff0b4; }
+.tr-line li.now[data-step] i svg { color: #fff; }
 .tr-line li > button { display: grid; place-items: center; width: 26px; height: 30px; }
 .tr-line li > button:hover > i { border-color: #fff; }
 .tr-line li b { font-size: 13px; font-weight: 600; color: #ddd; }

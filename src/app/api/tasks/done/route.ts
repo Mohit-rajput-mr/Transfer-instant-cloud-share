@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { rpc } from "@/lib/server";
+import { isHex, rpc, sha256 } from "@/lib/server";
 import { cleanHandle, member } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
 
-// anyone who can see a task ticks it (or unticks it); inside a space, only its members
+// only the task's writer ticks it (or unticks it)
 export async function POST(req: NextRequest) {
   const b = await req.json().catch(() => null);
   if (!b || typeof b.id !== "string" || !/^t[a-z0-9]{9}$/.test(b.id)) return NextResponse.json({ error: "bad request" }, { status: 400 });
+  if (!isHex(b.owner, 64) || !(await rpc<boolean>("orbit_task_owned", { p_id: b.id, p_owner_hash: sha256(b.owner) }).catch(() => false)))
+    return NextResponse.json({ error: "Only the person who wrote this task can change it" }, { status: 403 });
   let space: string | null = null;
   if (b.space != null) {
     const me = await member(b.space, b.deviceId, b.spaceToken);

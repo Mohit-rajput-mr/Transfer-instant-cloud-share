@@ -63,7 +63,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
   // the tick walks the route: grey → orange (first step) → blue → green (done). Only the writer can move it;
   // everyone else ticks it done / undone as before.
   const tap = (t: Task) => {
-    if (!isMyTask(t.id)) return props.onTick(t, !t.doneAt);
+    if (!isMyTask(t.id)) return; // only the task's writer moves it
     if (stepOf(t) === 3) return void props.onEdit(t, { stage: -1 }).then(() => t.doneAt && props.onTick(t, false)).catch(() => {});
     const route = t.route.length ? t.route : DEFAULT_ROUTE;
     props.onEdit(t, { route, stage: Math.min(route.length - 1, t.stage + 1) }).catch(() => {});
@@ -124,7 +124,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                   data-task-row={t.id}
                   className={`tb-row${stepOf(t) === 3 ? " done" : ""}${props.focus === t.id ? " focus" : ""}${mine && !t.doneAt ? " forme" : ""}`}
                 >
-                  <button className="tb-tick" onClick={() => tap(t)} aria-label={t.doneAt ? `Untick task ${t.num}` : `Move task ${t.num} to its next step`} title={t.doneAt ? `Done${t.doneBy ? ` by ${t.doneBy}` : ""}` : t.stage >= 0 && t.route[t.stage] ? `${t.route[t.stage]} · tap for the next step` : "Tap: first step"}>
+                  <button className="tb-tick" disabled={!isMyTask(t.id)} onClick={() => tap(t)} aria-label={t.doneAt ? `Untick task ${t.num}` : `Move task ${t.num} to its next step`} title={!isMyTask(t.id) ? `${t.stage >= 0 && t.route[t.stage] ? t.route[t.stage] : t.doneAt ? "Done" : "Not started"} · only its writer moves it` : t.doneAt ? `Done${t.doneBy ? ` by ${t.doneBy}` : ""}` : t.stage >= 0 && t.route[t.stage] ? `${t.route[t.stage]} · tap for the next step` : "Tap: first step"}>
                     <i className="task-dot big" data-task-dot={t.id} data-step={stepOf(t)}>{(t.doneAt || t.stage >= 0) && <LuCheck aria-hidden />}</i>
                   </button>
                   {editing === t.id ? (
@@ -157,7 +157,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                   <span className="tb-acts">
                     <button onClick={() => props.onAttach(t, "files")} aria-label={`Attach files to task ${t.num}`} title="Attach files"><LuPaperclip /></button>
                     <button onClick={() => props.onAttach(t, "folder")} aria-label={`Attach a folder to task ${t.num}`} title="Attach a folder"><LuFolderUp /></button>
-                    {!t.doneAt && <button onClick={() => (setTaking(taking === t.id ? null : t.id), setWho(t.assignee ?? props.me))} aria-label={`Assign task ${t.num}`} title={t.assignee ? "Reassign" : "Take it / assign"}><LuUserCheck /></button>}
+                    {isMyTask(t.id) && !t.doneAt && <button onClick={() => (setTaking(taking === t.id ? null : t.id), setWho(t.assignee ?? props.me))} aria-label={`Assign task ${t.num}`} title={t.assignee ? "Reassign" : "Take it / assign"}><LuUserCheck /></button>}
                     <button className={routing === t.id ? "on" : ""} onClick={() => setRouting(routing === t.id ? null : t.id)} aria-label={`Route of task ${t.num}`} title={isMyTask(t.id) ? "Route: edit and update" : "Route: see progress"}><LuRoute /></button>
                     {isMyTask(t.id) && <button onClick={() => (setEditing(t.id), setDraft(t.text))} aria-label={`Edit task ${t.num}`} title="Edit"><LuPencil /></button>}
                     {isMyTask(t.id) && i > 0 && <button onClick={() => props.onMove(t, -1)} aria-label={`Move task ${t.num} up`} title="Move up"><LuArrowUp /></button>}
@@ -175,7 +175,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                       ))}
                     </div>
                   ) : null}
-                  {routing === t.id && <RoutePanel t={t} mine={isMyTask(t.id)} onEdit={(c) => props.onEdit(t, c)} />}
+                  {routing === t.id && <RoutePanel t={t} mine={isMyTask(t.id)} onEdit={(c) => props.onEdit(t, c)} onClose={() => setRouting(null)} />}
                   {taking === t.id && (
                     <form className="tb-take" onSubmit={(e) => { e.preventDefault(); props.onTake(t, who.trim()); setTaking(null); }}>
                       <input autoFocus value={who} onChange={(e) => setWho(e.target.value.slice(0, 24))} placeholder="Name (empty = nobody)" />
@@ -251,33 +251,46 @@ const ago = (iso: string) => {
  * email…), rewrites the line, and taps a stage to move the task there; the last stage ticks it done.
  * Everyone else sees the same route as a live timeline: which stage, who moved it, when.
  */
-function RoutePanel({ t, mine, onEdit }: { t: Task; mine: boolean; onEdit: (c: { text?: string; route?: string[]; stage?: number }) => Promise<void> }) {
+function RoutePanel({ t, mine, onEdit, onClose }: { t: Task; mine: boolean; onEdit: (c: { text?: string; route?: string[]; stage?: number }) => Promise<void>; onClose: () => void }) {
   const [title, setTitle] = useState(t.text);
-  const [stages, setStages] = useState<string[]>(t.route.length ? t.route : ["In progress", "In review", "Delivered"]);
-  const [busy, setBusy] = useState(false);
-  const dirty = title.trim() !== t.text || stages.join("|") !== t.route.join("|");
+  const [stages, setStages] = useState<string[]>(t.route);
+  const [saved, setSaved] = useState(false);
+  // follow changes from other devices while nothing is being typed here
+  const typing = useRef(false);
+  useEffect(() => {
+    if (!typing.current) setStages(t.route), setTitle(t.text);
+  }, [t.route, t.text]);
   const last = (i: number) => [...t.log].reverse().find((l) => l.i === i);
-  const run = async (c: { text?: string; route?: string[]; stage?: number }) => {
-    setBusy(true);
-    try {
-      await onEdit(c);
-    } catch {}
-    setBusy(false);
+  const flash = () => (setSaved(true), setTimeout(() => setSaved(false), 1200));
+  // every change goes out the moment it is made (the list updates on screen instantly)
+  const save = (c: { text?: string; route?: string[]; stage?: number }) => {
+    typing.current = false;
+    onEdit(c).catch(() => {});
+    flash();
   };
-  const clean = () => stages.map((x) => x.trim()).filter(Boolean);
+  const cleanOf = (l: string[]) => l.map((x) => x.trim()).filter(Boolean);
+  const setRoute = (next: string[]) => {
+    setStages(next);
+    const c = cleanOf(next);
+    if (c.join("|") !== t.route.join("|")) save({ route: c, stage: Math.min(t.stage, c.length - 1) });
+  };
+  const commitTitle = () => title.trim() && title.trim() !== t.text && save({ text: title.trim() });
+  const commitStages = () => setRoute(stages);
+  const done = (i: number) => i < t.stage || (i === t.stage && i === t.route.length - 1);
 
   if (!mine)
     return (
       <div className="tb-route">
-        {!t.route.length && <p className="mono dim">No route yet. Its writer sets the stages.</p>}
+        <div className="tr-head"><span className="mono">Route · only its writer moves it</span><button className="tr-close" onClick={onClose} aria-label="Close route"><LuX /></button></div>
+        {!t.route.length && <p className="mono dim">No route yet.</p>}
         <ol className="tr-line">
           {t.route.map((r, i) => {
             const l = last(i);
             return (
-              <li key={i} className={i < t.stage ? "past" : i === t.stage ? "now" : ""}>
-                <i aria-hidden>{i < t.stage || (i === t.stage && t.doneAt) ? <LuCheck /> : null}</i>
+              <li key={i} className={i < t.stage ? "past" : i === t.stage ? "now" : ""} data-step={i === t.stage ? stepOf(t) : undefined}>
+                <i aria-hidden>{done(i) || i === t.stage ? <LuCheck /> : null}</i>
                 <b>{r}</b>
-                <span className="mono">{l ? `${l.by ?? "someone"} · ${ago(l.at)}` : i === t.stage ? "now" : ""}</span>
+                <span className="mono">{l ? `${l.by ?? "someone"} · ${ago(l.at)}` : ""}</span>
               </li>
             );
           })}
@@ -287,38 +300,58 @@ function RoutePanel({ t, mine, onEdit }: { t: Task; mine: boolean; onEdit: (c: {
 
   return (
     <div className="tb-route">
-      <label className="tr-title">
-        <span className="mono">Task {t.num}</span>
-        <input value={title} onChange={(e) => setTitle(e.target.value.slice(0, 140))} aria-label="Task line" />
-      </label>
-      <span className="mono dim tr-hint">Route · tap a stage to move the task there</span>
+      <div className="tr-head">
+        <span className="mono">{saved ? "Saved ✓" : "Changes save instantly"}</span>
+        <button className="tr-close" onClick={onClose} aria-label="Close route"><LuX /></button>
+      </div>
+      <input
+        className="tr-title-in"
+        value={title}
+        onFocus={() => (typing.current = true)}
+        onChange={(e) => setTitle(e.target.value.slice(0, 140))}
+        onBlur={commitTitle}
+        onKeyDown={(e) => e.key === "Enter" && (e.currentTarget.blur())}
+        aria-label="Task line"
+      />
+      {stages.length > 0 && <span className="mono dim tr-hint">Tap a step to move the task there</span>}
       <ol className="tr-line edit">
         {stages.map((r, i) => {
           const l = last(i);
+          const cur = i === t.stage;
           return (
-            <li key={i} className={i < t.stage ? "past" : i === t.stage ? "now" : ""}>
-              <button disabled={busy} onClick={() => run({ text: title.trim() || undefined, route: clean(), stage: i })} aria-label={`Move to ${r}`} title={`Move to ${r}`}>
-                <i aria-hidden>{i < t.stage || (i === t.stage && t.doneAt) ? <LuCheck /> : null}</i>
+            <li key={i} className={i < t.stage ? "past" : cur ? "now" : ""} data-step={cur ? stepOf(t) : undefined}>
+              <button onClick={() => save({ route: cleanOf(stages), stage: cur ? i - 1 : i })} aria-label={cur ? `Undo ${r}` : `Move to ${r}`} title={cur ? "Tap again to step back" : `Move to ${r}`}>
+                <i aria-hidden>{done(i) || cur ? <LuCheck /> : null}</i>
               </button>
-              <input value={r} onChange={(e) => setStages((s) => s.map((x, k) => (k === i ? e.target.value.slice(0, 40) : x)))} aria-label={`Stage ${i + 1}`} />
+              <input
+                value={r}
+                placeholder="Step name"
+                onFocus={() => (typing.current = true)}
+                onChange={(e) => setStages((s) => s.map((x, k) => (k === i ? e.target.value.slice(0, 40) : x)))}
+                onBlur={commitStages}
+                onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+                aria-label={`Step ${i + 1}`}
+              />
               <span className="mono">{l ? ago(l.at) : ""}</span>
-              <button className="tr-x" onClick={() => setStages((s) => s.filter((_, k) => k !== i))} aria-label={`Remove ${r}`}><LuX /></button>
+              <button className="tr-x" onClick={() => setRoute(stages.filter((_, k) => k !== i))} aria-label={`Remove ${r}`}><LuX /></button>
             </li>
           );
         })}
       </ol>
       {stages.length < 8 && (
         <div className="tr-presets">
+          <span className="mono dim">{stages.length ? "Add a step" : "Build the route: tap steps in order"}</span>
           {STAGES.filter((x) => !stages.includes(x)).slice(0, 6).map((x) => (
-            <button key={x} className="mono" onClick={() => setStages((s) => [...s, x])}><LuPlus aria-hidden />{x}</button>
+            <button key={x} className="mono" onClick={() => setRoute([...stages, x])}><LuPlus aria-hidden />{x}</button>
           ))}
-          <button className="mono" onClick={() => setStages((s) => [...s, ""])}><LuPlus aria-hidden />Your own</button>
+          <button className="mono" onClick={() => (typing.current = true, setStages((s) => [...s, ""]))}><LuPlus aria-hidden />Your own</button>
         </div>
       )}
-      <div className="tr-go">
-        {t.stage >= 0 && <button className="mono" disabled={busy} onClick={() => run({ stage: -1 })}>Back to not started</button>}
-        <button className="cta-mini" disabled={!dirty || busy || !clean().length} onClick={() => run({ text: title.trim() || undefined, route: clean() })}>{busy ? "Saving…" : "Save"}</button>
-      </div>
+      {t.stage >= 0 && (
+        <div className="tr-go">
+          <button className="mono" onClick={() => save({ stage: -1 })}>Back to not started</button>
+        </div>
+      )}
     </div>
   );
 }

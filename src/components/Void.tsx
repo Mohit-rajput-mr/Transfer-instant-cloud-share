@@ -36,6 +36,25 @@ import StylePicker from "./StylePicker";
 import { autoRemember, findDeviceSkin, skinName, toneOf, useLook } from "@/lib/skins";
 import { KINDS, fileKind, type Kind } from "@/lib/skin-list";
 
+/** a task with a change applied the way the server will (so the screen updates before it answers) */
+function applyEdit(t: Task, c: { text?: string; route?: string[]; stage?: number }, by: string): Task {
+  const route = c.route ?? t.route;
+  const last = route.length - 1;
+  const stage = Math.min(c.stage ?? t.stage, last);
+  const now = new Date().toISOString();
+  const done = stage >= 0 && stage === last ? t.doneAt ?? now : c.stage !== undefined && stage < last ? null : t.doneAt;
+  return {
+    ...t,
+    text: c.text?.trim() || t.text,
+    editedAt: c.text && c.text.trim() !== t.text ? now : t.editedAt,
+    route,
+    stage,
+    log: stage !== t.stage && stage >= 0 ? [...t.log, { i: stage, name: route[stage], by: by || null, at: now }] : t.log,
+    doneAt: done,
+    doneBy: done ? t.doneBy ?? (by || null) : null,
+  };
+}
+
 /** Someone else's launch, announced over realtime the moment they press Launch (before it has landed). */
 type Incoming = { key: string; by: string | null; life: number; open: boolean; name: string; size: number; files: number; hue: number; createdAt: string; net: string | null; frac: number; seen: number };
 const incomingId = (k: string) => `in-${k}`;
@@ -1300,6 +1319,7 @@ export default function Void() {
                 tickTask(t.id, done, bubbleName() || room?.handle || "").then(() => (refresh(), broadcast())).catch((e) => toast(e.message));
               }}
               onTake={(t, who) => {
+                setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, assignee: who || null } : x)));
                 assignTask(t.id, who).then(() => (toast(who ? `Task ${t.num} → ${who}` : `Task ${t.num} is open again`), refresh(), broadcast())).catch((e) => toast(e.message));
               }}
               onBurn={(t) => {
@@ -1310,16 +1330,13 @@ export default function Void() {
               onGoPrivate={space ? undefined : () => setPanel({ kind: "private" })}
               onMove={(t, dir) => moveTask(t.id, dir).then(() => (refresh(), broadcast())).catch((e) => toast(e.message))}
               onEdit={async (t, change) => {
-                try {
-                  await editTask(t.id, change, bubbleName() || room?.handle || "");
-                  if (change.stage !== undefined) toast(change.stage < 0 ? `Task ${t.num} is back to not started` : `Task ${t.num} → ${(change.route ?? t.route)[change.stage]}`);
-                  else toast(`Task ${t.num} saved`);
-                  await refresh();
-                  broadcast();
-                } catch (e) {
-                  toast((e as Error).message);
-                  throw e;
-                }
+                // shown at once; the server (and everyone else's screen) catches up in the background
+                const by = bubbleName() || room?.handle || "";
+                setTasks((ts) => ts.map((x) => (x.id === t.id ? applyEdit(x, change, by) : x)));
+                if (change.stage !== undefined) toast(change.stage < 0 ? `Task ${t.num} is back to not started` : `Task ${t.num} → ${(change.route ?? t.route)[change.stage]}`);
+                editTask(t.id, change, by)
+                  .then(() => (refresh(), broadcast()))
+                  .catch((e) => (toast((e as Error).message), refresh()));
               }}
             />
           )}

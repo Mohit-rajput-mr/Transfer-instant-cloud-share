@@ -94,7 +94,7 @@ export async function addTask(line: string, by = bubbleName(), life = 30) {
   return d as { id: string; num: number };
 }
 
-export const tickTask = (id: string, done: boolean, by = bubbleName()) => post("/api/tasks/done", { id, done, by, ...spaceBody() });
+export const tickTask = (id: string, done: boolean, by = bubbleName()) => post("/api/tasks/done", { id, done, by, owner: read()[id], ...spaceBody() });
 
 export async function burnTask(id: string) {
   const owner = read()[id];
@@ -102,7 +102,7 @@ export async function burnTask(id: string) {
   return !!(await post("/api/tasks/burn", { id, owner }).catch(() => null))?.ok;
 }
 
-export const assignTask = (id: string, assignee: string) => post("/api/tasks/assign", { id, assignee, ...spaceBody() });
+export const assignTask = (id: string, assignee: string) => post("/api/tasks/assign", { id, assignee, owner: read()[id], ...spaceBody() });
 /** is this task for me (by the name I go by here)? */
 export const forMe = (t: Task, me: string) => !!me && !!t.assignee && t.assignee.toLowerCase() === me.toLowerCase();
 
@@ -110,8 +110,12 @@ export const forMe = (t: Task, me: string) => !!me && !!t.assignee && t.assignee
 export async function editTask(id: string, change: { text?: string; route?: string[]; stage?: number }, by = bubbleName()) {
   const owner = read()[id];
   if (!owner) throw new Error("Only the person who wrote this task can change it");
-  return post("/api/tasks/edit", { id, owner, by, ...change });
+  // one at a time, in the order they were made (quick taps never land out of order)
+  const run = edits.then(() => post("/api/tasks/edit", { id, owner, by, ...change }));
+  edits = run.catch(() => {});
+  return run;
 }
+let edits: Promise<unknown> = Promise.resolve();
 
 /** the writer moves a task up (-1) or down (+1) the list */
 export async function moveTask(id: string, dir: -1 | 1) {
