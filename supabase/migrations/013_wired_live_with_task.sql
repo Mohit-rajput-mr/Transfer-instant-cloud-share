@@ -25,3 +25,6 @@ begin
 end $$;
 create trigger tasks_carry_files after update of expires_at on public.tasks
   for each row execute function private.task_carries_files();
+
+-- 013b (applied): orbit_task_edit — moving a task to any stage before the last makes it open again
+-- (done_at/done_by cleared); reaching the last stage still ticks it done. Tasks stuck "done" mid-route were reopened.
