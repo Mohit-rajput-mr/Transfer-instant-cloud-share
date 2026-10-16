@@ -29,6 +29,8 @@ export interface Orb {
   groupName?: string | null;
   /** the sender's style: every device draws the object this way */
   skin?: string | null;
+  /** a preview picture is stored (photo, video frame, first page): open objects only */
+  thumb?: boolean;
   createdAt: string;
   expiresAt: string;
 }

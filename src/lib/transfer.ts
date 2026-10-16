@@ -1,5 +1,6 @@
 "use client";
 import { pickedSkin } from "./skins";
+import { makePreview } from "./preview";
 import {
   CHUNK, ITERATIONS, deriveKeys, fromB64, randomBytes, streamDecrypt, toB64, toHex,
   type DownloadSink,
@@ -40,6 +41,8 @@ export async function launch(opts: {
   // open objects have nothing to stretch against guessing: the lightest setting the server accepts launches faster
   const iterations = opts.open ? 100_000 : ITERATIONS;
   const { key, auth } = await deriveKeys(opts.open ? OPEN_PASS : passcode, salt, iterations);
+  // a picture of what is inside (photo, video frame, PDF page), only for objects anyone may open
+  const preview = opts.open ? await makePreview(file) : null;
 
   const res = await fetch("/api/transfers", {
     method: "POST",
@@ -47,13 +50,15 @@ export async function launch(opts: {
     body: JSON.stringify({
       name, fileName: file.name || "file", mime: file.type || "application/octet-stream", size: file.size,
       chunkSize: CHUNK, iterations, salt: toB64(salt), nonce: toB64(nonce), auth, owner,
-      maxDownloads, device: deviceLabel(), hue: opts.hue, life: opts.life ?? 30, open: !!opts.open, from: await senderKey(), group: opts.group, skin: pickedSkin() ?? undefined, ...spaceBody(),
+      maxDownloads, device: deviceLabel(), hue: opts.hue, life: opts.life ?? 30, open: !!opts.open, from: await senderKey(), group: opts.group, skin: pickedSkin() ?? undefined, thumb: !!preview, ...spaceBody(),
     }),
     signal,
   });
   if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Could not open a slot in orbit");
   const { id } = (await res.json()) as { id: string };
   setOwnerKey(id, owner);
+  if (preview)
+    await fetch(`/api/transfers/${id}/thumb`, { method: "POST", headers: { "x-owner": owner, "Content-Type": "image/jpeg" }, body: preview, signal }).catch(() => null);
 
   // Nothing is uploaded: this device keeps the file and sends it, encrypted, straight to whoever
   // opens it (lib/p2p.ts) until it burns.

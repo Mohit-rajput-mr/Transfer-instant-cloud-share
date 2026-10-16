@@ -94,3 +94,23 @@ export function typeHue(fileName: string, mime = "") {
   for (const [re, h] of TYPE_HUE) if (re.test(e)) return h;
   return 228;
 }
+
+/** Kinds of file for the "Show only" filter. */
+export const KINDS = [
+  { id: "all", name: "Everything" },
+  { id: "photo", name: "Photos" },
+  { id: "video", name: "Videos" },
+  { id: "doc", name: "Documents" },
+  { id: "audio", name: "Audio" },
+  { id: "archive", name: "Archives" },
+] as const;
+export type Kind = (typeof KINDS)[number]["id"];
+export function fileKind(fileName: string, mime = ""): Exclude<Kind, "all"> | "other" {
+  const e = (/\.([a-z0-9]{1,6})$/i.exec(fileName)?.[1] ?? "").toLowerCase();
+  if (/^image\//.test(mime) || /^(jpe?g|png|gif|webp|heic|heif|svg|bmp|tiff?|avif|raw)$/.test(e)) return "photo";
+  if (/^video\//.test(mime) || /^(mp4|mov|avi|mkv|webm|m4v|3gp)$/.test(e)) return "video";
+  if (/^audio\//.test(mime) || /^(mp3|wav|flac|m4a|aac|ogg|opus)$/.test(e)) return "audio";
+  if (/^(zip|rar|7z|tar|gz|tgz|bz2|xz|dmg|iso)$/.test(e)) return "archive";
+  if (/^(pdf|docx?|odt|rtf|txt|md|pages|xlsx?|csv|ods|numbers|pptx?|key|odp)$/.test(e)) return "doc";
+  return "other";
+}

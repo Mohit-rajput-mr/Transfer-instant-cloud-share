@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as R
 import { setCardOrigin } from "./Panels";
 import { ext, formatBytes, formatClock, type Orb } from "@/lib/client";
 import { toneOf, typeHue } from "@/lib/skin-list";
+import { previewUrl } from "@/lib/preview";
 
 /** 7 → "7", 12 → "10+", 140 → "100+": a crowd stays readable */
 const crowd = (n: number) => (n >= 1000 ? "1k+" : n >= 100 ? "100+" : n >= 10 ? "10+" : String(n));
@@ -194,7 +195,7 @@ type Drag = {
 
 const HOLD_MS = 280;
 
-export type GroupMember = { id: string; name: string; hue: number; size: number; got: boolean; fileName: string; expiresAt: string; life: number; watchers: number; mine: boolean };
+export type GroupMember = { id: string; name: string; hue: number; size: number; got: boolean; fileName: string; expiresAt: string; life: number; watchers: number; mine: boolean; thumb?: boolean };
 
 export const clampTo = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 /** where the user dragged each ball inside its container (kept across re-renders, shared with the zoom) */
@@ -280,6 +281,20 @@ export function bubbleLayout(n: number) {
     spots.push([(px + (c + 0.5 + jx) * cw) / W, (py + (r + 0.42 + jy) * ch) / H]);
   }
   return { d, W, H, spots };
+}
+
+/** the preview picture inside a ball (photo, a video's frame with a play mark, a PDF's first page) */
+export function Thumb(props: { id: string; fileName: string; mime?: string }) {
+  const [bad, setBad] = useState(false);
+  if (bad) return null;
+  const video = /^video\//.test(props.mime ?? "") || /\.(mp4|m4v|webm|mov)$/i.test(props.fileName);
+  return (
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="thumb" src={previewUrl(props.id)} alt="" loading="lazy" decoding="async" draggable={false} onError={() => setBad(true)} />
+      {video && <i className="thumb-play" aria-hidden />}
+    </>
+  );
 }
 
 export default function OrbView(props: {
@@ -690,7 +705,8 @@ export default function OrbView(props: {
                       style={{ "--sh": m.hue, "--th": typeHue(m.fileName), "--mi": i, "--life": mf, left: `${x * 100}%`, top: `${y * 100}%` } as CSSProperties}
                       title={`${m.name} · ${formatBytes(m.size)} · ${formatClock(mleft)}`}
                     >
-                      <span className="mball">
+                      <span className={`mball${m.thumb ? " thumbed" : ""}`}>
+                        {m.thumb && <Thumb id={m.id} fileName={m.fileName} />}
                         <svg className="mring" viewBox="0 0 100 100" aria-hidden>
                           <circle className="track" cx="50" cy="50" r="48" />
                           <circle className="life" cx="50" cy="50" r="48" strokeDasharray={301.6} strokeDashoffset={301.6 * (1 - mf)} />
@@ -720,7 +736,7 @@ export default function OrbView(props: {
       <div className="orb-body" style={{ "--life": up ? Math.max(0.03, launching) : frac } as CSSProperties}>
         <div className="halo" />
         {mine && <span className="claim" />}
-        <div className="sphere" />
+        <div className={`sphere${orb.thumb && orb.open && !up ? " thumbed" : ""}`}>{orb.thumb && orb.open && !up && <Thumb id={orb.id} fileName={orb.fileName} mime={orb.mime} />}</div>
         <svg className="ring" viewBox="0 0 100 100">
           <circle className="track" cx="50" cy="50" r={R} />
           <circle className="life" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - (up ? Math.max(0.03, launching) : frac))} />

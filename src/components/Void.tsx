@@ -23,10 +23,12 @@ const release = (id: string) => {
 };
 import { downloading } from "@/lib/downloads";
 import { enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
-import { LuFlag, LuLayers, LuMenu, LuOrbit, LuPalette, LuUser, LuWifi } from "react-icons/lu";
+import { LuArchive, LuFileText, LuFlag, LuImage, LuLayers, LuLayoutGrid, LuMenu, LuMusic, LuOrbit, LuPalette, LuUser, LuVideo, LuWifi } from "react-icons/lu";
+const KIND_ICON = { all: LuLayoutGrid, photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
 import MobileMenu from "./MobileMenu";
 import StylePicker from "./StylePicker";
 import { autoRemember, findDeviceSkin, skinName, toneOf, useLook } from "@/lib/skins";
+import { KINDS, fileKind, type Kind } from "@/lib/skin-list";
 
 /** Someone else's launch, announced over realtime the moment they press Launch (before it has landed). */
 type Incoming = { key: string; by: string | null; life: number; open: boolean; name: string; size: number; files: number; hue: number; createdAt: string; net: string | null; frac: number; seen: number };
@@ -134,6 +136,8 @@ export default function Void() {
   // element (no remount, no second entrance) when the upload lands
   const alias = useRef(new Map<string, string>());
   const [scope, setScope] = useState<"all" | "near" | "mine">("all");
+  // "Show only": photos, videos, documents…
+  const [kind, setKind] = useState<Kind>("all");
   const [dragging, setDragging] = useState(false);
   const [online, setOnline] = useState(1);
   const [pulse, setPulse] = useState(0);
@@ -784,8 +788,15 @@ export default function Void() {
   // other people's launches still on their way up
   const arrivingOrbs = useMemo(() => Object.values(incoming).map(incomingOrb), [incoming]);
   const grouped = useMemo(
-    () => groupOrbs(alive.filter((o) => scope === "all" || (scope === "near" ? o.netHash === net || !!ownerKey(o.id) : !!ownerKey(o.id)))),
-    [alive, scope, net],
+    () =>
+      groupOrbs(
+        alive.filter(
+          (o) =>
+            (scope === "all" || (scope === "near" ? o.netHash === net || !!ownerKey(o.id) : !!ownerKey(o.id))) &&
+            (kind === "all" || fileKind(o.fileName, o.mime) === kind),
+        ),
+      ),
+    [alive, scope, net, kind],
   );
   const groups = grouped.groups;
   const bubbles = useMemo(() => grouped.list.filter((o) => isGroup(o.id)).map((o) => ({ id: o.id, name: o.name, members: groups.get(o.id) ?? [] })), [grouped, groups]);
@@ -983,7 +994,7 @@ export default function Void() {
             {mineCount > 0 && <button role="tab" aria-selected={scope === "mine"} className={scope === "mine" ? "on" : ""} onClick={() => setScope(scope === "mine" ? "all" : "mine")} aria-label={`Mine, ${mineCount}`}><LuUser /><b>{mineCount}</b></button>}
           </div>
           <button className={`m-ic lg-press${space ? " in" : ""}`} onClick={() => setPanel({ kind: "space" })} aria-label={space ? `Space: ${space.title}` : "Spaces"}><LuOrbit /></button>
-          <button className="m-ic lg-press" onClick={() => setPanel({ kind: "menu" })} aria-label="Menu"><LuMenu /></button>
+          <button className="m-ic lg-press" onClick={() => setPanel({ kind: "menu" })} aria-label={kind === "all" ? "Menu" : "Menu, filter on"}><LuMenu />{kind !== "all" && <i className="m-dot" />}</button>
         </div>
         <div className="top-row">
           <div className="brand" onClick={tapLogo} role="presentation">
@@ -1010,6 +1021,13 @@ export default function Void() {
             <span className="hl"><i />No login required</span><span>End-to-end encrypted</span><span>Any size</span><span>Burns in 5–30 min</span>
           </div>
           <span />
+          <div className="kinds-wrap">
+          <div className="kinds" role="radiogroup" aria-label="Show only">
+            {KINDS.map((k) => {
+              const I = KIND_ICON[k.id];
+              return <button key={k.id} role="radio" aria-checked={kind === k.id} className={kind === k.id ? "on" : ""} onClick={() => setKind(k.id)} title={k.name} aria-label={k.name}><I /></button>;
+            })}
+          </div>
           <div className="toggle" role="tablist" aria-label="Scope">
             <button className={scope === "all" ? "on" : ""} onClick={() => setScope("all")}>All</button>
             {!space && <button className={scope === "near" ? "on" : ""} onClick={() => setScope("near")}>Nearby{nearbyCount ? ` ${nearbyCount}` : ""}</button>}
@@ -1018,6 +1036,7 @@ export default function Void() {
                 Mine <b>{mineCount}</b>
               </button>
             )}
+          </div>
           </div>
         </div>
       </header>
@@ -1079,7 +1098,7 @@ export default function Void() {
               got={gotIds.has(o.id)}
               onDestroy={isGroup(o.id) ? () => destroy((groups.get(o.id) ?? []).map((m) => m.id)) : ownerKey(o.id) ? () => destroy([o.id]) : undefined}
               onDestroyMember={isGroup(o.id) ? (id) => destroy([id]) : undefined}
-              group={isGroup(o.id) ? groups.get(o.id)?.map((m) => ({ id: m.id, name: m.name, hue: m.hue, size: m.size, got: hasGot(m.id), fileName: m.fileName, expiresAt: m.expiresAt, life: m.life ?? 30, watchers: watchers(m.id), mine: !!ownerKey(m.id) })) : undefined}
+              group={isGroup(o.id) ? groups.get(o.id)?.map((m) => ({ id: m.id, name: m.name, hue: m.hue, size: m.size, got: hasGot(m.id), fileName: m.fileName, expiresAt: m.expiresAt, life: m.life ?? 30, watchers: watchers(m.id), mine: !!ownerKey(m.id), thumb: !!(m.thumb && m.open) })) : undefined}
             />
           ))}
           {ghosts.map((g) => (
@@ -1219,6 +1238,8 @@ export default function Void() {
       {panel?.kind === "menu" && (
         <MobileMenu
           space={space?.title ?? null}
+          kind={kind}
+          onKind={setKind}
           onSend={openMenu}
           onSpaces={() => setPanel({ kind: "space" })}
           onStyle={() => setPanel({ kind: "style" })}

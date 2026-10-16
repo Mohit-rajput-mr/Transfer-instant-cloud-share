@@ -15,6 +15,8 @@ const client =
 export const r2On = () => !!client;
 const base = () => `https://${ACCOUNT}.r2.cloudflarestorage.com/${BUCKET}`;
 export const objectKey = (id: string) => `f/${id}`;
+/** the small preview picture of an open object */
+export const previewKey = (id: string) => `t/${id}`;
 
 /** A URL that lets a browser do exactly one kind of request on one object, for `seconds`. */
 export async function presign(method: "GET" | "PUT", key: string, query: Record<string, string> = {}, seconds = 3600) {
@@ -57,4 +59,16 @@ export async function storedSize(key: string): Promise<number | null> {
 export async function removeObjects(keys: string[]) {
   if (!client || !keys.length) return;
   await Promise.all(keys.map((k) => client.fetch(`${base()}/${k}`, { method: "DELETE" }).catch(() => null)));
+}
+
+/** A small object written by the server itself (preview pictures). */
+export async function putObject(key: string, body: ArrayBuffer, type: string) {
+  if (!client) throw new Error("r2 off");
+  const r = await client.fetch(`${base()}/${key}`, { method: "PUT", body, headers: { "content-type": type } });
+  if (!r.ok) throw new Error(`r2 put ${r.status}`);
+}
+export async function getObject(key: string): Promise<ArrayBuffer | null> {
+  if (!client) return null;
+  const r = await client.fetch(`${base()}/${key}`).catch(() => null);
+  return r?.ok ? r.arrayBuffer() : null;
 }

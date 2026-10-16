@@ -2,7 +2,7 @@
 import { typeHue } from "@/lib/skin-list";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { ext, formatBytes, formatClock, hasGot, ownerKey, type Orb } from "@/lib/client";
-import { bubbleLayout, clampTo, fling, memberPos, stopFling, tracker } from "./OrbView";
+import { Thumb, bubbleLayout, clampTo, fling, memberPos, stopFling, tracker } from "./OrbView";
 import { enqueue, useDownloads } from "@/lib/downloads";
 import { LuArrowLeft, LuCheck, LuChevronLeft, LuChevronRight, LuDownload, LuEye, LuLock, LuLockOpen, LuTrash2 } from "react-icons/lu";
 
@@ -197,7 +197,8 @@ export default function BubbleZoom(props: {
                   props.onOpen(o);
                 }}
               >
-                <span className="zsphere">
+                <span className={`zsphere${o.thumb && o.open ? " thumbed" : ""}`}>
+                  {o.thumb && o.open && <Thumb id={o.id} fileName={o.fileName} mime={o.mime} />}
                   <span className="zhalo" aria-hidden />
                   <svg className="zring" viewBox="0 0 100 100" aria-hidden>
                     <circle className="track" cx="50" cy="50" r="48" />

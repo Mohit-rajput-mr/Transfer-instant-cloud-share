@@ -5,6 +5,7 @@ import {
   deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, hasGot, markGot, ownerKey, timeAgo, type Orb, type OwnerView,
 } from "@/lib/client";
 import { MAX_FILE_BYTES } from "@/lib/limits";
+import { previewUrl } from "@/lib/preview";
 import { release } from "@/lib/p2p";
 import { enqueue } from "@/lib/downloads";
 import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, filesBundle, isFolder, isLoose, isLinkText, itemName, itemSize, mergeItems, packFolder, pickFolderTarget, textToFile, type DirHandle, type Item } from "@/lib/bundle";
@@ -1146,6 +1147,10 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
         </div>
       ) : (
         <div className="col" key="info">
+          {orb.thumb && orb.open && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="card-thumb" src={previewUrl(orb.id)} alt={`Preview of ${orb.name}`} onError={(e) => (e.currentTarget.style.display = "none")} />
+          )}
           <div>
             <span className="mono dim ellip">{orb.fileName}</span>
             <div className="wide d-title">{orb.name}</div>

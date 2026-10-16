@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   let name = (clean(b.name, 60) || "untitled").replace(/^⟪/, "(");
   const life = LIVES.includes(Number(b.life)) ? Number(b.life) : 30;
-  const tags = { life, open: b.open === true, from: validFrom(b.from) ? b.from : undefined, group: cleanGroup(b.group) || undefined, skin: validSkin(b.skin) ? b.skin : undefined } as Parameters<typeof tagName>[1];
+  const tags = { life, open: b.open === true, from: validFrom(b.from) ? b.from : undefined, group: cleanGroup(b.group) || undefined, skin: validSkin(b.skin) ? b.skin : undefined, thumb: b.thumb === true } as Parameters<typeof tagName>[1];
   if (b.space != null) {
     const me = await member(b.space, b.deviceId, b.spaceToken);
     if (!me) return NextResponse.json({ error: "You are no longer in this space" }, { status: 403 });
