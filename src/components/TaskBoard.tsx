@@ -500,7 +500,7 @@ export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring, strai
             onPointerDown={(e) => e.stopPropagation()}
           >
             <span className="mono">Wire {orbs.find((o) => o.id === menu.orb)?.name ?? "this file"} to</span>
-            {tasks.filter((t) => !t.doneAt).map((t) => (
+            {tasks.map((t) => (
               <button
                 key={t.id}
                 role="menuitem"
@@ -510,11 +510,11 @@ export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring, strai
                   onConnect(menu.orb, t.id);
                 }}
               >
+                <i className="task-dot step-dot" data-step={stepOf(t)} aria-hidden />
                 <b className="mono">Task {t.num}</b>
                 <span>{t.text}</span>
               </button>
             ))}
-            {tasks.every((t) => t.doneAt) && <span className="mono dim">Every task is done</span>}
           </div>
         </div>,
         document.body,

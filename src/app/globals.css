@@ -2495,6 +2495,10 @@ em.hq-tag { font-style: normal; }
 .tb-row.done .task-dot svg { color: #f4f6f8; filter: drop-shadow(0 1px 0 rgba(0,0,0,0.6)); }
 /* the tick walks the route: orange (first step) → blue (on its way) → green (done) */
 .task-dot.big[data-step] { transition: background .35s, box-shadow .35s, transform .2s; }
+.task-dot.step-dot { width: 10px; height: 10px; margin-right: 2px; }
+.task-dot.step-dot[data-step="1"] { background: #f08a24; }
+.task-dot.step-dot[data-step="2"] { background: #2f86f2; }
+.task-dot.step-dot[data-step="3"] { background: #27c463; }
 .tb-row .task-dot.big[data-step="1"] { background: radial-gradient(circle at 32% 26%, #ffe2bf 0%, #ffad5c 28%, #f07a12 66%, #a84a00 100%); box-shadow: inset 0 -1px 2px rgba(0,0,0,.4), inset 0 1px 1px rgba(255,255,255,.6), 0 0 10px rgba(255,140,40,.45), 0 0 0 1px rgba(0,0,0,.35); }
 .tb-row .task-dot.big[data-step="2"] { background: radial-gradient(circle at 32% 26%, #d8ecff 0%, #69b1ff 28%, #1f7bf0 66%, #0b46a3 100%); box-shadow: inset 0 -1px 2px rgba(0,0,0,.4), inset 0 1px 1px rgba(255,255,255,.6), 0 0 10px rgba(50,140,255,.45), 0 0 0 1px rgba(0,0,0,.35); }
 .tb-row .task-dot.big[data-step="3"] { background: radial-gradient(circle at 32% 26%, #dcffe6 0%, #5fe08a 28%, #1fb455 66%, #0b6e30 100%); box-shadow: inset 0 -1px 2px rgba(0,0,0,.4), inset 0 1px 1px rgba(255,255,255,.6), 0 0 10px rgba(40,210,110,.45), 0 0 0 1px rgba(0,0,0,.35); }
@@ -2738,6 +2742,8 @@ em.hq-tag { font-style: normal; }
 .wire-menu button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 9px 10px; border-radius: 12px; color: #fff; }
 .wire-menu button b { font-size: 9px; color: #a8a8a8; font-weight: 400; }
 .wire-menu button span { font-size: 13px; line-height: 1.25; }
+.wire-menu button { position: relative; padding-right: 28px; }
+.wire-menu .task-dot.step-dot { position: absolute; right: 10px; top: 50%; margin: -5px 0 0; }
 .wire-menu button.on { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4); }
 @media (hover: hover) { .wire-menu button:hover { background: rgba(255,255,255,0.08); } }
 /* the delete button sits bottom-left, so it never covers the file-type badge (bottom-right) or the wire plug (right) */
