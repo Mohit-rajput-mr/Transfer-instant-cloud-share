@@ -112,3 +112,26 @@ if (process.argv[3] === "plug") (async () => {
   await page.screenshot({ path: `${process.argv[2]}/plug-3.png` });
   await b.close();
 })();
+// Arrange (desktop): node taskshots.cjs <outDir> arrange
+if (process.argv[3] === "arrange") (async () => {
+  const b = await L.chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--headless=new"] });
+  const extra = [
+    W("nh03", "hero-2.jpg", "hero-2.jpg", "image/jpeg", 3.9e6, "cccccccccc", "Noah", "t000000002"),
+    W("sf04", "logo-dark.svg", "logo-dark.svg", "image/svg+xml", 0.2e6, "bbbbbbbbbb", "Sofia", "t000000001"),
+    L.mkOrb("xx02", "Notes 2", "notes2.txt", "text/plain", 0.01e6, 60, 25),
+  ];
+  const { page } = await L.open(b, { viewport: { width: 1440, height: 900 } }, {
+    items: [...ITEMS, ...extra],
+    init: async (p, st) => {
+      st.custom = async (r, path, m) => {
+        if (path === "/api/transfers" && m === "GET") return r.fulfill({ json: { items: st.items, bubbles: [], tasks: TASKS, online: 6, now: L.NOW }, headers: L.CORS }), true;
+      };
+    },
+  });
+  await L.step(page, 2000, 100);
+  await page.screenshot({ path: `${process.argv[2]}/arrange-0.png` });
+  await page.click(".tb-arrange");
+  await L.step(page, 1500, 100);
+  await page.screenshot({ path: `${process.argv[2]}/arrange-1.png` });
+  await b.close();
+})();

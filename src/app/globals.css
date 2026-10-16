@@ -2644,3 +2644,12 @@ em.hq-tag { font-style: normal; }
 .tb-redeem button[type="button"] { background: none; color: #aaa; padding: 0 8px; }
 .tb-redeem svg { width: 14px; height: 14px; }
 .tb-redeem .mono { width: 100%; font-size: 9.5px; color: var(--danger); text-transform: none; }
+
+/* Arrange: tasks in lanes, files lined up in them, no drifting */
+.tb-arrange { position: absolute; right: 44px; top: 10px; height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18); font-size: 9.5px; color: #d6dbe0; z-index: 2; }
+.tb-arrange svg { width: 13px; height: 13px; }
+.tb-arrange:hover { background: rgba(255,255,255,0.08); }
+.tb-arrange.on { background: linear-gradient(180deg, #f4f6f8, #b9c0c8); color: #15181c; border-color: transparent; }
+.task-board:has(.tb-arrange) .tb-bar { margin-right: 92px; }
+.void.arranged .orb { --drift: 0; }
+.void.arranged .orb-anchor { transition: left 0.7s var(--ease-out), top 0.7s var(--ease-out); }

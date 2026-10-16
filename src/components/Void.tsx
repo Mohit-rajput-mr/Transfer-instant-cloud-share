@@ -923,7 +923,49 @@ export default function Void() {
     const rank = (o: Orb) => (ownerKey(o.id) || isPending(o.id) ? 2 : 0) + (o.netHash === net ? 1 : 0);
     return [...shown].sort((a, b) => rank(b) - rank(a) || b.createdAt.localeCompare(a.createdAt)).slice(0, cap);
   }, [shown, net, cap]);
-  const positions = useMemo(() => layout(visible, mode), [visible, mode]);
+  // Arrange (tasks): every task gets a lane, its files line up in it grouped by sender; the rest share a last lane
+  const [arranged, setArranged] = useState(false);
+  useEffect(() => {
+    try {
+      setArranged(localStorage.getItem("orbit:arranged") === "1");
+    } catch {}
+  }, []);
+  const toggleArrange = () =>
+    setArranged((a) => {
+      try {
+        localStorage.setItem("orbit:arranged", a ? "0" : "1");
+      } catch {}
+      return !a;
+    });
+  const [vw, setVw] = useState({ w: 1440, h: 900 });
+  useEffect(() => {
+    const on = () => setVw({ w: window.innerWidth, h: window.innerHeight });
+    on();
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, []);
+  // a tidy grid: files ordered by task (Task 1's first), then by sender (each team's colour together),
+  // unwired files last; the cell size decides the ball size, so nothing overlaps
+  const grid = useMemo(() => {
+    if (!arranged || mode !== "desk" || !tasks.length || !visible.length) return null;
+    const rank = new Map(tasks.map((t, i) => [t.id, i]));
+    const list = [...visible].sort(
+      (a, b) =>
+        (rank.get(a.task ?? "") ?? 1e3) - (rank.get(b.task ?? "") ?? 1e3) ||
+        (a.from ?? a.id).localeCompare(b.from ?? b.id) ||
+        a.createdAt.localeCompare(b.createdAt),
+    );
+    const areaW = Math.max(300, vw.w - 470 - (notes.length ? 380 : 110)), areaH = vw.h * 0.68;
+    let cols = Math.max(1, Math.ceil(Math.sqrt((list.length * areaW) / areaH)));
+    let rows = Math.ceil(list.length / cols);
+    while (cols > 1 && Math.ceil(list.length / (cols - 1)) === rows) cols--;
+    rows = Math.ceil(list.length / cols);
+    const k = Math.max(0.4, Math.min(1, areaW / cols / 210, areaH / rows / 255));
+    const pos = new Map<string, { x: number; y: number }>();
+    list.forEach((o, i) => pos.set(o.id, { x: ((i % cols) + 0.5) * (100 / cols), y: 16 + (Math.floor(i / cols) + 0.5) * (68 / rows) }));
+    return { pos, k };
+  }, [arranged, mode, tasks, visible, vw, notes.length]);
+  const positions = useMemo(() => grid?.pos ?? layout(visible, mode), [grid, visible, mode]);
   // a ball is the same colour on every device: the hue stored with it, never a local re-shuffle
   // wired files wear their sender's colour, so each team is easy to spot across tasks
   const colors = useMemo(() => new Map(visible.map((o) => [o.id, o.task ? hueFor(o.from ?? o.id) : ((o.hue % 360) + 360) % 360])), [visible]);
@@ -1126,9 +1168,9 @@ export default function Void() {
 
       <main className={menu && !menuOut ? "menu-open" : undefined} data-pal={pal}>
         <section
-          className={`void${notes.length ? " has-bubbles" : ""}${new Set(notes.map(senderOf)).size > 1 || tasks.length ? " bub-two" : ""}${tasks.length ? " has-tasks" : ""}${taskFocus ? " task-focus" : ""}${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
+          className={`void${notes.length ? " has-bubbles" : ""}${new Set(notes.map(senderOf)).size > 1 || tasks.length ? " bub-two" : ""}${tasks.length ? " has-tasks" : ""}${taskFocus ? " task-focus" : ""}${grid ? " arranged" : ""}${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
           id="void"
-          style={(flow ? { "--n": rows } : { "--k-auto": crowdScale(visible.length) }) as unknown as React.CSSProperties}
+          style={(flow ? { "--n": rows } : { "--k-auto": grid ? grid.k : crowdScale(visible.length) }) as unknown as React.CSSProperties}
         >
           {space && <SpaceRoom space={space} info={room} online={live} onKick={kick} onExit={() => {
             switchSpace(null);
@@ -1142,6 +1184,8 @@ export default function Void() {
               focus={taskFocus}
               onFocus={setTaskFocus}
               wiring={wiring}
+              arranged={!!grid}
+              onArrange={mode === "desk" ? toggleArrange : undefined}
               onAdd={async (line, life) => {
                 try {
                   const t = await addTask(line, bubbleName() || room?.handle || "", life);

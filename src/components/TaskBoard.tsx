@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { LuArrowDown, LuArrowUp, LuCheck, LuChevronDown, LuFolderUp, LuLock, LuPaperclip, LuPencil, LuPlus, LuRoute, LuTrash2, LuUserCheck, LuX } from "react-icons/lu";
+import { LuArrowDown, LuArrowUp, LuRows3, LuCheck, LuChevronDown, LuFolderUp, LuLock, LuPaperclip, LuPencil, LuPlus, LuRoute, LuTrash2, LuUserCheck, LuX } from "react-icons/lu";
 import { PRO_FOR_ALL, STAGES, TASK_LIVES, TASK_MAX, dropPro, forMe, isMyTask, parseTask, proCode, redeemPro, type Task } from "@/lib/tasks";
 import { hueFor } from "@/lib/bubbles";
 import type { Orb } from "@/lib/client";
@@ -34,7 +34,7 @@ export function wiredBy(task: string, orbs: Orb[]) {
  * Tasks, one line each: a big orange dot, "TASK 1", the line, who it is for, and a tick anyone can set.
  * Files wired to a task hang off its dot (TaskWires). Tapping a task shows only its files.
  */
-export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: string; focus: string | null; onFocus: (id: string | null) => void; onClose: () => void; /** a cable is being plugged in: the tasks light up as targets */ wiring?: boolean } & TaskActs) {
+export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: string; focus: string | null; onFocus: (id: string | null) => void; onClose: () => void; /** a cable is being plugged in: the tasks light up as targets */ wiring?: boolean; arranged?: boolean; onArrange?: () => void } & TaskActs) {
   const [line, setLine] = useState("");
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(true);
@@ -81,6 +81,11 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
         <span className="tb-bar" aria-hidden><i style={{ transform: `scaleX(${total ? done / total : 0})` }} /></span>
         <LuChevronDown className={`tb-chev${open ? " up" : ""}`} aria-hidden />
       </button>
+      {props.onArrange && total > 0 && (
+        <button className={`tb-arrange mono${props.arranged ? " on" : ""}`} onClick={props.onArrange} aria-pressed={!!props.arranged} title={props.arranged ? "Back to the free-floating void" : "Line every file up in its task's lane"}>
+          <LuRows3 aria-hidden />{props.arranged ? "Arranged" : "Arrange"}
+        </button>
+      )}
       {!total && <button className="tb-x" onClick={props.onClose} aria-label="Close tasks"><LuX /></button>}
       {(open || props.wiring) && (
         <>
