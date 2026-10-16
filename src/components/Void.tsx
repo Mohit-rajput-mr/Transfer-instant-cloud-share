@@ -23,9 +23,11 @@ const release = (id: string) => {
 };
 import { downloading } from "@/lib/downloads";
 import { enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
-import { LuArchive, LuFileText, LuFlag, LuImage, LuLayers, LuLayoutGrid, LuMenu, LuMusic, LuOrbit, LuPalette, LuUser, LuVideo, LuWifi } from "react-icons/lu";
+import { LuArchive, LuFileText, LuFlag, LuMessageCircle, LuImage, LuLayers, LuLayoutGrid, LuMenu, LuMusic, LuOrbit, LuPalette, LuUser, LuVideo, LuWifi } from "react-icons/lu";
 const KIND_ICON = { all: LuLayoutGrid, photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
 import MobileMenu from "./MobileMenu";
+import BubbleBoard, { BubbleCompose } from "./BubbleBoard";
+import { burnBubble, isMine as isMyBubble, postBubble, type Bubble } from "@/lib/bubbles";
 import StylePicker from "./StylePicker";
 import { autoRemember, findDeviceSkin, skinName, toneOf, useLook } from "@/lib/skins";
 import { KINDS, fileKind, type Kind } from "@/lib/skin-list";
@@ -58,6 +60,7 @@ type Panel =
   | { kind: "space"; start?: string }
   | { kind: "style" }
   | { kind: "menu" }
+  | { kind: "bubble" }
   | null;
 
 // more balls in the void, smaller balls, so they all have room
@@ -121,6 +124,9 @@ export default function Void() {
   const [spaceReady, setSpaceReady] = useState(false);
   // who is in the space (and who is live right now, via realtime presence on its channel)
   const [room, setRoom] = useState<SpaceInfo | null>(null);
+  // bubble text in this void (or space)
+  const [notes, setNotes] = useState<Bubble[]>([]);
+  const knownBubbles = useRef<Set<string> | null>(null);
   const [live, setLive] = useState<Set<string>>(new Set());
   const myId = room?.members.find((m) => m.you)?.id ?? null;
   // incoming launch the user tapped: it opens by itself the moment it lands
@@ -232,7 +238,11 @@ export default function Void() {
       if (spaceRef.current !== sp) return; // switched while this was in flight
       if (sp && r?.status === 403) return removedRef.current(sp);
       if (!r?.ok) return;
-      const d = (await r.json()) as { items: Orb[]; online: number; now: number };
+      const d = (await r.json()) as { items: Orb[]; bubbles?: Bubble[]; online: number; now: number };
+      const bs = d.bubbles ?? [];
+      setNotes(bs);
+      if (knownBubbles.current) for (const b of bs) if (!knownBubbles.current.has(b.id) && !isMyBubble(b.id)) toast(`New bubble from ${b.by || "someone"}`);
+      knownBubbles.current = new Set(bs.map((b) => b.id));
       setSkew(d.now - Date.now());
       // a launch that just landed stays put even if this list was cached a moment before it
       const ids = new Set(d.items.map((o) => o.id));
@@ -1043,7 +1053,7 @@ export default function Void() {
 
       <main className={menu && !menuOut ? "menu-open" : undefined} data-pal={pal}>
         <section
-          className={`void${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
+          className={`void${notes.length ? " has-bubbles" : ""}${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
           id="void"
           style={(flow ? { "--n": rows } : { "--k-auto": crowdScale(visible.length) }) as unknown as React.CSSProperties}
         >
@@ -1051,6 +1061,20 @@ export default function Void() {
             switchSpace(null);
             toast("Back in the public void");
           }} />}
+          {notes.length > 0 && (
+            <BubbleBoard
+              bubbles={notes}
+              now={serverNow}
+              toast={toast}
+              onBurn={async (id) => {
+                if (await burnBubble(id)) {
+                  setNotes((bs) => bs.filter((b) => b.id !== id));
+                  toast("Bubble burned");
+                  broadcast();
+                }
+              }}
+            />
+          )}
           <div className="ghost-type" aria-hidden>
             <span className="wide">Drop</span>
             <span className="wide">Lock</span>
@@ -1310,6 +1334,30 @@ export default function Void() {
         {toasts.map((t) => <div key={t.id}>{t.text}</div>)}
       </div>
 
+      {!panel && !(menu && !menuOut) && (
+        <button className={`bub-fab lg lg-press${compact ? " mini" : ""}`} onClick={() => setPanel({ kind: "bubble" })} aria-label="Bubble text: post a note everyone sees">
+          <LuMessageCircle aria-hidden />
+          <span>Bubble</span>
+        </button>
+      )}
+      {panel?.kind === "bubble" && (
+        <BubbleCompose
+          defaultName={room?.handle ?? ""}
+          inSpace={space?.title ?? null}
+          onClose={() => setPanel(null)}
+          onPost={async (text, by) => {
+            try {
+              await postBubble(text, by);
+              toast("Bubble posted");
+              await refresh();
+              broadcast();
+            } catch (e) {
+              toast((e as Error).message);
+              throw e;
+            }
+          }}
+        />
+      )}
       {!panel && (
         <button
           className={`send-fab lg lg-press${menu && !menuOut ? " open" : ""}${compact && !menu ? " mini" : ""}`}

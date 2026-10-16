@@ -2,6 +2,8 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { LuCheck, LuMonitorSmartphone, LuTicket } from "react-icons/lu";
 import { Pop } from "./Spaces";
+import { KindBadge } from "./OrbView";
+import { fileKind } from "@/lib/skin-list";
 import { AUTO_DEVICE, PALETTES, SKIN_GROUPS, SKINS, deviceSync, makeStyleCode, redeemStyleCode, setDeviceSync, setPalette, setSkin, skinName, toneOf, typeHue, useLook } from "@/lib/skins";
 
 const EXTS = ["PDF", "JPG", "MP4", "ZIP", "DOC", "XLS"];
@@ -12,7 +14,8 @@ function Sample(props: { id: string; i: number; pal: string; size?: number }) {
   const e = EXTS[props.i % EXTS.length];
   return (
     <span className="skin-sample" data-skin={props.id} data-tone={toneOf(props.id)} data-pal={props.pal} style={{ "--md": `${props.size ?? 46}px` } as CSSProperties}>
-      <span className="mball" style={{ "--sh": hue, "--th": typeHue(`x.${e.toLowerCase()}`), "--life": 0.68 } as CSSProperties}>
+      <span className="mball" data-kind={fileKind(`x.${e.toLowerCase()}`)} style={{ "--sh": hue, "--th": typeHue(`x.${e.toLowerCase()}`), "--life": 0.68 } as CSSProperties}>
+        <KindBadge kind={fileKind(`x.${e.toLowerCase()}`)} />
         <svg className="mring" viewBox="0 0 100 100" aria-hidden>
           <circle className="track" cx="50" cy="50" r="48" />
           <circle className="life" cx="50" cy="50" r="48" strokeDasharray={301.6} strokeDashoffset={301.6 * 0.32} />

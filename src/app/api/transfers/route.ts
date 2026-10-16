@@ -10,11 +10,14 @@ export const dynamic = "force-dynamic";
 // per region no matter how many people are watching the void.
 export async function GET() {
   await reap();
-  const r = await rpc<{ items: { name?: unknown; expiresAt?: unknown }[]; online: number }>("orbit_list2", {});
+  const [r, bubbles] = await Promise.all([
+    rpc<{ items: { name?: unknown; expiresAt?: unknown }[]; online: number }>("orbit_list2", {}),
+    rpc<unknown[]>("orbit_bubble_list", { p_space: null }).catch(() => []),
+  ]);
   // objects inside a space never show in the public void; short-lived ones leave on time
   const items = (r.items ?? []).map(untag).filter((o) => !o.space && !burnedUp(o));
   return NextResponse.json(
-    { ...r, items, now: Date.now() },
+    { ...r, items, bubbles: bubbles ?? [], now: Date.now() },
     { headers: { "Cache-Control": "public, max-age=0, s-maxage=1, stale-while-revalidate=5" } },
   );
 }

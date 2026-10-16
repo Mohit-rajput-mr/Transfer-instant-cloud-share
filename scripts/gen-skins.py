@@ -175,5 +175,28 @@ for k, (shaped, shape, text, extra, drop) in SK.items():
         out.append(f"[data-skin=\"{k}\"] .orb.dying .sphere::after {{ --bar: var(--danger); }}")
     if extra:
         out.append(extra)
+# ---- every kind of file has its own outline in the round / material styles ----
+# photos: a square tile · video: a wide screen · documents: a page with a folded corner · archives: a box ·
+# audio and everything else: round. Character styles (planet, vinyl, buddy, moon…) keep their shape and
+# show the kind with the small badge instead (.kind-badge).
+ROUND = ["graphite", "gold", "silver", "copper", "steel", "marble", "jade", "pearl", "obsidian", "ceramic", "carbon", "glass", "neon", "candy", "clay", "sunset", "chrome", "big"]
+RS = ", ".join(f'[data-skin="{k}"]' for k in ROUND)
+KIND = {
+    "photo": "inset:6%; border-radius:22%; clip-path:none;",
+    "video": "inset:20% 0; border-radius:16%; clip-path:none;",
+    "doc": "inset:0 15%; border-radius:9%; clip-path:polygon(0 0,70% 0,100% 21%,100% 100%,0 100%);",
+    "archive": "inset:9% 7%; border-radius:13%; clip-path:none;",
+}
+for k, geo in KIND.items():
+    out.append(f":is({RS}) {S}[data-kind=\"{k}\"]::before {{ {geo} }}")
+# the default Orbit look draws on the element itself
+ORB = {
+    "photo": "inset:18%; border-radius:22%;",
+    "video": "inset:27% 9%; border-radius:16%;",
+    "doc": "inset:11% 25%; border-radius:9%; clip-path:polygon(0 0,70% 0,100% 21%,100% 100%,0 100%);",
+    "archive": "inset:20% 17%; border-radius:13%;",
+}
+for k, geo in ORB.items():
+    out.append(f"[data-skin=\"orbit\"] .sphere[data-kind=\"{k}\"] {{ {geo} }}")
 out.append("/* <<< styles */")
 print("\n".join(out))

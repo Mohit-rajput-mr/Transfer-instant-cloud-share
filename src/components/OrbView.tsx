@@ -3,7 +3,8 @@ import { LuArrowUp, LuCheck, LuDownload, LuLock, LuLockOpen, LuMaximize2, LuTras
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
 import { setCardOrigin } from "./Panels";
 import { ext, formatBytes, formatClock, type Orb } from "@/lib/client";
-import { toneOf, typeHue } from "@/lib/skin-list";
+import { fileKind, toneOf, typeHue } from "@/lib/skin-list";
+import { LuArchive, LuFileText, LuImage, LuMusic, LuVideo } from "react-icons/lu";
 import { previewUrl } from "@/lib/preview";
 
 /** 7 → "7", 12 → "10+", 140 → "100+": a crowd stays readable */
@@ -281,6 +282,13 @@ export function bubbleLayout(n: number) {
     spots.push([(px + (c + 0.5 + jx) * cw) / W, (py + (r + 0.42 + jy) * ch) / H]);
   }
   return { d, W, H, spots };
+}
+
+const KIND_ICON = { photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
+/** what kind of file it is (photo, video, document, audio, archive), as a small badge on the ball */
+export function KindBadge(props: { kind: string }) {
+  const I = KIND_ICON[props.kind as keyof typeof KIND_ICON];
+  return I ? <i className={`kind-badge k-${props.kind}`} aria-hidden><I /></i> : null;
 }
 
 /** the preview picture inside a ball (photo, a video's frame with a play mark, a PDF's first page) */
@@ -705,7 +713,8 @@ export default function OrbView(props: {
                       style={{ "--sh": m.hue, "--th": typeHue(m.fileName), "--mi": i, "--life": mf, left: `${x * 100}%`, top: `${y * 100}%` } as CSSProperties}
                       title={`${m.name} · ${formatBytes(m.size)} · ${formatClock(mleft)}`}
                     >
-                      <span className={`mball${m.thumb ? " thumbed" : ""}`}>
+                      <span className={`mball${m.thumb ? " thumbed" : ""}`} data-kind={fileKind(m.fileName)}>
+                        <KindBadge kind={fileKind(m.fileName)} />
                         {m.thumb && <Thumb id={m.id} fileName={m.fileName} />}
                         <svg className="mring" viewBox="0 0 100 100" aria-hidden>
                           <circle className="track" cx="50" cy="50" r="48" />
@@ -736,11 +745,12 @@ export default function OrbView(props: {
       <div className="orb-body" style={{ "--life": up ? Math.max(0.03, launching) : frac } as CSSProperties}>
         <div className="halo" />
         {mine && <span className="claim" />}
-        <div className={`sphere${orb.thumb && orb.open && !up ? " thumbed" : ""}`}>{orb.thumb && orb.open && !up && <Thumb id={orb.id} fileName={orb.fileName} mime={orb.mime} />}</div>
+        <div className={`sphere${orb.thumb && orb.open && !up ? " thumbed" : ""}`} data-kind={fileKind(orb.fileName, orb.mime)}>{orb.thumb && orb.open && !up && <Thumb id={orb.id} fileName={orb.fileName} mime={orb.mime} />}</div>
         <svg className="ring" viewBox="0 0 100 100">
           <circle className="track" cx="50" cy="50" r={R} />
           <circle className="life" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - (up ? Math.max(0.03, launching) : frac))} />
         </svg>
+        <KindBadge kind={fileKind(orb.fileName, orb.mime)} />
         <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : ext(orb.fileName)}</span>
         {props.onDestroy && mine && !up && phase !== "burning" && <span className="destroy" data-destroy="" role="button" aria-label={`Destroy ${orb.name}`} title="Destroy"><LuTrash2 /></span>}
         {mine && badge ? <span className="mine-no" aria-hidden>{badge}</span> : null}
