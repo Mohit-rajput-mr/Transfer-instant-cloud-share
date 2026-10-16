@@ -1,4 +1,5 @@
 "use client";
+import { canPeek, peekFile } from "@/lib/peek";
 import { LuArrowUp, LuCheck, LuDownload, LuLock, LuLockOpen, LuMaximize2, LuTrash2 } from "react-icons/lu";
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
 import { setCardOrigin } from "./Panels";
@@ -664,6 +665,7 @@ export default function OrbView(props: {
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
       onContextMenu={(e) => e.preventDefault()}
+      onPointerEnter={() => !group && canPeek(orb) && void peekFile(orb).catch(() => {})}
       onDoubleClick={(e) => {
         if (!props.onPreview || (e.target as Element).closest?.("[data-destroy]")) return;
         const mid = ((e.target as Element).closest?.("[data-member]") as HTMLElement | null)?.dataset.member;

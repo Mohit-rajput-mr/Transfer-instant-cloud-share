@@ -21,10 +21,11 @@ export function viewKind(name: string, type: string): ViewKind | null {
 
 const TEXT_MAX = 2 * 1024 * 1024;
 
-export default function Viewer({ file, onClose, onDownload }: { file: File; onClose: () => void; onDownload?: () => void }) {
-  const kind = viewKind(file.name, file.type);
-  const url = useMemo(() => URL.createObjectURL(file), [file]);
-  useEffect(() => () => URL.revokeObjectURL(url), [url]);
+/** `file` may still be on its way (a background preview): the viewer opens at once and fills in when it lands. */
+export default function Viewer({ file, name, failed, onClose, onDownload }: { file: File | null; name?: string; failed?: boolean; onClose: () => void; onDownload?: () => void }) {
+  const kind = file ? viewKind(file.name, file.type) : null;
+  const url = useMemo(() => (file ? URL.createObjectURL(file) : ""), [file]);
+  useEffect(() => () => void (url && URL.revokeObjectURL(url)), [url]);
   const [copied, setCopied] = useState<string | null>(null);
   const pdfText = useRef<(() => Promise<string>) | null>(null);
 
@@ -50,7 +51,7 @@ export default function Viewer({ file, onClose, onDownload }: { file: File; onCl
   };
   const copyAll = async () => {
     try {
-      const text = kind === "pdf" ? await pdfText.current?.() : await file.text();
+      const text = kind === "pdf" ? await pdfText.current?.() : await file?.text();
       if (!text) return flash("No text in this file");
       await navigator.clipboard.writeText(text);
       flash("All text copied ✓");
@@ -58,6 +59,22 @@ export default function Viewer({ file, onClose, onDownload }: { file: File; onCl
       flash("Copy blocked by the browser");
     }
   };
+
+  if (!file)
+    return createPortal(
+      <div className="viewer" role="dialog" aria-modal="true" aria-label={`Preview of ${name ?? "file"}`}>
+        <header className="viewer-top">
+          <div className="viewer-name"><b className="ellip">{name}</b></div>
+          <div className="viewer-acts">
+            <button type="button" className="viewer-x lg-press" aria-label="Close preview" onClick={onClose}>×</button>
+          </div>
+        </header>
+        <div className="viewer-body">
+          <div className="viewer-none mono">{failed ? "No preview right now · use Download" : <i className="viewer-spin" aria-label="Opening" />}</div>
+        </div>
+      </div>,
+      document.body,
+    );
 
   return createPortal(
     <div className="viewer" role="dialog" aria-modal="true" aria-label={`Preview of ${file.name}`}>

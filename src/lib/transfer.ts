@@ -151,6 +151,20 @@ export async function unlockOrb(orb: Orb, passcode: string, signal?: AbortSignal
   return { key, r };
 }
 
+/** No-password objects only: the same key + location as unlock, but nothing is counted (previews). */
+export async function peekOrb(orb: Orb, signal?: AbortSignal): Promise<Unlocked> {
+  const { key, auth } = await deriveKeys(OPEN_PASS, fromB64(orb.salt), orb.iterations);
+  const res = await fetch(`/api/transfers/${orb.id}/peek`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ auth, ...spaceBody() }),
+    signal,
+  });
+  const r = await res.json().catch(() => ({ ok: false, reason: "gone" }));
+  if (!r.ok) throw new UnlockError(r.reason, r.left);
+  return { key, r };
+}
+
 /**
  * Where the ciphertext comes from: this tab (it sent it), the stored copy when it is complete (fast,
  * parallel, and spares the sender's line), or straight from the sender's device. If the direct path

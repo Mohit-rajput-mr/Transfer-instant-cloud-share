@@ -14,6 +14,7 @@ import { autoDownload, canPickSave, canShareFile, canShareFiles, deviceNoun, dow
 import "@/app/save.css";
 import { glyph } from "./Glyph";
 import Viewer, { viewKind } from "./Viewer";
+import { canPeek, peekFile } from "@/lib/peek";
 import { Meter } from "@/lib/rate";
 import type { Task } from "@/lib/tasks";
 import { LuArrowRight, LuCheck, LuChevronDown, LuFlag, LuInfinity } from "react-icons/lu";
@@ -825,6 +826,23 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
   const [viewing, setViewing] = useState(false);
   const wantView = useRef(false);
   const canView = !isFolder && !inline && !!viewKind(orb.fileName, orb.mime) && orb.size <= 400 * 1024 * 1024;
+  // open files preview straight from memory (fetched quietly, not counted): no progress, no saving
+  const quick = canPeek(orb);
+  const [peekF, setPeekF] = useState<File | null>(null);
+  const [peekOff, setPeekOff] = useState(false);
+  useEffect(() => {
+    if (!quick) return;
+    let alive = true;
+    peekFile(orb)
+      .then((f) => alive && setPeekF(f))
+      .catch(() => alive && setPeekOff(true));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quick, orb.id]);
+  const peekMode = quick && !peekOff;
+  const fellBack = useRef(false);
 
   // ---- the received file: phones hold it until the user picks where it goes ----
   const file = got?.kind === "file" ? got.file : null;
@@ -1103,16 +1121,26 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
 
   const startPreview = () => {
     if (!canView) return;
+    if (got?.kind === "file" || peekMode) return setViewing(true);
     wantView.current = true;
-    if (got?.kind === "file") return setViewing(true);
     void go();
   };
+  // the quiet fetch failed while the preview was open: fall back to the normal decrypt
+  useEffect(() => {
+    if (!peekOff || !viewing || got || fellBack.current) return;
+    fellBack.current = true;
+    setViewing(false);
+    wantView.current = true;
+    void go();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [peekOff, viewing]);
   // double-clicked ball: an open object opens straight into the preview; a locked one previews after its passcode
   const askedPreview = !!props.preview;
   const asked = useRef(false);
   useEffect(() => {
     if (!askedPreview || asked.current || !canView) return;
     asked.current = true;
+    if (peekMode) return setViewing(true);
     wantView.current = true;
     if (orb.open) void go();
     // go only reads state that is current on this render
@@ -1198,7 +1226,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
         <div className="col" key="info">
           {orb.thumb && orb.open && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="card-thumb" src={previewUrl(orb.id)} alt={`Preview of ${orb.name}`} onError={(e) => (e.currentTarget.style.display = "none")} />
+            <img className="card-thumb" src={previewUrl(orb.id)} alt={`Preview of ${orb.name}`} title={canView ? "Double-click to preview" : undefined} onDoubleClick={startPreview} onError={(e) => (e.currentTarget.style.display = "none")} />
           )}
           <div>
             <span className="mono dim ellip">{orb.fileName}</span>
@@ -1391,7 +1419,15 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
           )}
         </div>
       )}
-      {viewing && file && <Viewer file={file} onClose={() => setViewing(false)} onDownload={() => autoDownload(file)} />}
+      {viewing && (file || peekMode) && (
+        <Viewer
+          file={file ?? peekF}
+          name={orb.fileName}
+          failed={peekOff && !file}
+          onClose={() => setViewing(false)}
+          onDownload={file ? () => autoDownload(file) : () => (setViewing(false), void go())}
+        />
+      )}
     </Drawer>
   );
 }

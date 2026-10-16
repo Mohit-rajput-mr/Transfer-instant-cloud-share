@@ -22,6 +22,7 @@ const release = (id: string) => {
   stopCopy(id);
 };
 import { downloading } from "@/lib/downloads";
+import { warm } from "@/lib/peek";
 import { createSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
 import { LuArchive, LuFileText, LuFlag, LuMessageCircle, LuImage, LuLayers, LuLayoutGrid, LuMenu, LuMusic, LuOrbit, LuPalette, LuUser, LuVideo, LuWifi } from "react-icons/lu";
 const KIND_ICON = { all: LuLayoutGrid, photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
@@ -923,6 +924,11 @@ export default function Void() {
     const rank = (o: Orb) => (ownerKey(o.id) || isPending(o.id) ? 2 : 0) + (o.netHash === net ? 1 : 0);
     return [...shown].sort((a, b) => rank(b) - rank(a) || b.createdAt.localeCompare(a.createdAt)).slice(0, cap);
   }, [shown, net, cap]);
+  // small open files: decrypted quietly in the background so a double-click previews instantly
+  useEffect(() => {
+    const t = setTimeout(() => warm(visible.filter((o) => !isPending(o.id))), 400);
+    return () => clearTimeout(t);
+  }, [visible]);
   // Arrange (tasks): every task gets a lane, its files line up in it grouped by sender; the rest share a last lane
   const [arranged, setArranged] = useState(false);
   useEffect(() => {
