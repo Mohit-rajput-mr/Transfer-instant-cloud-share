@@ -137,7 +137,20 @@ export async function pickFolderTarget(): Promise<FolderPick> {
   }
 }
 
-const safe = (part: string) => part.replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_").replace(/^\.+$/, "_").slice(0, 200) || "_";
+// Names a browser refuses to write ("Name is not allowed"): Windows device names, trailing dots/spaces,
+// shortcut-like extensions and desktop.ini. They are renamed slightly instead of stopping the whole folder.
+const RESERVED = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
+const BLOCKED_EXT = /\.(lnk|local|scf|url|search-ms|library-ms|settingcontent-ms)$/i;
+const safe = (part: string) => {
+  let n = part.replace(/[\\/:*?"<>|\u0000-\u001f\u007f]/g, "_").trim().replace(/[. ]+$/, "").slice(0, 200);
+  if (!n || /^\.+$/.test(n)) n = "_";
+  if (RESERVED.test(n)) n = `_${n}`;
+  if (BLOCKED_EXT.test(n)) n = `${n}_`;
+  if (/^desktop\.ini$/i.test(n)) n = "desktop_.ini";
+  return n;
+};
+/** last resort when a browser still refuses a name: letters, digits, - _ . only */
+const plain = (part: string, i: number) => (part.replace(/[^\w\-.]+/g, "_").replace(/^[._]+|[._]+$/g, "") || `item-${i}`).slice(0, 120);
 
 async function freshDir(parent: DirHandle, name: string): Promise<DirHandle> {
   for (let i = 1; i < 100; i++) {
@@ -155,17 +168,28 @@ export function directoryOutput(parent: DirHandle, name: string): FolderOutput {
   let root: Promise<DirHandle> | null = null;
   let w: Awaited<ReturnType<Awaited<ReturnType<DirHandle["getFileHandle"]>>["createWritable"]>> | null = null;
   const dirs = new Map<string, Promise<DirHandle>>();
+  let renamed = 0;
   const dir = (path: string[]): Promise<DirHandle> => {
     const key = path.join("/");
     if (!dirs.has(key))
-      dirs.set(key, path.length ? dir(path.slice(0, -1)).then((d) => d.getDirectoryHandle(path[path.length - 1], { create: true })) : (root ??= freshDir(parent, safe(name))));
+      dirs.set(
+        key,
+        path.length
+          ? dir(path.slice(0, -1)).then((d) => {
+              const n = path[path.length - 1];
+              return d.getDirectoryHandle(n, { create: true }).catch(() => d.getDirectoryHandle(plain(n, path.length), { create: true }));
+            })
+          : (root ??= freshDir(parent, safe(name)).catch(() => freshDir(parent, plain(name, 0)))),
+      );
     return dirs.get(key)!;
   };
   return {
     async open(path) {
       const parts = path.split("/").filter(Boolean).map(safe);
       const d = await dir(parts.slice(0, -1));
-      w = await (await d.getFileHandle(parts[parts.length - 1] || "file", { create: true })).createWritable();
+      const n = parts[parts.length - 1] || "file";
+      const fh = await d.getFileHandle(n, { create: true }).catch(() => d.getFileHandle(plain(n, ++renamed), { create: true }));
+      w = await fh.createWritable();
     },
     async data(bytes) {
       await w!.write(bytes as BufferSource);
