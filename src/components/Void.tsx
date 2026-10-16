@@ -943,6 +943,30 @@ export default function Void() {
     const rank = (o: Orb) => (ownerKey(o.id) || isPending(o.id) ? 2 : 0) + (o.netHash === net ? 1 : 0);
     return [...shown].sort((a, b) => rank(b) - rank(a) || b.createdAt.localeCompare(a.createdAt)).slice(0, cap);
   }, [shown, net, cap]);
+  // the task board is solid ground: a ball that drifts, is dragged or lands behind it is nudged out to its right
+  useEffect(() => {
+    if (!tasks.length) return;
+    const t = setInterval(() => {
+      // phones stack the board above the sky instead (nothing to push sideways into)
+      const board = window.innerWidth > 720 ? document.querySelector<HTMLElement>(".task-board")?.getBoundingClientRect() : undefined;
+      document.querySelectorAll<HTMLElement>(".void .orb-anchor[data-orb]").forEach((a) => {
+        const was = parseFloat(a.dataset.push || "0");
+        const body = (a.querySelector(".orb-body") ?? a.querySelector(".orb"))?.getBoundingClientRect();
+        if (!body || !body.width) return;
+        let push = 0;
+        if (board && board.width) {
+          const left = body.left - was; // where it would be without the nudge
+          const overlapY = body.bottom > board.top - 12 && body.top < board.bottom + 12;
+          if (overlapY && left < board.right + 18) push = Math.ceil(board.right + 18 - left);
+        }
+        if (Math.abs(push - was) > 1) {
+          a.dataset.push = String(push);
+          a.style.translate = push ? `${push}px 0` : "";
+        }
+      });
+    }, 300);
+    return () => clearInterval(t);
+  }, [tasks.length]);
   // small open files: decrypted quietly in the background so a double-click previews instantly
   useEffect(() => {
     const t = setTimeout(() => warm(visible.filter((o) => !isPending(o.id))), 400);

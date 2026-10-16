@@ -2474,6 +2474,9 @@ em.hq-tag { font-style: normal; }
 .task-dot.ghost { opacity: 0.4; box-shadow: none; }
 .task-board { position: absolute; z-index: 7; left: max(22px, var(--safe-l)); top: calc(118px + var(--safe-t)); width: 344px; max-height: calc(100% - 118px - 150px - var(--safe-t));
   display: flex; flex-direction: column; border-radius: 22px; overflow: hidden; animation: rise 0.4s var(--ease-out) both; }
+/* solid: nothing in the void shows through or hides behind it */
+.task-board.lg { background: linear-gradient(180deg, #1b1c1f, #121315 60%, #151619); }
+.orb-anchor { transition: translate .5s cubic-bezier(.2,.8,.2,1); }
 .tb-head { display: flex; align-items: center; gap: 10px; padding: 13px 14px 11px 16px; text-align: left; flex: none; }
 .tb-head b { font-family: var(--display); font-weight: 900; font-variation-settings: "wdth" 125; text-transform: uppercase; font-size: 14px; }
 .tb-head .mono { font-size: 9.5px; }
