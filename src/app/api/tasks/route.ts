@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isHex, netHash, newId, rpc, sha256 } from "@/lib/server";
 import { cleanHandle, member, validFrom } from "@/lib/spaces";
+import { FREE_TASK_LIFE, PRO_TASK_LIVES, validPro } from "@/lib/pro";
 
 export const dynamic = "force-dynamic";
 
@@ -24,9 +25,11 @@ export async function POST(req: NextRequest) {
     by = by || me.handle;
   }
   const id = "t" + newId(9);
+  // Pro members keep tasks up to 8 hours; everyone else gets the usual 30 minutes
+  const life = validPro(b.pro) && PRO_TASK_LIVES.includes(Number(b.life)) ? Number(b.life) : FREE_TASK_LIFE;
   try {
     const num = await rpc<number>("orbit_task_add", {
-      p: { id, body: text, by, assignee: cleanHandle(b.assignee), from: validFrom(b.from) ? b.from : "", owner: sha256(b.owner), net: netHash(req), space: space ?? "", life: 30 },
+      p: { id, body: text, by, assignee: cleanHandle(b.assignee), from: validFrom(b.from) ? b.from : "", owner: sha256(b.owner), net: netHash(req), space: space ?? "", life },
     });
     return NextResponse.json({ id, num });
   } catch (e) {

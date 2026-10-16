@@ -2611,3 +2611,19 @@ em.hq-tag { font-style: normal; }
 .invite-card div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .invite-card b { font-size: 14px; }
 .invite-card .mono { font-size: 9.5px; }
+
+/* Pro: tasks kept up to 8 hours */
+.tb-pro { margin: 0 10px 8px; height: 30px; border-radius: 10px; color: #9aa3ad; font-size: 9.5px; flex: none; }
+.tb-pro:hover { color: #e6eaee; background: rgba(255,255,255,0.05); }
+.tb-keep { display: flex; flex-wrap: nowrap; align-items: center; gap: 3px; margin: 0 10px 8px; flex: none; }
+.tb-keep .mono { font-size: 8.5px; color: #c3c9d0; margin-right: 2px; white-space: nowrap; }
+.tb-keep button { height: 26px; padding: 0 7px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.14); font-size: 11px; color: #bbb; white-space: nowrap; }
+.tb-keep button.on { background: linear-gradient(180deg, #f4f6f8, #b9c0c8); color: #15181c; border-color: transparent; font-weight: 700; }
+.tb-keep .tb-unpro { width: 26px; padding: 0; display: grid; place-items: center; border: 0; margin-left: auto; }
+.tb-keep .tb-unpro svg { width: 12px; height: 12px; }
+.tb-redeem { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 10px 8px; flex: none; }
+.tb-redeem input { flex: 1; min-width: 0; height: 34px; padding: 0 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: #fff; font: 13px var(--mono); letter-spacing: 0.06em; outline: none; }
+.tb-redeem button { height: 34px; padding: 0 12px; border-radius: 10px; background: #fff; color: #0b0b0f; font-size: 10px; }
+.tb-redeem button[type="button"] { background: none; color: #aaa; padding: 0 8px; }
+.tb-redeem svg { width: 14px; height: 14px; }
+.tb-redeem .mono { width: 100%; font-size: 9.5px; color: var(--danger); text-transform: none; }

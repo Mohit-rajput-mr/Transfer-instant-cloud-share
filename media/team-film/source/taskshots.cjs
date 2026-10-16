@@ -26,7 +26,7 @@ if (process.argv[3] !== "send") (async () => {
     const { page, ctx } = await L.open(b, opts, {
       items: [...ITEMS],
       init: async (p, st) => {
-        await p.addInitScript(() => { localStorage.setItem("orbit:bubble-name", "Mohit"); localStorage.setItem("orbit:tasks", JSON.stringify({ t000000001: "x".repeat(64), t000000002: "x".repeat(64) })); });
+        await p.addInitScript(() => { localStorage.setItem("orbit:bubble-name", "Mohit"); localStorage.setItem("orbit:pro", "PRO-TEST00-ABCDEFGH"); localStorage.setItem("orbit:tasks", JSON.stringify({ t000000001: "x".repeat(64), t000000002: "x".repeat(64) })); });
         st.custom = async (r, path, m) => {
           if (path === "/api/transfers" && m === "GET") return r.fulfill({ json: { items: st.items, bubbles: [], tasks: TASKS, online: 6, now: L.NOW }, headers: L.CORS }), true;
         };

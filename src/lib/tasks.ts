@@ -53,10 +53,34 @@ export function parseTask(line: string) {
   return m ? { text: line.trim().slice(0, -m[0].length + 1).trim() || line.trim(), assignee: m[1] } : { text: line.trim(), assignee: "" };
 }
 
-export async function addTask(line: string, by = bubbleName()) {
+// Pro: a code minted in Mission HQ, kept on this device; it lets tasks stay up to 8 hours
+const PRO = "orbit:pro";
+export const proCode = () => {
+  try {
+    return localStorage.getItem(PRO) || "";
+  } catch {
+    return "";
+  }
+};
+export async function redeemPro(code: string) {
+  const c = code.trim().toUpperCase();
+  const d = await post("/api/pro", { code: c });
+  if (!d?.ok) throw new Error("That Pro code doesn't work");
+  try {
+    localStorage.setItem(PRO, c);
+  } catch {}
+}
+export const dropPro = () => {
+  try {
+    localStorage.removeItem(PRO);
+  } catch {}
+};
+export const TASK_LIVES: [number, string][] = [[30, "30 min"], [60, "1 h"], [120, "2 h"], [240, "4 h"], [480, "8 h"]];
+
+export async function addTask(line: string, by = bubbleName(), life = 30) {
   const owner = toHex(crypto.getRandomValues(new Uint8Array(32)));
   const { text, assignee } = parseTask(line);
-  const d = await post("/api/tasks", { text, assignee, by, owner, from: await senderKey(), ...spaceBody() });
+  const d = await post("/api/tasks", { text, assignee, by, life, pro: proCode() || undefined, owner, from: await senderKey(), ...spaceBody() });
   const m = read();
   m[d.id] = owner;
   const ids = Object.keys(m);

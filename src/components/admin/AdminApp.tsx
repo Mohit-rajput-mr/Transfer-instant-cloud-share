@@ -252,6 +252,18 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
         </nav>
         <span className="live"><span className="dot" /><b>{n(data?.online)}</b> online now</span>
         <span className="mono dim hq-clock">{new Date(now).toLocaleTimeString()}</span>
+        <button
+          className="pill"
+          title="Mint a Pro code: tasks made on a device holding it stay up to 8 hours"
+          onClick={async () => {
+            const d = await fetch("/api/admin/pro", { method: "POST" }).then((r) => r.json()).catch(() => null);
+            if (!d?.code) return;
+            await navigator.clipboard.writeText(d.code).catch(() => {});
+            window.prompt("Pro code (copied). Give it to a member: tasks stay up to 8 hours.", d.code);
+          }}
+        >
+          Pro code
+        </button>
         <button className="pill" onClick={logout}>Lock</button>
       </header>
 

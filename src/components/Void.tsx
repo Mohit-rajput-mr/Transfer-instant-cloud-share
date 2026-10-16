@@ -1139,9 +1139,9 @@ export default function Void() {
               me={bubbleName() || room?.handle || ""}
               focus={taskFocus}
               onFocus={setTaskFocus}
-              onAdd={async (line) => {
+              onAdd={async (line, life) => {
                 try {
-                  const t = await addTask(line, bubbleName() || room?.handle || "");
+                  const t = await addTask(line, bubbleName() || room?.handle || "", life);
                   toast(`Task ${t.num} added`);
                   await refresh();
                   broadcast();

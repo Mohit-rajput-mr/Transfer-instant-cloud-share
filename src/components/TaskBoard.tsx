@@ -1,12 +1,12 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { LuArrowDown, LuArrowUp, LuCheck, LuChevronDown, LuFolderUp, LuLock, LuPaperclip, LuPencil, LuPlus, LuRoute, LuTrash2, LuUserCheck, LuX } from "react-icons/lu";
-import { STAGES, TASK_MAX, forMe, isMyTask, parseTask, type Task } from "@/lib/tasks";
+import { STAGES, TASK_LIVES, TASK_MAX, dropPro, forMe, isMyTask, parseTask, proCode, redeemPro, type Task } from "@/lib/tasks";
 import { hueFor } from "@/lib/bubbles";
 import type { Orb } from "@/lib/client";
 
 export type TaskActs = {
-  onAdd: (line: string) => Promise<void>;
+  onAdd: (line: string, life: number) => Promise<void>;
   onTick: (t: Task, done: boolean) => void;
   onTake: (t: Task, who: string) => void;
   onBurn: (t: Task) => void;
@@ -43,6 +43,12 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
   const [routing, setRouting] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  // Pro (a code from Mission HQ on this device): tasks stay up to 8 hours
+  const [pro, setPro] = useState(false);
+  const [life, setLife] = useState(480);
+  const [redeem, setRedeem] = useState<string | null>(null);
+  const [proErr, setProErr] = useState("");
+  useEffect(() => setPro(!!proCode()), []);
   const input = useRef<HTMLInputElement>(null);
   const done = props.tasks.filter((t) => t.doneAt).length;
   const total = props.tasks.length;
@@ -57,7 +63,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
     if (!line.trim() || busy) return;
     setBusy(true);
     try {
-      await props.onAdd(line);
+      await props.onAdd(line, pro ? life : 30);
       setLine("");
     } catch {}
     setBusy(false);
@@ -106,6 +112,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                       {t.stage >= 0 && t.route[t.stage] && <em className="tb-stage">{t.route[t.stage]} · {t.stage + 1}/{t.route.length}</em>}
                       {t.doneAt ? `done${t.doneBy ? ` · ${t.doneBy}` : ""}` : t.assignee ? (mine ? "for you" : `@${t.assignee}`) : t.by ? `from ${t.by}` : "open"}
                       {t.editedAt && " · edited"}
+                      {Date.parse(t.expiresAt) - Date.parse(t.createdAt) > 31 * 60_000 && ` · ${left(t.expiresAt)}`}
                     </span>
                     {t.route.length > 0 && (
                       <span className="tb-rbar" aria-hidden>
@@ -152,6 +159,34 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
             />
             {parsed.assignee && <span className="tb-for mono">@{parsed.assignee}</span>}
           </form>
+          {pro ? (
+            <div className="tb-keep" role="radiogroup" aria-label="New tasks stay">
+              <span className="mono">Pro · keep for</span>
+              {TASK_LIVES.map(([m, l]) => (
+                <button key={m} role="radio" aria-checked={life === m} className={life === m ? "on" : ""} onClick={() => setLife(m)}>{l}</button>
+              ))}
+              <button className="tb-unpro" onClick={() => (dropPro(), setPro(false))} aria-label="Remove the Pro code from this device" title="Remove Pro from this device"><LuX /></button>
+            </div>
+          ) : redeem !== null ? (
+            <form className="tb-redeem" onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                await redeemPro(redeem);
+                setPro(true);
+                setRedeem(null);
+                setProErr("");
+              } catch (err) {
+                setProErr((err as Error).message);
+              }
+            }}>
+              <input autoFocus value={redeem} onChange={(e) => setRedeem(e.target.value.toUpperCase().slice(0, 20))} placeholder="PRO-XXXXXX-XXXXXXXX" aria-label="Pro code" />
+              <button type="submit" className="mono">Unlock</button>
+              <button type="button" onClick={() => (setRedeem(null), setProErr(""))} aria-label="Cancel"><LuX /></button>
+              {proErr && <span className="mono">{proErr}</span>}
+            </form>
+          ) : (
+            <button className="tb-pro mono" onClick={() => setRedeem("")}>Pro: keep tasks up to 8 hours</button>
+          )}
           {props.onGoPrivate && (
             <button className="tb-private mono" onClick={props.onGoPrivate}><LuLock aria-hidden /> Go private with the team</button>
           )}
@@ -162,6 +197,10 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
   );
 }
 
+const left = (iso: string) => {
+  const m = Math.max(0, Math.round((Date.parse(iso) - Date.now()) / 60000));
+  return m < 60 ? `${m}m left` : `${Math.floor(m / 60)}h ${m % 60 ? `${m % 60}m ` : ""}left`;
+};
 const ago = (iso: string) => {
   const m = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000));
   return m < 1 ? "just now" : m < 60 ? `${m}m ago` : `${Math.floor(m / 60)}h ago`;
