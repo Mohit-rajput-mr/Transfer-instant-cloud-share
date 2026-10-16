@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { LuArrowDown, LuArrowUp, LuRows3, LuCheck, LuChevronDown, LuFolderUp, LuLock, LuPaperclip, LuPencil, LuPlus, LuRoute, LuSettings2, LuTrash2, LuUserCheck, LuX } from "react-icons/lu";
-import { PRO_FOR_ALL, STAGES, TASK_LIVES, TASK_MAX, dropPro, forMe, isMyTask, parseTask, proCode, redeemPro, type Task } from "@/lib/tasks";
+import { PRO_FOR_ALL, STAGES, TASK_LIVES, TASK_MAX, dropPro, forMe, isCancel, isMyTask, parseTask, proCode, redeemPro, type Task } from "@/lib/tasks";
 import { hueFor } from "@/lib/bubbles";
 import { formatBytes, type Orb } from "@/lib/client";
 
@@ -22,9 +22,9 @@ export type TaskActs = {
 };
 
 const DEFAULT_ROUTE = ["In progress", "In review", "Done"];
-/** 0 grey (not started) · 1 orange (first step) · 2 blue (second step) · 3 green (third step on, or done) */
+/** 0 grey (not started) · 1 orange (first step) · 2 blue (second step) · 3 green (third step on, or done) · 4 red (cancelled) */
 export const stepOf = (t: Task) =>
-  t.doneAt ? 3 : t.route.length && t.stage >= 0 ? (t.stage === 0 ? 1 : t.stage === 1 ? 2 : 3) : 0;
+  t.stage >= 0 && isCancel(t.route[t.stage]) ? 4 : t.doneAt ? 3 : t.route.length && t.stage >= 0 ? (t.stage === 0 ? 1 : t.stage === 1 ? 2 : 3) : 0;
 
 /** Who wired files to a task: one dot per sender, in their colour, with how many. */
 export function wiredBy(task: string, orbs: Orb[]) {
@@ -106,7 +106,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
   // everyone else ticks it done / undone as before.
   const tap = (t: Task) => {
     if (!isMyTask(t.id)) return; // only the task's writer moves it
-    if (stepOf(t) === 3) return void props.onEdit(t, { stage: -1 }).then(() => t.doneAt && props.onTick(t, false)).catch(() => {});
+    if (stepOf(t) >= 3) return void props.onEdit(t, { stage: -1 }).then(() => t.doneAt && props.onTick(t, false)).catch(() => {});
     const route = t.route.length ? t.route : DEFAULT_ROUTE;
     // on the last step of a short route the next tap finishes it
     if (t.stage >= route.length - 1) return props.onTick(t, true);
@@ -164,7 +164,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                   data-task-row={t.id}
                   onPointerEnter={(e) => !narrow && editing !== t.id && routing !== t.id && showFor(t.id, e.currentTarget)}
                   onPointerLeave={() => !narrow && hideSoon()}
-                  className={`tb-row${stepOf(t) === 3 ? " done" : ""}${props.focus === t.id ? " focus" : ""}${mine && !t.doneAt ? " forme" : ""}`}
+                  className={`tb-row${stepOf(t) === 3 ? " done" : stepOf(t) === 4 ? " cancel" : ""}${props.focus === t.id ? " focus" : ""}${mine && !t.doneAt ? " forme" : ""}`}
                 >
                   <button className="tb-tick" disabled={!isMyTask(t.id)} onClick={() => tap(t)} aria-label={t.doneAt ? `Untick task ${t.num}` : `Move task ${t.num} to its next step`} title={!isMyTask(t.id) ? `${t.stage >= 0 && t.route[t.stage] ? t.route[t.stage] : t.doneAt ? "Done" : "Not started"} · only its writer moves it` : t.doneAt ? `Done${t.doneBy ? ` by ${t.doneBy}` : ""}` : t.stage >= 0 && t.route[t.stage] ? `${t.route[t.stage]} · tap for the next step` : "Tap: first step"}>
                     <i className="task-dot big" data-task-dot={t.id} data-step={stepOf(t)}>{(t.doneAt || t.stage >= 0) && <LuCheck aria-hidden />}</i>
@@ -181,7 +181,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                     <span className="tb-text">{t.text}</span>
                     <span className="tb-meta mono">
                       {t.stage >= 0 && t.route[t.stage] && <em className="tb-stage">{t.route[t.stage]} · {t.stage + 1}/{t.route.length}</em>}
-                      {t.doneAt ? `done${t.doneBy ? ` · ${t.doneBy}` : ""}` : t.assignee ? (mine ? "for you" : `@${t.assignee}`) : t.by ? `from ${t.by}` : "open"}
+                      {stepOf(t) === 4 ? "cancelled" : t.doneAt ? `done${t.doneBy ? ` · ${t.doneBy}` : ""}` : t.assignee ? (mine ? "for you" : `@${t.assignee}`) : t.by ? `from ${t.by}` : "open"}
                       {t.editedAt && " · edited"}
                       {Date.parse(t.expiresAt) - Date.parse(t.createdAt) > 31 * 60_000 && ` · ${left(t.expiresAt)}`}
                     </span>
@@ -442,11 +442,22 @@ function RoutePanel({ t, mine, onEdit, onClose }: { t: Task; mine: boolean; onEd
           <button className="mono" onClick={() => (typing.current = true, setStages((s) => [...s, ""]))}><LuPlus aria-hidden />Your own</button>
         </div>
       )}
-      {t.stage >= 0 && (
-        <div className="tr-go">
-          <button className="mono" onClick={() => save({ stage: -1 })}>Back to not started</button>
-        </div>
-      )}
+      <div className="tr-go">
+        {t.stage >= 0 && <button className="mono" onClick={() => save({ stage: -1 })}>Back to not started</button>}
+        {!isCancel(t.route[t.stage]) && (
+          <button
+            className="mono tr-cancel"
+            onClick={() => {
+              const base = cleanOf(stages).filter((x) => !isCancel(x));
+              const route = [...base, "Cancelled"].slice(-8);
+              setStages(route);
+              save({ route, stage: route.length - 1 });
+            }}
+          >
+            Cancel order
+          </button>
+        )}
+      </div>
     </div>
   );
 }

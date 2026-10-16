@@ -27,7 +27,9 @@ export interface Task {
   editedAt: string | null;
 }
 /** ready-made stages to build a route from */
-export const STAGES = ["In progress", "AI reviewing", "Generating zip", "Zip sent to email", "Waiting on client", "In review", "Approved", "Delivered"];
+export const STAGES = ["In progress", "AI reviewing", "Generating zip", "Zip sent to email", "Waiting on client", "In review", "Approved", "Delivered", "Cancelled"];
+/** a step called "Cancelled" / "Cancel order"… marks the task red */
+export const isCancel = (name?: string) => !!name && /cancel/i.test(name);
 export const TASK_MAX = 140;
 
 const OWN = "orbit:tasks";
