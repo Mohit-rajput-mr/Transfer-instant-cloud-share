@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { LuArrowDown, LuArrowUp, LuCheck, LuChevronDown, LuFolderUp, LuLock, LuPaperclip, LuPencil, LuPlus, LuRoute, LuTrash2, LuUserCheck, LuX } from "react-icons/lu";
-import { STAGES, TASK_LIVES, TASK_MAX, dropPro, forMe, isMyTask, parseTask, proCode, redeemPro, type Task } from "@/lib/tasks";
+import { PRO_FOR_ALL, STAGES, TASK_LIVES, TASK_MAX, dropPro, forMe, isMyTask, parseTask, proCode, redeemPro, type Task } from "@/lib/tasks";
 import { hueFor } from "@/lib/bubbles";
 import type { Orb } from "@/lib/client";
 
@@ -165,7 +165,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
               {TASK_LIVES.map(([m, l]) => (
                 <button key={m} role="radio" aria-checked={life === m} className={life === m ? "on" : ""} onClick={() => setLife(m)}>{l}</button>
               ))}
-              <button className="tb-unpro" onClick={() => (dropPro(), setPro(false))} aria-label="Remove the Pro code from this device" title="Remove Pro from this device"><LuX /></button>
+              {!PRO_FOR_ALL && <button className="tb-unpro" onClick={() => (dropPro(), setPro(false))} aria-label="Remove the Pro code from this device" title="Remove Pro from this device"><LuX /></button>}
             </div>
           ) : redeem !== null ? (
             <form className="tb-redeem" onSubmit={async (e) => {

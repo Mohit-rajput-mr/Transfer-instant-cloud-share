@@ -8,12 +8,15 @@ export function mintPro() {
   return `PRO-${id}-${sig(id)}`;
 }
 export function validPro(code: unknown) {
+  if (PRO_FOR_ALL) return true;
   if (typeof code !== "string") return false;
   const m = /^PRO-([A-Z0-9]{6})-([A-Z0-9]{8})$/.exec(code.trim().toUpperCase());
   if (!m) return false;
   const a = Buffer.from(sig(m[1])), b = Buffer.from(m[2]);
   return a.length === b.length && timingSafeEqual(a, b);
 }
+/** Testing mode: everyone is Pro (no code needed). Set to false at launch; codes from Mission HQ then unlock it. */
+export const PRO_FOR_ALL = true;
 /** how long a task may stay, in minutes */
 export const FREE_TASK_LIFE = 30;
 export const PRO_TASK_LIVES = [30, 60, 120, 240, 480];

@@ -55,7 +55,10 @@ export function parseTask(line: string) {
 
 // Pro: a code minted in Mission HQ, kept on this device; it lets tasks stay up to 8 hours
 const PRO = "orbit:pro";
+/** Testing mode: Pro for everyone (keep in step with PRO_FOR_ALL in lib/pro.ts) */
+export const PRO_FOR_ALL = true;
 export const proCode = () => {
+  if (PRO_FOR_ALL) return "ALL";
   try {
     return localStorage.getItem(PRO) || "";
   } catch {
