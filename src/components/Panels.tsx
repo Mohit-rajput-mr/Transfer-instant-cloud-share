@@ -14,6 +14,7 @@ import { autoDownload, canPickSave, canShareFile, canShareFiles, deviceNoun, dow
 import "@/app/save.css";
 import { glyph } from "./Glyph";
 import { Meter } from "@/lib/rate";
+import type { Task } from "@/lib/tasks";
 import { LuArrowRight, LuCheck, LuChevronDown, LuFlag, LuInfinity } from "react-icons/lu";
 
 // Screen point the card zooms out of (the tapped sphere / button). Set right before opening.
@@ -487,7 +488,7 @@ export function ShareBlock({ id }: { id: string }) {
 
 /* ------------------------------ SEND ------------------------------ */
 
-export type LaunchJob = { file: File; name: string; files: number; passcode: string; maxDownloads: number | null; life: number; open: boolean; group?: string };
+export type LaunchJob = { file: File; name: string; files: number; passcode: string; maxDownloads: number | null; life: number; open: boolean; group?: string; /** wired to this task */ task?: string; /** and tick that task done */ done?: boolean };
 
 const LIVES = [5, 10, 15, 20, 25, 30];
 // the last choices stick (this device only): the next send is one tap
@@ -513,8 +514,15 @@ export function SendPanel(props: {
   onAddFolder?: () => void;
   onAddFiles?: () => void;
   onRemove?: (index: number) => void;
+  /** tasks in this void/space: the files can be wired to one */
+  tasks?: Task[];
+  /** preselected (Attach on a task) */
+  task?: string | null;
 }) {
   const { onClose } = props;
+  const openTasks = props.tasks ?? [];
+  const [wire, setWire] = useState<string | null>(props.task ?? null);
+  const [markDone, setMarkDone] = useState(false);
   // several picks (files, folders or both): one ball for all of them, or one ball each
   const multi = props.items.length > 1;
   const [split, setSplit] = useState<boolean>(() => multi && pref("split", false));
@@ -552,7 +560,7 @@ export function SendPanel(props: {
     tick("success");
     setPref("life", life);
     if (multi) setPref("split", split);
-    const common = { passcode: locked ? code : "", maxDownloads: max, life, open: !locked };
+    const common = { passcode: locked ? code : "", maxDownloads: max, life, open: !locked, task: wire ?? undefined, done: !!wire && markDone };
     if (split) {
       // one ball per pick, each under its own name, all with the same settings
       for (const it of props.items) {
@@ -653,6 +661,22 @@ export function SendPanel(props: {
         {!multi && <p className="mono dim">Encrypted · keep this page open until it says saved</p>}
       </div>
       <div className="col">
+        {openTasks.length > 0 && (
+          <div className="field wire-field">
+            <label><span className="mono">Wire to a task</span><span className="mono dim">{wire ? "its wire shows in the void" : "optional"}</span></label>
+            <div className="wire-chips" role="radiogroup" aria-label="Wire to a task">
+              <button role="radio" aria-checked={!wire} className={`chip lg-press${!wire ? " on" : ""}`} onClick={() => setWire(null)}>None</button>
+              {openTasks.map((t) => (
+                <button key={t.id} role="radio" aria-checked={wire === t.id} className={`chip task-chip lg-press${wire === t.id ? " on" : ""}${t.doneAt ? " done" : ""}`} onClick={() => setWire(t.id)} title={t.text}>
+                  <i className="task-dot" aria-hidden /><b>Task {t.num}</b><span>{t.text}</span>
+                </button>
+              ))}
+            </div>
+            {wire && !openTasks.find((t) => t.id === wire)?.doneAt && (
+              <label className="wire-done"><input type="checkbox" checked={markDone} onChange={(e) => setMarkDone(e.target.checked)} /> <span>Tick Task {openTasks.find((t) => t.id === wire)?.num} done when it lands</span></label>
+            )}
+          </div>
+        )}
         <div className="field">
           <label><span className="mono">Password</span><span className="mono dim">{locked ? "only people with it" : "anyone can open it"}</span></label>
           <div className="seg" role="radiogroup" aria-label="Password">

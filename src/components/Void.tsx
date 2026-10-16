@@ -22,12 +22,15 @@ const release = (id: string) => {
   stopCopy(id);
 };
 import { downloading } from "@/lib/downloads";
-import { enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
+import { createSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
 import { LuArchive, LuFileText, LuFlag, LuMessageCircle, LuImage, LuLayers, LuLayoutGrid, LuMenu, LuMusic, LuOrbit, LuPalette, LuUser, LuVideo, LuWifi } from "react-icons/lu";
 const KIND_ICON = { all: LuLayoutGrid, photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
 import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, type BubbleChange } from "./BubbleBoard";
-import { burnBubble, editBubble, isMine as isMyBubble, postBubble, senderOf, type Bubble } from "@/lib/bubbles";
+import TaskBoard, { TaskWires } from "./TaskBoard";
+import { addTask, assignTask, burnTask, carryTasks, editTask, isMyTask, moveTask, openInvite, sealInvite, tickTask, type Task } from "@/lib/tasks";
+import { GoPrivate, InviteCard } from "./TeamMove";
+import { bubbleName, burnBubble, editBubble, hueFor, isMine as isMyBubble, postBubble, senderOf, type Bubble } from "@/lib/bubbles";
 import StylePicker from "./StylePicker";
 import { autoRemember, findDeviceSkin, skinName, toneOf, useLook } from "@/lib/skins";
 import { KINDS, fileKind, type Kind } from "@/lib/skin-list";
@@ -61,6 +64,7 @@ type Panel =
   | { kind: "style" }
   | { kind: "menu" }
   | { kind: "bubble"; edit?: BubbleChange }
+  | { kind: "private" }
   | null;
 
 // more balls in the void, smaller balls, so they all have room
@@ -71,11 +75,12 @@ const GROUP = "g-";
 const isGroup = (id: string) => id.startsWith(GROUP);
 function groupOrbs(list: Orb[]) {
   const by = new Map<string, Orb[]>();
-  for (const o of list) if (o.from) by.set(o.from, [...(by.get(o.from) ?? []), o]);
+  // files wired to a task never fold into a container: each stays its own ball (same colour per sender)
+  for (const o of list) if (o.from && !o.task) by.set(o.from, [...(by.get(o.from) ?? []), o]);
   const groups = new Map<string, Orb[]>();
   const out: Orb[] = [];
   for (const o of list) {
-    const m = o.from ? by.get(o.from)! : null;
+    const m = o.from && !o.task ? by.get(o.from)! : null;
     if (!m || m.length < 2) {
       out.push(o);
       continue;
@@ -113,6 +118,8 @@ export default function Void() {
   const [loaded, setLoaded] = useState(false);
   const [net, setNet] = useState<string | null>(null);
   const netRef = useRef(net);
+  // this network's private invite key (lib/tasks.ts sealInvite): never sent to anyone
+  const inviteKeyRef = useRef("");
   netRef.current = net;
   const [skew, setSkew] = useState(0);
   const skewRef = useRef(skew);
@@ -124,9 +131,20 @@ export default function Void() {
   const [spaceReady, setSpaceReady] = useState(false);
   // who is in the space (and who is live right now, via realtime presence on its channel)
   const [room, setRoom] = useState<SpaceInfo | null>(null);
+  const roomRef = useRef(room);
+  roomRef.current = room;
   // bubble text in this void (or space)
   const [notes, setNotes] = useState<Bubble[]>([]);
   const knownBubbles = useRef<Map<string, string> | null>(null);
+  // tasks in this void/space, which one is in focus (only its files show), and the task a new send is wired to
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const knownTasks = useRef<Map<string, string> | null>(null);
+  const [taskFocus, setTaskFocus] = useState<string | null>(null);
+  const [wireTo, setWireTo] = useState<string | null>(null);
+  // the board shows once someone opens it, even before the first task
+  const [taskOpen, setTaskOpen] = useState(false);
+  // someone on this Wi-Fi is taking the team into a private space
+  const [invite, setInvite] = useState<{ slug: string; title: string; by: string; pass: string } | null>(null);
   // the bubble board (everyone's bubbles, drag and zoom): false = closed, else who to bring close
   const [board, setBoard] = useState<string | null | false>(false);
   const [live, setLive] = useState<Set<string>>(new Set());
@@ -240,7 +258,23 @@ export default function Void() {
       if (spaceRef.current !== sp) return; // switched while this was in flight
       if (sp && r?.status === 403) return removedRef.current(sp);
       if (!r?.ok) return;
-      const d = (await r.json()) as { items: Orb[]; bubbles?: Bubble[]; online: number; now: number };
+      const d = (await r.json()) as { items: Orb[]; bubbles?: Bubble[]; tasks?: Task[]; online: number; now: number };
+      const ts = d.tasks ?? [];
+      setTasks(ts);
+      const me = (bubbleName() || roomRef.current?.handle || "").toLowerCase();
+      if (knownTasks.current)
+        for (const t of ts) {
+          const was = knownTasks.current.get(t.id);
+          const now = `${t.doneAt ?? ""}|${t.assignee ?? ""}|${t.stage}`;
+          if (was === undefined && !isMyTask(t.id)) toast(t.assignee && t.assignee.toLowerCase() === me ? `Task ${t.num} is for you: ${t.text}` : `New task ${t.num}${t.by ? ` from ${t.by}` : ""}: ${t.text}`);
+          else if (was !== undefined && was !== now) {
+            const wasStage = Number(was.split("|")[2]);
+            if (t.stage !== wasStage && t.stage >= 0 && !isMyTask(t.id)) toast(`Task ${t.num} → ${t.route[t.stage] ?? "next stage"}`);
+            else if (t.doneAt && !was.startsWith(t.doneAt)) toast(`Task ${t.num} done${t.doneBy ? ` by ${t.doneBy}` : ""}`);
+            else if (t.assignee && t.assignee.toLowerCase() === me && was.split("|")[1] !== t.assignee) toast(`Task ${t.num} is for you`);
+          }
+        }
+      knownTasks.current = new Map(ts.map((t) => [t.id, `${t.doneAt ?? ""}|${t.assignee ?? ""}|${t.stage}`]));
       const bs = d.bubbles ?? [];
       setNotes(bs);
       if (knownBubbles.current)
@@ -337,8 +371,9 @@ export default function Void() {
       frac = st === "uploading" ? f : st === "finalizing" || st === "done" ? 1 : 0;
       if (Date.now() - beamed > 500) announce();
     };
-    launch({ file: job.file, name: job.name, passcode: job.passcode, maxDownloads: job.maxDownloads, life: job.life, open: job.open, group: job.group, hue: l.hue, signal: l.abort.signal, onProgress })
+    launch({ file: job.file, name: job.name, passcode: job.passcode, maxDownloads: job.maxDownloads, life: job.life, open: job.open, group: job.group, task: job.task, hue: l.hue, signal: l.abort.signal, onProgress })
       .then((orb) => {
+        if (job.task && job.done) tickTask(job.task, true).then(() => refresh()).catch(() => {});
         clearInterval(keepAlive);
         beam("landed", { k: key, id: orb.id });
         const from = pendingId(key);
@@ -443,7 +478,10 @@ export default function Void() {
       keepalive: true,
     })
       .then((r) => r.json())
-      .then((d: { net?: string }) => d.net && setNet(d.net))
+      .then((d: { net?: string; invite?: string }) => {
+        if (d.invite) inviteKeyRef.current = d.invite;
+        if (d.net) setNet(d.net);
+      })
       .catch(() => {});
   }, []);
 
@@ -614,6 +652,13 @@ export default function Void() {
     ch.on("broadcast", { event: "launch" }, ({ payload }) => beams.current.launch(payload ?? {}));
     ch.on("broadcast", { event: "landed" }, ({ payload }) => void beams.current.landed(payload ?? {}));
     ch.on("broadcast", { event: "gone" }, ({ payload }) => beams.current.gone(payload ?? {}));
+    // "go private with the team": only devices on the sender's network can open the passcode
+    ch.on("broadcast", { event: "invite" }, async ({ payload }) => {
+      const p = payload as { slug?: string; title?: string; by?: string; net?: string; seal?: { iv: string; c: string } } | undefined;
+      if (!p?.slug || !p.seal || spaceRef.current || p.net !== netRef.current || !inviteKeyRef.current || !/^[a-z0-9-]{1,32}$/.test(p.slug)) return;
+      const pass = await openInvite(inviteKeyRef.current, p.seal);
+      if (pass) setInvite({ slug: p.slug, title: String(p.title ?? "").slice(0, 40), by: String(p.by ?? "").slice(0, 24), pass });
+    });
     if (spaceRef.current) {
       ch.on("presence", { event: "sync" }, () => {
         const ids = new Set<string>();
@@ -878,7 +923,8 @@ export default function Void() {
   }, [shown, net, cap]);
   const positions = useMemo(() => layout(visible, mode), [visible, mode]);
   // a ball is the same colour on every device: the hue stored with it, never a local re-shuffle
-  const colors = useMemo(() => new Map(visible.map((o) => [o.id, ((o.hue % 360) + 360) % 360])), [visible]);
+  // wired files wear their sender's colour, so each team is easy to spot across tasks
+  const colors = useMemo(() => new Map(visible.map((o) => [o.id, o.task ? hueFor(o.from ?? o.id) : ((o.hue % 360) + 360) % 360])), [visible]);
 
   // arrival + burn-up choreography
   const [arriving, setArriving] = useState<Set<string>>(new Set());
@@ -941,12 +987,14 @@ export default function Void() {
     }
   };
 
-  const pickFiles = () => {
+  const pickFiles = (task: string | null = null) => {
+    setWireTo(task);
     if (menu) closeMenu();
     adding.current = false;
     fileInput.current?.click();
   };
-  const pickFolder = () => {
+  const pickFolder = (task: string | null = null) => {
+    setWireTo(task);
     if (menu) closeMenu();
     adding.current = false;
     folderInput.current?.click();
@@ -1036,6 +1084,7 @@ export default function Void() {
           <nav className="nav">
             <a href="#void">Void</a>
             <a href="#how">How it works</a>
+            <button onClick={() => setTaskOpen(true)}>Tasks{tasks.length ? ` ${tasks.filter((t) => !t.doneAt).length}` : ""}</button>
             <Link href="/about">About</Link>
             <button onClick={openMenu}>Launch</button>
           </nav>
@@ -1075,7 +1124,7 @@ export default function Void() {
 
       <main className={menu && !menuOut ? "menu-open" : undefined} data-pal={pal}>
         <section
-          className={`void${notes.length ? " has-bubbles" : ""}${new Set(notes.map(senderOf)).size > 1 ? " bub-two" : ""}${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
+          className={`void${notes.length ? " has-bubbles" : ""}${new Set(notes.map(senderOf)).size > 1 || tasks.length ? " bub-two" : ""}${tasks.length ? " has-tasks" : ""}${taskFocus ? " task-focus" : ""}${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
           id="void"
           style={(flow ? { "--n": rows } : { "--k-auto": crowdScale(visible.length) }) as unknown as React.CSSProperties}
         >
@@ -1083,8 +1132,56 @@ export default function Void() {
             switchSpace(null);
             toast("Back in the public void");
           }} />}
+          {(tasks.length > 0 || taskOpen) && (
+            <TaskBoard
+              tasks={tasks}
+              orbs={alive}
+              me={bubbleName() || room?.handle || ""}
+              focus={taskFocus}
+              onFocus={setTaskFocus}
+              onAdd={async (line) => {
+                try {
+                  const t = await addTask(line, bubbleName() || room?.handle || "");
+                  toast(`Task ${t.num} added`);
+                  await refresh();
+                  broadcast();
+                } catch (e) {
+                  toast((e as Error).message);
+                  throw e;
+                }
+              }}
+              onTick={(t, done) => {
+                setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, doneAt: done ? new Date().toISOString() : null, doneBy: done ? bubbleName() || room?.handle || null : null } : x)));
+                tickTask(t.id, done, bubbleName() || room?.handle || "").then(() => (refresh(), broadcast())).catch((e) => toast(e.message));
+              }}
+              onTake={(t, who) => {
+                assignTask(t.id, who).then(() => (toast(who ? `Task ${t.num} → ${who}` : `Task ${t.num} is open again`), refresh(), broadcast())).catch((e) => toast(e.message));
+              }}
+              onBurn={(t) => {
+                burnTask(t.id).then((ok) => ok && (toast(`Task ${t.num} removed`), refresh(), broadcast()));
+              }}
+              onAttach={(t, what) => (what === "folder" ? pickFolder(t.id) : pickFiles(t.id))}
+              onClose={() => setTaskOpen(false)}
+              onGoPrivate={space ? undefined : () => setPanel({ kind: "private" })}
+              onMove={(t, dir) => moveTask(t.id, dir).then(() => (refresh(), broadcast())).catch((e) => toast(e.message))}
+              onEdit={async (t, change) => {
+                try {
+                  await editTask(t.id, change, bubbleName() || room?.handle || "");
+                  if (change.stage !== undefined) toast(change.stage < 0 ? `Task ${t.num} is back to not started` : `Task ${t.num} → ${(change.route ?? t.route)[change.stage]}`);
+                  else toast(`Task ${t.num} saved`);
+                  await refresh();
+                  broadcast();
+                } catch (e) {
+                  toast((e as Error).message);
+                  throw e;
+                }
+              }}
+            />
+          )}
+          {tasks.length > 0 && <TaskWires tasks={tasks} orbs={visible} focus={taskFocus} />}
+          {taskFocus && /^t[a-z0-9]{9}$/.test(taskFocus) && <style>{`.void.task-focus .orb-anchor:not([data-task="${taskFocus}"]){opacity:.14;filter:grayscale(.85);transition:opacity .3s}`}</style>}
           {notes.length > 0 && (
-            <BubbleBoard bubbles={notes} {...bubbleActs} onOpenBoard={(f) => setBoard(f)} />
+            <BubbleBoard bubbles={notes} {...bubbleActs} oneSide={tasks.length > 0} onOpenBoard={(f) => setBoard(f)} />
           )}
           <div className="ghost-type" aria-hidden>
             <span className="wide">Drop</span>
@@ -1109,7 +1206,7 @@ export default function Void() {
                 )}
                 <span className="cursor" />
               </p>
-              <Uploader onFiles={pickFiles} onFolder={pickFolder} onText={compose} folderSub={touch ? "a folder, or many files at once" : undefined} />
+              <Uploader onFiles={() => pickFiles()} onFolder={() => pickFolder()} onText={compose} folderSub={touch ? "a folder, or many files at once" : undefined} />
             </div>
           )}
 
@@ -1279,6 +1376,8 @@ export default function Void() {
           onSpaces={() => setPanel({ kind: "space" })}
           onStyle={() => setPanel({ kind: "style" })}
           onHow={() => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" })}
+          onTasks={() => setTaskOpen(true)}
+          taskCount={tasks.filter((t) => !t.doneAt).length}
           onClose={() => setPanel((p) => (p?.kind === "menu" ? null : p))}
         />
       )}
@@ -1309,6 +1408,8 @@ export default function Void() {
           onRemove={(i) => setPanel((p) => (p?.kind === "send" && p.items.length > 1 ? { kind: "send", items: p.items.filter((_, k) => k !== i) } : p))}
           onClose={() => setPanel(null)}
           onLaunch={startLaunch}
+          tasks={tasks}
+          task={wireTo}
         />
       )}
       {panel?.kind === "unlock" && unlockOrb && (
@@ -1353,6 +1454,48 @@ export default function Void() {
       )}
       {board !== false && (
         <BubbleSpace bubbles={notes} focus={board} {...bubbleActs} onClose={() => setBoard(false)} onCompose={() => setPanel({ kind: "bubble" })} />
+      )}
+      {panel?.kind === "private" && (
+        <GoPrivate
+          me={bubbleName() || ""}
+          tasks={tasks.filter((t) => isMyTask(t.id)).length}
+          onClose={() => setPanel(null)}
+          onGo={async (title, handle, pass) => {
+            try {
+              const mine = tasks.filter((t) => isMyTask(t.id)).map((t) => t.id);
+              const s = await createSpace(title, handle, true, pass);
+              // invite everyone on this Wi-Fi first, on the public channel (sealed for this network)
+              if (netRef.current && inviteKeyRef.current)
+                channel.current?.send({ type: "broadcast", event: "invite", payload: { slug: s.slug, title: s.title, by: handle, net: netRef.current, seal: await sealInvite(inviteKeyRef.current, pass) } });
+              const moved = mine.length ? await carryTasks(mine, { slug: s.slug, token: s.token, deviceId: deviceId() }) : 0;
+              enterSpace(s);
+              try {
+                await navigator.clipboard.writeText(`${window.location.origin}/?space=${s.slug} · code ${pass}`);
+              } catch {}
+              toast(`Private: ${s.title} · code ${pass}${moved ? ` · ${moved} ${moved > 1 ? "tasks" : "task"} moved` : ""} · invite copied`);
+            } catch (e) {
+              toast((e as Error).message);
+              throw e;
+            }
+          }}
+        />
+      )}
+      {invite && !space && (
+        <InviteCard
+          by={invite.by}
+          title={invite.title}
+          onClose={() => setInvite(null)}
+          onJoin={async () => {
+            try {
+              const s = await joinSpace(invite.slug, bubbleName() || deviceInfo().label || "Guest", invite.pass);
+              setInvite(null);
+              enterSpace(s);
+            } catch (e) {
+              toast((e as Error).message);
+              throw e;
+            }
+          }}
+        />
       )}
       {panel?.kind === "bubble" && (
         <BubbleCompose
@@ -1410,8 +1553,8 @@ export default function Void() {
         <>
           <div className={`menu-scrim${menuOut ? " out" : ""}`} onClick={closeMenu} />
           <div className={`send-menu bubbles${menuOut ? " out" : ""}`} role="menu">
-            <button role="menuitem" className="bubble-btn lg lg-press" style={{ "--i": 0 } as React.CSSProperties} onClick={pickFiles}><span>{Icon.file}</span><b>Files</b><small>photos · videos · docs · anything</small></button>
-            <button role="menuitem" className="bubble-btn lg lg-press" style={{ "--i": 1 } as React.CSSProperties} onClick={pickFolder}><span>{Icon.folder}</span><b>Folder</b><small>{touch ? "a folder, or many files at once" : "whole folder, structure intact"}</small></button>
+            <button role="menuitem" className="bubble-btn lg lg-press" style={{ "--i": 0 } as React.CSSProperties} onClick={() => pickFiles()}><span>{Icon.file}</span><b>Files</b><small>photos · videos · docs · anything</small></button>
+            <button role="menuitem" className="bubble-btn lg lg-press" style={{ "--i": 1 } as React.CSSProperties} onClick={() => pickFolder()}><span>{Icon.folder}</span><b>Folder</b><small>{touch ? "a folder, or many files at once" : "whole folder, structure intact"}</small></button>
             <button role="menuitem" className="bubble-btn lg lg-press" style={{ "--i": 2 } as React.CSSProperties} onClick={compose}><span>{Icon.link}</span><b>Text or link</b><small>opens instantly on the other side</small></button>
           </div>
         </>

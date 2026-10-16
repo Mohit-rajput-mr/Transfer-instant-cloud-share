@@ -43,6 +43,12 @@ export function netHash(req: NextRequest) {
   return sha256(`${SECRET}:net:${ip}`).slice(0, 12);
 }
 
+/** A key only devices on the same network get (never broadcast, unlike netHash): seals invites to a private space. */
+export function netInviteKey(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "0";
+  return sha256(`${SECRET}:invite:${ip}`).slice(0, 32);
+}
+
 export interface Geo {
   country: string;
   region: string;

@@ -31,6 +31,8 @@ export interface Orb {
   skin?: string | null;
   /** a preview picture is stored (photo, video frame, first page): open objects only */
   thumb?: boolean;
+  /** wired to this task (lib/tasks.ts) */
+  task?: string | null;
   createdAt: string;
   expiresAt: string;
 }

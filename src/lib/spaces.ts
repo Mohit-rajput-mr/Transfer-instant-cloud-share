@@ -154,9 +154,11 @@ export async function search(q: string) {
 //   g: sender group (an anonymous per-device hash: one device's objects gather into one bubble), n: its name,
 //   k: the sender's style (how the object looks to everyone; see lib/skin-list.ts), p: has a preview picture
 // The old space-only form ⟪slug|handle⟫ is still read.
-export interface Tags { space?: string; by?: string; life?: number; open?: boolean; from?: string; group?: string; skin?: string; thumb?: boolean }
+export interface Tags { space?: string; by?: string; life?: number; open?: boolean; from?: string; group?: string; skin?: string; thumb?: boolean; task?: string }
+/** a task id (lib/tasks.ts): files wired to it carry it */
+export const validTask = (x: unknown): x is string => typeof x === "string" && /^t[a-z0-9]{9}$/.test(x);
 const OLD = /^⟪([a-z0-9-]{1,32})\|([^⟫]{0,24})⟫/;
-const NEW = /^⟪((?:[sbtognkp]=[^;⟫]*;?)*)⟫/;
+const NEW = /^⟪((?:[sbtognkpw]=[^;⟫]*;?)*)⟫/;
 /** a bubble's name, safe inside a tag */
 export const cleanGroup = (x: unknown) => (typeof x === "string" ? x.replace(/[\u0000-\u001f\u007f⟪⟫;=|]/g, "").replace(/\s+/g, " ").trim().slice(0, 40) : "");
 export const validFrom = (x: unknown): x is string => typeof x === "string" && /^[a-f0-9]{10}$/.test(x);
@@ -173,19 +175,20 @@ export function tagName(name: string, t: Tags) {
   if (t.from && t.group) parts.push(`n=${t.group}`);
   if (t.skin && validSkin(t.skin) && t.skin !== "orbit") parts.push(`k=${t.skin}`);
   if (t.thumb && t.open) parts.push("p=1");
+  if (t.task && validTask(t.task)) parts.push(`w=${t.task}`);
   return parts.length ? `⟪${parts.join(";")}⟫${name}` : name;
 }
 
-export type Untagged<T> = T & { space: string | null; by: string | null; life: number; open: boolean; from: string | null; groupName: string | null; skin: string | null; thumb: boolean };
+export type Untagged<T> = T & { space: string | null; by: string | null; life: number; open: boolean; from: string | null; groupName: string | null; skin: string | null; thumb: boolean; task: string | null };
 export function untag<T extends { name?: unknown; expiresAt?: unknown }>(o: T): Untagged<T> {
   const name = typeof o.name === "string" ? o.name : "";
   const old = OLD.exec(name);
-  if (old) return { ...o, name: name.slice(old[0].length), space: old[1], by: old[2] || null, life: LIFE_MIN, open: false, from: null, groupName: null, skin: null, thumb: false };
+  if (old) return { ...o, name: name.slice(old[0].length), space: old[1], by: old[2] || null, life: LIFE_MIN, open: false, from: null, groupName: null, skin: null, thumb: false, task: null };
   const m = NEW.exec(name);
-  if (!m) return { ...o, space: null, by: null, life: LIFE_MIN, open: false, from: null, groupName: null, skin: null, thumb: false };
+  if (!m) return { ...o, space: null, by: null, life: LIFE_MIN, open: false, from: null, groupName: null, skin: null, thumb: false, task: null };
   const kv = Object.fromEntries(m[1].split(";").filter(Boolean).map((x) => [x[0], x.slice(2)]));
   const life = LIVES.includes(Number(kv.t)) ? Number(kv.t) : LIFE_MIN;
-  const out = { ...o, name: name.slice(m[0].length), space: kv.s || null, by: kv.b || null, life, open: kv.o === "1", from: validFrom(kv.g) ? kv.g : null, groupName: cleanGroup(kv.n) || null, skin: validSkin(kv.k) ? kv.k : null, thumb: kv.p === "1" && kv.o === "1" };
+  const out = { ...o, name: name.slice(m[0].length), space: kv.s || null, by: kv.b || null, life, open: kv.o === "1", from: validFrom(kv.g) ? kv.g : null, groupName: cleanGroup(kv.n) || null, skin: validSkin(kv.k) ? kv.k : null, thumb: kv.p === "1" && kv.o === "1", task: validTask(kv.w) ? kv.w : null };
   // a shorter life burns earlier than the database's 30 minutes: the server hides it and refuses it from then on
   if (life < LIFE_MIN && typeof o.expiresAt === "string") {
     const t = Date.parse(o.expiresAt);

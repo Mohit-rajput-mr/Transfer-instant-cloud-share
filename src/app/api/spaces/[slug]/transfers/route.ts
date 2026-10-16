@@ -9,11 +9,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const { slug } = await params;
   const me = await member(slug, req.headers.get("x-device"), req.headers.get("x-space-token"));
   if (!me) return NextResponse.json({ error: "removed" }, { status: 403 });
-  const [r, ros, bubbles] = await Promise.all([
+  const [r, ros, bubbles, tasks] = await Promise.all([
     rpc<{ items: { name?: unknown; expiresAt?: unknown }[]; online: number }>("orbit_list2", {}),
     roster(slug),
     rpc<unknown[]>("orbit_bubble_list", { p_space: slug }).catch(() => []),
+    rpc<unknown[]>("orbit_task_list", { p_space: slug }).catch(() => []),
   ]);
   const items = (r.items ?? []).map(untag).filter((o) => o.space === slug && !burnedUp(o));
-  return NextResponse.json({ items, bubbles: bubbles ?? [], online: ros.members.length, now: Date.now() }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ items, bubbles: bubbles ?? [], tasks: tasks ?? [], online: ros.members.length, now: Date.now() }, { headers: { "Cache-Control": "no-store" } });
 }

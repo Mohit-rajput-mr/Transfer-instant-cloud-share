@@ -118,14 +118,14 @@ const useNarrow = () => {
  * Bubbles in the void: people take turns right and left (you first, on the right), a couple each side,
  * newest bubble on top. More people than fit → the board, which holds everyone.
  */
-export default function BubbleBoard(props: { bubbles: Bubble[]; onOpenBoard: (focus: string | null) => void } & Actions) {
+export default function BubbleBoard(props: { bubbles: Bubble[]; onOpenBoard: (focus: string | null) => void; /** the left side is taken (tasks): everyone on the right */ oneSide?: boolean } & Actions) {
   const stacks = useStacks(props.bubbles);
   const narrow = useNarrow();
   if (!stacks.length) return null;
   // you first, then whoever spoke last
   const order = [...stacks].sort((a, b) => Number(b.mine) - Number(a.mine) || b.last - a.last);
   const PER_SIDE = 2;
-  const shown = narrow ? order : order.slice(0, PER_SIDE * 2);
+  const shown = narrow ? order : order.slice(0, props.oneSide ? PER_SIDE + 1 : PER_SIDE * 2);
   const hidden = order.length - shown.length;
   const per = narrow ? 1 : 2;
   const stack = (s: Stack, i: number) => (
@@ -146,8 +146,8 @@ export default function BubbleBoard(props: { bubbles: Bubble[]; onOpenBoard: (fo
         <button className="bub-open lg lg-press" onClick={() => props.onOpenBoard(null)}><LuLayoutDashboard aria-hidden /><b>Open board</b><small className="mono">{order.length} {order.length > 1 ? "people" : "person"}</small></button>
       </aside>
     );
-  const right = shown.filter((_, i) => i % 2 === 0);
-  const left = shown.filter((_, i) => i % 2 === 1);
+  const right = props.oneSide ? shown : shown.filter((_, i) => i % 2 === 0);
+  const left = props.oneSide ? [] : shown.filter((_, i) => i % 2 === 1);
   return (
     <>
       <aside className="bub-board right" aria-label="Bubble text">{right.map(stack)}</aside>

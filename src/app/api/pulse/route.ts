@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { clean, geo, netHash, rpc, validId } from "@/lib/server";
+import { clean, geo, netHash, netInviteKey, rpc, validId } from "@/lib/server";
 
 export const dynamic = "force-dynamic";
 
@@ -21,5 +21,5 @@ export async function POST(req: NextRequest) {
       ...geo(req),
     },
   });
-  return NextResponse.json({ net }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ net, invite: netInviteKey(req) }, { headers: { "Cache-Control": "no-store" } });
 }

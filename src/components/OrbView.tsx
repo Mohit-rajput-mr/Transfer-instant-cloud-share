@@ -641,6 +641,7 @@ export default function OrbView(props: {
     <div
       className={`orb-anchor${phase ? ` ${phase}` : ""}${group ? " grp" : ""}`}
       data-orb={orb.id}
+      data-task={orb.task ?? undefined}
       data-skin={props.skin ?? "orbit"}
       data-tone={toneOf(props.skin ?? "orbit")}
       ref={anchor}

@@ -30,6 +30,8 @@ export async function launch(opts: {
   hue?: number;
   /** name for the sender's bubble (several balls sent at once) */
   group?: string;
+  /** wired to this task */
+  task?: string;
   onProgress: (stage: Stage, fraction: number) => void;
   signal?: AbortSignal;
 }): Promise<Orb> {
@@ -50,7 +52,7 @@ export async function launch(opts: {
     body: JSON.stringify({
       name, fileName: file.name || "file", mime: file.type || "application/octet-stream", size: file.size,
       chunkSize: CHUNK, iterations, salt: toB64(salt), nonce: toB64(nonce), auth, owner,
-      maxDownloads, device: deviceLabel(), hue: opts.hue, life: opts.life ?? 30, open: !!opts.open, from: await senderKey(), group: opts.group, skin: pickedSkin() ?? undefined, thumb: !!preview, ...spaceBody(),
+      maxDownloads, device: deviceLabel(), hue: opts.hue, life: opts.life ?? 30, open: !!opts.open, from: await senderKey(), group: opts.group, task: opts.task, skin: pickedSkin() ?? undefined, thumb: !!preview, ...spaceBody(),
     }),
     signal,
   });

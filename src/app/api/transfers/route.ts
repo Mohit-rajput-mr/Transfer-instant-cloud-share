@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { MAX_FILE_BYTES, MAX_LABEL } from "@/lib/limits";
 import { clean, geo, isB64, isHex, netHash, newId, reap, rpc, sha256 } from "@/lib/server";
 import { validSkin } from "@/lib/skin-list";
-import { LIVES, burnedUp, cleanGroup, member, tagName, untag, validFrom } from "@/lib/spaces";
+import { LIVES, burnedUp, cleanGroup, member, tagName, untag, validFrom, validTask } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
 
@@ -10,14 +10,15 @@ export const dynamic = "force-dynamic";
 // per region no matter how many people are watching the void.
 export async function GET() {
   await reap();
-  const [r, bubbles] = await Promise.all([
+  const [r, bubbles, tasks] = await Promise.all([
     rpc<{ items: { name?: unknown; expiresAt?: unknown }[]; online: number }>("orbit_list2", {}),
     rpc<unknown[]>("orbit_bubble_list", { p_space: null }).catch(() => []),
+    rpc<unknown[]>("orbit_task_list", { p_space: null }).catch(() => []),
   ]);
   // objects inside a space never show in the public void; short-lived ones leave on time
   const items = (r.items ?? []).map(untag).filter((o) => !o.space && !burnedUp(o));
   return NextResponse.json(
-    { ...r, items, bubbles: bubbles ?? [], now: Date.now() },
+    { ...r, items, bubbles: bubbles ?? [], tasks: tasks ?? [], now: Date.now() },
     { headers: { "Cache-Control": "public, max-age=0, s-maxage=1, stale-while-revalidate=5" } },
   );
 }
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
 
   let name = (clean(b.name, 60) || "untitled").replace(/^⟪/, "(");
   const life = LIVES.includes(Number(b.life)) ? Number(b.life) : 30;
-  const tags = { life, open: b.open === true, from: validFrom(b.from) ? b.from : undefined, group: cleanGroup(b.group) || undefined, skin: validSkin(b.skin) ? b.skin : undefined, thumb: b.thumb === true } as Parameters<typeof tagName>[1];
+  const tags = { life, open: b.open === true, from: validFrom(b.from) ? b.from : undefined, group: cleanGroup(b.group) || undefined, skin: validSkin(b.skin) ? b.skin : undefined, thumb: b.thumb === true, task: validTask(b.task) ? b.task : undefined } as Parameters<typeof tagName>[1];
   if (b.space != null) {
     const me = await member(b.space, b.deviceId, b.spaceToken);
     if (!me) return NextResponse.json({ error: "You are no longer in this space" }, { status: 403 });
