@@ -73,7 +73,8 @@ export async function launch(opts: {
   });
   if (!fin.ok) throw new Error("Could not place the object in orbit");
   // and an encrypted copy into storage, so it stays downloadable after this page closes
-  void storeCopy(id, owner, file, key, nonce);
+  // a folder is packed on the fly, so it can't be picked again after a reload: only real files resume
+  void storeCopy(id, owner, file, key, nonce, name, file.type !== FOLDER_MIME);
   onProgress("done", 1);
   return (await fin.json()) as Orb;
 }

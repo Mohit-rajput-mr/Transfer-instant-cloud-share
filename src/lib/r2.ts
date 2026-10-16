@@ -48,6 +48,36 @@ export async function abortMultipart(key: string, uploadId: string) {
   await client?.fetch(`${base()}/${key}?uploadId=${encodeURIComponent(uploadId)}`, { method: "DELETE" }).catch(() => {});
 }
 
+/** Parts already in R2 for an unfinished multipart upload (resume). null: the upload is gone. */
+export async function listParts(key: string, uploadId: string): Promise<{ n: number; etag: string }[] | null> {
+  const out: { n: number; etag: string }[] = [];
+  let marker = "0";
+  for (let page = 0; page < 20; page++) {
+    const r = await client!.fetch(`${base()}/${key}?uploadId=${encodeURIComponent(uploadId)}&max-parts=1000&part-number-marker=${marker}`);
+    if (r.status === 404) return null;
+    const xml = await r.text();
+    if (!r.ok) throw new Error(`r2 list ${r.status}`);
+    for (const m of xml.matchAll(/<Part>([\s\S]*?)<\/Part>/g)) {
+      const n = Number(tag(m[1], "PartNumber"));
+      const etag = tag(m[1], "ETag");
+      if (n && etag) out.push({ n, etag: etag.replace(/&quot;/g, '"') });
+    }
+    if (tag(xml, "IsTruncated") !== "true") break;
+    marker = tag(xml, "NextPartNumberMarker") ?? "0";
+  }
+  return out;
+}
+
+/** Unfinished uploads of one object (a sender who never came back): their parts would otherwise linger. */
+export async function abortAllUploads(key: string) {
+  if (!client) return;
+  const r = await client.fetch(`${base()}?uploads&prefix=${encodeURIComponent(key)}`).catch(() => null);
+  if (!r?.ok) return;
+  const xml = await r.text();
+  const ids = [...xml.matchAll(/<Upload>([\s\S]*?)<\/Upload>/g)].filter((m) => tag(m[1], "Key") === key).map((m) => tag(m[1], "UploadId")).filter(Boolean) as string[];
+  await Promise.all(ids.map((u) => abortMultipart(key, u)));
+}
+
 /** Size of a stored object, or null when it isn't there (yet). */
 export async function storedSize(key: string): Promise<number | null> {
   if (!client) return null;

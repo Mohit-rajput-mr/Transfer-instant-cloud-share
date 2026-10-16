@@ -18,7 +18,7 @@ export default function Terms() {
       <ul>
         <li>Only upload files you have the right to share.</li>
         <li>No malware, illegal content, harassment, or material that infringes anyone&apos;s rights.</li>
-        <li>Limits: 5 GB per file, 300 uploads per network per hour. Every object burns after the lifetime its sender picked, 30 minutes at most.</li>
+        <li>Limits: 20 GB per file, 300 uploads per network per hour. Every object burns after the lifetime its sender picked, 30 minutes at most.</li>
         <li>Objects sent without a passcode are open: anyone who can see them can download them.</li>
         <li>Space creators can remove anyone from their space. Do not use spaces to harass or exclude people unlawfully.</li>
       </ul>

@@ -5,11 +5,11 @@
 // parallel byte ranges. Until then the direct (peer-to-peer) path serves it, so nothing waits on this.
 import { useSyncExternalStore } from "react";
 import { encryptChunk } from "./crypto";
-import { PART_CHUNKS, STORE_CHUNK, STORE_TAG, storeChunks } from "./limits";
+import { ALIVE_EVERY_MS, PART_CHUNKS, STORE_CHUNK, STORE_TAG, storeChunks } from "./limits";
 import { stayAwake } from "./wake";
 import { Meter } from "./rate";
 
-export type CloudState = { state: "saving" | "saved" | "failed"; frac: number; speed?: string };
+export type CloudState = { state: "saving" | "paused" | "saved" | "failed"; frac: number; speed?: string };
 const states = new Map<string, CloudState>();
 const aborts = new Map<string, AbortController>();
 const subs = new Set<() => void>();
@@ -19,11 +19,11 @@ const set = (id: string, s: CloudState | null) => {
   else states.delete(id);
   snap = new Map(states);
   subs.forEach((f) => f());
-  stayAwake("cloud", [...states.values()].some((x) => x.state === "saving"));
+  stayAwake("cloud", [...states.values()].some((x) => x.state === "saving" || x.state === "paused"));
 };
 
 export const cloudSaved = (id: string) => states.get(id)?.state === "saved";
-export const cloudSaving = () => [...states.values()].some((s) => s.state === "saving");
+export const cloudSaving = () => [...states.values()].some((s) => s.state === "saving" || s.state === "paused");
 export function useCloud() {
   return useSyncExternalStore(
     (f) => {
@@ -36,11 +36,54 @@ export function useCloud() {
 }
 
 const PARALLEL_UP = 3;
-const TRIES = 4;
+const TRIES = 3;
+
+// ---- uploads that resume -------------------------------------------------------------------------
+// A big upload is remembered on this device (IndexedDB: the object, its owner key, R2's upload id and
+// the encryption key, which stays non-extractable). After the page closes or crashes, reopening the
+// site offers to finish it: pick the same file again and only the missing parts go up.
+
+export type PendingUpload = {
+  id: string; owner: string; uploadId: string; fileName: string; size: number; lastModified: number;
+  key: CryptoKey; nonce: Uint8Array; label: string; at: number;
+};
+const DB = "orbit-uploads";
+const idb = () =>
+  new Promise<IDBDatabase>((res, rej) => {
+    const r = indexedDB.open(DB, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("up", { keyPath: "id" });
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>) {
+  const db = await idb();
+  try {
+    return await new Promise<T>((res, rej) => {
+      const q = fn(db.transaction("up", mode).objectStore("up"));
+      q.onsuccess = () => res(q.result);
+      q.onerror = () => rej(q.error);
+    });
+  } finally {
+    db.close();
+  }
+}
+const remember = (u: PendingUpload) => tx("readwrite", (s) => s.put(u)).catch(() => null);
+const forgetUpload = (id: string) => tx("readwrite", (s) => s.delete(id)).catch(() => null);
+/** Unfinished uploads from earlier visits (newest first), at most a day old. */
+export async function pendingUploads(): Promise<PendingUpload[]> {
+  const all = ((await tx<PendingUpload[]>("readonly", (s) => s.getAll() as IDBRequest<PendingUpload[]>).catch(() => [])) ?? []).filter((u) => !aborts.has(u.id));
+  const old = all.filter((u) => Date.now() - u.at > 24 * 3600_000);
+  old.forEach((u) => forgetUpload(u.id));
+  return all.filter((u) => !old.includes(u)).sort((a, b) => b.at - a.at);
+}
+export const dropPending = (id: string) => forgetUpload(id);
+/** Is this the same file the upload started with? */
+export const sameFile = (u: PendingUpload, f: File) => f.size === u.size && f.name === u.fileName && (!u.lastModified || f.lastModified === u.lastModified);
 
 /** PUT one part with progress; resolves to its ETag. */
 function put(url: string, body: Blob, onSent: (n: number) => void, signal: AbortSignal) {
   return new Promise<string>((res, rej) => {
+    if (signal.aborted) return rej(new DOMException("Aborted", "AbortError"));
     const x = new XMLHttpRequest();
     x.open("PUT", url);
     x.upload.onprogress = (e) => onSent(e.loaded);
@@ -64,19 +107,31 @@ async function sealRange(file: File, key: CryptoKey, nonce: Uint8Array, from: nu
 const call = (id: string, body: object) =>
   fetch(`/api/transfers/${id}/store`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 
+const sleep = (ms: number, signal: AbortSignal) =>
+  new Promise<void>((res) => {
+    const t = setTimeout(res, ms);
+    signal.addEventListener("abort", () => (clearTimeout(t), res()), { once: true });
+  });
+/** Offline: wait until the network is back (or `ms` passes, onLine is not always truthful). */
+const backOnline = (ms: number, signal: AbortSignal) =>
+  new Promise<void>((res) => {
+    if (navigator.onLine) return void setTimeout(res, Math.min(ms, 1500));
+    const done = () => (window.removeEventListener("online", done), clearTimeout(t), res());
+    const t = setTimeout(done, ms);
+    window.addEventListener("online", done);
+    signal.addEventListener("abort", done, { once: true });
+  });
+
+class Gone extends Error {}
+
+/** Big uploads under way on this page: closing it keeps them in orbit, to be finished on the next visit. */
+const resumables = new Set<string>();
+export const isResumable = (id: string) => resumables.has(id);
+
 /** Uploads the encrypted copy. Never throws: on any failure the direct path still serves the file. */
-export async function storeCopy(id: string, owner: string, file: File, key: CryptoKey, nonce: Uint8Array) {
+export async function storeCopy(id: string, owner: string, file: File, key: CryptoKey, nonce: Uint8Array, label = file.name, canResume = true) {
   const ac = new AbortController();
   aborts.set(id, ac);
-  const total = storeChunks(file.size);
-  const sent = new Map<number, number>();
-  const encTotal = file.size + total * STORE_TAG;
-  const meter = new Meter(encTotal);
-  const progress = () => {
-    const done = [...sent.values()].reduce((a, b) => a + b, 0);
-    set(id, { state: "saving", frac: Math.min(0.99, done / encTotal), speed: meter.label(done) });
-  };
-  let uploadId: string | null = null;
   try {
     set(id, { state: "saving", frac: 0 });
     // can this page reach the bucket at all (its CORS rule)? If not, don't send a byte: the direct path serves it
@@ -93,55 +148,194 @@ export async function storeCopy(id: string, owner: string, file: File, key: Cryp
     }
     const r = await call(id, { owner, action: "start" });
     if (!r.ok) {
-      set(id, r.status === 501 ? null : { state: "failed", frac: 0 });
+      // 501: no storage; 507: this month's free storage is used up. Either way it still sends directly
+      set(id, r.status === 501 || r.status === 507 ? null : { state: "failed", frac: 0 });
       return;
     }
     const s = (await r.json()) as { put?: string; uploadId?: string; urls?: string[] };
-    const tryPut = async (url: string, n: number, from: number, to: number) => {
-      for (let attempt = 1; ; attempt++) {
-        try {
-          const body = await sealRange(file, key, nonce, from, to, total);
-          return await put(url, body, (b) => ((sent.set(n, b), progress())), ac.signal);
-        } catch (e) {
-          if (ac.signal.aborted || attempt >= TRIES) throw e;
-          sent.set(n, 0);
-          await new Promise((res) => setTimeout(res, 800 * attempt));
-        }
+    if (s.put) await single(id, owner, file, key, nonce, s.put, ac.signal);
+    else if (s.uploadId && s.urls) {
+      if (canResume) {
+        await remember({ id, owner, uploadId: s.uploadId, fileName: file.name, size: file.size, lastModified: file.lastModified, key, nonce, label, at: Date.now() });
+        resumables.add(id);
       }
-    };
-    if (s.put) {
-      await tryPut(s.put, 0, 0, total);
-      await call(id, { owner, action: "saved" }).catch(() => null);
-    } else if (s.uploadId && s.urls) {
-      uploadId = s.uploadId;
-      const urls = s.urls;
-      const etags: string[] = new Array(urls.length);
-      let next = 0;
-      const worker = async () => {
-        while (next < urls.length) {
-          const p = next++;
-          const etag = await tryPut(urls[p], p, p * PART_CHUNKS, Math.min(total, (p + 1) * PART_CHUNKS));
-          // R2 must expose ETag to the page (bucket CORS); without it the parts can't be put together
-          if (!etag) throw new Error("no etag");
-          etags[p] = etag;
-        }
-      };
-      await Promise.all(Array.from({ length: Math.min(PARALLEL_UP, urls.length) }, worker));
-      const c = await call(id, { owner, action: "complete", uploadId, etags });
-      if (!c.ok) throw new Error("complete");
+      await multi(id, owner, file, key, nonce, s.uploadId, s.urls.map((url, i) => ({ n: i + 1, url })), [], ac);
     } else throw new Error("start");
     set(id, { state: "saved", frac: 1 });
-  } catch {
-    if (uploadId) call(id, { owner, action: "abort", uploadId }).catch(() => {});
-    set(id, ac.signal.aborted ? null : { state: "failed", frac: 0 });
+    forgetUpload(id);
+  } catch (e) {
+    forgetUpload(id);
+    set(id, ac.signal.aborted || e instanceof Gone ? null : { state: "failed", frac: 0 });
   } finally {
     aborts.delete(id);
+    resumables.delete(id);
+  }
+}
+
+/** Finishes an upload from an earlier visit: the same file picked again, only the missing parts go up. */
+export async function resumeCopy(u: PendingUpload, file: File) {
+  if (aborts.has(u.id) || !sameFile(u, file)) return false;
+  const ac = new AbortController();
+  aborts.set(u.id, ac);
+  try {
+    set(u.id, { state: "saving", frac: 0 });
+    await remember({ ...u, at: Date.now() });
+    resumables.add(u.id);
+    await multi(u.id, u.owner, file, u.key, u.nonce, u.uploadId, null, null, ac);
+    set(u.id, { state: "saved", frac: 1 });
+    forgetUpload(u.id);
+    return true;
+  } catch (e) {
+    forgetUpload(u.id);
+    set(u.id, ac.signal.aborted || e instanceof Gone ? null : { state: "failed", frac: 0 });
+    return false;
+  } finally {
+    aborts.delete(u.id);
+    resumables.delete(u.id);
+  }
+}
+
+/** A small file: one plain upload, retried through network drops. */
+async function single(id: string, owner: string, file: File, key: CryptoKey, nonce: Uint8Array, url: string, signal: AbortSignal) {
+  const total = storeChunks(file.size);
+  const enc = file.size + total * STORE_TAG;
+  const meter = new Meter(enc);
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const body = await sealRange(file, key, nonce, 0, total, total);
+      await put(url, body, (b) => set(id, { state: "saving", frac: Math.min(0.99, b / enc), speed: meter.label(b) }), signal);
+      break;
+    } catch (e) {
+      if (signal.aborted || attempt >= 8) throw e;
+      set(id, { state: "paused", frac: 0 });
+      await backOnline(Math.min(30_000, 1000 * 2 ** attempt), signal);
+    }
+  }
+  await call(id, { owner, action: "saved" }).catch(() => null);
+}
+
+/**
+ * A big file in parts, three at a time. Any break (offline, laptop asleep, links expired) pauses it;
+ * then R2 is asked which parts it already has, and only the rest go up. It gives up only when the
+ * object is gone (burnt or destroyed) or the user stops it.
+ */
+async function multi(
+  id: string, owner: string, file: File, key: CryptoKey, nonce: Uint8Array, uploadId: string,
+  todo: { n: number; url: string }[] | null, have: { n: number; etag: string }[] | null, ac: AbortController,
+) {
+  const total = storeChunks(file.size);
+  const enc = file.size + total * STORE_TAG;
+  const partBytes = (n: number) => {
+    const from = (n - 1) * PART_CHUNKS, to = Math.min(total, n * PART_CHUNKS);
+    return Math.min(file.size, to * STORE_CHUNK) - from * STORE_CHUNK + (to - from) * STORE_TAG;
+  };
+  const etags = new Map<number, string>();
+  const sent = new Map<number, number>();
+  let base = 0;
+  const meter = new Meter(enc);
+  let paused = false;
+  const progress = () => {
+    const done = base + [...sent.values()].reduce((a, b) => a + b, 0);
+    set(id, { state: paused ? "paused" : "saving", frac: Math.min(0.99, done / enc), speed: paused ? undefined : meter.label(done) });
+  };
+  const sync = async () => {
+    const r = await call(id, { owner, action: "resume", uploadId });
+    if (r.status === 404 || r.status === 403) throw new Gone();
+    if (!r.ok) throw new Error("resume");
+    const d = (await r.json()) as { parts: number; done: { n: number; etag: string }[]; urls: { n: number; url: string }[] };
+    have = d.done;
+    todo = d.urls;
+  };
+  // keeps the object in orbit while this runs, paused or not
+  const beat = setInterval(async () => {
+    const r = await call(id, { owner, action: "alive" }).catch(() => null);
+    if (r?.ok && (await r.json().catch(() => null))?.ok === false) ac.abort(new Gone());
+  }, ALIVE_EVERY_MS);
+  try {
+    if (!todo) await sync();
+    for (let tries = 0; ; tries++) {
+      etags.clear();
+      for (const p of have ?? []) etags.set(p.n, p.etag);
+      base = [...etags.keys()].reduce((a, n) => a + partBytes(n), 0);
+      sent.clear();
+      paused = false;
+      progress();
+      const queue = (todo ?? []).filter((p) => !etags.has(p.n));
+      // one round: when a part gives up, the other lanes stop too, so nothing is sent twice after the resume
+      const round = new AbortController();
+      const stopRound = () => round.abort();
+      ac.signal.addEventListener("abort", stopRound, { once: true });
+      try {
+        let next = 0;
+        const worker = async () => {
+          while (next < queue.length && !round.signal.aborted) {
+            const p = queue[next++];
+            for (let attempt = 1; ; attempt++) {
+              try {
+                const body = await sealRange(file, key, nonce, (p.n - 1) * PART_CHUNKS, Math.min(total, p.n * PART_CHUNKS), total);
+                const etag = await put(p.url, body, (b) => (sent.set(p.n, b), progress()), round.signal);
+                // R2 must expose ETag to the page (bucket CORS); without it the parts can't be put together
+                if (!etag) throw new Error("no etag");
+                etags.set(p.n, etag);
+                sent.set(p.n, partBytes(p.n));
+                paused = false;
+                progress();
+                break;
+              } catch (e) {
+                sent.delete(p.n);
+                if (round.signal.aborted) throw e;
+                if (attempt >= TRIES) {
+                  round.abort();
+                  throw e;
+                }
+                // shows as paused right away, not after the retries run out
+                paused = true;
+                progress();
+                await sleep(800 * attempt, round.signal);
+              }
+            }
+          }
+        };
+        await Promise.all(Array.from({ length: Math.min(PARALLEL_UP, Math.max(1, queue.length)) }, worker));
+        const parts = Math.ceil(total / PART_CHUNKS);
+        const list = Array.from({ length: parts }, (_, i) => etags.get(i + 1));
+        if (list.some((e) => !e)) throw new Error("missing parts");
+        const c = await call(id, { owner, action: "complete", uploadId, etags: list });
+        if (c.status === 404 || c.status === 403) throw new Gone();
+        if (!c.ok) throw new Error("complete");
+        ac.signal.removeEventListener("abort", stopRound);
+        return;
+      } catch (e) {
+        round.abort();
+        ac.signal.removeEventListener("abort", stopRound);
+        if (ac.signal.aborted) throw ac.signal.reason instanceof Gone ? ac.signal.reason : e;
+        if (e instanceof Gone) throw e;
+        if (String(e).includes("no etag")) throw e;
+        // pause, wait for the network, then ask R2 what it has and carry on from there
+        paused = true;
+        progress();
+        await backOnline(Math.min(30_000, 2000 * 2 ** Math.min(tries, 4)), ac.signal);
+        if (ac.signal.aborted) throw ac.signal.reason instanceof Gone ? ac.signal.reason : e;
+        for (;;) {
+          try {
+            await sync();
+            break;
+          } catch (err) {
+            if (err instanceof Gone || ac.signal.aborted) throw err instanceof Gone ? err : e;
+            await backOnline(15_000, ac.signal);
+          }
+        }
+      }
+    }
+  } finally {
+    clearInterval(beat);
   }
 }
 
 /** Stop uploading (the ball was destroyed or burnt). */
 export function stopCopy(id: string) {
   aborts.get(id)?.abort();
+  forgetUpload(id);
   set(id, null);
 }
 

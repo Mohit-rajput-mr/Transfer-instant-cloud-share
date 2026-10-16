@@ -15,7 +15,7 @@ import { supabase, type RealtimeChannel } from "@/lib/realtime";
 import SpacePanel, { SpaceRoom } from "./Spaces";
 import BubbleZoom from "./BubbleZoom";
 import { heldIds, release as releaseP2P } from "@/lib/p2p";
-import { cloudSaved, cloudSaving, stopCopy } from "@/lib/cloud";
+import { cloudSaved, cloudSaving, isResumable, stopCopy } from "@/lib/cloud";
 // a ball leaving: stop offering it directly and stop any upload of its stored copy
 const release = (id: string) => {
   releaseP2P(id);
@@ -769,7 +769,8 @@ export default function Void() {
       for (const id of heldIds()) {
         const saved = cloudSaved(id);
         releaseP2P(id);
-        if (saved) continue;
+        // saved, or a big upload this device can finish on its next visit (the parts already sent stay)
+        if (saved || isResumable(id)) continue;
         const key = ownerKey(id);
         if (key) fetch(`/api/transfers/${id}`, { method: "DELETE", headers: { "x-owner": key }, keepalive: true }).catch(() => {});
       }
@@ -1176,7 +1177,7 @@ export default function Void() {
             </div>
           ))}
           <div className="legal">
-            <span>Files are end-to-end encrypted. Max 5 GB each. 300 uploads per network per hour.</span>
+            <span>Files are end-to-end encrypted. Max 20 GB each. 300 uploads per network per hour.</span>
             <span><Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · Abuse? Open the object and tap <span className="glyph"><LuFlag aria-hidden />Report</span></span>
           </div>
         </section>

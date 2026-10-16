@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { del } from "@vercel/blob";
 import type { NextRequest } from "next/server";
-import { objectKey, previewKey, removeObjects } from "./r2";
+import { abortAllUploads, objectKey, previewKey, removeObjects } from "./r2";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -70,7 +70,10 @@ export function geo(req: NextRequest): Geo {
 
 export async function removeBlobs(urls: (string | null | undefined)[]) {
   // p2p:<id> objects may have an encrypted copy in R2 (deletes there are free; a missing one is fine)
-  await removeObjects(urls.filter((u): u is string => !!u && u.startsWith("p2p:")).flatMap((u) => [objectKey(u.slice(4)), previewKey(u.slice(4))])).catch(() => {});
+  const ids = urls.filter((u): u is string => !!u && u.startsWith("p2p:")).map((u) => u.slice(4));
+  await removeObjects(ids.flatMap((id) => [objectKey(id), previewKey(id)])).catch(() => {});
+  // and the parts of a big upload that never finished
+  await Promise.all(ids.map((id) => abortAllUploads(objectKey(id)).catch(() => {})));
   const list = urls.filter((u): u is string => !!u && u.startsWith("https://"));
   if (!list.length) return;
   try {

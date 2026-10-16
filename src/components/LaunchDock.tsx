@@ -1,5 +1,6 @@
 "use client";
 import DownloadCard from "./DownloadCard";
+import ResumeUploads, { usePendingCount } from "./ResumeUploads";
 import { useDownloads } from "@/lib/downloads";
 import { useCloud } from "@/lib/cloud";
 import { useState, type CSSProperties } from "react";
@@ -75,9 +76,11 @@ export default function LaunchDock(props: {
 }) {
   const { launches } = props;
   const dl = useDownloads();
-  if (!launches.length && !dl.jobs.length) return null;
+  const pending = usePendingCount();
+  if (!launches.length && !dl.jobs.length && !pending) return null;
   return (
     <div className="dock" aria-live="polite">
+      <ResumeUploads />
       <DownloadCard />
       {launches.slice(-3).map((l) => (
         <DockItem key={l.key} l={l} {...props} />
@@ -137,9 +140,10 @@ function DockItem({ l, badges, onToggle, onDismiss, onOpenOwner }: { l: Launch }
           <span className="mono">In orbit · <span className="dock-code">{l.orb.id}</span>
             {cloud?.state === "saving" && <span className="dock-cloud"> · saving {Math.round(cloud.frac * 100)}%{cloud.speed ? ` · ${cloud.speed}` : ""}, keep open</span>}
             {cloud?.state === "saved" && <span className="dock-cloud ok"> · saved <LuCheck className="ic-inline" /> safe to close</span>}
+            {cloud?.state === "paused" && <span className="dock-cloud"> · paused at {Math.round(cloud.frac * 100)}%, resumes when you are back online</span>}
             {cloud?.state === "failed" && <span className="dock-cloud"> · keep this page open</span>}
           </span>
-          {cloud?.state === "saving" && <span className="dock-bar"><i style={{ transform: `scaleX(${Math.max(0.03, cloud.frac)})` }} /></span>}
+          {(cloud?.state === "saving" || cloud?.state === "paused") && <span className="dock-bar"><i style={{ transform: `scaleX(${Math.max(0.03, cloud.frac)})` }} /></span>}
         </div>
         {!l.open && (
           <button className={`pill lg-press${copied ? " solid" : ""}`} onClick={copy}>{glyph(copied ? "Copied ✓" : "Copy link")}</button>
