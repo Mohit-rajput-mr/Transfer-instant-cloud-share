@@ -116,12 +116,53 @@ export default function Viewer({ file, name, failed, onClose, onDownload }: { fi
   );
 }
 
+/** Photo: fits the screen, centred. Scroll (or pinch) zooms in/out right where the pointer is, drag pans,
+ *  double-click toggles 2.5×. */
 function ImageView({ url, name }: { url: string; name: string }) {
-  const [zoom, setZoom] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const [v, setV] = useState({ k: 1, x: 0, y: 0 });
+  const drag = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
+  const zoomAt = (cx: number, cy: number, k2: number) =>
+    setV((o) => {
+      const k = Math.max(1, Math.min(8, k2));
+      if (k === 1) return { k: 1, x: 0, y: 0 };
+      const r = box.current!.getBoundingClientRect();
+      // keep the point under the pointer where it is
+      const px = cx - r.left - r.width / 2, py = cy - r.top - r.height / 2;
+      return { k, x: px - ((px - o.x) * k) / o.k, y: py - ((py - o.y) * k) / o.k };
+    });
+  useEffect(() => {
+    const el = box.current!;
+    const wheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const f = Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0022));
+      zoomAt(e.clientX, e.clientY, vRef.current.k * f);
+    };
+    el.addEventListener("wheel", wheel, { passive: false });
+    return () => el.removeEventListener("wheel", wheel);
+  }, []);
+  const vRef = useRef(v);
+  vRef.current = v;
   return (
-    <div className={`viewer-img${zoom ? " zoom" : ""}`} onClick={() => setZoom((z) => !z)}>
+    <div
+      ref={box}
+      className={`viewer-img${v.k > 1 ? " zoom" : ""}`}
+      onDoubleClick={(e) => zoomAt(e.clientX, e.clientY, v.k > 1 ? 1 : 2.5)}
+      onPointerDown={(e) => {
+        if (v.k === 1) return;
+        drag.current = { px: e.clientX, py: e.clientY, x: v.x, y: v.y };
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }}
+      onPointerMove={(e) => {
+        const d = drag.current;
+        if (d) setV((o) => ({ ...o, x: d.x + e.clientX - d.px, y: d.y + e.clientY - d.py }));
+      }}
+      onPointerUp={() => (drag.current = null)}
+      onPointerCancel={() => (drag.current = null)}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element -- a local blob: URL */}
-      <img src={url} alt={name} draggable={false} />
+      <img src={url} alt={name} draggable={false} style={{ transform: `translate(${v.x}px, ${v.y}px) scale(${v.k})`, transition: drag.current ? "none" : undefined }} />
+      <span className="viewer-hint mono">{v.k > 1 ? `${Math.round(v.k * 100)}% · drag to move · double-click to fit` : "scroll to zoom"}</span>
     </div>
   );
 }

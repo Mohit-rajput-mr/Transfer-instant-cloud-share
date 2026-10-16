@@ -18,6 +18,10 @@ export type TaskActs = {
   onGoPrivate?: () => void;
 };
 
+const DEFAULT_ROUTE = ["In progress", "In review", "Done"];
+/** 0 grey (not started) · 1 orange (first step) · 2 blue (on its way) · 3 green (done) */
+export const stepOf = (t: Task) => (t.doneAt || (t.route.length && t.stage >= t.route.length - 1) ? 3 : t.stage < 0 ? 0 : t.stage === 0 ? 1 : 2);
+
 /** Who wired files to a task: one dot per sender, in their colour, with how many. */
 export function wiredBy(task: string, orbs: Orb[]) {
   const m = new Map<string, { hue: number; n: number; name: string }>();
@@ -52,6 +56,14 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
   useEffect(() => setPro(!!proCode()), []);
   const input = useRef<HTMLInputElement>(null);
   const done = props.tasks.filter((t) => t.doneAt).length;
+  // the tick walks the route: grey → orange (first step) → blue → green (done). Only the writer can move it;
+  // everyone else ticks it done / undone as before.
+  const tap = (t: Task) => {
+    if (!isMyTask(t.id)) return props.onTick(t, !t.doneAt);
+    if (t.doneAt) return void props.onEdit(t, { stage: -1 }).then(() => props.onTick(t, false)).catch(() => {});
+    const route = t.route.length ? t.route : DEFAULT_ROUTE;
+    props.onEdit(t, { route, stage: Math.min(route.length - 1, t.stage + 1) }).catch(() => {});
+  };
   const total = props.tasks.length;
   const parsed = parseTask(line);
 
@@ -101,8 +113,8 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                   data-task-row={t.id}
                   className={`tb-row${t.doneAt ? " done" : ""}${props.focus === t.id ? " focus" : ""}${mine && !t.doneAt ? " forme" : ""}`}
                 >
-                  <button className="tb-tick" onClick={() => props.onTick(t, !t.doneAt)} aria-label={t.doneAt ? `Untick task ${t.num}` : `Tick task ${t.num} done`} title={t.doneAt ? `Done${t.doneBy ? ` by ${t.doneBy}` : ""}` : "Tick it done"}>
-                    <i className="task-dot big" data-task-dot={t.id}>{t.doneAt && <LuCheck aria-hidden />}</i>
+                  <button className="tb-tick" onClick={() => tap(t)} aria-label={t.doneAt ? `Untick task ${t.num}` : `Move task ${t.num} to its next step`} title={t.doneAt ? `Done${t.doneBy ? ` by ${t.doneBy}` : ""}` : t.stage >= 0 && t.route[t.stage] ? `${t.route[t.stage]} · tap for the next step` : "Tap: first step"}>
+                    <i className="task-dot big" data-task-dot={t.id} data-step={stepOf(t)}>{(t.doneAt || t.stage >= 0) && <LuCheck aria-hidden />}</i>
                   </button>
                   {editing === t.id ? (
                     <form className="tb-edit" onSubmit={(e) => { e.preventDefault(); if (draft.trim() && draft.trim() !== t.text) props.onEdit(t, { text: draft.trim() }).catch(() => {}); setEditing(null); }}>
