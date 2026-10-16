@@ -43,7 +43,7 @@ export function wiredBy(task: string, orbs: Orb[]) {
  * Tasks, one line each: a big orange dot, "TASK 1", the line, who it is for, and a tick anyone can set.
  * Files wired to a task hang off its dot (TaskWires). Tapping a task shows only its files.
  */
-export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: string; focus: string | null; onFocus: (id: string | null) => void; onClose: () => void; /** a cable is being plugged in: the tasks light up as targets */ wiring?: boolean; arranged?: boolean; onArrange?: () => void; /** arranged: each row is a lane this tall, its files on the same line */ laneH?: number } & TaskActs) {
+export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: string; focus: string | null; onFocus: (id: string | null) => void; onClose: () => void; /** a cable is being plugged in: the tasks light up as targets */ wiring?: boolean; arranged?: boolean; onArrange?: () => void; /** arranged: each row is a lane this tall, its files on the same line */ laneH?: number; /** the Tasks button in the bar opened the new-task box */ composing?: boolean; onComposed?: () => void } & TaskActs) {
   const [line, setLine] = useState("");
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(true);
@@ -51,7 +51,6 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
   const [who, setWho] = useState("");
   const [routing, setRouting] = useState<string | null>(null);
   // the extras (how long tasks stay, go private) stay out of the way until asked for
-  const [more, setMore] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   // Pro (a code from Mission HQ on this device): tasks stay up to 8 hours
@@ -87,7 +86,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
   };
   useEffect(() => {
     if (!hover) return;
-    const off = (e: Event) => (e.target as Element)?.classList?.contains("tb-list") && setHover(null);
+    const off = (e: Event) => ((e.target as Element)?.classList?.contains("tb-list") || (e.target as Element)?.classList?.contains("task-boards")) && setHover(null);
     document.addEventListener("scroll", off, true);
     return () => document.removeEventListener("scroll", off, true);
   }, [hover]);
@@ -125,6 +124,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
     try {
       await props.onAdd(line, pro ? life : 30);
       setLine("");
+      props.onComposed?.();
     } catch {}
     setBusy(false);
     input.current?.focus();
@@ -139,25 +139,20 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
     return m;
   }, [props.orbs]);
 
-  return (
-    <aside className={`task-board lg${open || props.wiring ? " open" : ""}${props.wiring ? " wiring" : ""}${props.laneH ? " lanes" : ""}`} style={props.laneH ? ({ "--lane-h": `${props.laneH}px` } as CSSProperties) : undefined} aria-label="Tasks">
-      <button className="tb-head" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        <i className="task-dot" aria-hidden />
-        <b>Tasks</b>
-        <span className="mono dim">{total ? `${done}/${total} done` : "none yet"}</span>
-        <span className="tb-bar" aria-hidden><i style={{ transform: `scaleX(${total ? done / total : 0})` }} /></span>
-        <LuChevronDown className={`tb-chev${open ? " up" : ""}`} aria-hidden />
-      </button>
-      {props.onArrange && total > 0 && (
-        <button className={`tb-arrange mono${props.arranged ? " on" : ""}`} onClick={props.onArrange} aria-pressed={!!props.arranged} title={props.arranged ? "Back to the free-floating void" : "Line every file up in its task's lane"}>
-          <LuRows3 aria-hidden />{props.arranged ? "Arranged" : "Arrange"}
-        </button>
-      )}
-      {!total && <button className="tb-x" onClick={props.onClose} aria-label="Close tasks"><LuX /></button>}
-      {(open || props.wiring) && (
-        <>
-          <ol className="tb-list">
-            {props.tasks.map((t, i) => {
+  // one panel per person who writes tasks (yours first), never merged
+  const groups = useMemo(() => {
+    const m = new Map<string, { key: string; mine: boolean; name: string; tasks: Task[] }>();
+    for (const t of props.tasks) {
+      const mineT = isMyTask(t.id);
+      const key = mineT ? "me" : t.from || t.by || "someone";
+      const g = m.get(key) ?? { key, mine: mineT, name: mineT ? "Your tasks" : `${t.by || "Someone"}'s tasks`, tasks: [] };
+      g.tasks.push(t);
+      m.set(key, g);
+    }
+    return [...m.values()].sort((a, b) => Number(b.mine) - Number(a.mine));
+  }, [props.tasks]);
+  const [shut, setShut] = useState<Set<string>>(new Set());
+  const row = (t: Task, i: number) => {
               const w = wired.get(t.id) ?? [];
               const n = w.reduce((a, x) => a + x.n, 0);
               const mine = forMe(t, props.me);
@@ -221,33 +216,29 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                   )}
                 </li>
               );
-            })}
-          </ol>
-          {!narrow && hover && editing !== hover.id && routing !== hover.id && (() => {
-            const i = props.tasks.findIndex((x) => x.id === hover.id);
-            if (i < 0) return null;
-            return createPortal(
-              <span className="tb-acts float" style={{ left: hover.x, top: hover.y }} onPointerEnter={keep} onPointerLeave={hideSoon}>
-                {acts(props.tasks[i], i)}
-              </span>,
-              document.body,
-            );
-          })()}
-          <form className="tb-add" onSubmit={(e) => { e.preventDefault(); add(); }}>
+              };
+
+  return (
+    <div className={`task-boards${props.laneH ? " lanes" : ""}${props.wiring ? " wiring" : ""}`} style={props.laneH ? ({ "--lane-h": `${props.laneH}px` } as CSSProperties) : undefined}>
+      {(props.composing || !total) && (
+        <form className="task-board lg tb-compose" onSubmit={(e) => { e.preventDefault(); add(); }}>
+          <div className="tb-compose-head">
+            <b>New task</b>
+            <button type="button" className="tr-close" onClick={() => (total ? props.onComposed?.() : props.onClose())} aria-label="Close"><LuX /></button>
+          </div>
+          <div className="tb-add">
             <i className="task-dot ghost" aria-hidden />
             <input
               ref={input}
+              autoFocus
               value={line}
               onChange={(e) => setLine(e.target.value.slice(0, TASK_MAX + 26))}
-              placeholder={total ? "Add a task… (@name to assign)" : "Add the first task… (@name to assign)"}
+              placeholder="Write the task… (@name to assign)"
               aria-label="New task"
               enterKeyHint="done"
             />
             {parsed.assignee && <span className="tb-for mono">@{parsed.assignee}</span>}
-            <button type="button" className={`tb-opts${more ? " on" : ""}`} onClick={() => setMore((m) => !m)} aria-expanded={more} aria-label="Task options" title="Options: how long tasks stay, go private"><LuSettings2 /></button>
-          </form>
-          {more && (
-          <div className="tb-more">
+          </div>
           {pro ? (
             <div className="tb-keep" role="radiogroup" aria-label="New tasks stay">
               <span className="mono">Pro · keep for</span>
@@ -279,11 +270,40 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
           {props.onGoPrivate && (
             <button className="tb-private mono" onClick={props.onGoPrivate}><LuLock aria-hidden /> Go private with the team</button>
           )}
-          </div>
-          )}
-        </>
+        </form>
       )}
-    </aside>
+      {groups.map((g, gi) => {
+        const isOpen = (open || !!props.wiring) && !shut.has(g.key);
+        const gDone = g.tasks.filter((t) => stepOf(t) === 3).length;
+        return (
+          <aside key={g.key} className={`task-board lg${isOpen ? " open" : ""}${props.wiring ? " wiring" : ""}${props.laneH ? " lanes" : ""}${g.mine ? " mine" : " theirs"}`} aria-label={g.name}>
+            <button className="tb-head" onClick={() => (narrow && gi === 0 && groups.length === 1 ? setOpen((o) => !o) : setShut((x) => { const n = new Set(x); if (n.has(g.key)) n.delete(g.key); else n.add(g.key); if (!open) setOpen(true); return n; }))} aria-expanded={isOpen}>
+              <i className="task-dot" aria-hidden />
+              <b>{g.mine ? "Your tasks" : g.name}</b>
+              <span className="mono dim">{gDone}/{g.tasks.length} done</span>
+              <span className="tb-bar" aria-hidden><i style={{ transform: `scaleX(${g.tasks.length ? gDone / g.tasks.length : 0})` }} /></span>
+              <LuChevronDown className={`tb-chev${isOpen ? " up" : ""}`} aria-hidden />
+            </button>
+            {gi === 0 && props.onArrange && (
+              <button className={`tb-arrange mono${props.arranged ? " on" : ""}`} onClick={props.onArrange} aria-pressed={!!props.arranged} title={props.arranged ? "Back to the free-floating void" : "Line every file up in its task's lane"}>
+                <LuRows3 aria-hidden />{props.arranged ? "Arranged" : "Arrange"}
+              </button>
+            )}
+            {isOpen && <ol className="tb-list">{g.tasks.map((t) => row(t, props.tasks.indexOf(t)))}</ol>}
+          </aside>
+        );
+      })}
+          {!narrow && hover && editing !== hover.id && routing !== hover.id && (() => {
+            const i = props.tasks.findIndex((x) => x.id === hover.id);
+            if (i < 0) return null;
+            return createPortal(
+              <span className="tb-acts float" style={{ left: hover.x, top: hover.y }} onPointerEnter={keep} onPointerLeave={hideSoon}>
+                {acts(props.tasks[i], i)}
+              </span>,
+              document.body,
+            );
+          })()}
+    </div>
   );
 }
 

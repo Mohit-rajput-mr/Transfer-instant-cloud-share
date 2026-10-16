@@ -2472,8 +2472,16 @@ em.hq-tag { font-style: normal; }
 .task-dot.big { width: 22px; height: 22px; }
 .task-dot.big svg { width: 12px; height: 12px; color: #1d2126; stroke-width: 3.4; }
 .task-dot.ghost { opacity: 0.4; box-shadow: none; }
-.task-board { position: absolute; z-index: 7; left: max(22px, var(--safe-l)); top: calc(118px + var(--safe-t)); width: 344px; max-height: calc(100% - 118px - 150px - var(--safe-t));
-  display: flex; flex-direction: column; border-radius: 22px; overflow: hidden; animation: rise 0.4s var(--ease-out) both; }
+/* the column of task panels (one per person who writes tasks) */
+.task-boards { position: absolute; z-index: 7; left: max(22px, var(--safe-l)); top: calc(118px + var(--safe-t)); width: 344px; max-height: calc(100% - 118px - 150px - var(--safe-t));
+  display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.task-boards::-webkit-scrollbar { display: none; }
+.task-boards.wiring { z-index: 61; }
+.task-board { position: relative; flex: none; display: flex; flex-direction: column; border-radius: 22px; overflow: hidden; animation: rise 0.4s var(--ease-out) both; }
+.task-board.theirs .task-dot:not(.big) { opacity: .6; }
+.tb-compose { padding: 12px 0 2px; }
+.tb-compose-head { display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 16px; }
+.tb-compose-head b { font-family: var(--display); font-weight: 900; font-variation-settings: "wdth" 125; text-transform: uppercase; font-size: 13px; }
 /* solid: nothing in the void shows through or hides behind it */
 .task-board.lg { background: linear-gradient(180deg, #1b1c1f, #121315 60%, #151619); }
 .orb-anchor { transition: translate .5s cubic-bezier(.2,.8,.2,1); }
@@ -2583,7 +2591,8 @@ em.hq-tag { font-style: normal; }
 .wire-done input { width: 18px; height: 18px; accent-color: #c3c9d0; }
 @media (max-width: 720px) {
   /* phones: one slim row under the bar (open it for the list); the bubbles and the sky move down a row */
-  .task-board { left: 12px; right: 12px; width: auto; top: calc(76px + var(--safe-t)); max-height: 64dvh; border-radius: 18px; }
+  .task-boards { left: 12px; right: 12px; width: auto; top: calc(76px + var(--safe-t)); max-height: 64dvh; gap: 8px; }
+  .task-board { border-radius: 18px; }
   .task-board:not(.open) .tb-head { padding: 9px 12px; }
   .void.has-tasks .bub-board { top: calc(128px + var(--safe-t)); }
   .void.has-tasks:not(.has-bubbles):not(.flow) .orb-anchor { top: clamp(calc(190px + var(--safe-t)), var(--y), calc(100% - 178px - var(--safe-b))); }
@@ -2748,7 +2757,7 @@ em.hq-tag { font-style: normal; }
 
 /* ---------- Arranged lanes: each task row is a lane, its files on that exact line ---------- */
 /* arranged: the board still fits on screen; when it is taller (an open route, many files) it scrolls and the lanes follow */
-.task-board.lanes .tb-list { overflow-y: auto; }
+.task-board.lanes .tb-list { overflow: visible; }
 .task-board.lanes .tb-row { min-height: var(--lane-h); transition: min-height 0.45s var(--ease-out); }
 /* lanes place every ball exactly (measured from the task rows): no other layout band may remap it */
 .void.arranged .orb-anchor { left: var(--x) !important; top: calc(var(--yn) * 1%) !important; }

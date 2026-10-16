@@ -163,6 +163,8 @@ export default function Void() {
   const [wireTo, setWireTo] = useState<string | null>(null);
   // the board shows once someone opens it, even before the first task
   const [taskOpen, setTaskOpen] = useState(false);
+  // new tasks are written from the Tasks button in the bar
+  const [composing, setComposing] = useState(false);
   // a cable is being plugged into a task right now
   const [wiring, setWiring] = useState(false);
   // someone on this Wi-Fi is taking the team into a private space
@@ -948,7 +950,7 @@ export default function Void() {
     if (!tasks.length) return;
     const t = setInterval(() => {
       // phones stack the board above the sky instead (nothing to push sideways into)
-      const board = window.innerWidth > 720 ? document.querySelector<HTMLElement>(".task-board")?.getBoundingClientRect() : undefined;
+      const board = window.innerWidth > 720 ? document.querySelector<HTMLElement>(".task-boards")?.getBoundingClientRect() : undefined;
       document.querySelectorAll<HTMLElement>(".void .orb-anchor[data-orb]").forEach((a) => {
         const was = parseFloat(a.dataset.push || "0");
         const body = (a.querySelector(".orb-body") ?? a.querySelector(".orb"))?.getBoundingClientRect();
@@ -1008,7 +1010,7 @@ export default function Void() {
     const measure = () => {
       const v = document.querySelector<HTMLElement>("section.void");
       voidRef.current = v;
-      const board = document.querySelector<HTMLElement>(".task-board");
+      const board = document.querySelector<HTMLElement>(".task-boards");
       if (!v || !board) return;
       // balls are placed in % of the box they are positioned in (not always the whole void)
       const host = (document.querySelector<HTMLElement>(".void .orb-anchor")?.offsetParent as HTMLElement | null) ?? v;
@@ -1052,7 +1054,7 @@ export default function Void() {
     };
     loop();
     // lanes follow the task list as it scrolls
-    const onScroll = (e: Event) => (e.target as Element)?.classList?.contains("tb-list") && measure();
+    const onScroll = (e: Event) => ((e.target as Element)?.classList?.contains("tb-list") || (e.target as Element)?.classList?.contains("task-boards")) && measure();
     document.addEventListener("scroll", onScroll, true);
     return () => (clearTimeout(raf), document.removeEventListener("scroll", onScroll, true));
   }, [laneTasks, tasks, vw, laneH]);
@@ -1269,7 +1271,7 @@ export default function Void() {
           <nav className="nav">
             <a href="#void">Void</a>
             <a href="#how">How it works</a>
-            <button onClick={() => setTaskOpen(true)}>Tasks{tasks.length ? ` ${tasks.filter((t) => !t.doneAt).length}` : ""}</button>
+            <button onClick={() => (setTaskOpen(true), setComposing(true))}>Tasks{tasks.length ? ` ${tasks.filter((t) => !t.doneAt).length}` : ""}</button>
             <Link href="/about">About</Link>
             <button onClick={openMenu}>Launch</button>
           </nav>
@@ -1353,7 +1355,9 @@ export default function Void() {
                 burnTask(t.id).then((ok) => ok && (toast(`Task ${t.num} removed`), refresh(), broadcast()));
               }}
               onAttach={(t, what) => (what === "folder" ? pickFolder(t.id) : pickFiles(t.id))}
-              onClose={() => setTaskOpen(false)}
+              onClose={() => (setTaskOpen(false), setComposing(false))}
+              composing={composing}
+              onComposed={() => setComposing(false)}
               onGoPrivate={space ? undefined : () => setPanel({ kind: "private" })}
               onMove={(t, dir) => moveTask(t.id, dir).then(() => (refresh(), broadcast())).catch((e) => toast(e.message))}
               onEdit={async (t, change) => {
@@ -1586,7 +1590,7 @@ export default function Void() {
           onSpaces={() => setPanel({ kind: "space" })}
           onStyle={() => setPanel({ kind: "style" })}
           onHow={() => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" })}
-          onTasks={() => setTaskOpen(true)}
+          onTasks={() => (setTaskOpen(true), setComposing(true))}
           taskCount={tasks.filter((t) => !t.doneAt).length}
           onClose={() => setPanel((p) => (p?.kind === "menu" ? null : p))}
         />
