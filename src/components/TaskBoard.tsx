@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { LuArrowDown, LuArrowUp, LuRows3, LuCheck, LuChevronDown, LuFolderUp, LuLock, LuPaperclip, LuPencil, LuPlus, LuRoute, LuTrash2, LuUserCheck, LuX } from "react-icons/lu";
 import { PRO_FOR_ALL, STAGES, TASK_LIVES, TASK_MAX, dropPro, forMe, isMyTask, parseTask, proCode, redeemPro, type Task } from "@/lib/tasks";
 import { hueFor } from "@/lib/bubbles";
@@ -323,6 +324,8 @@ export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring, strai
   const plugs = useRef(new Map<string, HTMLButtonElement>());
   const drag = useRef<Drag | null>(null);
   const [dragging, setDragging] = useState<Drag | null>(null);
+  // a plain click on a plug: a small list of the tasks, one tap wires it
+  const [menu, setMenu] = useState<{ orb: string; x: number; y: number } | null>(null);
   const wired = useMemo(() => orbs.filter((o) => o.task && tasks.some((t) => t.id === o.task)), [orbs, tasks]);
   const pluggable = useMemo(() => (tasks.length ? orbs.filter((o) => mine.has(o.id)) : []), [orbs, tasks, mine]);
   const num = useMemo(() => new Map(tasks.map((t) => [t.id, t.num])), [tasks]);
@@ -388,7 +391,8 @@ export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring, strai
           continue;
         }
         btn.style.opacity = "";
-        btn.style.transform = `translate(${(a.right - box.left - a.width * 0.08).toFixed(1)}px, ${(a.bottom - box.top - a.height * 0.2).toFixed(1)}px)`;
+        // on the sphere's right edge, level with its middle: clear of the delete / type / number badges
+        btn.style.transform = `translate(${(a.right - box.left + 12).toFixed(1)}px, ${(a.top - box.top + a.height / 2).toFixed(1)}px)`;
       }
     };
     raf = requestAnimationFrame(draw);
@@ -397,7 +401,7 @@ export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring, strai
 
   // magnet: the nearest task row within reach pulls the cable in
   const nearest = (x: number, y: number) => {
-    let best: string | null = null, bd = 120;
+    let best: string | null = null, bd = 200;
     document.querySelectorAll<HTMLElement>("[data-task-row]").forEach((row) => {
       const r = row.getBoundingClientRect();
       const dx = Math.max(r.left - x, 0, x - r.right), dy = Math.max(r.top - y, 0, y - r.bottom);
@@ -454,6 +458,34 @@ export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring, strai
         </button>
       ))}
     </div>
+      {menu && createPortal(
+        <div className="wire-menu-catch" onPointerDown={() => setMenu(null)}>
+          <div
+            className="wire-menu lg"
+            role="menu"
+            style={{ left: Math.min(menu.x, window.innerWidth - 270), top: Math.min(menu.y, window.innerHeight - 60 - tasks.length * 44) }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <span className="mono">Wire {orbs.find((o) => o.id === menu.orb)?.name ?? "this file"} to</span>
+            {tasks.filter((t) => !t.doneAt).map((t) => (
+              <button
+                key={t.id}
+                role="menuitem"
+                className={`lg-press${orbs.find((o) => o.id === menu.orb)?.task === t.id ? " on" : ""}`}
+                onClick={() => {
+                  setMenu(null);
+                  onConnect(menu.orb, t.id);
+                }}
+              >
+                <b className="mono">Task {t.num}</b>
+                <span>{t.text}</span>
+              </button>
+            ))}
+            {tasks.every((t) => t.doneAt) && <span className="mono dim">Every task is done</span>}
+          </div>
+        </div>,
+        document.body,
+      )}
       {dragging && (
         <div
           className="wire-catch"
@@ -468,9 +500,12 @@ export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring, strai
               drag.current = { ...d, snap };
               return end(true);
             }
-            // let go in empty space after a real drag: cancel; after a plain press: keep following (tap a task next)
-            if (d.moved > 40) end(false);
-            else set({ ...d, moved: 41 });
+            // let go in empty space after a real drag: cancel; a plain click opens the task list instead
+            end(false);
+            if (d.moved <= 12) {
+              const b = plugs.current.get(d.orb)?.getBoundingClientRect();
+              setMenu({ orb: d.orb, x: b ? b.right + 8 : e.clientX + 8, y: b ? b.top - 6 : e.clientY - 6 });
+            }
           }}
         >
           <span className="wire-hint mono" style={{ transform: `translate(${dragging.x + 18}px, ${dragging.y + 14}px)` }}>
