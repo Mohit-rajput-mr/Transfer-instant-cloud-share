@@ -261,6 +261,29 @@ function RoutePanel({ t, mine, onEdit, onClose }: { t: Task; mine: boolean; onEd
     if (!typing.current) setStages(t.route), setTitle(t.text);
   }, [t.route, t.text]);
   const last = (i: number) => [...t.log].reverse().find((l) => l.i === i);
+  // a tap anywhere outside (or Escape) saves what was typed and closes the panel
+  const box = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    const shut = () => {
+      const a = document.activeElement as HTMLElement | null;
+      if (a && box.current?.contains(a)) a.blur(); // fires the save for a half-typed name
+      closeRef.current();
+    };
+    const down = (e: PointerEvent) => {
+      const el = e.target as Element;
+      if (box.current?.contains(el) || el.closest?.('[aria-label^="Route of task"]')) return;
+      shut();
+    };
+    const key = (e: KeyboardEvent) => e.key === "Escape" && shut();
+    document.addEventListener("pointerdown", down, true);
+    document.addEventListener("keydown", key);
+    return () => {
+      document.removeEventListener("pointerdown", down, true);
+      document.removeEventListener("keydown", key);
+    };
+  }, []);
   const flash = () => (setSaved(true), setTimeout(() => setSaved(false), 1200));
   // every change goes out the moment it is made (the list updates on screen instantly)
   const save = (c: { text?: string; route?: string[]; stage?: number }) => {
@@ -280,7 +303,7 @@ function RoutePanel({ t, mine, onEdit, onClose }: { t: Task; mine: boolean; onEd
 
   if (!mine)
     return (
-      <div className="tb-route">
+      <div className="tb-route" ref={box}>
         <div className="tr-head"><span className="mono">Route · only its writer moves it</span><button className="tr-close" onClick={onClose} aria-label="Close route"><LuX /></button></div>
         {!t.route.length && <p className="mono dim">No route yet.</p>}
         <ol className="tr-line">
@@ -299,7 +322,7 @@ function RoutePanel({ t, mine, onEdit, onClose }: { t: Task; mine: boolean; onEd
     );
 
   return (
-    <div className="tb-route">
+    <div className="tb-route" ref={box}>
       <div className="tr-head">
         <span className="mono">{saved ? "Saved ✓" : "Changes save instantly"}</span>
         <button className="tr-close" onClick={onClose} aria-label="Close route"><LuX /></button>

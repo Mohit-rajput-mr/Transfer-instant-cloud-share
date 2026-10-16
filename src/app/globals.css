@@ -2738,8 +2738,8 @@ em.hq-tag { font-style: normal; }
 .open-badge .mono { white-space: normal; margin-left: 18px; flex-basis: 100%; }
 
 /* ---------- Arranged lanes: each task row is a lane, its files on that exact line ---------- */
-.task-board.lanes { max-height: none; }
-.task-board.lanes .tb-list { max-height: none; overflow: visible; }
+/* arranged: the board still fits on screen; when it is taller (an open route, many files) it scrolls and the lanes follow */
+.task-board.lanes .tb-list { overflow-y: auto; }
 .task-board.lanes .tb-row { min-height: var(--lane-h); transition: min-height 0.45s var(--ease-out); }
 /* lanes place every ball exactly (measured from the task rows): no other layout band may remap it */
 .void.arranged .orb-anchor { left: var(--x) !important; top: calc(var(--yn) * 1%) !important; }

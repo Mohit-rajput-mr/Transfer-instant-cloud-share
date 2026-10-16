@@ -1027,7 +1027,10 @@ export default function Void() {
       raf = window.setTimeout(loop, 400) as unknown as number;
     };
     loop();
-    return () => clearTimeout(raf);
+    // lanes follow the task list as it scrolls
+    const onScroll = (e: Event) => (e.target as Element)?.classList?.contains("tb-list") && measure();
+    document.addEventListener("scroll", onScroll, true);
+    return () => (clearTimeout(raf), document.removeEventListener("scroll", onScroll, true));
   }, [laneTasks, tasks, vw, laneH]);
   const grid = useMemo(() => {
     if (!laneTasks || !lanes || !lanes.y.size) return null;
