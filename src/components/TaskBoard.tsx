@@ -34,7 +34,7 @@ export function wiredBy(task: string, orbs: Orb[]) {
  * Tasks, one line each: a big orange dot, "TASK 1", the line, who it is for, and a tick anyone can set.
  * Files wired to a task hang off its dot (TaskWires). Tapping a task shows only its files.
  */
-export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: string; focus: string | null; onFocus: (id: string | null) => void; onClose: () => void } & TaskActs) {
+export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: string; focus: string | null; onFocus: (id: string | null) => void; onClose: () => void; /** a cable is being plugged in: the tasks light up as targets */ wiring?: boolean } & TaskActs) {
   const [line, setLine] = useState("");
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(true);
@@ -73,7 +73,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
   const wired = useMemo(() => new Map(props.tasks.map((t) => [t.id, wiredBy(t.id, props.orbs)])), [props.tasks, props.orbs]);
 
   return (
-    <aside className={`task-board lg${open ? " open" : ""}`} aria-label="Tasks">
+    <aside className={`task-board lg${open || props.wiring ? " open" : ""}${props.wiring ? " wiring" : ""}`} aria-label="Tasks">
       <button className="tb-head" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
         <i className="task-dot" aria-hidden />
         <b>Tasks</b>
@@ -82,7 +82,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
         <LuChevronDown className={`tb-chev${open ? " up" : ""}`} aria-hidden />
       </button>
       {!total && <button className="tb-x" onClick={props.onClose} aria-label="Close tasks"><LuX /></button>}
-      {open && (
+      {(open || props.wiring) && (
         <>
           <ol className="tb-list">
             {props.tasks.map((t, i) => {
@@ -283,69 +283,192 @@ function RoutePanel({ t, mine, onEdit }: { t: Task; mine: boolean; onEdit: (c: {
   );
 }
 
+/** A real cable between two points: it hangs (sags under its own weight) and sways a little. */
+function cable(ax: number, ay: number, bx: number, by: number, t: number, seed: number) {
+  const dx = bx - ax, dist = Math.hypot(dx, by - ay);
+  const sag = Math.min(150, 26 + dist * 0.2);
+  const sway = Math.sin(t / 900 + seed) * Math.min(8, dist * 0.02);
+  const c1x = ax + dx * 0.28, c1y = Math.max(ay, by) * 0 + ay + sag + sway;
+  const c2x = bx - dx * 0.3, c2y = by + sag * 0.85 - sway;
+  return `M${ax.toFixed(1)} ${ay.toFixed(1)} C${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)}`;
+}
+const CABLE_DEFS = `<defs><linearGradient id="twm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef1f4"/><stop offset="0.45" stop-color="#9aa3ad"/><stop offset="1" stop-color="#d6dbe0"/></linearGradient></defs>`;
+const drawCable = (d: string, hue: number | null, op: number) =>
+  `<g opacity="${op}"><path d="${d}" class="tw-shadow"/><path d="${d}" class="tw-line"/><path d="${d}" class="tw-glint"/></g>`;
+
+type Drag = { orb: string; x: number; y: number; moved: number; snap: string | null };
+
 /**
- * The wiring: a line from every wired ball to its task's orange dot, in the sender's colour, plus a
- * small "T2" tag on the ball. Measured from the page (balls drift), redrawn ~20 times a second, only
- * while something is wired.
+ * The wiring: a hanging cable from every wired ball to its task, in brushed metal, with the sender's colour
+ * at the ball end and a "T2" tag on the ball. Your own balls get a plug: press it and a cable follows the
+ * pointer; the tasks pull it in like magnets (snap within reach); let go (or click) on one to connect.
  */
-export function TaskWires({ tasks, orbs, focus }: { tasks: Task[]; orbs: Orb[]; focus: string | null }) {
+export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring }: {
+  tasks: Task[];
+  orbs: Orb[];
+  focus: string | null;
+  /** my own balls (they get a plug) */
+  mine: Set<string>;
+  onConnect: (orb: string, task: string) => void;
+  onWiring: (on: boolean) => void;
+}) {
   const svg = useRef<SVGSVGElement>(null);
+  const plugs = useRef(new Map<string, HTMLButtonElement>());
+  const drag = useRef<Drag | null>(null);
+  const [dragging, setDragging] = useState<Drag | null>(null);
   const wired = useMemo(() => orbs.filter((o) => o.task && tasks.some((t) => t.id === o.task)), [orbs, tasks]);
+  const pluggable = useMemo(() => (tasks.length ? orbs.filter((o) => mine.has(o.id)) : []), [orbs, tasks, mine]);
   const num = useMemo(() => new Map(tasks.map((t) => [t.id, t.num])), [tasks]);
+  const focusHas = !!focus && wired.some((o) => o.task === focus);
+
   useEffect(() => {
     const el = svg.current;
-    if (!el || !wired.length) {
-      if (el) el.innerHTML = "";
-      return;
-    }
+    if (!el) return;
     let raf = 0, last = 0;
     const draw = (now: number) => {
       raf = requestAnimationFrame(draw);
-      if (now - last < 50 || document.hidden) return;
+      if (now - last < 40 || document.hidden) return;
       last = now;
       const box = el.getBoundingClientRect();
-      // each task gets its own vertical lane, each wire its own track in it: parallel, never on top of each other
-      const lanes = new Map<string, number>();
-      const lane = (task: string) => (lanes.has(task) ? lanes.get(task)! : (lanes.set(task, lanes.size), lanes.size - 1));
-      const tracks = new Map<string, number>();
-      let s = `<defs><linearGradient id="twm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9edf2"/><stop offset="0.5" stop-color="#9aa3ad"/><stop offset="1" stop-color="#d4d9df"/></linearGradient></defs>`;
+      const ballRect = (id: string) => document.querySelector(`[data-orb="${id}"] .orb`)?.getBoundingClientRect();
+      const rowEnd = (task: string) => {
+        const d = document.querySelector(`[data-task-dot="${task}"]`)?.getBoundingClientRect();
+        const row = document.querySelector(`[data-task-row="${task}"]`)?.getBoundingClientRect();
+        return d && d.width && row && row.width ? { x: row.right - box.left + 2, y: d.top + d.height / 2 - box.top } : null;
+      };
+      let s = CABLE_DEFS;
+      let k = 0;
       for (const o of wired) {
-        const a = document.querySelector(`[data-orb="${o.id}"] .orb`)?.getBoundingClientRect();
+        const a = ballRect(o.id);
         if (!a || !a.width) continue;
         const ox = a.left + a.width / 2 - box.left, oy = a.top + a.height / 2 - box.top;
         const hue = hueFor(o.from ?? o.id);
-        const on = !focus || focus === o.task;
-        const op = on ? 1 : 0.1;
-        const d = document.querySelector(`[data-task-dot="${o.task}"]`)?.getBoundingClientRect();
-        const row = document.querySelector(`[data-task-row="${o.task}"]`)?.getBoundingClientRect();
-        const r = a.width * 0.44;
-        if (d && d.width && row && row.width) {
-          const k = tracks.get(o.task!) ?? 0;
-          tracks.set(o.task!, k + 1);
-          const tx = row.right - box.left + 2, ty = d.top + d.height / 2 - box.top + (k - 1) * 3;
-          // out of the row, along its lane, then straight across to the ball: right angles, soft corners
-          const vx = tx + 22 + lane(o.task!) * 9 + k * 3;
-          const ex = ox - (ox > vx ? r : -r), ey = oy;
-          const R = Math.max(2, Math.min(10, Math.abs(ey - ty) / 2, Math.abs(ex - vx) / 2));
-          const dy = ey > ty ? 1 : -1, dx = ex > vx ? 1 : -1;
-          const path = Math.abs(ey - ty) < 2
-            ? `M${tx} ${ty} H${ex}`
-            : `M${tx} ${ty} H${vx - R} Q${vx} ${ty} ${vx} ${ty + dy * R} V${ey - dy * R} Q${vx} ${ey} ${vx + dx * R} ${ey} H${ex}`;
-          s += `<g opacity="${op}"><path d="${path}" class="tw-shadow"/><path d="${path}" class="tw-line"/>`;
-          s += `<circle cx="${tx}" cy="${ty}" r="2.6" class="tw-pin"/>`;
-          // the terminal on the ball: a metal ring with the sender's colour inside (who wired it)
-          s += `<circle cx="${ex}" cy="${ey}" r="5" class="tw-pin"/><circle cx="${ex}" cy="${ey}" r="2.6" fill="hsl(${hue} 70% 58%)"/></g>`;
+        const op = !focusHas || focus === o.task ? 1 : 0.18;
+        const end = rowEnd(o.task!);
+        if (end) {
+          // the cable leaves the ball from its side facing the task
+          const ang = Math.atan2(end.y - oy, end.x - ox), r = a.width * 0.44;
+          const bx = ox + Math.cos(ang) * r, by = oy + Math.sin(ang) * r;
+          s += drawCable(cable(end.x, end.y, bx, by, now, k++ * 1.7), hue, op);
+          s += `<g opacity="${op}"><rect x="${end.x - 3}" y="${end.y - 4}" width="7" height="8" rx="2" class="tw-pin"/><circle cx="${bx}" cy="${by}" r="5" class="tw-pin"/><circle cx="${bx}" cy="${by}" r="2.6" fill="hsl(${hue} 70% 58%)"/></g>`;
         }
-        // the task tag on the ball (also when the board is folded away, as on phones)
         const n = num.get(o.task!);
         const w = n && n > 9 ? 34 : 28;
         const lx = a.left - box.left + a.width * 0.06, ly = a.top - box.top + a.height * 0.04;
         s += `<g opacity="${op}" transform="translate(${lx.toFixed(1)} ${ly.toFixed(1)})"><rect x="-4" y="-12" width="${w}" height="19" rx="6" class="tw-tagbg"/><rect x="-4" y="-12" width="3" height="19" rx="1.5" fill="hsl(${hue} 70% 58%)"/><text x="${w / 2 - 2}" y="2" text-anchor="middle" class="tw-tag">T${n}</text></g>`;
       }
+      // the cable being plugged in right now
+      const d = drag.current;
+      if (d) {
+        const a = ballRect(d.orb);
+        if (a && a.width) {
+          const ox = a.left + a.width / 2 - box.left, oy = a.top + a.height / 2 - box.top;
+          const snap = d.snap ? rowEnd(d.snap) : null;
+          const ex = snap ? snap.x : d.x - box.left, ey = snap ? snap.y : d.y - box.top;
+          const ang = Math.atan2(ey - oy, ex - ox), r = a.width * 0.44;
+          s += drawCable(cable(ex, ey, ox + Math.cos(ang) * r, oy + Math.sin(ang) * r, now, 3), null, 1);
+          s += `<circle cx="${ex}" cy="${ey}" r="${snap ? 7 : 5}" class="tw-pin${snap ? " hot" : ""}"/>`;
+        }
+      }
       el.innerHTML = s;
+      // plugs ride along with their balls
+      for (const [id, btn] of plugs.current) {
+        const a = ballRect(id);
+        if (!a || !a.width) {
+          btn.style.opacity = "0";
+          continue;
+        }
+        btn.style.opacity = "";
+        btn.style.transform = `translate(${(a.right - box.left - a.width * 0.08).toFixed(1)}px, ${(a.bottom - box.top - a.height * 0.2).toFixed(1)}px)`;
+      }
     };
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, [wired, num, focus]);
-  return <svg ref={svg} className="task-wires" aria-hidden />;
+  }, [wired, num, focus, focusHas]);
+
+  // magnet: the nearest task row within reach pulls the cable in
+  const nearest = (x: number, y: number) => {
+    let best: string | null = null, bd = 120;
+    document.querySelectorAll<HTMLElement>("[data-task-row]").forEach((row) => {
+      const r = row.getBoundingClientRect();
+      const dx = Math.max(r.left - x, 0, x - r.right), dy = Math.max(r.top - y, 0, y - r.bottom);
+      const dd = Math.hypot(dx, dy);
+      if (dd < bd) (bd = dd), (best = row.dataset.taskRow!);
+    });
+    return best;
+  };
+  const set = (d: Drag | null) => {
+    drag.current = d;
+    setDragging(d);
+    document.querySelectorAll(".tb-row.magnet").forEach((r) => r.classList.remove("magnet"));
+    if (d?.snap) document.querySelector(`[data-task-row="${d.snap}"]`)?.classList.add("magnet");
+  };
+  const start = (orb: string, e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    set({ orb, x: e.clientX, y: e.clientY, moved: 0, snap: null });
+    onWiring(true);
+  };
+  const end = (connect: boolean) => {
+    const d = drag.current;
+    set(null);
+    onWiring(false);
+    if (connect && d?.snap) onConnect(d.orb, d.snap);
+  };
+  useEffect(() => {
+    if (!dragging) return;
+    const k = (e: KeyboardEvent) => e.key === "Escape" && end(false);
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  });
+  const snapTask = dragging?.snap ? tasks.find((t) => t.id === dragging.snap) : null;
+
+  return (
+    <>
+    <div className="wire-layer">
+      <svg ref={svg} className="task-wires" aria-hidden />
+    </div>
+    <div className="plug-layer">
+      {pluggable.map((o) => (
+        <button
+          key={o.id}
+          ref={(b) => {
+            if (b) plugs.current.set(o.id, b);
+            else plugs.current.delete(o.id);
+          }}
+          className={`wire-plug${o.task ? " on" : ""}`}
+          onPointerDown={(e) => start(o.id, e)}
+          aria-label={o.task ? `Rewire ${o.name} to another task` : `Wire ${o.name} to a task`}
+          title={o.task ? "Rewire to another task" : "Wire to a task"}
+        >
+          <LuPlus aria-hidden />
+        </button>
+      ))}
+    </div>
+      {dragging && (
+        <div
+          className="wire-catch"
+          onPointerMove={(e) => {
+            const d = drag.current!;
+            set({ ...d, x: e.clientX, y: e.clientY, moved: d.moved + Math.abs(e.movementX) + Math.abs(e.movementY), snap: nearest(e.clientX, e.clientY) });
+          }}
+          onPointerUp={(e) => {
+            const d = drag.current!;
+            const snap = nearest(e.clientX, e.clientY);
+            if (snap) {
+              drag.current = { ...d, snap };
+              return end(true);
+            }
+            // let go in empty space after a real drag: cancel; after a plain press: keep following (tap a task next)
+            if (d.moved > 40) end(false);
+            else set({ ...d, moved: 41 });
+          }}
+        >
+          <span className="wire-hint mono" style={{ transform: `translate(${dragging.x + 18}px, ${dragging.y + 14}px)` }}>
+            {snapTask ? `Connect to Task ${snapTask.num}` : "Bring it to a task"}
+          </span>
+        </div>
+      )}
+    </>
+  );
 }

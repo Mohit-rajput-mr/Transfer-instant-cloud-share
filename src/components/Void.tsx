@@ -28,7 +28,7 @@ const KIND_ICON = { all: LuLayoutGrid, photo: LuImage, video: LuVideo, doc: LuFi
 import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, type BubbleChange } from "./BubbleBoard";
 import TaskBoard, { TaskWires } from "./TaskBoard";
-import { addTask, assignTask, burnTask, carryTasks, editTask, isMyTask, moveTask, openInvite, sealInvite, tickTask, type Task } from "@/lib/tasks";
+import { addTask, assignTask, burnTask, carryTasks, wireObject, editTask, isMyTask, moveTask, openInvite, sealInvite, tickTask, type Task } from "@/lib/tasks";
 import { GoPrivate, InviteCard } from "./TeamMove";
 import { bubbleName, burnBubble, editBubble, hueFor, isMine as isMyBubble, postBubble, senderOf, type Bubble } from "@/lib/bubbles";
 import StylePicker from "./StylePicker";
@@ -143,6 +143,8 @@ export default function Void() {
   const [wireTo, setWireTo] = useState<string | null>(null);
   // the board shows once someone opens it, even before the first task
   const [taskOpen, setTaskOpen] = useState(false);
+  // a cable is being plugged into a task right now
+  const [wiring, setWiring] = useState(false);
   // someone on this Wi-Fi is taking the team into a private space
   const [invite, setInvite] = useState<{ slug: string; title: string; by: string; pass: string } | null>(null);
   // the bubble board (everyone's bubbles, drag and zoom): false = closed, else who to bring close
@@ -1139,6 +1141,7 @@ export default function Void() {
               me={bubbleName() || room?.handle || ""}
               focus={taskFocus}
               onFocus={setTaskFocus}
+              wiring={wiring}
               onAdd={async (line, life) => {
                 try {
                   const t = await addTask(line, bubbleName() || room?.handle || "", life);
@@ -1178,8 +1181,23 @@ export default function Void() {
               }}
             />
           )}
-          {tasks.length > 0 && <TaskWires tasks={tasks} orbs={visible} focus={taskFocus} />}
-          {taskFocus && /^t[a-z0-9]{9}$/.test(taskFocus) && <style>{`.void.task-focus .orb-anchor:not([data-task="${taskFocus}"]){opacity:.14;filter:grayscale(.85);transition:opacity .3s}`}</style>}
+          {tasks.length > 0 && (
+            <TaskWires
+              tasks={tasks}
+              orbs={visible}
+              focus={taskFocus}
+              mine={new Set(visible.filter((o) => !isGroup(o.id) && !isPending(o.id) && ownerKey(o.id)).map((o) => o.id))}
+              onWiring={setWiring}
+              onConnect={(orb, task) => {
+                const t = tasks.find((x) => x.id === task);
+                setOrbs((os) => os.map((o) => (o.id === orb ? { ...o, task } : o)));
+                wireObject(orb, task)
+                  .then(() => (toast(`Wired to Task ${t?.num ?? ""}`), refresh(), broadcast()))
+                  .catch((e) => (toast(e.message), refresh()));
+              }}
+            />
+          )}
+          {taskFocus && /^t[a-z0-9]{9}$/.test(taskFocus) && visible.some((o) => o.task === taskFocus) && <style>{`.void.task-focus .orb-anchor:not([data-task="${taskFocus}"]){opacity:.38;transition:opacity .3s}`}</style>}
           {notes.length > 0 && (
             <BubbleBoard bubbles={notes} {...bubbleActs} oneSide={tasks.length > 0} onOpenBoard={(f) => setBoard(f)} />
           )}

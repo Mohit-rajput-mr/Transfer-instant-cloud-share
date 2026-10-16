@@ -1,5 +1,5 @@
 "use client";
-import { senderKey } from "./client";
+import { ownerKey, senderKey } from "./client";
 import { toHex } from "./crypto";
 import { spaceBody } from "./space";
 import { bubbleName } from "./bubbles";
@@ -150,4 +150,11 @@ export async function openInvite(net: string, sealed: { iv: string; c: string })
   } catch {
     return null;
   }
+}
+
+/** wire one of my objects to a task after sending it (null unwires it) */
+export async function wireObject(id: string, task: string | null) {
+  const owner = ownerKey(id);
+  if (!owner) throw new Error("Only the sender can wire this file");
+  return post(`/api/transfers/${id}/wire`, { owner, task });
 }

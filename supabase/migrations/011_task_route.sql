@@ -13,3 +13,6 @@ alter table public.tasks add column if not exists edited_at timestamptz;
 -- orbit_task_reorder(p_secret, p_id, p_owner_hash, p_dir) → boolean: the writer moves a task up/down (numbers swap)
 -- orbit_task_to_space(p_secret, p_id, p_owner_hash, p_space) → boolean: going private with the team, the writer's
 --   tasks move into the new space, numbered after what is there
+
+-- 011c (applied as transfer_retag): orbit_retag(p_secret, p_id, p_owner_hash, p_name) → boolean
+--   the sender rewrites their object's name tag (wiring it to a task after sending, or unwiring it)

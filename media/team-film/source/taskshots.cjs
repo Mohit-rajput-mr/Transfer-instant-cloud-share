@@ -20,7 +20,7 @@ const ITEMS = [
   W("mh01", "Contract signed", "Contract signed.pdf", "application/pdf", 0.6e6, "dddddddddd", "Lena", "t000000003"),
   L.mkOrb("xx01", "Random notes", "notes.txt", "text/plain", 0.01e6, 120, 25),
 ];
-if (process.argv[3] !== "send") (async () => {
+if (!process.argv[3]) (async () => {
   const b = await L.chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--headless=new"] });
   for (const [name, opts] of [["desk", { viewport: { width: 1440, height: 900 } }], ["phone", { ...L.devices["iPhone 13"], viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 }]]) {
     const { page, ctx } = await L.open(b, opts, {
@@ -80,5 +80,35 @@ if (process.argv[3] === "send") (async () => {
   await page.locator(".wire-done input").check().catch(() => {});
   await L.step(page, 200, 100);
   await page.screenshot({ path: `${process.argv[2]}/desk-send.png` });
+  await b.close();
+})();
+// plugging a cable into a task (desktop): node taskshots.cjs <outDir> plug
+if (process.argv[3] === "plug") (async () => {
+  const b = await L.chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--headless=new"] });
+  const mineOrb = L.mkOrb("my01", "Unit 1", "Unit 1.files", "application/x-orbit-folder", 1.2e6, 160, 28);
+  const { page } = await L.open(b, { viewport: { width: 1440, height: 900 } }, {
+    items: [...ITEMS, mineOrb],
+    init: async (p, st) => {
+      await p.addInitScript(() => localStorage.setItem("orbit:own:my01", "a".repeat(64)));
+      st.custom = async (r, path, m) => {
+        if (path === "/api/transfers" && m === "GET") return r.fulfill({ json: { items: st.items, bubbles: [], tasks: TASKS, online: 6, now: L.NOW }, headers: L.CORS }), true;
+      };
+    },
+  });
+  await L.step(page, 2000, 100);
+  await page.screenshot({ path: `${process.argv[2]}/plug-0.png` });
+  const plug = await page.locator(".wire-plug").first().boundingBox();
+  await page.mouse.move(plug.x + 13, plug.y + 13);
+  await page.mouse.down();
+  await page.mouse.move(800, 500, { steps: 8 });
+  await L.step(page, 300, 100);
+  await page.screenshot({ path: `${process.argv[2]}/plug-1.png` });
+  const row = await page.locator(".tb-row").nth(3).boundingBox();
+  await page.mouse.move(row.x + row.width + 40, row.y + row.height / 2, { steps: 8 });
+  await L.step(page, 300, 100);
+  await page.screenshot({ path: `${process.argv[2]}/plug-2.png` });
+  await page.mouse.up();
+  await L.step(page, 800, 100);
+  await page.screenshot({ path: `${process.argv[2]}/plug-3.png` });
   await b.close();
 })();
