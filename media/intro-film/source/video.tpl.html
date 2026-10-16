@@ -1,0 +1,455 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Orbi Transfer · intro film</title>
+<!--V2STYLE-->
+<style>
+  /* ---------- intro film ---------- */
+  #stage { background: radial-gradient(120% 90% at 50% 40%, #0b0d12 0%, #030305 60%, #000 100%); }
+  #stars { position: absolute; inset: 0; }
+  .film { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; border: 0; opacity: 0; pointer-events: none; background: #000; }
+  #paris { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; opacity: 0; transform-origin: 960px 700px; }
+  #paris svg { position: absolute; left: 0; top: 0; overflow: visible; }
+  .chip { position: absolute; left: 50%; padding: 22px 40px; border-radius: 26px; background: rgba(255,255,255,0.08); border: 1.5px solid rgba(255,255,255,0.22); font: 700 54px/1 "Inter", Arial, sans-serif; color: #fff; white-space: nowrap; opacity: 0; transform: translateX(-50%); }
+  .chip .x { position: absolute; left: 4%; right: 4%; top: 50%; height: 7px; margin-top: -3px; border-radius: 4px; background: #ff4d4d; transform-origin: 0 50%; transform: scaleX(0); box-shadow: 0 0 18px rgba(255,77,77,0.7); }
+  .say { position: absolute; z-index: 30; padding: 16px 24px; border-radius: 24px; background: #fff; color: #111; font: 700 28px/1.15 "Inter", Arial, sans-serif; white-space: nowrap; box-shadow: 0 16px 40px rgba(0,0,0,0.45); opacity: 0; transform-origin: 30px 100%; }
+  .say::after { content: ""; position: absolute; left: 30px; bottom: -14px; border: 9px solid transparent; border-top: 12px solid #fff; border-left-width: 11px; }
+  .say.r { transform-origin: calc(100% - 30px) 100%; }
+  .say.r::after { left: auto; right: 30px; }
+  .say small { display: block; font: 600 15px/1 "Inter", Arial, sans-serif; color: #777; margin-bottom: 7px; letter-spacing: 0.05em; }
+  .tag { position: absolute; z-index: 31; padding: 8px 15px; border-radius: 999px; background: rgba(14,16,20,0.82); border: 1px solid rgba(255,255,255,0.2); font: 600 17px/1 "Inter", Arial, sans-serif; color: #eee; white-space: nowrap; opacity: 0; }
+  .tag i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--live); margin-right: 9px; box-shadow: 0 0 10px var(--live); vertical-align: 1px; }
+  #look { position: absolute; z-index: 40; padding: 12px 22px; border-radius: 999px; background: #fff; color: #000; font: 800 26px/1 "Inter", Arial, sans-serif; opacity: 0; white-space: nowrap; }
+  /* the big file */
+  #big { position: absolute; inset: 0; opacity: 0; }
+  #bigOrb { position: absolute; left: 1180px; top: 290px; width: 420px; height: 420px; margin: -0px; }
+  #bigOrb .ball { position: absolute; left: 60px; top: 60px; width: 300px; height: 300px; border-radius: 50%;
+    background: radial-gradient(circle at 34% 28%, #f2e4ff 0%, #a77bff 24%, #5a2fd6 62%, #1e0b5c 100%); box-shadow: 0 0 120px rgba(150,110,255,0.55), inset -20px -30px 60px rgba(0,0,0,0.45); }
+  #bigOrb .ball b { position: absolute; left: 0; right: 0; top: 50%; margin-top: -40px; text-align: center; font: 900 76px/80px "Archivo Black", "Arial Black", sans-serif; color: #fff; letter-spacing: 0.02em; }
+  #bigOrb svg { position: absolute; left: 0; top: 0; }
+  #bigName { position: absolute; left: 1180px; width: 420px; top: 730px; text-align: center; font: 900 34px/1 "Archivo Black", "Arial Black", sans-serif; text-transform: uppercase; }
+  #bigSize { position: absolute; left: 1180px; width: 420px; top: 778px; text-align: center; font-size: 22px; color: #aaa; }
+  #bigState { position: absolute; left: 1390px; top: 832px; transform: translateX(-50%); padding: 14px 26px; border-radius: 999px; font: 700 24px/1 "Inter", Arial, sans-serif; white-space: nowrap; display: flex; gap: 12px; align-items: center; }
+  #wifi { position: absolute; left: 1640px; top: 250px; width: 120px; height: 120px; }
+  #twenty { position: absolute; left: 150px; top: 420px; font-size: 230px; line-height: 0.9; opacity: 0; }
+  #twenty small { display: block; font-size: 40px; color: #9a9a9a; margin-top: 18px; letter-spacing: 0.06em; }
+  #capbg { position: absolute; left: 0; top: 0; width: 980px; height: 460px; z-index: 49; pointer-events: none; opacity: 0; background: radial-gradient(90% 90% at 0% 0%, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0) 80%); }
+  #dim { position: absolute; inset: 0; background: #000; opacity: 0; z-index: 45; pointer-events: none; }
+  .laptop .screen .cursor { width: 34px; height: 34px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="stars" width="1920" height="1080"></canvas>
+
+  <iframe class="film" id="office" src="../../office-film/source/video.html"></iframe>
+  <iframe class="film" id="spaces" src="../../spaces-film/source/video.html"></iframe>
+
+  <div id="paris"><svg id="pBack" width="1920" height="1080"></svg><svg id="pFront" width="1920" height="1080"></svg><svg id="pFx" width="1920" height="1080"></svg></div>
+  <div class="say" id="sEmma"><small>EMMA</small>Can you send me the trip photos?</div>
+  <div class="say r" id="sSofia"><small>SOFIA</small>Sure! Sending now.</div>
+  <div class="tag" id="tEmma"><i></i>Emma</div>
+  <div class="tag" id="tSofia"><i></i>Sofia</div>
+
+  <div class="chip" id="c1" style="top:300px">Email it to yourself?<i class="x"></i></div>
+  <div class="chip" id="c2" style="top:470px">Find a cable?<i class="x"></i></div>
+  <div class="chip" id="c3" style="top:640px">What's your number?<i class="x"></i></div>
+
+  <div class="dev laptop" id="lap">
+    <div class="base"></div>
+    <div class="lid"><div class="cam"></div><div class="screen"><img class="cap" id="lapImg" style="width:100%;height:100%" />
+      <div class="ripple" id="rip"></div>
+      <svg class="cursor" id="cur" viewBox="0 0 34 34"><path d="M6 3 L6 27 L12.2 21.2 L16.4 30.6 L20.6 28.8 L16.5 19.6 L25 19.6 Z" fill="#fff" stroke="#000" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    </div></div>
+  </div>
+  <div id="look"></div>
+
+  <div class="dev phone" id="ph"><div class="body"></div><div class="island"></div><div class="screen"><img class="cap" id="phImg" style="width:100%;height:100%" /></div></div>
+
+  <div id="big">
+    <div id="twenty" class="wide">20 GB<small class="mono">per file · no account</small></div>
+    <div id="bigOrb"><div class="ball"><b>MOV</b></div><svg width="420" height="420" viewBox="0 0 420 420"><circle cx="210" cy="210" r="190" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="10"/><circle id="ring" cx="210" cy="210" r="190" fill="none" stroke="#3dff8c" stroke-width="10" stroke-linecap="round" transform="rotate(-90 210 210)" stroke-dasharray="0 2000"/></svg></div>
+    <div id="bigName">Wedding film</div>
+    <div id="bigSize" class="mono">18.6 GB · encrypted</div>
+    <div id="bigState"></div>
+    <svg id="wifi" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+  </div>
+
+  <div id="dim"></div>
+  <img id="emblem" src="emblem.svg" />
+  <img id="logo" src="logo.svg" />
+  <div id="meetline" class="mono">Drop it in · it floats in orbit · anyone can grab it</div>
+  <div id="capbg"></div>
+  <div class="caption" id="cap"><div class="n mono" id="capN"></div><div class="t wide" id="capT"></div><div class="s mono" id="capS"></div></div>
+  <div class="facts wide" id="facts"><span class="f" id="f1">Free.</span><span class="f" id="f2">No sign-up.</span><br /><span class="f" id="f3">Encrypted.</span></div>
+  <div id="end"><img src="logo.svg" /><div class="url mono">orbitransfer.com</div><div class="sub mono">Send anything · nearby or anywhere · spaces · bubble text · up to 20 GB · free</div></div>
+  <div class="fade" id="fade"></div>
+</div>
+
+<script>
+// ===================== timeline (seconds) =====================
+const VO = { hook: 0.6, meet: 5.3, office: 11.4, paris: 18.8, void: 26.1, spaces: 32.4, bubbles: 39.0, big: 46.2, styles: 51.7, end: 56.4 };
+window.VO = VO;
+const DURATION = 61.0;
+window.DURATION = DURATION;
+let MARKS = {};
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, k) => a + (b - a) * k;
+const win = (t, a, b, fi = 0.4, fo = 0.4) => clamp((t - a) / fi) * clamp((b - t) / fo);
+function pw(t, pts) {
+  if (t <= pts[0][0]) return pts[0][1];
+  for (let i = 1; i < pts.length; i++) if (t <= pts[i][0]) { const [t0, v0] = pts[i - 1], [t1, v1] = pts[i]; return v0 + ((t - t0) / (t1 - t0)) * (v1 - v0); }
+  return pts[pts.length - 1][1];
+}
+function pwInv(f, pts) {
+  for (let i = 1; i < pts.length; i++) { const [t0, v0] = pts[i - 1], [t1, v1] = pts[i]; if (f >= v0 && f <= v1 && v1 !== v0) return t0 + ((f - v0) / (v1 - v0)) * (t1 - t0); }
+  return pts[pts.length - 1][0];
+}
+const M = (shot) => MARKS.intro?.[shot] ?? { frames: 1, marks: [] };
+const mk = (shot, name) => M(shot).marks.find((m) => m.name === name) || { f: 0, x: 0, y: 0 };
+const last = (shot) => M(shot).frames - 1;
+const frameSrc = (shot, f) => `cap/${shot}/${String(Math.max(0, Math.min(last(shot), Math.round(f)))).padStart(5, "0")}.png`;
+const $ = (id) => document.getElementById(id);
+const pending = [];
+function setImg(el, src) { if (el.dataset.src === src) return; el.dataset.src = src; el.src = src; pending.push(el.decode().catch(() => {})); }
+let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+
+// ===================== scenes =====================
+const S = {
+  hook: [0, 5.2], meet: [5.0, 11.3], office: [11.2, 18.6], paris: [18.6, 25.9], void: [25.8, 32.3],
+  spaces: [32.2, 38.9], bubbles: [38.8, 46.1], big: [46.0, 51.6], styles: [51.5, 56.3], end: [56.2, DURATION],
+};
+const vis = (k, fi = 0.35, fo = 0.35) => win(T, S[k][0], S[k][1], fi, fo);
+let T = 0;
+
+// recorded shots → film time
+const MAP = {
+  void: () => [[25.8, 0], [29.0, mk("void", "near").f], [32.3, last("void")]],
+  bubbles: () => [[38.8, 0], [40.4, mk("bubbles", "board").f], [42.2, mk("bubbles", "sofia").f], [44.0, mk("bubbles", "maya").f], [46.1, last("bubbles")]],
+  receive: () => [[22.3, 30], [23.3, mk("receive", "ball").f], [24.1, mk("receive", "download").f], [24.9, mk("receive", "ready").f], [25.3, mk("receive", "save").f], [25.6, mk("receive", "saved").f], [25.9, last("receive")]],
+};
+const LOOKS = [["orbit", "Orbit"], ["chrome", "Chrome"], ["wood", "Wood"], ["neon", "Neon"], ["pixel", "Pixel"], ["candy", "Candy"], ["gold", "Gold"], ["polaroid", "Polaroid"]];
+
+// ---- stars (the void behind everything) ----
+const STARS = Array.from({ length: 260 }, () => [rnd() * 1920, rnd() * 1080, rnd() * 1.6 + 0.3, rnd()]);
+function stars(t) {
+  const c = $("stars").getContext("2d");
+  c.clearRect(0, 0, 1920, 1080);
+  for (const [x, y, r, p] of STARS) {
+    c.globalAlpha = 0.35 + 0.45 * (0.5 + 0.5 * Math.sin(t * 1.3 + p * 20));
+    c.fillStyle = "#fff";
+    c.beginPath(); c.arc((x - t * 6 * r + 1920) % 1920, y, r, 0, 7); c.fill();
+  }
+  c.globalAlpha = 1;
+}
+
+// ---- Paris at golden hour: a café table, two friends, the tower ----
+function person(cx, cy, k, o) {
+  // seated, facing the camera three-quarters; o.side = 1 (looks right) / -1 (looks left)
+  const P = (x, y) => `${(cx + x * k).toFixed(1)} ${(cy + y * k).toFixed(1)}`;
+  let s = "";
+  s += `<path d="M${P(-70, 190)} Q${P(-78, 70)} ${P(-34, 52)} L${P(34, 52)} Q${P(78, 70)} ${P(70, 190)} Z" fill="${o.shirt}"/>`;
+  s += `<path d="M${P(-70, 190)} Q${P(-78, 70)} ${P(-34, 52)} L${P(-14, 52)} Q${P(-48, 90)} ${P(-48, 190)} Z" fill="rgba(0,0,0,0.16)"/>`;
+  s += `<rect x="${cx - 12 * k}" y="${cy + 26 * k}" width="${24 * k}" height="${30 * k}" fill="${o.skin}"/>`;
+  // long hair: two locks falling past the shoulders, open at the chin
+  if (o.hair === "long") s += `<path d="M${P(-38, -10)} Q${P(-54, 50)} ${P(-46, 96)} L${P(-24, 96)} Q${P(-30, 40)} ${P(-24, 0)} Z" fill="${o.hc}"/><path d="M${P(38, -10)} Q${P(54, 50)} ${P(46, 96)} L${P(24, 96)} Q${P(30, 40)} ${P(24, 0)} Z" fill="${o.hc}"/>`;
+  s += `<ellipse cx="${cx}" cy="${cy}" rx="${36 * k}" ry="${40 * k}" fill="${o.skin}"/>`;
+  s += `<path d="M${P(-38, 2)} Q${P(-40, -46)} ${P(0, -44)} Q${P(40, -46)} ${P(38, 2)} Q${P(26, -20)} ${P(0, -22)} Q${P(-26, -20)} ${P(-38, 2)} Z" fill="${o.hc}"/>`;
+  if (o.hair === "bun") s += `<circle cx="${cx + 6 * k * o.side}" cy="${cy - 46 * k}" r="${16 * k}" fill="${o.hc}"/>`;
+  const ex = 9 * o.side * k, bl = o.blink ? 0.15 : 1;
+  s += `<ellipse cx="${cx - 12 * k + ex}" cy="${cy + 2 * k}" rx="${3.2 * k}" ry="${4 * k * bl}" fill="#1a1a1a"/><ellipse cx="${cx + 12 * k + ex}" cy="${cy + 2 * k}" rx="${3.2 * k}" ry="${4 * k * bl}" fill="#1a1a1a"/>`;
+  s += `<path d="M${cx - 9 * k + ex} ${cy + 18 * k} Q${cx + ex} ${cy + (o.smile ? 26 : 22) * k} ${cx + 9 * k + ex} ${cy + 18 * k}" stroke="#7a3326" stroke-width="${2.6 * k}" fill="none" stroke-linecap="round"/>`;
+  s += `<circle cx="${cx - 22 * k + ex}" cy="${cy + 14 * k}" r="${6 * k}" fill="rgba(255,110,110,0.22)"/><circle cx="${cx + 22 * k + ex}" cy="${cy + 14 * k}" r="${6 * k}" fill="rgba(255,110,110,0.22)"/>`;
+  // arm up with the phone
+  const hx = cx + o.phone[0] * k, hy = cy + o.phone[1] * k;
+  s += `<path d="M${P(o.side * -40, 80)} Q${P(o.side * -10, 150)} ${hx} ${hy + 10 * k}" stroke="${o.shirt}" stroke-width="${24 * k}" fill="none" stroke-linecap="round"/>`;
+  s += `<g transform="rotate(${o.side * -14} ${hx} ${hy})"><rect x="${hx - 15 * k}" y="${hy - 30 * k}" width="${30 * k}" height="${54 * k}" rx="${6 * k}" fill="#111"/><rect x="${hx - 12 * k}" y="${hy - 27 * k}" width="${24 * k}" height="${46 * k}" rx="${4 * k}" fill="${o.glow > 0 ? `rgba(170,140,255,${0.45 + 0.55 * o.glow})` : "#2a3b66"}"/></g>`;
+  s += `<circle cx="${hx}" cy="${hy + 12 * k}" r="${12 * k}" fill="${o.skin}"/>`;
+  if (o.glow > 0) s += `<circle cx="${hx}" cy="${hy}" r="${60 * k}" fill="rgba(170,140,255,${0.18 * o.glow})"/>`;
+  return s;
+}
+function parisBack() {
+  let s = `<defs>
+    <linearGradient id="psky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#25205a"/><stop offset="0.42" stop-color="#7b3f86"/><stop offset="0.72" stop-color="#e2735f"/><stop offset="1" stop-color="#ffc277"/></linearGradient>
+    <radialGradient id="psun"><stop offset="0" stop-color="#fff1c4"/><stop offset="0.4" stop-color="rgba(255,200,120,0.75)"/><stop offset="1" stop-color="rgba(255,160,100,0)"/></radialGradient>
+    <linearGradient id="pground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b2c33"/><stop offset="1" stop-color="#1a1418"/></linearGradient>
+    <radialGradient id="bulb"><stop offset="0" stop-color="rgba(255,214,140,0.95)"/><stop offset="1" stop-color="rgba(255,214,140,0)"/></radialGradient>
+  </defs>`;
+  s += `<rect x="-200" y="-200" width="2320" height="1000" fill="url(#psky)"/>`;
+  s += `<circle cx="1180" cy="640" r="230" fill="url(#psun)"/>`;
+  // the tower
+  const tx = 1420, ty = 120, base = 690;
+  s += `<g fill="#2a1d3a" stroke="#2a1d3a">`;
+  s += `<path d="M${tx - 6} ${ty} L${tx + 6} ${ty} L${tx + 30} ${ty + 230} L${tx + 70} ${ty + 380} L${tx + 160} ${base} L${tx + 110} ${base} Q${tx} ${ty + 470} ${tx - 110} ${base} L${tx - 160} ${base} L${tx - 70} ${ty + 380} L${tx - 30} ${ty + 230} Z"/>`;
+  s += `<rect x="${tx - 82}" y="${ty + 372}" width="164" height="16"/><rect x="${tx - 40}" y="${ty + 226}" width="80" height="12"/><rect x="${tx - 2}" y="${ty - 50}" width="4" height="54"/>`;
+  s += `</g>`;
+  for (let i = 0; i < 9; i++) { const y = ty + 30 + i * 40; s += `<path d="M${tx - 24 - i * 6} ${y} L${tx + 24 + i * 6} ${y + 30} M${tx + 24 + i * 6} ${y} L${tx - 24 - i * 6} ${y + 30}" stroke="rgba(255,190,140,0.12)" stroke-width="2"/>`; }
+  // rooftops of Paris
+  seed = 5;
+  let x = -40;
+  while (x < 1960) {
+    const w = 120 + rnd() * 140, h = 90 + rnd() * 90;
+    s += `<path d="M${x} ${base + 10} L${x} ${base - h + 30} L${x + 20} ${base - h} L${x + w - 20} ${base - h} L${x + w} ${base - h + 30} L${x + w} ${base + 10} Z" fill="#3a2747"/>`;
+    for (let c = 0; c < 2; c++) s += `<rect x="${x + 30 + c * (w - 70)}" y="${base - h - 22}" width="14" height="24" fill="#3a2747"/>`;
+    for (let yy = base - h + 40; yy < base - 10; yy += 26) for (let xx = x + 16; xx < x + w - 20; xx += 30) if (rnd() < 0.42) s += `<rect x="${xx}" y="${yy}" width="12" height="16" rx="2" fill="rgba(255,206,130,${0.4 + rnd() * 0.5})"/>`;
+    x += w + 6;
+  }
+  // terrace floor
+  s += `<rect x="-200" y="${base}" width="2320" height="600" fill="url(#pground)"/>`;
+  for (let i = 0; i < 8; i++) { const y = base + Math.pow(i / 8, 1.6) * 400; s += `<line x1="-200" x2="2120" y1="${y}" y2="${y}" stroke="rgba(0,0,0,0.22)" stroke-width="2"/>`; }
+  // café awning, top left
+  s += `<g>`;
+  for (let i = 0; i < 9; i++) s += `<path d="M${-40 + i * 80} 0 L${40 + i * 80} 0 L${40 + i * 80} 120 Q${i * 80} 150 ${-40 + i * 80} 120 Z" fill="${i % 2 ? "#f2efe8" : "#c8333b"}"/>`;
+  s += `<rect x="-40" y="0" width="760" height="14" fill="#8e1f27"/></g>`;
+  return s;
+}
+function parisFront(t, emmaGlow, sofiaGlow) {
+  let s = "";
+  // string lights
+  s += `<path d="M720 40 Q1100 150 1940 70" stroke="#1a1218" stroke-width="3" fill="none"/>`;
+  for (let i = 0; i <= 14; i++) {
+    const u = i / 14, x = (1 - u) ** 2 * 720 + 2 * (1 - u) * u * 1100 + u * u * 1940, y = (1 - u) ** 2 * 40 + 2 * (1 - u) * u * 150 + u * u * 70;
+    const fl = 0.75 + 0.25 * Math.sin(t * 3 + i * 1.7);
+    s += `<circle cx="${x}" cy="${y + 12}" r="${34 * fl}" fill="url(#bulb)" opacity="0.7"/><circle cx="${x}" cy="${y + 12}" r="7" fill="#ffe2a6"/>`;
+  }
+  // the two friends
+  s += person(700, 560, 1.25, { skin: "#f1c7a5", hc: "#7a4a2a", shirt: "#2f7f8f", hair: "long", side: 1, phone: [86, 110], glow: emmaGlow, smile: emmaGlow > 0.3, blink: (t * 0.31) % 1 < 0.04 });
+  s += person(1220, 560, 1.25, { skin: "#c98e68", hc: "#1a120d", shirt: "#e8705a", hair: "bun", side: -1, phone: [-86, 110], glow: sofiaGlow, smile: true, blink: (t * 0.37 + 0.5) % 1 < 0.04 });
+  // the table
+  s += `<ellipse cx="960" cy="842" rx="380" ry="62" fill="#e9e1d2"/><ellipse cx="960" cy="852" rx="380" ry="62" fill="#b9ac98" opacity="0.45"/>`;
+  s += `<rect x="948" y="900" width="24" height="200" fill="#26222a"/>`;
+  // coffee, croissant
+  s += `<ellipse cx="850" cy="828" rx="46" ry="12" fill="#fff"/><path d="M820 790 L880 790 L874 826 L826 826 Z" fill="#fff"/><ellipse cx="850" cy="792" rx="30" ry="7" fill="#6b3f22"/>`;
+  s += `<path d="M1060 826 Q1090 788 1130 800 Q1160 790 1180 826 Q1120 842 1060 826 Z" fill="#d99743"/><path d="M1085 812 Q1095 800 1104 812 M1120 806 Q1130 796 1140 808" stroke="#a8682a" stroke-width="3" fill="none"/>`;
+  for (let i = 0; i < 3; i++) { const u = (t * 0.7 + i / 3) % 1; s += `<path d="M${838 + i * 10} ${780 - u * 40} q6 -8 0 -16" stroke="rgba(255,255,255,${0.55 * (1 - u)})" stroke-width="3" fill="none"/>`; }
+  return s;
+}
+
+// cursor over the laptop screen (captures are 1440 px wide)
+function cursorOn(t, shot, names, map, from, to, t0, t1) {
+  const curEl = $("cur"), ripEl = $("rip");
+  const SC = 1100 / 1440;
+  const path = [[t0, from[0], from[1], 0], ...names.map((n) => [pwInv(mk(shot, n).f - 1, map), mk(shot, n).x, mk(shot, n).y, 1]), [t1, to[0], to[1], 0]];
+  let i = 1; while (i < path.length - 1 && t > path[i][0]) i++;
+  const [ta, x0, y0] = path[i - 1], [tb, x1, y1] = path[i];
+  const k = ease(clamp((t - ta) / Math.max(0.05, (tb - ta) * 0.78)));
+  const arc = Math.sin(k * Math.PI) * Math.min(60, Math.hypot(x1 - x0, y1 - y0) * 0.12);
+  const cx = lerp(x0, x1, k), cy = lerp(y0, y1, k) - arc;
+  let press = 0, rp = -1, rx = 0, ry = 0;
+  for (const [tc, x, y, c] of path) if (c) {
+    const d = t - tc;
+    if (d > -0.12 && d < 0.1) press = Math.max(press, 1 - Math.abs(d + 0.01) / 0.12);
+    if (d >= 0 && d < 0.5) { rp = d / 0.5; rx = x; ry = y; }
+  }
+  curEl.style.opacity = win(t, t0, t1, 0.3, 0.3);
+  curEl.style.transform = `translate(${cx * SC - 6}px,${cy * SC - 4}px) scale(${1.1 * (1 - press * 0.18)})`;
+  ripEl.style.opacity = rp >= 0 ? (1 - rp) * 0.9 : 0;
+  ripEl.style.transform = `translate(${rx * SC}px,${ry * SC}px) scale(${0.3 + rp * 1.1})`;
+}
+
+const WIFI_ON = `<path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>`;
+const WIFI_OFF = `<line x1="2" y1="2" x2="22" y2="22"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 13a10 10 0 0 1 5.24-2.76"/><line x1="12" y1="20" x2="12.01" y2="20"/>`;
+
+let parisBuilt = false;
+async function render(t) {
+  T = t;
+  pending.length = 0;
+  stars(t);
+
+  // ---- 0 · the old way ----
+  [["c1", 0.7, 3.5], ["c2", 1.5, 3.75], ["c3", 2.3, 4.0]].forEach(([id, at, strike]) => {
+    const el = $(id), k = clamp((t - at) / 0.35);
+    el.style.opacity = k * clamp((5.0 - t) / 0.4);
+    el.style.transform = `translateX(-50%) scale(${0.8 + 0.2 * back(k)})`;
+    el.querySelector(".x").style.transform = `scaleX(${out(clamp((t - strike) / 0.25))})`;
+  });
+
+  // ---- films inside the film (office, spaces): their own captions hidden, time remapped ----
+  const ov = vis("office", 0.4, 0.4);
+  $("office").style.opacity = ov;
+  if (ov > 0) pending.push($("office").contentWindow.render(15.0 + (t - S.office[0]) * 1.15));
+  const sv = vis("spaces", 0.4, 0.4);
+  $("spaces").style.opacity = sv;
+  if (sv > 0) pending.push($("spaces").contentWindow.render(10.0 + (t - S.spaces[0]) * 1.3));
+
+  // ---- Paris ----
+  const pv = vis("paris", 0.45, 0.4);
+  $("paris").style.opacity = pv;
+  if (pv > 0) {
+    if (!parisBuilt) { $("pBack").innerHTML = parisBack(); parisBuilt = true; }
+    const push = 1 + 0.05 * ease(clamp((t - 18.6) / 4)) - 0.04 * ease(clamp((t - 22.2) / 0.8));
+    $("paris").style.transform = `scale(${push}) translateX(${-ease(clamp((t - 22.2) / 0.8)) * 220}px)`;
+    $("paris").style.filter = t > 22.2 ? `blur(${ease(clamp((t - 22.2) / 0.8)) * 4}px) brightness(${1 - 0.3 * ease(clamp((t - 22.2) / 0.8))})` : "";
+    const sofiaGlow = win(t, 20.4, 21.8, 0.2, 0.3);
+    const emmaGlow = win(t, 21.7, 25.9, 0.2, 0.3) * (0.8 + 0.2 * Math.sin(t * 8));
+    $("pFront").innerHTML = parisFront(t, emmaGlow, sofiaGlow);
+    // three photos fly from Sofia's phone to Emma's
+    let fx = `<defs><clipPath id="pc"><rect x="-34" y="-34" width="68" height="68" rx="12"/></clipPath></defs>`;
+    const from = [1220 - 86 * 1.25, 560 + 110 * 1.25], to = [700 + 86 * 1.25, 560 + 110 * 1.25];
+    for (let i = 0; i < 3; i++) {
+      const a = 20.9 + i * 0.28, k = clamp((t - a) / 1.0);
+      if (k <= 0 || k >= 1) continue;
+      const e = ease(k), c = [960, 300 - i * 50];
+      const x = (1 - e) ** 2 * from[0] + 2 * (1 - e) * e * c[0] + e * e * to[0], y = (1 - e) ** 2 * from[1] + 2 * (1 - e) * e * c[1] + e * e * to[1];
+      const sc = 0.6 + Math.sin(e * Math.PI) * 0.7;
+      fx += `<g transform="translate(${x} ${y}) rotate(${(i - 1) * 10 + e * 20}) scale(${sc})"><circle r="56" fill="rgba(170,140,255,0.25)"/><rect x="-38" y="-38" width="76" height="76" rx="14" fill="#fff"/><image href="thumbs/${["photo", "photo2", "video"][i]}.jpg" x="-34" y="-34" width="68" height="68" clip-path="url(#pc)" preserveAspectRatio="xMidYMid slice"/></g>`;
+    }
+    const fl = clamp((t - 21.9) / 0.6);
+    if (fl > 0 && fl < 1) fx += `<circle cx="${to[0]}" cy="${to[1]}" r="${10 + fl * 90}" fill="none" stroke="rgba(170,140,255,${1 - fl})" stroke-width="5"/>`;
+    $("pFx").innerHTML = fx;
+  }
+  const say = (id, at, until, x, y) => { const el = $(id), k = clamp((t - at) / 0.35); el.style.opacity = k * clamp((until - t) / 0.3); el.style.left = x + "px"; el.style.top = y + "px"; el.style.transform = `scale(${0.7 + 0.3 * back(k)})`; };
+  say("sEmma", 19.0, 22.2, 520, 300);
+  say("sSofia", 20.1, 22.2, 1060, 300);
+  const tg = (id, x, y, v) => { const el = $(id); el.style.left = x + "px"; el.style.top = y + "px"; el.style.opacity = v; };
+  tg("tEmma", 640, 760, win(t, 18.9, 22.1));
+  tg("tSofia", 1170, 760, win(t, 18.9, 22.1));
+
+  // ---- phones ----
+  const phv = win(t, 22.2, 25.9, 0.5, 0.35);
+  const phone = $("ph");
+  phone.style.opacity = phv;
+  const pin = out(clamp((t - 22.2) / 0.7));
+  phone.style.transform = `translate(${1250 + (1 - pin) * 180}px,${150 + (1 - pin) * 60 + Math.sin(t * 1.1) * 4}px) scale(1.18) rotate(${(1 - pin) * 6}deg)`;
+  if (phv > 0) setImg($("phImg"), frameSrc("receive", pw(t, MAP.receive())));
+
+  // ---- the laptop (real recordings): void + Nearby, bubbles + board, styles ----
+  const lv = Math.max(win(t, 7.4, 11.3, 0.6, 0.35), vis("void"), vis("bubbles"), vis("styles"));
+  const lap = $("lap");
+  lap.style.opacity = lv;
+  let lx = 690, ly = 230, ls = 1.0;
+  if (t < 12) { const k = out(clamp((t - 7.4) / 0.9)); lx = 390 + 300 * k; ly = 300 - 70 * k; ls = 1.0; }
+  if (t > 38.5 && t < 46.2) { const k = ease(clamp((t - 38.8) / 0.6)); lx = lerp(690, 600, k); ly = lerp(230, 200, k); ls = lerp(1, 1.08, k); }
+  lap.style.transform = `translate(${lx}px,${ly + Math.sin(t * 0.8) * 3}px) scale(${ls})`;
+  let shot = null, f = 0;
+  if (t < 12) { shot = "void"; f = clamp((t - 7.4) / 3.9) * 60; }
+  else if (t < 33) { shot = "void"; f = pw(t, MAP.void()); }
+  else if (t < 46.2) { shot = "bubbles"; f = pw(t, MAP.bubbles()); }
+  else if (t > 51) {
+    shot = "styles";
+    const i = clamp(Math.floor((t - 51.6) / 0.56), 0, LOOKS.length - 1);
+    f = mk("styles", LOOKS[i][0]).f + clamp((t - 51.6 - i * 0.56) * 30, 0, 18);
+    const lk = $("look"); lk.textContent = LOOKS[i][1]; lk.style.opacity = vis("styles"); lk.style.left = "1170px"; lk.style.top = "930px";
+    lk.style.transform = `translateX(-50%) scale(${1 + 0.08 * (1 - clamp((t - 51.6 - i * 0.56) / 0.2))})`;
+  }
+  if (t <= 51 || t > 56.4) $("look").style.opacity = 0;
+  if (shot && lv > 0) setImg($("lapImg"), frameSrc(shot, f));
+  if (t >= 27.6 && t < 31.8) cursorOn(t, "void", ["near"], MAP.void(), [900, 500], [1100, 380], 27.6, 31.8);
+  else if (t >= 39.4 && t < 45.6) cursorOn(t, "bubbles", ["board", "sofia", "maya"], MAP.bubbles(), [900, 520], [700, 560], 39.4, 45.6);
+  else { $("cur").style.opacity = 0; $("rip").style.opacity = 0; }
+
+  // ---- 20 GB, and an upload that survives a dropped connection ----
+  const bv = vis("big", 0.4, 0.4);
+  $("big").style.opacity = bv;
+  if (bv > 0) {
+    const prog = t < 48.3 ? pw(t, [[46.3, 0], [48.3, 0.62]]) : t < 49.4 ? 0.62 : pw(t, [[49.4, 0.62], [50.7, 1]]);
+    const off = t >= 48.3 && t < 49.3;
+    $("ring").setAttribute("stroke-dasharray", `${prog * 2 * Math.PI * 190} 2000`);
+    $("ring").setAttribute("stroke", off ? "#ffb547" : "#3dff8c");
+    const st = $("bigState");
+    const pct = Math.round(prog * 100);
+    if (t < 48.3) { st.innerHTML = `Saving ${pct}% · 210 MB/s`; st.style.background = "rgba(255,255,255,0.1)"; st.style.color = "#fff"; }
+    else if (off) { st.innerHTML = `Connection lost · paused at 62%`; st.style.background = "rgba(255,181,71,0.16)"; st.style.color = "#ffcf85"; }
+    else if (prog < 1) { st.innerHTML = `Back online · resuming ${pct}%`; st.style.background = "rgba(61,255,140,0.12)"; st.style.color = "#bfffd6"; }
+    else { st.innerHTML = `Saved ✓ · safe to close`; st.style.background = "#3dff8c"; st.style.color = "#06210f"; }
+    const w = $("wifi");
+    w.innerHTML = off ? WIFI_OFF : WIFI_ON;
+    w.setAttribute("stroke", off ? "#ff6b6b" : "#3dff8c");
+    w.style.opacity = win(t, 47.6, 50.4, 0.2, 0.3);
+    w.style.transform = off ? `translateX(${Math.sin(t * 40) * 3}px)` : "";
+    const orbK = out(clamp((t - 46.0) / 0.6));
+    $("bigOrb").style.transform = `scale(${0.7 + 0.3 * back(orbK)}) translateY(${Math.sin(t * 1.4) * 6}px)`;
+    $("bigOrb").style.filter = off ? "saturate(0.4) brightness(0.8)" : "";
+    const tw = $("twenty"), tk = out(clamp((t - 46.3) / 0.6));
+    tw.style.opacity = tk; tw.style.transform = `translateX(${(1 - tk) * -40}px)`;
+  }
+
+  // ---- logo ----
+  const lgv = win(t, 5.0, 7.6, 0.4, 0.5);
+  $("dim").style.opacity = lgv * 0.6 + clamp((t - 58.6) / 0.6) * 0.94 + win(t, 56.2, 58.8, 0.3, 0.3) * 0.75;
+  const em = $("emblem"), ep = clamp((t - 5.3) / 0.45);
+  em.style.opacity = win(t, 5.3, 6.3, 0.15, 0.3);
+  em.style.transform = `scale(${0.4 + 0.6 * back(ep)}) rotate(${(1 - ep) * -40}deg)`;
+  const lg = $("logo");
+  lg.style.opacity = win(t, 5.95, 7.6, 0.2, 0.45);
+  lg.style.clipPath = `inset(0 ${100 - 100 * out(clamp((t - 5.95) / 0.6))}% 0 0)`;
+  $("meetline").style.opacity = win(t, 6.4, 7.6, 0.3, 0.4);
+
+  // ---- captions ----
+  const CAPS = [
+    [7.9, 11.1, "", "Drop it in.<br>It floats in orbit.", "Any file · any device · no account"],
+    [11.6, 18.3, "01", "Send across<br>the office.", "Laptop to phone · no app"],
+    [18.9, 22.0, "02", "Friends in<br>Paris.", "Photos straight from the table"],
+    [26.1, 32.0, "03", "The void.<br>Or just Nearby.", "Public, or only your Wi-Fi"],
+    [32.6, 38.6, "04", "Your own<br>space.", "Team · family · friends · one link"],
+    [39.0, 45.8, "05", "Bubble text.<br>Zoom the board.", "Notes for everyone · add more anytime"],
+    [46.3, 51.3, "06", "Up to 20 GB.<br>It picks up again.", "Dropped Wi-Fi? Resumes where it stopped"],
+    [51.7, 56.0, "07", "Make it<br>yours.", "Styles · every file type has its own shape"],
+  ];
+  let cv = 0;
+  for (const [a, b, n, tt, s] of CAPS) {
+    const v = win(t, a, b, 0.45, 0.4);
+    if (v > 0) { cv = v; $("capN").textContent = n; $("capN").style.display = n ? "" : "none"; $("capT").innerHTML = tt; $("capS").textContent = s; $("cap").style.transform = `translateY(${(1 - out(clamp((t - a) / 0.6))) * 24}px)`; }
+  }
+  $("cap").style.opacity = cv;
+  $("capbg").style.opacity = cv * (t > 46 && t < 51.5 ? 0 : 1);
+  // the big-file scene puts its caption top left too, over its own dark side
+  $("facts").style.opacity = win(t, 56.3, 58.8, 0.2, 0.4);
+  [["f1", 56.4], ["f2", 56.9], ["f3", 57.5]].forEach(([id, at]) => { const el = $(id); const kk = clamp((t - at) / 0.3); el.style.opacity = kk; el.style.transform = `scale(${0.8 + 0.2 * back(kk)})`; });
+  const ev = clamp((t - 58.6) / 0.6);
+  $("end").style.opacity = ev;
+  $("end").style.transform = `scale(${0.96 + 0.04 * out(ev)})`;
+  $("fade").style.opacity = Math.max(1 - clamp(t / 0.5), clamp((t - (DURATION - 1.0)) / 0.9));
+  await Promise.all(pending);
+}
+window.render = render;
+
+// the inner films: hide their captions, logos and end cards; give them their marks
+const HIDE = `.caption,#capbg,.facts,#end,.fade,#fade,#logo,#emblem,#meetline{display:none!important}`;
+const loaded = (el) => new Promise((res) => (el.contentDocument?.readyState === "complete" && el.contentWindow.render ? res() : el.addEventListener("load", res, { once: true })));
+window.setMarks = (m) => { MARKS = m; };
+window.ready = (async () => {
+  await Promise.all([...document.images].map((i) => i.decode().catch(() => {})));
+  for (const id of ["office", "spaces"]) {
+    const f = $(id);
+    await loaded(f);
+    const st = f.contentDocument.createElement("style");
+    st.textContent = HIDE;
+    f.contentDocument.head.appendChild(st);
+    f.contentWindow.setMarks(MARKS[id] ?? {});
+    await f.contentWindow.ready;
+  }
+})();
+window.events = () => {
+  const ev = [];
+  for (const at of [0.7, 1.5, 2.3]) ev.push({ t: at, k: "tap" });
+  for (const at of [3.5, 3.75, 4.0]) ev.push({ t: at, k: "strike" });
+  ev.push({ t: 5.3, k: "logo" });
+  ev.push({ t: pwInv(mk("void", "near").f - 1, MAP.void()), k: "click" });
+  for (const n of ["board", "sofia", "maya"]) ev.push({ t: pwInv(mk("bubbles", n).f - 1, MAP.bubbles()), k: "click" });
+  // office (remapped): Maya's clicks, the launch, the landing
+  const om = (s) => S.office[0] + (s - 15.0) / 1.15;
+  for (const s of [15.5, 16.37, 17.17, 18.17]) ev.push({ t: om(s), k: "click" });
+  ev.push({ t: om(20.0), k: "launch" }, { t: om(21.7), k: "arrive" });
+  // Paris: speech, photos flying, landing, saving on the phone
+  ev.push({ t: 19.0, k: "tap" }, { t: 20.1, k: "tap" }, { t: 20.9, k: "launch" }, { t: 21.9, k: "arrive" });
+  for (const n of ["ball", "download", "save"]) ev.push({ t: pwInv(mk("receive", n).f, MAP.receive()), k: "tap" });
+  ev.push({ t: 25.6, k: "done" });
+  // spaces: people arriving
+  for (const at of [34.6, 35.6, 36.6, 37.6]) ev.push({ t: at, k: "arrive" });
+  // big file: drop and resume, done
+  ev.push({ t: 48.3, k: "strike" }, { t: 49.4, k: "arrive" }, { t: 50.7, k: "done" });
+  for (let i = 0; i < LOOKS.length; i++) ev.push({ t: 51.6 + i * 0.56, k: "tap" });
+  for (const at of [56.4, 56.9, 57.5]) ev.push({ t: at, k: "word" });
+  ev.push({ t: 58.6, k: "end" });
+  for (const at of [5.0, 11.2, 18.6, 22.2, 25.8, 32.2, 38.8, 46.0, 51.5]) ev.push({ t: at, k: "move" });
+  return ev.sort((a, b) => a.t - b.t);
+};
+</script>
+</body>
+</html>

@@ -2357,7 +2357,7 @@ em.hq-tag { font-style: normal; }
 /* the desktop sky leaves room for the bubbles on the right (and the left when people are there) */
 @media (min-width: 721px) {
   .void.has-bubbles .orb-anchor { left: clamp(calc(110px + var(--safe-l)), calc(var(--xn) * 0.74%), calc(100% - 380px - var(--safe-r))); }
-  .void.has-bubbles.bub-two .orb-anchor { left: clamp(calc(430px + var(--safe-l)), calc(var(--xn) * 0.74%), calc(100% - 380px - var(--safe-r))); }
+  .void.has-bubbles.bub-two .orb-anchor { left: clamp(calc(470px + var(--safe-l)), calc(var(--xn) * 0.74%), calc(100% - 380px - var(--safe-r))); }
   .void.has-bubbles.bub-two .ghost-type { opacity: 0.4; }
 }
 /* the Bubble button: always there, bottom right */

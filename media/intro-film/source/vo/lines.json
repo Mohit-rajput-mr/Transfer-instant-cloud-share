@@ -1,0 +1,55 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Sending a file shouldn't need an email, a cable, or someone's phone number.",
+   "dur": 4.075
+  },
+  {
+   "key": "meet",
+   "text": "Meet Orbi Transfer. Drop anything in, and it floats into orbit, ready for whoever needs it.",
+   "dur": 5.376
+  },
+  {
+   "key": "office",
+   "text": "At work, Maya drops the new cut and hits Send. It flies across the office, straight to Leo's phone.",
+   "dur": 5.845
+  },
+  {
+   "key": "paris",
+   "text": "In Paris, Emma asks for the trip photos. Sofia sends them right from the table. They land in seconds.",
+   "dur": 6.123
+  },
+  {
+   "key": "void",
+   "text": "Everything floats in the public void. Or tap Nearby, to see only what's shared on your Wi-Fi.",
+   "dur": 5.483
+  },
+  {
+   "key": "spaces",
+   "text": "Make a private space for your team, your family, or your friends, and invite everyone with one link.",
+   "dur": 5.653
+  },
+  {
+   "key": "bubbles",
+   "text": "Bubble text puts quick notes right in the void. Add more anytime, and zoom across the board to find anyone.",
+   "dur": 6.336
+  },
+  {
+   "key": "big",
+   "text": "Send up to twenty gigabytes. If your connection drops, it picks up right where it stopped.",
+   "dur": 4.715
+  },
+  {
+   "key": "styles",
+   "text": "Make it yours. Every style, and every file type, gets its own look.",
+   "dur": 4.011
+  },
+  {
+   "key": "end",
+   "text": "Free. No sign up. Encrypted. Orbi Transfer.",
+   "dur": 3.008
+  }
+ ]
+}
