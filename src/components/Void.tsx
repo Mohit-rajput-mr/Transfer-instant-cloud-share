@@ -1001,7 +1001,8 @@ export default function Void() {
   const laneTasks = arranged && mode === "desk" && tasks.length > 0 && visible.length > 0;
   const loose = laneTasks ? visible.filter((o) => !o.task || !tasks.some((t) => t.id === o.task)) : [];
   const laneCount = tasks.length + (loose.length ? 1 : 0);
-  const laneH = Math.round(Math.max(56, Math.min(190, (vw.h - 360) / Math.max(1, laneCount))));
+  // every lane fits on screen (the board never scrolls in Arranged): its height is the board's room split by the lanes
+  const laneH = Math.round(Math.max(44, Math.min(150, (vw.h - 118 - 150 - 60) / Math.max(1, laneCount))));
   const [lanes, setLanes] = useState<{ y: Map<string, number>; x0: number; x1: number; W: number; H: number; last: number; off: number; offs: Map<string, number> } | null>(null);
   const voidRef = useRef<HTMLElement | null>(null);
   useEffect(() => {

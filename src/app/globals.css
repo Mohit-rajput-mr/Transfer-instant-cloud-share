@@ -2758,6 +2758,12 @@ em.hq-tag { font-style: normal; }
 /* ---------- Arranged lanes: each task row is a lane, its files on that exact line ---------- */
 /* arranged: the board still fits on screen; when it is taller (an open route, many files) it scrolls and the lanes follow */
 .task-board.lanes .tb-list { overflow: visible; }
+/* arranged: each row is exactly one lane (its files are the balls on that lane, so the chips step aside) */
+.task-board.lanes .tb-files { display: none; }
+.task-board.lanes .tb-row:not(:has(.tb-route, .tb-edit, .tb-take)) { height: var(--lane-h); overflow: hidden; padding-top: 2px; padding-bottom: 2px; }
+.task-boards.lanes { scrollbar-width: none; }
+.task-board.lanes.tight .tb-rbar { display: none; }
+.task-board.lanes.tight .tb-meta { font-size: 9px; }
 .task-board.lanes .tb-row { min-height: var(--lane-h); transition: min-height 0.45s var(--ease-out); }
 /* lanes place every ball exactly (measured from the task rows): no other layout band may remap it */
 .void.arranged .orb-anchor { left: var(--x) !important; top: calc(var(--yn) * 1%) !important; }
