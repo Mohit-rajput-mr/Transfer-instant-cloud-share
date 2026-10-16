@@ -26,8 +26,8 @@ import { enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, rem
 import { LuArchive, LuFileText, LuFlag, LuMessageCircle, LuImage, LuLayers, LuLayoutGrid, LuMenu, LuMusic, LuOrbit, LuPalette, LuUser, LuVideo, LuWifi } from "react-icons/lu";
 const KIND_ICON = { all: LuLayoutGrid, photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
 import MobileMenu from "./MobileMenu";
-import BubbleBoard, { BubbleCompose } from "./BubbleBoard";
-import { burnBubble, isMine as isMyBubble, postBubble, type Bubble } from "@/lib/bubbles";
+import BubbleBoard, { BubbleCompose, BubbleSpace, type BubbleChange } from "./BubbleBoard";
+import { burnBubble, editBubble, isMine as isMyBubble, postBubble, senderOf, type Bubble } from "@/lib/bubbles";
 import StylePicker from "./StylePicker";
 import { autoRemember, findDeviceSkin, skinName, toneOf, useLook } from "@/lib/skins";
 import { KINDS, fileKind, type Kind } from "@/lib/skin-list";
@@ -60,7 +60,7 @@ type Panel =
   | { kind: "space"; start?: string }
   | { kind: "style" }
   | { kind: "menu" }
-  | { kind: "bubble" }
+  | { kind: "bubble"; edit?: BubbleChange }
   | null;
 
 // more balls in the void, smaller balls, so they all have room
@@ -126,7 +126,9 @@ export default function Void() {
   const [room, setRoom] = useState<SpaceInfo | null>(null);
   // bubble text in this void (or space)
   const [notes, setNotes] = useState<Bubble[]>([]);
-  const knownBubbles = useRef<Set<string> | null>(null);
+  const knownBubbles = useRef<Map<string, string> | null>(null);
+  // the bubble board (everyone's bubbles, drag and zoom): false = closed, else who to bring close
+  const [board, setBoard] = useState<string | null | false>(false);
   const [live, setLive] = useState<Set<string>>(new Set());
   const myId = room?.members.find((m) => m.you)?.id ?? null;
   // incoming launch the user tapped: it opens by itself the moment it lands
@@ -241,8 +243,14 @@ export default function Void() {
       const d = (await r.json()) as { items: Orb[]; bubbles?: Bubble[]; online: number; now: number };
       const bs = d.bubbles ?? [];
       setNotes(bs);
-      if (knownBubbles.current) for (const b of bs) if (!knownBubbles.current.has(b.id) && !isMyBubble(b.id)) toast(`New bubble from ${b.by || "someone"}`);
-      knownBubbles.current = new Set(bs.map((b) => b.id));
+      if (knownBubbles.current)
+        for (const b of bs) {
+          if (isMyBubble(b.id)) continue;
+          const was = knownBubbles.current.get(b.id);
+          if (was === undefined) toast(`New bubble from ${b.by || "someone"}`);
+          else if (was !== (b.updatedAt ?? "")) toast(`${b.by || "Someone"} ${b.editedAt ? "edited" : "added to"} a bubble`);
+        }
+      knownBubbles.current = new Map(bs.map((b) => [b.id, b.updatedAt ?? ""]));
       setSkew(d.now - Date.now());
       // a launch that just landed stays put even if this list was cached a moment before it
       const ids = new Set(d.items.map((o) => o.id));
@@ -810,6 +818,18 @@ export default function Void() {
     [alive, scope, net, kind],
   );
   const groups = grouped.groups;
+  const bubbleActs = {
+    now: serverNow,
+    toast,
+    onBurn: async (id: string) => {
+      if (await burnBubble(id)) {
+        setNotes((bs) => bs.filter((b) => b.id !== id));
+        toast("Bubble burned");
+        broadcast();
+      }
+    },
+    onChange: (c: BubbleChange) => setPanel({ kind: "bubble", edit: c }),
+  };
   const bubbles = useMemo(() => grouped.list.filter((o) => isGroup(o.id)).map((o) => ({ id: o.id, name: o.name, members: groups.get(o.id) ?? [] })), [grouped, groups]);
   // a container zoomed in keeps its sender's style
   const zoomSkin = (zoom && bubbles.find((b) => b.id === zoom.id)?.members[0]?.skin) || skin;
@@ -1054,7 +1074,7 @@ export default function Void() {
 
       <main className={menu && !menuOut ? "menu-open" : undefined} data-pal={pal}>
         <section
-          className={`void${notes.length ? " has-bubbles" : ""}${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
+          className={`void${notes.length ? " has-bubbles" : ""}${new Set(notes.map(senderOf)).size > 1 ? " bub-two" : ""}${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
           id="void"
           style={(flow ? { "--n": rows } : { "--k-auto": crowdScale(visible.length) }) as unknown as React.CSSProperties}
         >
@@ -1063,18 +1083,7 @@ export default function Void() {
             toast("Back in the public void");
           }} />}
           {notes.length > 0 && (
-            <BubbleBoard
-              bubbles={notes}
-              now={serverNow}
-              toast={toast}
-              onBurn={async (id) => {
-                if (await burnBubble(id)) {
-                  setNotes((bs) => bs.filter((b) => b.id !== id));
-                  toast("Bubble burned");
-                  broadcast();
-                }
-              }}
-            />
+            <BubbleBoard bubbles={notes} {...bubbleActs} onOpenBoard={(f) => setBoard(f)} />
           )}
           <div className="ghost-type" aria-hidden>
             <span className="wide">Drop</span>
@@ -1335,16 +1344,36 @@ export default function Void() {
         {toasts.map((t) => <div key={t.id}>{t.text}</div>)}
       </div>
 
-      {!panel && !(menu && !menuOut) && (
+      {!panel && board === false && !(menu && !menuOut) && (
         <button className={`bub-fab lg lg-press${compact ? " mini" : ""}`} onClick={() => setPanel({ kind: "bubble" })} aria-label="Bubble text: post a note everyone sees">
           <LuMessageCircle aria-hidden />
           <span>Bubble</span>
         </button>
       )}
+      {board !== false && (
+        <BubbleSpace bubbles={notes} focus={board} {...bubbleActs} onClose={() => setBoard(false)} onCompose={() => setPanel({ kind: "bubble" })} />
+      )}
       {panel?.kind === "bubble" && (
         <BubbleCompose
+          key={panel.edit ? `${panel.edit.id}-${panel.edit.mode}` : "new"}
           defaultName={room?.handle ?? ""}
           inSpace={space?.title ?? null}
+          edit={panel.edit ? (() => {
+            const b = notes.find((x) => x.id === panel.edit!.id);
+            return b ? { bubble: b, mode: panel.edit!.mode } : null;
+          })() : null}
+          latest={notes.find((b) => isMyBubble(b.id)) ?? null}
+          onChange={async (id, text, mode) => {
+            try {
+              await editBubble(id, text, mode);
+              toast(mode === "edit" ? "Bubble edited" : "Added to your bubble");
+              await refresh();
+              broadcast();
+            } catch (e) {
+              toast((e as Error).message);
+              throw e;
+            }
+          }}
           onClose={() => setPanel(null)}
           onPost={async (text, by) => {
             try {
@@ -1359,7 +1388,7 @@ export default function Void() {
           }}
         />
       )}
-      {!panel && (
+      {!panel && board === false && (
         <button
           className={`send-fab lg lg-press${menu && !menuOut ? " open" : ""}${compact && !menu ? " mini" : ""}`}
           onClick={(e) => {

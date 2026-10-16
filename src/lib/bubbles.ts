@@ -15,7 +15,18 @@ export interface Bubble {
   hue: number;
   createdAt: string;
   expiresAt: string;
+  /** length of the text before the latest addition (the rest shows as new) */
+  added?: number | null;
+  editedAt?: string | null;
+  updatedAt?: string | null;
 }
+/** One colour per person, every time: worked out from who they are, never random per bubble. */
+export function hueFor(key: string) {
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619);
+  return ((h >>> 0) % 360 + 360) % 360;
+}
+export const senderOf = (b: Pick<Bubble, "from" | "by" | "id">) => b.from || (b.by ? `n:${b.by.toLowerCase()}` : b.id);
 export const BUBBLE_MAX = 500;
 
 const OWN = "orbit:bubbles";
@@ -46,10 +57,11 @@ export async function postBubble(text: string, by: string, life = 30) {
   try {
     localStorage.setItem(NAME, by);
   } catch {}
+  const from = await senderKey();
   const r = await fetch("/api/bubbles", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, by, life, owner, from: await senderKey(), hue: Math.floor(Math.random() * 360), ...spaceBody() }),
+    body: JSON.stringify({ text, by, life, owner, from, hue: hueFor(from || `n:${by.toLowerCase()}`), ...spaceBody() }),
   });
   const d = await r.json().catch(() => null);
   if (!r.ok || !d?.id) throw new Error(d?.error ?? "Could not post the bubble");
@@ -67,6 +79,15 @@ export async function burnBubble(id: string) {
   if (!owner) return false;
   const r = await fetch("/api/bubbles/burn", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, owner }) }).catch(() => null);
   return !!r?.ok;
+}
+
+/** Add to your bubble (append) or rewrite it (edit). */
+export async function editBubble(id: string, text: string, mode: "append" | "edit") {
+  const owner = read()[id];
+  if (!owner) throw new Error("Only the sender can change this bubble");
+  const r = await fetch("/api/bubbles/edit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, owner, text, mode }) });
+  const d = await r.json().catch(() => null);
+  if (!r.ok) throw new Error(d?.error ?? "Could not change the bubble");
 }
 
 /** links in a bubble become tappable; everything else stays plain text */
