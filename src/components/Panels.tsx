@@ -13,6 +13,7 @@ import { needsSavePicker, pickSaveTarget, receive, unlockOrb, UnlockError, type 
 import { autoDownload, canPickSave, canShareFile, canShareFiles, deviceNoun, downloadWhere, downloadsShortcut, pickAndWrite, saveEnv, shareFile } from "@/lib/save";
 import "@/app/save.css";
 import { glyph } from "./Glyph";
+import Viewer, { viewKind } from "./Viewer";
 import { Meter } from "@/lib/rate";
 import type { Task } from "@/lib/tasks";
 import { LuArrowRight, LuCheck, LuChevronDown, LuFlag, LuInfinity } from "react-icons/lu";
@@ -798,7 +799,7 @@ function RichText({ text }: { text: string }) {
   );
 }
 
-export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; onClose: () => void; onDownloaded: () => void; onViewed: () => void }) {
+export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; onClose: () => void; onDownloaded: () => void; onViewed: () => void; preview?: boolean }) {
   const { orb, now, watchers, onClose } = props;
   const [env] = useState(saveEnv);
   const [code, setCode] = useState("");
@@ -820,6 +821,10 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
   const inline = (isLink || orb.mime.startsWith("text/")) && orb.size <= INLINE_MAX;
   const [report, setReport] = useState<"idle" | "arm" | "sent">("idle");
   const [wrong, setWrong] = useState(0);
+  // full-screen preview: decrypt into memory (never auto-download), then look inside
+  const [viewing, setViewing] = useState(false);
+  const wantView = useRef(false);
+  const canView = !isFolder && !inline && !!viewKind(orb.fileName, orb.mime) && orb.size <= 400 * 1024 * 1024;
 
   // ---- the received file: phones hold it until the user picks where it goes ----
   const file = got?.kind === "file" ? got.file : null;
@@ -886,7 +891,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
   // Unsaved file in memory (and maybe the last allowed download): a stray ×, scrim tap or Escape must not throw it away.
   // The first attempt is held back (capture phase, before the card's own handlers) and asks for a second one.
   useEffect(() => {
-    if (!unsaved || closeArm) return;
+    if (!unsaved || closeArm || viewing) return;
     const drawer = card.current?.closest(".drawer");
     if (!drawer) return;
     const hold = (e: Event) => {
@@ -908,7 +913,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
       window.removeEventListener("click", onClick, true);
       window.removeEventListener("keydown", onKey, true);
     };
-  }, [unsaved, closeArm]);
+  }, [unsaved, closeArm, viewing]);
 
   useEffect(() => {
     if (!closeArm) return;
@@ -1045,7 +1050,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     setBusy(false);
     tick("success");
     // a folder or a big file needs a "where?" picker, which browsers only open on a fresh tap
-    if ((asDir && canWriteFolders()) || (!inline && !isFolder && needsSavePicker(orb))) return setVerified(un);
+    if (!wantView.current && (asDir && canWriteFolders()) || (!wantView.current && !inline && !isFolder && needsSavePicker(orb))) return setVerified(un);
     run(un, Promise.resolve(null), null);
   };
 
@@ -1070,7 +1075,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     const meter = new Meter(orb.size);
     setSpeed("");
     receive({
-      orb, unlocked: un, target, folderTarget, signal: abort.current.signal, inline, hold: env.mobile,
+      orb, unlocked: un, target, folderTarget, signal: abort.current.signal, inline, hold: env.mobile || wantView.current,
       onProgress: (s, p) => {
         setStage(s);
         setFrac(p);
@@ -1089,11 +1094,30 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
         setDone(null);
         setVerified(null);
         setGot(res);
+        if (wantView.current && res.kind === "file" && viewKind(res.file.name, res.file.type)) setViewing(true);
         props.onDownloaded();
       })
       .catch(fail)
       .finally(() => setBusy(false));
   };
+
+  const startPreview = () => {
+    if (!canView) return;
+    wantView.current = true;
+    if (got?.kind === "file") return setViewing(true);
+    void go();
+  };
+  // double-clicked ball: an open object opens straight into the preview; a locked one previews after its passcode
+  const askedPreview = !!props.preview;
+  const asked = useRef(false);
+  useEffect(() => {
+    if (!askedPreview || asked.current || !canView) return;
+    asked.current = true;
+    wantView.current = true;
+    if (orb.open) void go();
+    // go only reads state that is current on this render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [askedPreview, canView]);
 
   // ---- copy + actions for the held file ----
   const where = downloadWhere(env);
@@ -1164,6 +1188,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
             )}
           </div>
           {preview === "audio" && url && <audio src={url} controls preload="metadata" />}
+          {viewKind(file.name, file.type) && <button type="button" className="ghost-btn lg-press" onClick={() => setViewing(true)}>Preview full screen ⤢</button>}
           <div className="save-meta">
             <span className="mono ellip">{parts && folder ? folder.name : file.name}</span>
             <span className="mono dim">{formatBytes(file.size)}</span>
@@ -1281,6 +1306,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
               ) : (
                 <a className="ghost-btn lg-press" href={url ?? undefined} download={file.name}>Download again</a>
               )}
+              {viewKind(file.name, file.type) && <button type="button" className="ghost-btn lg-press" onClick={() => setViewing(true)}>Preview ⤢</button>}
               <BackBtn />
             </div>
           ) : (
@@ -1355,6 +1381,9 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
                     : "First the password is checked, then you pick the folder."}
                 </p>
               ) : null}
+              {canView && (
+                <button type="button" className="ghost-btn lg-press" disabled={!free && !code} onClick={startPreview}>{glyph("Preview ⤢")}</button>
+              )}
               <button className="cta lg-press" disabled={!free && !code} onClick={() => go()}>
                 {glyph(free ? (isLink || inline ? "Open ↗" : isFolder ? "Get it ↓" : "Download ↓") : isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : env.mobile && !(asDir && canWriteFolders()) ? "Decrypt →" : loose ? "Decrypt + download all ↓" : isFolder ? "Unlock folder →" : needsSavePicker(orb) ? "Unlock →" : "Decrypt + download ↓")}
               </button>
@@ -1362,6 +1391,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
           )}
         </div>
       )}
+      {viewing && file && <Viewer file={file} onClose={() => setViewing(false)} onDownload={() => autoDownload(file)} />}
     </Drawer>
   );
 }

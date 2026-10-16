@@ -220,6 +220,7 @@ export function downloadsShortcut(env: SaveEnv): string | null {
 /** "iPhone" / "iPad" / "phone" / "tablet" — for copy like "Decrypted on this iPhone". */
 export function deviceNoun(env: SaveEnv): string {
   if (env.ios) return env.ipad ? "iPad" : "iPhone";
+  if (!env.mobile) return "computer";
   if (typeof window !== "undefined" && Math.min(window.screen?.width ?? 0, window.screen?.height ?? 0) >= 600) return "tablet";
-  return env.mobile ? "phone" : "device";
+  return "phone";
 }

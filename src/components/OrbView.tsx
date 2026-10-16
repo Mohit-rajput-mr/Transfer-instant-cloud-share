@@ -313,6 +313,10 @@ export default function OrbView(props: {
   nearby: boolean;
   watchers: number;
   onOpen: (orb: Orb) => void;
+  /** double-click: look inside full screen (a ball, or one file in a container) */
+  onPreview?: (id: string) => void;
+  /** a file inside a container was clicked (the container zooms open): remembered for a double-click */
+  onMemberHint?: (id: string) => void;
   phase?: "arriving" | "burning";
   hue?: number;
   /** how it looks: the sender's style (or this viewer's, for objects without one) */
@@ -660,6 +664,12 @@ export default function OrbView(props: {
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
       onContextMenu={(e) => e.preventDefault()}
+      onDoubleClick={(e) => {
+        if (!props.onPreview || (e.target as Element).closest?.("[data-destroy]")) return;
+        const mid = ((e.target as Element).closest?.("[data-member]") as HTMLElement | null)?.dataset.member;
+        if (mid) return props.onPreview(mid);
+        if (!group) props.onPreview(orb.id);
+      }}
       onClick={(e) => {
         if (suppressClick.current) {
           suppressClick.current = false;
@@ -681,6 +691,7 @@ export default function OrbView(props: {
           if (r) setCardOrigin(r.left + r.width / 2, r.top + r.height / 2);
           return props.onOpenMember(id);
         }
+        if (id && group) props.onMemberHint?.(id);
         open(e.currentTarget);
       }}
       aria-label={`${up ? "Launching" : "Open"} ${group ? `a group of ${group.length} from one sender: ` : ""}${orb.name}${mine ? `, yours${badge ? ` number ${badge}` : ""}` : ""}${got && !up ? ", already downloaded" : ""}`}
@@ -728,7 +739,7 @@ export default function OrbView(props: {
                       </span>
                       {m.mine && props.onDestroyMember && <span className="destroy small" data-destroy={m.id} role="button" aria-label={`Destroy ${m.name}`} title="Destroy"><LuTrash2 /></span>}
                       <span className="mname">{m.name}</span>
-                      <span className="mmeta">{formatBytes(m.size)} · {formatClock(mleft)}</span>
+                      <span className="mmeta">{formatBytes(m.size)}</span>
                     </span>
                   );
                 })}

@@ -4,7 +4,7 @@
 // app's photo preview): a photo itself, a video's opening frame, a PDF's first page. 240×240 JPEG, ~10 KB.
 // Only for objects sent without a password: a locked object never shows what is inside before it is opened.
 
-const SIZE = 240;
+const SIZE = 280;
 const TIMEOUT = 6000;
 
 export type PreviewKind = "image" | "video" | "pdf";
@@ -16,15 +16,17 @@ export function previewKind(file: File): PreviewKind | null {
   return null;
 }
 
-/** draw `src` into a square, cropped to fill (from the top for documents, the middle for pictures) */
-function square(src: CanvasImageSource, w: number, h: number, top: boolean) {
+/** draw the WHOLE of `src` into a square, letterboxed (never cropped: every corner of the picture stays in) */
+function square(src: CanvasImageSource, w: number, h: number, page: boolean) {
   const c = document.createElement("canvas");
   c.width = c.height = SIZE;
   const g = c.getContext("2d")!;
-  const s = Math.min(w, h);
-  g.fillStyle = "#fff";
+  const k = Math.min(SIZE / w, SIZE / h);
+  const dw = w * k, dh = h * k;
+  g.fillStyle = page ? "#e9eaee" : "#0e0f12";
   g.fillRect(0, 0, SIZE, SIZE);
-  g.drawImage(src, (w - s) / 2, top ? 0 : (h - s) / 2, s, s, 0, 0, SIZE, SIZE);
+  g.imageSmoothingQuality = "high";
+  g.drawImage(src, 0, 0, w, h, (SIZE - dw) / 2, (SIZE - dh) / 2, dw, dh);
   return new Promise<Blob | null>((ok) => c.toBlob((b) => ok(b), "image/jpeg", 0.72));
 }
 

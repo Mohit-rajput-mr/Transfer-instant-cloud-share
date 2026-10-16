@@ -2277,12 +2277,12 @@ em.hq-tag { font-style: normal; }
 .thumbed { background: #0e0f12 !important; box-shadow: 0 6px 16px rgba(0,0,0,0.5) !important; border-radius: 24% !important; outline: 1.5px solid rgba(255,255,255,0.5); outline-offset: -1.5px; }
 .thumbed::before { display: none !important; }
 [data-skin] .thumbed { filter: none; }
-.thumbed > .thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; z-index: 0; pointer-events: none; -webkit-user-drag: none; }
+.thumbed > .thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #0e0f12; border-radius: inherit; z-index: 0; pointer-events: none; -webkit-user-drag: none; }
 .thumb-play { position: absolute; left: 50%; top: 50%; width: 32%; height: 32%; translate: -50% -50%; border-radius: 50%; background: rgba(0,0,0,0.55); box-shadow: 0 0 0 1.5px rgba(255,255,255,0.8); z-index: 1; pointer-events: none; }
 .thumb-play::after { content: ""; position: absolute; inset: 30% 26% 30% 36%; background: #fff; clip-path: polygon(0 0, 100% 50%, 0 100%); }
 .orb-body:has(> .thumbed) > .ext { align-items: end; padding-bottom: 17%; font-size: calc(var(--s) * var(--k) * 0.085); text-shadow: 0 1px 3px #000, 0 0 8px rgba(0,0,0,0.8); color: #fff; }
 .mball.thumbed > span:not([class]), .zsphere.thumbed > .zext { align-self: end; margin-bottom: 7%; font-size: 0.75em; color: #fff; text-shadow: 0 1px 3px #000, 0 0 8px rgba(0,0,0,0.8); }
-.card-thumb { width: 100%; aspect-ratio: 4 / 3; max-height: 210px; object-fit: cover; border-radius: 16px; border: 1px solid rgba(255,255,255,0.16); background: #0e0f12; }
+.card-thumb { width: 100%; aspect-ratio: 4 / 3; max-height: 210px; object-fit: contain; border-radius: 16px; border: 1px solid rgba(255,255,255,0.16); background: #0e0f12; }
 
 /* ---- "Show only": photos, videos, documents, audio, archives ---- */
 .kinds { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 999px; justify-self: end; }
@@ -2653,3 +2653,63 @@ em.hq-tag { font-style: normal; }
 .task-board:has(.tb-arrange) .tb-bar { margin-right: 92px; }
 .void.arranged .orb { --drift: 0; }
 .void.arranged .orb-anchor { transition: left 0.7s var(--ease-out), top 0.7s var(--ease-out); }
+
+/* ---------------- full-screen preview (double-click a ball, or Preview on its card) ---------------- */
+.viewer { position: fixed; inset: 0; z-index: 90; background: rgba(4,4,6,0.97); display: flex; flex-direction: column; animation: viewer-in 0.28s var(--ease-out, ease-out) both; }
+@keyframes viewer-in { from { opacity: 0; transform: scale(0.985); } to { opacity: 1; transform: none; } }
+.viewer-top { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: calc(12px + env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px)) 12px max(18px, env(safe-area-inset-left, 0px)); border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(10,10,12,0.9); }
+.viewer-name { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.viewer-name b { font-size: 15px; font-weight: 600; max-width: 52vw; }
+.viewer-name .mono { color: #8d8d8d; font-size: 10px; }
+.viewer-acts { display: flex; align-items: center; gap: 8px; flex: none; }
+.viewer-acts .pill { height: 34px; display: inline-flex; align-items: center; text-decoration: none; color: inherit; }
+.viewer-x { width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.18); font-size: 22px; line-height: 1; color: #fff; display: grid; place-items: center; }
+.viewer-body { flex: 1; min-height: 0; position: relative; display: flex; }
+.viewer-media { margin: auto; max-width: 100%; max-height: 100%; background: #000; }
+.viewer-audio { margin: auto; display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 24px; text-align: center; }
+.viewer-audio b { font-size: clamp(28px, 6vw, 64px); }
+.viewer-audio audio { width: min(520px, 86vw); }
+.viewer-none { margin: auto; color: #9a9a9a; padding: 24px; text-align: center; }
+.viewer-text { flex: 1; overflow: auto; margin: 0; padding: 24px max(24px, 6vw); font: 14px/1.6 var(--mono); color: #e8e8e8; white-space: pre-wrap; word-break: break-word; -webkit-user-select: text; user-select: text; }
+.viewer-img { flex: 1; overflow: auto; display: grid; place-items: center; cursor: zoom-in; }
+.viewer-img img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.viewer-img.zoom { cursor: zoom-out; place-items: start; }
+.viewer-img.zoom img { max-width: none; max-height: none; }
+.viewer-toast { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); background: #fff; color: #000; padding: 8px 14px; border-radius: 999px; font-size: 11px; }
+.viewer-pdf { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 22px 16px 90px; overscroll-behavior: contain; }
+.pdf-page { position: relative; flex: none; background: #fff; box-shadow: 0 10px 40px rgba(0,0,0,0.6); border-radius: 3px; overflow: hidden; }
+.pdf-page canvas { display: block; }
+.pdf-num { position: absolute; right: 8px; bottom: 6px; font-size: 9px; color: rgba(0,0,0,0.35); pointer-events: none; }
+.viewer-zoom { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 5px 6px 5px 14px; border-radius: 999px; background: rgba(28,28,30,0.92); border: 1px solid rgba(255,255,255,0.12); z-index: 2; }
+.viewer-zoom .mono { font-size: 10px; color: #aaa; margin-right: 8px; }
+.viewer-zoom button { min-width: 38px; height: 34px; border-radius: 999px; color: #fff; font-size: 18px; }
+.viewer-zoom button.mono { font-size: 10px; margin: 0; }
+@media (hover: hover) { .viewer-zoom button:hover, .viewer-x:hover { background: rgba(255,255,255,0.1); } }
+/* pdf.js text layer: invisible real text over the drawn page, so it can be selected and copied */
+.textLayer { position: absolute; inset: 0; overflow: clip; opacity: 1; line-height: 1; text-align: initial; -webkit-text-size-adjust: none; text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; z-index: 0; }
+.textLayer :is(span, br) { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; -webkit-user-select: text; user-select: text; }
+.textLayer > :not(.markedContent), .textLayer .markedContent span:not(.markedContent) { z-index: 1; }
+.textLayer span.markedContent { top: 0; height: 0; }
+.textLayer ::selection { background: rgba(0, 110, 255, 0.32); }
+.textLayer br::selection { background: transparent; }
+.textLayer .endOfContent { display: block; position: absolute; inset: 100% 0 0; z-index: 0; cursor: default; -webkit-user-select: none; user-select: none; }
+.textLayer.selecting .endOfContent { top: 0; }
+@media (max-width: 720px) { .viewer-name b { max-width: 40vw; font-size: 14px; } .viewer-acts .pill { padding: 0 10px; font-size: 11px; } }
+
+/* cards never scroll sideways: columns can shrink, the no-password chip wraps its hint */
+.drawer-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); overflow-x: hidden; }
+@media (max-width: 720px) { .drawer-body { grid-template-columns: minmax(0, 1fr); } }
+.drawer-body > * { min-width: 0; }
+.open-badge { flex-wrap: wrap; row-gap: 4px; min-width: 0; }
+.open-badge .mono { white-space: normal; margin-left: 18px; flex-basis: 100%; }
+
+/* ---------- Arranged lanes: each task row is a lane, its files on that exact line ---------- */
+.task-board.lanes { max-height: none; }
+.task-board.lanes .tb-list { max-height: none; overflow: visible; }
+.task-board.lanes .tb-row { min-height: var(--lane-h); transition: min-height 0.45s var(--ease-out); }
+/* lanes place every ball exactly (measured from the task rows): no other layout band may remap it */
+.void.arranged .orb-anchor { left: var(--x) !important; top: calc(var(--yn) * 1%) !important; }
+.void.arranged.tight .orb-meta, .void.arranged.tight .tags, .void.arranged.tight .bubble { display: none; }
+.void.arranged.tight .orb-label { font-size: 10px; }
+/* a name never spills into its neighbour's slot */
+.void.arranged .orb-label { max-width: calc(var(--cell, 200px) - 10px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }

@@ -57,7 +57,7 @@ function incomingOrb(i: Incoming): Orb {
 type Panel =
   | { kind: "send"; items: Item[] }
   | { kind: "compose" }
-  | { kind: "unlock"; id: string }
+  | { kind: "unlock"; id: string; preview?: boolean }
   | { kind: "owner"; id: string }
   | { kind: "group"; id: string }
   | { kind: "space"; start?: string }
@@ -944,27 +944,85 @@ export default function Void() {
     window.addEventListener("resize", on);
     return () => window.removeEventListener("resize", on);
   }, []);
-  // a tidy grid: files ordered by task (Task 1's first), then by sender (each team's colour together),
-  // unwired files last; the cell size decides the ball size, so nothing overlaps
+  // Arranged lanes: every task row on the board is a lane; that task's files sit on the SAME line as the row
+  // (so its cable runs dead straight), unwired files get one lane below. The rows grow to share the height,
+  // and the balls shrink when a lane is crowded, so nothing overlaps.
+  const laneTasks = arranged && mode === "desk" && tasks.length > 0 && visible.length > 0;
+  const loose = laneTasks ? visible.filter((o) => !o.task || !tasks.some((t) => t.id === o.task)) : [];
+  const laneCount = tasks.length + (loose.length ? 1 : 0);
+  const laneH = Math.round(Math.max(56, Math.min(190, (vw.h - 360) / Math.max(1, laneCount))));
+  const [lanes, setLanes] = useState<{ y: Map<string, number>; x0: number; x1: number; W: number; H: number; last: number; off: number; offs: Map<string, number> } | null>(null);
+  const voidRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!laneTasks) return setLanes(null);
+    let raf = 0;
+    const measure = () => {
+      const v = document.querySelector<HTMLElement>("section.void");
+      voidRef.current = v;
+      const board = document.querySelector<HTMLElement>(".task-board");
+      if (!v || !board) return;
+      // balls are placed in % of the box they are positioned in (not always the whole void)
+      const host = (document.querySelector<HTMLElement>(".void .orb-anchor")?.offsetParent as HTMLElement | null) ?? v;
+      const vr = host.getBoundingClientRect(), br = board.getBoundingClientRect();
+      const y = new Map<string, number>();
+      let last = 0;
+      for (const t of tasks) {
+        const r = document.querySelector(`[data-task-row="${t.id}"]`)?.getBoundingClientRect();
+        if (r && r.height) {
+          y.set(t.id, r.top + r.height / 2 - vr.top);
+          last = Math.max(last, r.bottom - vr.top);
+        }
+      }
+      // the chat bubbles on the right are a wall: lanes end before them
+      let wall = vr.right;
+      document.querySelectorAll<HTMLElement>(".bub-stack").forEach((b) => {
+        const r = b.getBoundingClientRect();
+        if (r.width && r.left > vr.left + vr.width / 2) wall = Math.min(wall, r.left);
+      });
+      const x1 = wall - vr.left - 80;
+      // where the sphere sits relative to its anchor point (the name hangs below it): lines go through the sphere's middle
+      // (each shape sits a little differently, so every ball is measured on its own)
+      let off = 0, n = 0;
+      const offs = new Map<string, number>();
+      document.querySelectorAll<HTMLElement>(".void.arranged .orb-anchor[data-orb]").forEach((a) => {
+        const o = (a.querySelector(".orb-body") ?? a.querySelector(".orb"))?.getBoundingClientRect(), ar = a.getBoundingClientRect();
+        if (!o || !o.height) return;
+        const d = Math.round(o.top + o.height / 2 - ar.top);
+        offs.set(a.dataset.orb!, d);
+        off += d;
+        n++;
+      });
+      off = n ? Math.round(off / n) : 0;
+      const next = { y, x0: Math.max(40, br.right - vr.left + 64), x1, W: vr.width, H: vr.height, last, off, offs };
+      const same = (p: typeof next) => p.x0 === next.x0 && p.x1 === next.x1 && p.W === next.W && p.H === next.H && p.last === next.last && [...y].every(([k, val]) => p.y.get(k) === val) && [...offs].every(([k, d]) => Math.abs((p.offs.get(k) ?? -99) - d) < 2);
+      setLanes((p) => (p && same(p) ? p : next));
+    };
+    const loop = () => {
+      measure();
+      raf = window.setTimeout(loop, 400) as unknown as number;
+    };
+    loop();
+    return () => clearTimeout(raf);
+  }, [laneTasks, tasks, vw, laneH]);
   const grid = useMemo(() => {
-    if (!arranged || mode !== "desk" || !tasks.length || !visible.length) return null;
-    const rank = new Map(tasks.map((t, i) => [t.id, i]));
-    const list = [...visible].sort(
-      (a, b) =>
-        (rank.get(a.task ?? "") ?? 1e3) - (rank.get(b.task ?? "") ?? 1e3) ||
-        (a.from ?? a.id).localeCompare(b.from ?? b.id) ||
-        a.createdAt.localeCompare(b.createdAt),
-    );
-    const areaW = Math.max(300, vw.w - 470 - (notes.length ? 380 : 110)), areaH = vw.h * 0.68;
-    let cols = Math.max(1, Math.ceil(Math.sqrt((list.length * areaW) / areaH)));
-    let rows = Math.ceil(list.length / cols);
-    while (cols > 1 && Math.ceil(list.length / (cols - 1)) === rows) cols--;
-    rows = Math.ceil(list.length / cols);
-    const k = Math.max(0.4, Math.min(1, areaW / cols / 210, areaH / rows / 255));
+    if (!laneTasks || !lanes || !lanes.y.size) return null;
+    const bySender = (a: Orb, b: Orb) => (a.from ?? a.id).localeCompare(b.from ?? b.id) || a.createdAt.localeCompare(b.createdAt);
+    const rows: { y: number; list: Orb[] }[] = tasks
+      .filter((t) => lanes.y.has(t.id))
+      .map((t) => ({ y: lanes.y.get(t.id)!, list: visible.filter((o) => o.task === t.id).sort(bySender) }));
+    if (loose.length) rows.push({ y: lanes.last + laneH / 2 + 8, list: [...loose].sort(bySender) });
+    const span = Math.max(160, lanes.x1 - lanes.x0);
+    const most = Math.max(1, ...rows.map((r) => r.list.length));
+    // packed close to the board: a fixed comfortable step, tighter only when a lane is crowded
+    const cell = Math.min(span / most, 168);
+    // a ball with its name needs ~170 px wide and ~175 px tall at full size
+    const k = Math.max(0.24, Math.min(1, cell / 170, laneH / 175));
     const pos = new Map<string, { x: number; y: number }>();
-    list.forEach((o, i) => pos.set(o.id, { x: ((i % cols) + 0.5) * (100 / cols), y: 16 + (Math.floor(i / cols) + 0.5) * (68 / rows) }));
-    return { pos, k };
-  }, [arranged, mode, tasks, visible, vw, notes.length]);
+    for (const r of rows) r.list.forEach((o, i) => pos.set(o.id, { x: ((lanes.x0 + cell * (i + 0.5)) / lanes.W) * 100, y: ((r.y - (lanes.offs.get(o.id) ?? lanes.off)) / lanes.H) * 100 }));
+    return { pos, k, tight: k < 0.62, cell: Math.round(cell) };
+    // loose is derived from visible + tasks
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [laneTasks, lanes, tasks, visible, laneH]);
   const positions = useMemo(() => grid?.pos ?? layout(visible, mode), [grid, visible, mode]);
   // a ball is the same colour on every device: the hue stored with it, never a local re-shuffle
   // wired files wear their sender's colour, so each team is easy to spot across tasks
@@ -1063,8 +1121,39 @@ export default function Void() {
       const r = document.querySelector(`[data-orb="${o.id}"] .orb-body`)?.getBoundingClientRect();
       return setZoom({ id: o.id, from: r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null });
     }
+    lastOpen.current = { id: o.id, at: Date.now() };
     setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id });
   }, [toast]);
+  // double-click: straight into the full-screen preview (open objects), or after the passcode (locked ones)
+  const preview = useCallback((id: string) => {
+    if (isIncoming(id) || isPending(id) || isGroup(id)) return;
+    setPanel({ kind: "unlock", id, preview: true });
+  }, []);
+  // The first click of a double-click already opened the card, so the second one lands on the card's backdrop:
+  // a second click right after a ball opened is the double-click (preview), never a "close the card".
+  const lastOpen = useRef<{ id: string; at: number } | null>(null);
+  useEffect(() => {
+    const recent = () => lastOpen.current && Date.now() - lastOpen.current.at < 550;
+    const onClick = (e: MouseEvent) => {
+      if (e.detail >= 2 && recent()) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    };
+    const onDbl = (e: MouseEvent) => {
+      if (!recent()) return;
+      e.stopPropagation();
+      const id = lastOpen.current!.id;
+      lastOpen.current = null;
+      preview(id);
+    };
+    window.addEventListener("click", onClick, true);
+    window.addEventListener("dblclick", onDbl, true);
+    return () => {
+      window.removeEventListener("click", onClick, true);
+      window.removeEventListener("dblclick", onDbl, true);
+    };
+  }, [preview]);
   const noop = useCallback(() => {}, []);
   // the sender destroys their own objects (a ball, or everything in their container): gone for everyone now
   const destroy = useCallback(async (ids: string[]) => {
@@ -1168,9 +1257,9 @@ export default function Void() {
 
       <main className={menu && !menuOut ? "menu-open" : undefined} data-pal={pal}>
         <section
-          className={`void${notes.length ? " has-bubbles" : ""}${new Set(notes.map(senderOf)).size > 1 || tasks.length ? " bub-two" : ""}${tasks.length ? " has-tasks" : ""}${taskFocus ? " task-focus" : ""}${grid ? " arranged" : ""}${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
+          className={`void${notes.length ? " has-bubbles" : ""}${new Set(notes.map(senderOf)).size > 1 || tasks.length ? " bub-two" : ""}${tasks.length ? " has-tasks" : ""}${taskFocus ? " task-focus" : ""}${grid ? ` arranged${grid.tight ? " tight" : ""}` : ""}${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
           id="void"
-          style={(flow ? { "--n": rows } : { "--k-auto": grid ? grid.k : crowdScale(visible.length) }) as unknown as React.CSSProperties}
+          style={(flow ? { "--n": rows } : { "--k-auto": grid ? grid.k : crowdScale(visible.length), ...(grid ? { "--cell": `${grid.cell}px` } : null) }) as unknown as React.CSSProperties}
         >
           {space && <SpaceRoom space={space} info={room} online={live} onKick={kick} onExit={() => {
             switchSpace(null);
@@ -1184,7 +1273,8 @@ export default function Void() {
               focus={taskFocus}
               onFocus={setTaskFocus}
               wiring={wiring}
-              arranged={!!grid}
+              arranged={laneTasks}
+              laneH={laneTasks ? laneH : undefined}
               onArrange={mode === "desk" ? toggleArrange : undefined}
               onAdd={async (line, life) => {
                 try {
@@ -1232,6 +1322,7 @@ export default function Void() {
               focus={taskFocus}
               mine={new Set(visible.filter((o) => !isGroup(o.id) && !isPending(o.id) && ownerKey(o.id)).map((o) => o.id))}
               onWiring={setWiring}
+              straight={!!grid}
               onConnect={(orb, task) => {
                 const t = tasks.find((x) => x.id === task);
                 setOrbs((os) => os.map((o) => (o.id === orb ? { ...o, task } : o)));
@@ -1283,6 +1374,8 @@ export default function Void() {
               nearby={!!net && o.netHash === net}
               watchers={isGroup(o.id) ? o.watchers ?? 0 : watchers(o.id)}
               onOpen={open}
+              onPreview={preview}
+              onMemberHint={(id) => (lastOpen.current = { id, at: Date.now() })}
               phase={arriving.has(o.id) ? "arriving" : undefined}
               hue={colors.get(o.id)}
               skin={o.skin ?? skin}
@@ -1421,7 +1514,10 @@ export default function Void() {
           from={zoom.from}
           now={serverNow}
           onSurf={(id) => setZoom((z) => (z ? { ...z, id } : z))}
-          onOpen={(o) => setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id })}
+          onOpen={(o) => {
+            lastOpen.current = { id: o.id, at: Date.now() };
+            setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id });
+          }}
           onDownloadAll={(id) => setPanel({ kind: "group", id })}
           onDestroy={destroy}
           onClose={() => setZoom(null)}
@@ -1486,6 +1582,7 @@ export default function Void() {
             broadcast();
           }}
           onViewed={onViewed}
+          preview={panel.preview}
         />
       )}
       {panel?.kind === "owner" && (
