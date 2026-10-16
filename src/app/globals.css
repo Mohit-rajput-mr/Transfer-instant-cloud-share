@@ -2456,3 +2456,5 @@ em.hq-tag { font-style: normal; }
   .bs-top { left: 12px; right: 12px; transform: none; justify-content: space-between; }
   .bs-tools .mono { display: none; }
 }
+
+.m-about { display: block; text-align: center; padding: 10px; border-radius: 12px; color: #bbb; font-size: 11px; letter-spacing: 0.14em; text-decoration: none; border: 1px solid rgba(255,255,255,0.12); }

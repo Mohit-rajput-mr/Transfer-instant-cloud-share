@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: l === "en" ? 1 : 0.9,
       alternates: { languages: languageAlternates() },
     })),
+    { url: `${SITE}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${SITE}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${SITE}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];

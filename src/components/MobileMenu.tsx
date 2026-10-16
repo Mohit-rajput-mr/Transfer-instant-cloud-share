@@ -1,5 +1,6 @@
 "use client";
 import { LuArchive, LuArrowUp, LuCircleHelp, LuFileText, LuImage, LuLayoutGrid, LuMusic, LuOrbit, LuPalette, LuShieldCheck, LuTimer, LuUserX, LuVideo } from "react-icons/lu";
+import Link from "next/link";
 import { KINDS, type Kind } from "@/lib/skin-list";
 
 const ICON = { all: LuLayoutGrid, photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
@@ -19,6 +20,7 @@ export default function MobileMenu(props: { space: string | null; kind: Kind; on
         <button className="m-tile lg-press" onClick={go(props.onStyle)}><LuPalette aria-hidden /><b>Style</b><small>How files look</small></button>
         <button className="m-tile lg-press" onClick={go(props.onHow)}><LuCircleHelp aria-hidden /><b>How it works</b><small>Drop · lock · beam · burn</small></button>
       </div>
+      <Link className="m-about mono" href="/about" onClick={props.onClose}>About · Contact</Link>
       <span className="mono dim">Show only</span>
       <div className="m-kinds" role="radiogroup" aria-label="Show only">
         {KINDS.map((k) => {

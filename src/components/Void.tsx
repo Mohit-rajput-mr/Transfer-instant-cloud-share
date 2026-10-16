@@ -1036,6 +1036,7 @@ export default function Void() {
           <nav className="nav">
             <a href="#void">Void</a>
             <a href="#how">How it works</a>
+            <Link href="/about">About</Link>
             <button onClick={openMenu}>Launch</button>
           </nav>
           <div className="top-right">
@@ -1187,7 +1188,7 @@ export default function Void() {
           ))}
           <div className="legal">
             <span>Files are end-to-end encrypted. Max 20 GB each. 300 uploads per network per hour.</span>
-            <span><Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · Abuse? Open the object and tap <span className="glyph"><LuFlag aria-hidden />Report</span></span>
+            <span><Link href="/about">About</Link> · <Link href="/about#contact">Contact</Link> · <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · Abuse? Open the object and tap <span className="glyph"><LuFlag aria-hidden />Report</span></span>
           </div>
         </section>
       </main>
