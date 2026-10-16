@@ -28,3 +28,6 @@ create trigger tasks_carry_files after update of expires_at on public.tasks
 
 -- 013b (applied): orbit_task_edit — moving a task to any stage before the last makes it open again
 -- (done_at/done_by cleared); reaching the last stage still ticks it done. Tasks stuck "done" mid-route were reopened.
+
+-- 013c (applied): orbit_task_edit auto-ticks done only on reaching the last step when it is the third step or
+-- later (a one- or two-step route stays orange/blue until its writer taps it done); any stage move clears done.

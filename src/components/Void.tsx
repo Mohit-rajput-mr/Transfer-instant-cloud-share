@@ -42,7 +42,7 @@ function applyEdit(t: Task, c: { text?: string; route?: string[]; stage?: number
   const last = route.length - 1;
   const stage = Math.min(c.stage ?? t.stage, last);
   const now = new Date().toISOString();
-  const done = stage >= 0 && stage === last ? t.doneAt ?? now : c.stage !== undefined && stage < last ? null : t.doneAt;
+  const done = stage >= 2 && stage === last ? t.doneAt ?? now : c.stage !== undefined ? null : t.doneAt;
   return {
     ...t,
     text: c.text?.trim() || t.text,
