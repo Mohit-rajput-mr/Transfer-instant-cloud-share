@@ -146,7 +146,7 @@ export default function MapWorld({ W, H, band, children, onView, fit, empty }: {
     pts.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     const s = g.current, m = mid();
     // a ball was picked up (held): it is the ball that moves now, not the map
-    if (pts.current.size === 1 && document.querySelector(".orb-anchor.dragging")) {
+    if (pts.current.size === 1 && (document.querySelector(".orb-anchor.dragging") || document.body.dataset.grab)) {
       pts.current.clear();
       g.current = null;
       return;

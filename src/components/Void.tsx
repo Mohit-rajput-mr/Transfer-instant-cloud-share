@@ -36,6 +36,7 @@ import { readSync, type SyncMsg } from "@/lib/sync";
 import { around } from "@/lib/area";
 import { asked, dropGps, fromIp, locate, markAsked, permission, where } from "@/lib/where";
 import LocationAsk from "./LocationAsk";
+import TaskThrow, { type Grab } from "./TaskThrow";
 import { GoPrivate, InviteCard } from "./TeamMove";
 import { bubbleName, burnBubble, editBubble, hueFor, isMine as isMyBubble, postBubble, senderOf, type Bubble } from "@/lib/bubbles";
 import StylePicker from "./StylePicker";
@@ -250,6 +251,8 @@ export default function Void() {
   const [panel, setPanel] = useState<Panel>(null);
   // something of mine just went up: the map shows everything again so it is in sight
   const [fitAll, setFitAll] = useState(0);
+  // a task of mine picked up to be thrown into one of my spaces (components/TaskThrow.tsx)
+  const [grab, setGrab] = useState<(Grab & { spaces: SpaceSession[] }) | null>(null);
   const [launches, setLaunches] = useState<Launch[]>([]);
   // ids handed over from a stand-in sphere to its real one: no burn-up, no second entrance
   const swapped = useRef(new Set<string>());
@@ -1572,6 +1575,11 @@ export default function Void() {
       onArchive={() => (setArchived(true), setComposing(false), setArranged(false), toast("Tasks archived with their files · Tasks in the bar brings them back"))}
       onComposed={() => setComposing(false)}
       onGoPrivate={space ? undefined : () => setPanel({ kind: "private" })}
+      onGrab={(t, x, y) => {
+        // the spaces it can go to: every one this device is in, except the one it is already in
+        setGrab({ task: t, x, y, spaces: [] });
+        savedSpaces().then((list) => setGrab((g) => (g && g.task.id === t.id ? { ...g, spaces: list.filter((x) => x.slug !== spaceRef.current?.slug) } : g))).catch(() => {});
+      }}
       onMove={(t, dir) => moveTask(t.id, dir).then(() => (refresh(), broadcast())).catch((e) => toast(e.message))}
       onEdit={async (t, change) => {
         // shown at once; the server (and everyone else's screen) catches up in the background
@@ -1752,7 +1760,7 @@ export default function Void() {
             <p className="mono">Longest life of any object.<br />The sender picks 5 to 30.</p>
           </div>
 
-          {loaded && shown.length === 0 && (
+          {loaded && shown.length === 0 && !(map && map.spots.size) && (
             <div className="empty">
               <p className="mono">
                 {space ? `${space.title} is empty. Launch something: only people in this space see it` : scope === "near" ? "Nothing from your network yet" : (
@@ -1929,6 +1937,25 @@ export default function Void() {
           onClose={() => setZoom(null)}
         />
         </div>
+      )}
+      {grab && (
+        <TaskThrow
+          key={grab.task.id}
+          grab={grab}
+          targets={grab.spaces.map((x) => ({ slug: x.slug, title: x.title }))}
+          onCancel={() => setGrab(null)}
+          onThrow={async (t, to) => {
+            setGrab(null);
+            if (!to) return setPanel({ kind: "private" });
+            const sp = grab.spaces.find((x) => x.slug === to.slug);
+            if (!sp) return;
+            const n = await carryTasks([t.id], { slug: sp.slug, token: sp.token, deviceId: deviceId() }).catch(() => 0);
+            if (!n) return toast(`Couldn't move Task ${t.num} into ${sp.title}`);
+            // it leaves this void (here and on every screen around) and lives in the space now
+            sync({ tg: [t.id] });
+            toast(`Task ${t.num} is in ${sp.title} now · open Spaces to see it there`);
+          }}
+        />
       )}
       {geoAsk && !panel && (
         <LocationAsk

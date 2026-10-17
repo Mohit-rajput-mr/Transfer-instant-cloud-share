@@ -2856,3 +2856,32 @@ em.hq-tag { font-style: normal; }
 .geo-ring svg { width: 28px; height: 28px; }
 .geo-later { color: #aaa; font-size: 11px; padding: 6px 12px; }
 .m-ic.geo-pin.off { box-shadow: inset 0 0 0 1px rgba(255,90,90,0.55); }
+
+/* ---------- throw a task into a space (components/TaskThrow.tsx) ---------- */
+.throw-layer { position: fixed; inset: 0; z-index: 80; pointer-events: none; }
+.throw-layer::before { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 70% at 50% 100%, rgba(0,0,0,0.75), rgba(0,0,0,0.25) 60%, transparent); animation: fade-in 0.25s ease-out both; }
+.throw-chip { position: absolute; z-index: 2; left: 0; top: 0; max-width: 300px; padding: 10px 14px; border-radius: 16px; display: flex; flex-direction: column; gap: 2px;
+  transform: translate(var(--tx), var(--ty)) translate(-50%, -60%) rotate(-3deg); background: linear-gradient(180deg, #24262b, #16171a); border: 1px solid rgba(255,255,255,0.3);
+  box-shadow: 0 18px 44px rgba(0,0,0,0.7), 0 0 0 4px rgba(255,255,255,0.06); color: #fff; }
+.throw-chip .mono { font-size: 9.5px; color: #aaa; }
+.throw-chip b { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.throw-chip.fly { transition: transform 0.6s cubic-bezier(0.5, -0.3, 0.7, 1), opacity 0.6s ease-in; transform: translate(var(--tx), var(--ty)) translate(-50%, -50%) scale(0.12) rotate(540deg); opacity: 0; }
+.throw-zones { position: absolute; left: 50%; bottom: calc(34px + var(--safe-b)); translate: -50% 0; display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; width: min(92vw, 820px); }
+.throw-zone { width: 190px; min-height: 150px; padding: 18px 14px; border-radius: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center;
+  color: #fff; background: rgba(20,22,26,0.88); border: 1.5px dashed rgba(255,255,255,0.35); animation: throw-rise 0.38s var(--spring, cubic-bezier(.3,1.4,.5,1)) both;
+  transition: transform 0.18s ease-out, border-color 0.18s, background 0.18s, box-shadow 0.18s; }
+.throw-zone:nth-child(2) { animation-delay: 0.05s; } .throw-zone:nth-child(3) { animation-delay: 0.1s; } .throw-zone:nth-child(4) { animation-delay: 0.15s; }
+.throw-zone i { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, rgba(61,255,140,0.22), rgba(61,255,140,0.04) 70%); color: var(--live); }
+.throw-zone i svg { width: 28px; height: 28px; }
+.throw-zone b { font-family: var(--display); font-weight: 900; font-variation-settings: "wdth" 125; text-transform: uppercase; font-size: 13px; line-height: 1.1; }
+.throw-zone small { font-size: 9.5px; color: #9a9a9a; }
+.throw-zone.hot { transform: scale(1.08); border-style: solid; border-color: var(--live); background: rgba(10,40,24,0.92); box-shadow: 0 0 0 6px rgba(61,255,140,0.12), 0 20px 50px rgba(0,0,0,0.6); }
+.throw-zone.hot i { animation: throw-spin 1.6s linear infinite; }
+.throw-zone.eat { animation: throw-eat 0.65s ease-out both; }
+@keyframes throw-rise { from { opacity: 0; transform: translateY(60px) scale(0.9); } }
+@keyframes throw-spin { to { rotate: 360deg; } }
+@keyframes throw-eat { 0% { transform: scale(1.08); } 55% { transform: scale(1.22); box-shadow: 0 0 0 26px rgba(61,255,140,0.08); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(61,255,140,0); } }
+@keyframes fade-in { from { opacity: 0; } }
+.tb-main.grabbable { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; cursor: grab; }
+@media (max-width: 720px) { .throw-zone { width: 150px; min-height: 124px; } }
+@media (prefers-reduced-motion: reduce) { .throw-zone, .throw-zone.hot i, .throw-zone.eat { animation: none; } .throw-chip.fly { transition-duration: 0.01s; } }

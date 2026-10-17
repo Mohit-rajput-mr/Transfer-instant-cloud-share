@@ -19,6 +19,8 @@ export type TaskActs = {
   onPreviewFile?: (o: Orb) => void;
   /** public void only: make a private space and take the team (and these tasks) there */
   onGoPrivate?: () => void;
+  /** your task picked up off the panel (drag it, or hold a finger on it) to be thrown into a space */
+  onGrab?: (t: Task, x: number, y: number) => void;
 };
 
 const DEFAULT_ROUTE = ["In progress", "In review", "Done"];
@@ -157,6 +159,39 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
   }, [props.orbs]);
 
   const groups = useMemo(() => taskGroups(props.tasks), [props.tasks]);
+  // picking a task up: a mouse drags it off the row; a finger holds still on it for a moment (a swipe still moves the map)
+  const grabbed = useRef(false);
+  const startGrab = (t: Task, e: React.PointerEvent) => {
+    if (!props.onGrab || !isMyTask(t.id) || e.button !== 0 || editing === t.id) return;
+    const mouse = e.pointerType === "mouse", id = e.pointerId, x0 = e.clientX, y0 = e.clientY;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const done = () => {
+      if (timer) clearTimeout(timer);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", done);
+      window.removeEventListener("pointercancel", done);
+    };
+    const go = (x: number, y: number) => {
+      done();
+      grabbed.current = true;
+      setTimeout(() => (grabbed.current = false), 500);
+      setHover(null);
+      props.onGrab!(t, x, y);
+    };
+    const move = (ev: PointerEvent) => {
+      if (ev.pointerId !== id || Math.hypot(ev.clientX - x0, ev.clientY - y0) < 10) return;
+      if (mouse) go(ev.clientX, ev.clientY);
+      else done();
+    };
+    if (!mouse)
+      timer = setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("orbit:haptic", { detail: "light" }));
+        go(x0, y0);
+      }, 380);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", done);
+    window.addEventListener("pointercancel", done);
+  };
   const mappedAtStart = useRef(!!props.spots);
   const mapped = !!props.spots;
   const [shut, setShut] = useState<Set<string>>(new Set());
@@ -182,7 +217,12 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                       <button type="submit" aria-label="Save"><LuCheck /></button>
                     </form>
                   ) : (
-                  <button className="tb-main" onClick={() => props.onFocus(props.focus === t.id ? null : t.id)} title={props.focus === t.id ? "Show everything" : "Show only this task's files"}>
+                  <button
+                    className={`tb-main${props.onGrab && isMyTask(t.id) ? " grabbable" : ""}`}
+                    onPointerDown={(e) => startGrab(t, e)}
+                    onClick={() => !grabbed.current && props.onFocus(props.focus === t.id ? null : t.id)}
+                    title={props.focus === t.id ? "Show everything" : props.onGrab && isMyTask(t.id) ? "Show only this task's files · drag it to throw it into a space" : "Show only this task's files"}
+                  >
                     <span className="tb-num mono">Task {t.num}</span>
                     <span className="tb-text">{t.text}</span>
                     <span className="tb-meta mono">
