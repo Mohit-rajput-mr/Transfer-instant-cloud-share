@@ -1,7 +1,7 @@
 # FLEET SYNC — handover for the next AI agent
 
 Read `CLAUDE.md` first (owner wants SHORT answers, deploy steps, IDs). This file is the live task board.
-Last updated: 2026-10-17 by the Claude session that built live sync, the map, areas, Earth, Cloudflare live.
+Last updated: 2026-10-17 (2nd session: A, B, C done + deployed; D paused, see below).
 
 ## How to ship (every time)
 1. `npx tsc --noEmit` and `npx eslint src` (0 errors). Production build check: copy repo without `node_modules/.next/.git/media/live`
@@ -39,21 +39,16 @@ Last updated: 2026-10-17 by the Claude session that built live sync, the map, ar
 - Bubble edit blink logic in `BubbleBoard.tsx` (`useEditMarks`, `changedWords`): JS done, **CSS missing** (see task B).
 
 ## OPEN TASKS (owner's requests, in priority order)
-A. **Verify the mobile card fix** above, deploy. Owner's screenshot: iPhone in-app browser, unlock card text overlapping.
-B. **Bubble edit blink**: add CSS `.bub-edited` (small "edited" chip) and `.bub-chg` (changed words blink white→green for 5 s,
-   e.g. keyframes alternating #fff / var(--live) ~3 cycles). Test: edit a bubble on device A, device B shows the blink.
-C. **Bubble fully rounded on all 4 sides** (owner: "like a bubble container"): `.bub` uses `border-radius: 18px 18px 18px 6px`
-   and variants (`.bub-board.left .bub`, `.bs-card .bub`, `.bub-board.right .bub-stack.mine .bub`) → make all 20px.
-D. **Admin: exact live location** of devices that allowed location (not the IP/server location):
-   - `lib/where.ts` keep last GPS coords (lat, lon, accuracy); use `watchPosition` while granted; include in `/api/pulse` body
-     (`lat, lon, acc, precise: true`); send an early pulse when moved >100 m (throttle ~15 s).
-   - `src/app/api/pulse/route.ts`: if precise coords valid, pass them (5 decimals) instead of `geo(req)` lat/lon.
-   - DB (new migration 017, save file): `sessions` add `precise boolean default false, acc real, loc_at timestamptz`;
-     `orbit_pulse` stores precise coords and does NOT overwrite them with IP coords while `loc_at` is recent.
-   - `orbit_admin_overview`: add `exact` list (online sessions with precise=true: lat, lon unrounded, acc, label, city, cc, at).
-   - Admin globe (`src/components/admin/Earth.tsx`, AdminApp polls every 5 s): show `exact` as distinct live markers.
-   - ⚠ Honesty: update `LocationAsk.tsx` text — it currently says "Your exact spot never leaves this device". Must say the
-     exact location is shared with Orbit (used on Orbit's live map) while others only see the rough area.
+A. DONE: mobile low-perf card verified (390×844, perf=low): readable, SEND pill white. Deployed.
+B. DONE: `.bub-edited` chip + `.bub-chg` blink (white→green ×3 in 5 s). Verified in Playwright. Deployed.
+C. DONE: `.bub` border-radius 20px on all sides (variants removed). Deployed.
+D. **Admin exact live location — PAUSED, waiting for owner's go-ahead** (agent's auto-mode blocked it as PII handling).
+   - DB part is APPLIED: migration `017_exact_location.sql` (sessions.precise/acc/loc_at, orbit_pulse keeps a fresh
+     precise spot, orbit_admin_overview returns `exact`). Inert until the client sends `precise: true`.
+   - Client part NOT committed (where.ts `follow`/`fixNow` via watchPosition, Void pulse adds lat/lon/acc/precise,
+     pulse route passes 5-decimal coords). Rewrite from the spec in git history (commit before this one, task D).
+   - Still to do: admin Earth.tsx markers for `exact`, and the honest `LocationAsk.tsx` text (must say the exact
+     spot is shared with Orbit for its live map; others only see the rough area) — ship both together with the client.
 E. **Files instantly on other devices**: tested OK locally via Cloudflare (stand-in ball appears ~1.3 s, bubbles ~1 s, across
    GPS-area and IP-area devices). Owner's failure was most likely an old tab still on the pre-Cloudflare build. If it
    happens again: check both tabs `/api/version` RELEASE, Cloudflare Requests count, browser console for WebSocket errors.
