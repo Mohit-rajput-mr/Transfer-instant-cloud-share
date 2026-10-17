@@ -120,3 +120,6 @@ export function timeAgo(iso: string, now: number) {
   if (s < 60) return `${s}s ago`;
   return `${Math.floor(s / 60)}m ago`;
 }
+
+/** the page links should lead back to: /work for people on the work look, the main page otherwise */
+export const homePath = () => (typeof window !== "undefined" && window.location.pathname.startsWith("/work") ? "/work" : "/");

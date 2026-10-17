@@ -12,7 +12,7 @@ import LaunchDock, { isPending, pendingId, pendingOrb, type Launch } from "./Lau
 import { launch, type Stage } from "@/lib/transfer";
 import { folderFromInput, fromDrop, textToFile, type Item } from "@/lib/bundle";
 import { useRouter } from "next/navigation";
-import { deviceId, deviceInfo, dropOwnerKey, hasGot, ownerKey, type Orb } from "@/lib/client";
+import { deviceId, deviceInfo, dropOwnerKey, hasGot, ownerKey, homePath, type Orb } from "@/lib/client";
 import { supabase, type RealtimeChannel } from "@/lib/realtime";
 import SpacePanel, { SpaceRoom } from "./Spaces";
 import BubbleZoom from "./BubbleZoom";
@@ -50,6 +50,8 @@ import { bubbleName, burnBubble, editBubble, hueFor, isMine as isMyBubble, postB
 import StylePicker from "./StylePicker";
 import { autoRemember, findDeviceSkin, skinName, toneOf, useLook } from "@/lib/skins";
 import { KINDS, fileKind, type Kind } from "@/lib/skin-list";
+import { WorkBar, WorkDock, WorkEmpty, WorkRail } from "./WorkChrome";
+import { readTheme } from "@/lib/theme";
 
 /** a task with a change applied the way the server will (so the screen updates before it answers) */
 function applyEdit(t: Task, c: { text?: string; route?: string[]; stage?: number }, by: string): Task {
@@ -188,7 +190,20 @@ function groupOrbs(list: Orb[]) {
   return { list: out, groups };
 }
 
-export default function Void() {
+/** ui "work": the /work page (same void, calm editor-style look; app/work/work.css) */
+export default function Void({ ui }: { ui?: "work" } = {}) {
+  const work = ui === "work";
+  // leaving /work inside the app (About, the classic view): the page underneath is the normal one again
+  useEffect(() => {
+    if (!work) return;
+    const d = document.documentElement;
+    d.dataset.ui = "work";
+    d.dataset.theme = readTheme();
+    return () => {
+      delete d.dataset.ui;
+      delete d.dataset.theme;
+    };
+  }, [work]);
   const [orbs, setOrbs] = useState<Orb[]>([]);
   const orbsRef = useRef(orbs);
   orbsRef.current = orbs;
@@ -1687,6 +1702,17 @@ export default function Void() {
   const replaced = new Set(visible.map((o) => alias.current.get(o.id)).filter((x): x is string => !!x));
 
   const mapSpots = shownSpots;
+  // /work "Share": a link to this workspace (a space's link asks newcomers for its code, as on the main page)
+  const shareWork = async () => {
+    const url = `${window.location.origin}/work${space ? `?space=${space.slug}` : ""}`;
+    try {
+      if (navigator.share && matchMedia("(pointer: coarse)").matches) await navigator.share({ title: space?.title ?? "Orbi Work", url });
+      else {
+        await navigator.clipboard.writeText(url);
+        toast(space ? `Link to ${space.title} copied` : "Workspace link copied");
+      }
+    } catch {}
+  };
   // location: green pin when this device shares it, red when not (a tap asks again)
   const pinButton = (cls: string) => (
     <button
@@ -1765,9 +1791,39 @@ export default function Void() {
   );
   return (
     <>
-      <Starfield />
+      {!work && <Starfield />}
       <LiquidGlass />
 
+      {work ? (
+        <>
+          <WorkBar
+            space={space?.title ?? null}
+            isPrivate={!!space?.priv}
+            online={online}
+            scope={scope}
+            onScope={setScope}
+            nearbyCount={nearbyCount}
+            mineCount={mineCount}
+            kind={kind}
+            onKind={setKind}
+            pin={pinButton("w-icon geo-chip")}
+            onLogo={tapLogo}
+            onSpaces={() => setPanel({ kind: "space" })}
+            onShare={shareWork}
+            onMenu={() => setPanel({ kind: "menu" })}
+            area={area ? area.toUpperCase() : ""}
+          />
+          <WorkRail
+            inSpace={!!space}
+            onHome={() => (space ? (switchSpace(null), toast("Back in the public workspace")) : setArea(home))}
+            onSpaces={() => setPanel({ kind: "space" })}
+            onTasks={openTasks}
+            taskCount={tasks.filter((t) => !t.doneAt).length}
+            onBoard={() => setBoard(null)}
+            noteCount={notes.length}
+          />
+        </>
+      ) : (
       <header className={`top lg${compact ? " compact" : ""}`}>
         {/* phones: one slim bar of icons; the rest lives in the menu card */}
         <div className="m-bar">
@@ -1832,6 +1888,7 @@ export default function Void() {
           </div>
         </div>
       </header>
+      )}
 
       <main className={menu && !menuOut ? "menu-open" : undefined} data-pal={pal}>
         <section
@@ -1871,7 +1928,7 @@ export default function Void() {
               onMemberHint={(id) => (lastOpen.current = { id, at: Date.now() })}
               phase={arriving.has(o.id) ? "arriving" : undefined}
               hue={colors.get(o.id)}
-              skin={o.skin ?? skin}
+              skin={work ? "work" : o.skin ?? skin}
               launching={upFrac.get(o.id)}
               incoming={isIncoming(o.id)}
               badge={badges.get(o.id)}
@@ -1893,7 +1950,7 @@ export default function Void() {
               onOpen={noop}
               phase="burning"
               hue={g.hue}
-              skin={g.orb.skin ?? skin}
+              skin={work ? "work" : g.orb.skin ?? skin}
             />
           ))}
             </MapWorld>
@@ -1974,7 +2031,10 @@ export default function Void() {
               )}
             </div>
           )}
-          {loaded && shown.length === 0 && !(map && map.spots.size) && (
+          {work && loaded && shown.length === 0 && !(map && map.spots.size) && (
+            <WorkEmpty space={space?.title ?? null} near={scope === "near"} onFiles={() => pickFiles()} onFolder={() => pickFolder()} onText={compose} />
+          )}
+          {!work && loaded && shown.length === 0 && !(map && map.spots.size) && (
             <div className="empty">
               <p className="mono">
                 {space ? `${space.title} is empty. Launch something: only people in this space see it` : scope === "near" ? "Nothing from your network yet" : (
@@ -2005,7 +2065,7 @@ export default function Void() {
               onMemberHint={(id) => (lastOpen.current = { id, at: Date.now() })}
               phase={arriving.has(o.id) ? "arriving" : undefined}
               hue={colors.get(o.id)}
-              skin={o.skin ?? skin}
+              skin={work ? "work" : o.skin ?? skin}
               launching={upFrac.get(o.id)}
               incoming={isIncoming(o.id)}
               badge={badges.get(o.id)}
@@ -2027,13 +2087,13 @@ export default function Void() {
               onOpen={noop}
               phase="burning"
               hue={g.hue}
-              skin={g.orb.skin ?? skin}
+              skin={work ? "work" : g.orb.skin ?? skin}
             />
           ))}
           </>)}
         </section>
 
-        <section className="how" id="how">
+        {!work && <section className="how" id="how">
           <div className="how-top"><span>Protocol</span><span>Objects in orbit right now</span></div>
           <div className="how-hero">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2070,7 +2130,7 @@ export default function Void() {
             <span>Files are end-to-end encrypted. Max 20 GB each. 300 uploads per network per hour.</span>
             <span><Link href="/about">About</Link> · <Link href="/about#contact">Contact</Link> · <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · Abuse? Open the object and tap <span className="glyph"><LuFlag aria-hidden />Report</span></span>
           </div>
-        </section>
+        </section>}
       </main>
 
       <input
@@ -2203,6 +2263,7 @@ export default function Void() {
           onTasks={openTasks}
           taskCount={tasks.filter((t) => !t.doneAt).length}
           onClose={() => setPanel((p) => (p?.kind === "menu" ? null : p))}
+          work={work ? { onBoard: () => setBoard(null) } : undefined}
         />
       )}
       {panel?.kind === "group" && groups.get(panel.id) && (
@@ -2272,7 +2333,10 @@ export default function Void() {
         {toasts.map((t) => <div key={t.id}>{t.text}</div>)}
       </div>
 
-      {!panel && board === false && !(menu && !menuOut) && (
+      {work && !panel && board === false && (
+        <WorkDock onFiles={() => pickFiles()} onFolder={() => pickFolder()} onText={compose} onNote={() => setPanel({ kind: "bubble" })} onTasks={openTasks} onSpaces={() => setPanel({ kind: "space" })} />
+      )}
+      {!work && !panel && board === false && !(menu && !menuOut) && (
         <button className={`bub-fab lg lg-press${compact ? " mini" : ""}`} onClick={() => setPanel({ kind: "bubble" })} aria-label="Bubble text: post a note everyone sees">
           <LuMessageCircle aria-hidden />
           <span>Bubble</span>
@@ -2296,7 +2360,7 @@ export default function Void() {
               const moved = mine.length ? await carryTasks(mine, { slug: s.slug, token: s.token, deviceId: deviceId() }) : 0;
               enterSpace(s);
               try {
-                await navigator.clipboard.writeText(`${window.location.origin}/?space=${s.slug} · code ${pass}`);
+                await navigator.clipboard.writeText(`${window.location.origin}${homePath()}?space=${s.slug} · code ${pass}`);
               } catch {}
               toast(`Private: ${s.title} · code ${pass}${moved ? ` · ${moved} ${moved > 1 ? "tasks" : "task"} moved` : ""} · invite copied`);
             } catch (e) {
@@ -2361,7 +2425,7 @@ export default function Void() {
           }}
         />
       )}
-      {!panel && board === false && (
+      {!work && !panel && board === false && (
         <button
           className={`send-fab lg lg-press${menu && !menuOut ? " open" : ""}${compact && !menu ? " mini" : ""}`}
           onClick={(e) => {

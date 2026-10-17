@@ -4,7 +4,7 @@ import ResumeUploads, { usePendingCount } from "./ResumeUploads";
 import { useDownloads } from "@/lib/downloads";
 import { useCloud } from "@/lib/cloud";
 import { useState, type CSSProperties } from "react";
-import { formatBytes, type Orb } from "@/lib/client";
+import { formatBytes, homePath, type Orb } from "@/lib/client";
 import type { Stage } from "@/lib/transfer";
 import { ShareBlock } from "./Panels";
 import { glyph } from "./Glyph";
@@ -122,7 +122,7 @@ function DockItem({ l, badges, onToggle, onDismiss, onOpenOwner }: { l: Launch }
   const copy = async () => {
     if (!l.orb) return;
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/?o=${l.orb.id}`);
+      await navigator.clipboard.writeText(`${window.location.origin}${homePath()}?o=${l.orb.id}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 1400);
     } catch {}

@@ -2,7 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import QRCode from "qrcode";
 import {
-  deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, hasGot, markGot, ownerKey, timeAgo, type Orb, type OwnerView,
+  deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, hasGot, markGot, ownerKey, timeAgo, type Orb, type OwnerView, homePath,
 } from "@/lib/client";
 import { MAX_FILE_BYTES, MAX_LABEL } from "@/lib/limits";
 import { previewUrl } from "@/lib/preview";
@@ -457,7 +457,7 @@ function useQR(text: string | null) {
 }
 
 export function ShareBlock({ id }: { id: string }) {
-  const link = typeof window !== "undefined" ? `${window.location.origin}/?o=${id}` : "";
+  const link = typeof window !== "undefined" ? `${window.location.origin}${homePath()}?o=${id}` : "";
   const qr = useQR(link);
   const [copied, setCopied] = useState(false);
   const [canShare] = useState(() => typeof navigator !== "undefined" && typeof navigator.share === "function");

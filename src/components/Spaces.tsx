@@ -1,4 +1,5 @@
 "use client";
+import { homePath } from "@/lib/client";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   createSpace, joinSpace, savedHandle, savedSpaces, searchSpaces,
@@ -104,7 +105,7 @@ export default function SpacePanel(props: {
   const copyInvite = async () => {
     if (!current) return;
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/?space=${current.slug}`);
+      await navigator.clipboard.writeText(`${window.location.origin}${homePath()}?space=${current.slug}`);
       props.toast("Invite link copied");
     } catch {}
   };
