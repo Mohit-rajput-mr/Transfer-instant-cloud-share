@@ -26,7 +26,7 @@ const release = (id: string) => {
 import { downloading } from "@/lib/downloads";
 import { warm } from "@/lib/peek";
 import { createSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
-import { LuFlag, LuMessageCircle, LuLayers, LuMapPin, LuMapPinOff, LuMenu, LuOrbit, LuPalette, LuUser, LuWifi } from "react-icons/lu";
+import { LuFlag, LuMessageCircle, LuLayers, LuMapPin, LuMapPinOff, LuMenu, LuOrbit, LuPalette, LuUser, LuWifi, LuSearch, LuPlus } from "react-icons/lu";
 import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange } from "./BubbleBoard";
 import TaskBoard, { TaskWires, taskGroups } from "./TaskBoard";
@@ -49,7 +49,7 @@ import { bubbleName, burnBubble, editBubble, hueFor, isMine as isMyBubble, postB
 import StylePicker from "./StylePicker";
 import { autoRemember, findDeviceSkin, skinName, toneOf, useLook } from "@/lib/skins";
 import { fileKind, type Kind } from "@/lib/skin-list";
-import { WorkBar, WorkDock, WorkEmpty, WorkRail } from "./WorkChrome";
+import { WorkBar, WorkDock, WorkRail } from "./WorkChrome";
 import KindFilter from "./KindFilter";
 import { readTheme } from "@/lib/theme";
 import { speakWork } from "@/lib/words";
@@ -143,6 +143,13 @@ const MAP_BAND: Record<VoidMode, Band> = {
   tall: { top: 124, bottom: 118, left: 20, right: 72 },
   phone: { top: 70, bottom: 96, left: 10, right: 10 },
   short: { top: 56, bottom: 60, left: 60, right: 60 },
+};
+// inside a space or the archive (classic look): everything sits within the glass pane, clear of its title
+const ROOM_BAND: Record<VoidMode, Band> = {
+  desk: { top: 236, bottom: 70, left: 72, right: 112 },
+  tall: { top: 236, bottom: 70, left: 56, right: 96 },
+  phone: { top: 356, bottom: 34, left: 22, right: 22 },
+  short: { top: 172, bottom: 28, left: 40, right: 40 },
 };
 // the map holds far more than a fixed sky
 const MAP_CAP = 160;
@@ -260,6 +267,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   useEffect(() => {
     if (inArchive && !trash.size) setInArchive(false);
   }, [inArchive, trash]);
+  // walking into (or out of) the archive or a space: the view fits everything in again
+  useEffect(() => setFitAllN((n) => n + 1), [inArchive, space?.slug]);
   // inside it nothing is archived again (the drop zone is gone) and Esc walks out
   useEffect(() => {
     if (!inArchive) return;
@@ -1890,38 +1899,21 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             <span className="brand-by">Instant transfer</span>
           </div>
           <nav className="nav">
-            <a href="#void">Void</a>
             <a href="#how">How it works</a>
             <button onClick={openTasks}>Tasks{tasks.length ? ` ${tasks.filter((t) => !t.doneAt).length}` : ""}</button>
             <Link href="/about">About</Link>
-            <button onClick={openMenu}>Launch</button>
+            {/* a full load: the work look starts clean */}
+            <button onClick={() => window.location.assign("/work")}>Switch to Work</button>
+            <Link href="/upgrade" className="nav-up">Upgrade</Link>
           </nav>
           <div className="top-right">
+            <KindFilter kind={kind} onKind={setKind} scope={{ value: scope, set: setScope, near: space ? null : nearbyCount, mine: mineCount }} />
             <span className="live" aria-label={`${online} ${online > 1 ? "devices" : "device"} in orbit`}><span className="dot" /><b>{online}</b><span className="live-txt">{space ? "in this space" : online > 1 ? "devices in orbit" : "device in orbit"}</span></span>
-            {pinButton("pill lg-press geo-chip")}
-            <button className="pill lg-press style-chip" onClick={() => setPanel({ kind: "style" })} aria-label={`Style: ${skinName(skin)}. Change how files look`} title="Style"><LuPalette aria-hidden /></button>
-            <button className={`pill lg-press space-chip${space ? " in" : ""}`} onClick={() => setPanel({ kind: "space" })} aria-label={space ? `Space: ${space.title}. Change space` : "Public void. Open spaces"}>
-              <i className="space-dot" />{space ? space.title : "Public void"}
-            </button>
+            {pinButton("hd-ic lg-press geo-chip")}
+            <button className="hd-ic lg-press style-chip" onClick={() => setPanel({ kind: "style" })} aria-label={`Style: ${skinName(skin)}. Change how files look`} title="Style"><LuPalette aria-hidden /></button>
+            <button className="hd-ic lg-press" onClick={() => setPanel({ kind: "space", start: ":search" })} aria-label="Search spaces" title="Search spaces"><LuSearch aria-hidden /></button>
+            <button className="hd-ic lg-press" onClick={() => setPanel({ kind: "space", start: ":create" })} aria-label="Create a space" title="Create your space"><LuPlus aria-hidden /></button>
             <button className="pill solid lg-press send-pill" onClick={openMenu}>Send</button>
-          </div>
-        </div>
-        <div className="top-row">
-          <div className="sub-left">
-            <span className="hl"><i />No login required</span><span>End-to-end encrypted</span><span>Any size</span><span>Burns in 5–30 min</span>
-          </div>
-          <span />
-          <div className="kinds-wrap">
-          <KindFilter kind={kind} onKind={setKind} />
-          <div className="toggle" role="tablist" aria-label="Scope">
-            <button className={scope === "all" ? "on" : ""} onClick={() => setScope("all")}>All</button>
-            {!space && <button className={scope === "near" ? "on" : ""} onClick={() => setScope("near")}>Nearby{nearbyCount ? ` ${nearbyCount}` : ""}</button>}
-            {mineCount > 0 && (
-              <button className={`mine-tab${scope === "mine" ? " on" : ""}`} onClick={() => setScope(scope === "mine" ? "all" : "mine")} aria-label={`Show only your ${mineCount} ${mineCount > 1 ? "objects" : "object"}`}>
-                Mine <b>{mineCount}</b>
-              </button>
-            )}
-          </div>
           </div>
         </div>
       </header>
@@ -1934,12 +1926,15 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           style={(flow ? { "--n": rows } : { "--k-auto": grid ? grid.k : map ? 1 : crowdScale(visible.length), ...(grid ? { "--cell": `${grid.cell}px` } : null) }) as unknown as React.CSSProperties}
         >
           {inArchive && <ArchiveRoom onExit={() => setInArchive(false)} />}
+          {!work && !inArchive && !space && (
+            <button className="where-badge" onClick={() => setPanel({ kind: "space" })} aria-label="You are in the public void. Open spaces"><i aria-hidden />You&apos;re in the public void</button>
+          )}
           {space && !inArchive && <SpaceRoom space={space} info={room} online={live} onKick={kick} onExit={() => {
             switchSpace(null);
             toast("Back in the public void");
           }} />}
           {map ? (
-            <MapWorld W={map.W} H={map.H} band={MAP_BAND[mode]} fit={fitAll} empty={!map.spots.size} onRect={setRect}
+            <MapWorld W={map.W} H={map.H} band={(space || inArchive) && !work ? ROOM_BAND[mode] : MAP_BAND[mode]} fit={fitAll} empty={!map.spots.size} onRect={setRect}
               onMoveItem={(key, dx, dy) => {
                 const p = map.spots.get(key);
                 if (!p) return;
@@ -2074,7 +2069,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             </div>
           )}
           {work && loaded && shown.length === 0 && !(map && map.spots.size) && (
-            <WorkEmpty space={space?.title ?? null} near={scope === "near"} onFiles={() => pickFiles()} onFolder={() => pickFolder()} onText={compose} />
+            <p className="w-hint">{space ? `${space.title} is empty` : "Drop files anywhere, or press Upload"}</p>
           )}
           {!work && loaded && shown.length === 0 && !(map && map.spots.size) && (
             <div className="empty">

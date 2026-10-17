@@ -74,8 +74,9 @@ export default function SpacePanel(props: {
 }) {
   const { current, info } = props;
   const [quitArm, setQuitArm] = useState(false);
-  const [tab, setTab] = useState<Tab>(props.start ? "browse" : current ? "here" : "browse");
-  const [q, setQ] = useState(props.start ?? "");
+  // start: a space to look up, or the header's "+" (":create") / search (":search") buttons
+  const [tab, setTab] = useState<Tab>(props.start === ":create" ? "create" : props.start ? "browse" : current ? "here" : "browse");
+  const [q, setQ] = useState(props.start?.startsWith(":") ? "" : props.start ?? "");
   const [hits, setHits] = useState<SpaceHit[] | null>(null);
   const [saved, setSaved] = useState<SpaceSession[]>([]);
   const [handle, setHandle] = useState("");

@@ -1226,7 +1226,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
         <div className="col" key="info">
           {orb.thumb && orb.open && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="card-thumb" src={previewUrl(orb.id)} alt={`Preview of ${orb.name}`} title={canView ? "Double-click to preview" : undefined} onDoubleClick={startPreview} onError={(e) => (e.currentTarget.style.display = "none")} />
+            <img className="card-thumb" src={previewUrl(orb.id)} alt={`Preview of ${orb.name}`} title={canView ? "Click to preview" : undefined} onClick={canView ? startPreview : undefined} style={canView ? { cursor: "zoom-in" } : undefined} onError={(e) => (e.currentTarget.style.display = "none")} />
           )}
           <div>
             <span className="mono dim ellip">{orb.fileName}</span>

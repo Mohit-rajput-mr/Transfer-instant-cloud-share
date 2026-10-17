@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import type { ReactNode } from "react";
-import { LuCircleHelp, LuFileText, LuFolderUp, LuGlobe, LuImage, LuLayers, LuListChecks, LuLock, LuMenu, LuMessageSquareText, LuMoon, LuOrbit, LuShare2, LuStickyNote, LuSun, LuType, LuUpload, LuUser, LuVideo, LuWifi } from "react-icons/lu";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { LuCircleHelp, LuFile, LuX, LuFolderUp, LuGlobe, LuLayers, LuListChecks, LuLock, LuMenu, LuMessageSquareText, LuMoon, LuOrbit, LuShare2, LuSparkles, LuStickyNote, LuSun, LuType, LuUpload, LuUser, LuWifi } from "react-icons/lu";
 import type { Kind } from "@/lib/skin-list";
 import { useTheme } from "@/lib/theme";
 import KindFilter from "./KindFilter";
@@ -11,14 +11,7 @@ import KindFilter from "./KindFilter";
 
 
 export function WorkMark() {
-  return (
-    <svg className="w-mark" viewBox="0 0 28 28" aria-hidden>
-      <circle cx="7" cy="14" r="3.4" />
-      <circle cx="21" cy="7.5" r="3.4" />
-      <circle cx="21" cy="20.5" r="3.4" />
-      <path d="M10.4 14h2.6c2.2 0 2.6-6.5 4.6-6.5M13 14c2.2 0 2.6 6.5 4.6 6.5" />
-    </svg>
-  );
+  return <span className="w-mark" aria-hidden />;
 }
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
@@ -82,6 +75,7 @@ export function WorkBar(p: {
         {p.pin}
         <ThemeToggle className="w-hide-s" />
         <button className="w-btn" onClick={p.onShare}><LuShare2 aria-hidden /><span>Share</span></button>
+        <Link href="/upgrade" className="w-btn w-upg"><LuSparkles aria-hidden /><span>Upgrade</span></Link>
         <button className="w-icon w-only-s" onClick={p.onMenu} aria-label="Menu"><LuMenu /></button>
       </div>
     </header>
@@ -107,36 +101,34 @@ export function WorkRail(p: { inSpace: boolean; onHome: () => void; onSpaces: ()
 }
 
 export function WorkDock(p: { onFiles: () => void; onFolder: () => void; onText: () => void; onNote: () => void; onTasks: () => void; onSpaces: () => void }) {
+  // one Upload button; File, Folder and Text fan out of it as glass buttons
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const down = (e: PointerEvent) => !box.current?.contains(e.target as Node) && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("pointerdown", down, true);
+    window.addEventListener("keydown", esc);
+    return () => (window.removeEventListener("pointerdown", down, true), window.removeEventListener("keydown", esc));
+  }, [open]);
+  const go = (f: () => void) => () => (setOpen(false), f());
   return (
-    <div className="w-dock" role="toolbar" aria-label="Add to the canvas">
-      <button className="w-primary" onClick={p.onFiles}><LuUpload aria-hidden /><span>Send files</span></button>
-      <button className="w-ghost w-hide-s" onClick={p.onFolder}><LuFolderUp aria-hidden /><span>Folder</span></button>
-      <button className="w-ghost" onClick={p.onText}><LuType aria-hidden /><span>Text</span></button>
-      <button className="w-ghost" onClick={p.onNote}><LuStickyNote aria-hidden /><span>Note</span></button>
+    <div className={`w-dock${open ? " open" : ""}`} role="toolbar" aria-label="Add to the canvas" ref={box}>
+      <button className="w-ghost w-only-s" onClick={p.onNote}><LuStickyNote aria-hidden /><span>Note</span></button>
       <button className="w-ghost w-only-s" onClick={p.onTasks}><LuListChecks aria-hidden /><span>Tasks</span></button>
+      <div className="w-up-wrap">
+        <div className="w-fan" aria-hidden={!open}>
+          <button style={{ "--i": 0 } as CSSProperties} tabIndex={open ? 0 : -1} onClick={go(p.onFiles)}><LuFile aria-hidden /><b>Files</b><small>photos · videos · docs</small></button>
+          <button style={{ "--i": 1 } as CSSProperties} tabIndex={open ? 0 : -1} onClick={go(p.onFolder)}><LuFolderUp aria-hidden /><b>Folder</b><small>structure intact</small></button>
+          <button style={{ "--i": 2 } as CSSProperties} tabIndex={open ? 0 : -1} onClick={go(p.onText)}><LuType aria-hidden /><b>Text or link</b><small>opens instantly</small></button>
+        </div>
+        <button className="w-primary w-up" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label={open ? "Close" : "Upload"}>
+          <LuUpload className="i-up" aria-hidden /><LuX className="i-x" aria-hidden /><span>Upload</span>
+        </button>
+      </div>
       <button className="w-ghost w-only-s" onClick={p.onSpaces}><LuOrbit aria-hidden /><span>Spaces</span></button>
     </div>
   );
 }
 
-export function WorkEmpty(p: { space: string | null; near: boolean; onFiles: () => void; onFolder: () => void; onText: () => void }) {
-  return (
-    <div className="w-empty" data-no-pan>
-      <div className="w-empty-art" aria-hidden>
-        <span className="n a"><LuFileText /></span>
-        <svg viewBox="0 0 120 72" preserveAspectRatio="none"><path d="M0 36h40c16 0 16-35 34-35h46M40 36c16 0 16 35 34 35h46" /></svg>
-        <span className="n b"><LuImage /></span>
-        <span className="n c"><LuVideo /></span>
-      </div>
-      <h2>{p.space ? `${p.space} is empty` : p.near ? "Nothing from your network yet" : "Your workspace is empty"}</h2>
-      <p>
-        {p.space ? "Send something: only people in this space see it." : "Drop files, folders or text anywhere on the canvas."} Everything is encrypted end to end and burns in 5 to 30 minutes.
-      </p>
-      <div className="w-empty-acts">
-        <button className="w-primary" onClick={p.onFiles}><LuUpload aria-hidden /><span>Send files</span></button>
-        <button className="w-ghost" onClick={p.onFolder}><LuFolderUp aria-hidden /><span>Folder</span></button>
-        <button className="w-ghost" onClick={p.onText}><LuType aria-hidden /><span>Text</span></button>
-      </div>
-    </div>
-  );
-}

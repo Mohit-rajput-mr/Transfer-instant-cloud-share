@@ -174,12 +174,16 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     [keepIn, go, moving],
   );
 
+  const emptyRef = useRef(empty);
+  emptyRef.current = empty;
   // wheel: a pinch (ctrl) or a mouse wheel zooms at the pointer; a trackpad's two-finger scroll moves the map
   useEffect(() => {
     const el = box.current;
     if (!el) return;
     const wheel = (e: WheelEvent) => {
       if ((e.target as Element).closest?.("textarea, .tb-acts, .tb-route, .map-tools, [data-no-pan]")) return;
+      // nothing on the map: the wheel scrolls the page as usual (down to How it works)
+      if (emptyRef.current && !e.ctrlKey) return;
       e.preventDefault();
       const r = el.getBoundingClientRect();
       const mouse = e.deltaMode === 1 || (e.deltaX === 0 && Math.abs(e.deltaY) >= 40 && Number.isInteger(e.deltaY));

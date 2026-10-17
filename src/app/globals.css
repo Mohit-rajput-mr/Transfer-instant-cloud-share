@@ -3100,3 +3100,38 @@ html[data-earth], html[data-earth] body { overflow: hidden; overscroll-behavior:
 .arch-room .arch-all-btn svg { width: 15px; height: 15px; }
 body[data-archive] .trash-zone { display: none; }
 body[data-archive] .arch-bubble { display: none; }
+.kf-sec { padding: 8px 10px 4px; font: 600 9.5px/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: #777; }
+.kf-sec:first-child { padding-top: 5px; }
+.kf-count { margin-left: auto; font: 500 11px/1 var(--mono); color: #888; }
+.kf-count + .kf-ok { margin-left: 8px; }
+.kf-n { min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: #000; color: #fff; font: 700 9.5px/16px var(--mono); font-style: normal; text-align: center; letter-spacing: 0; }
+/* the header is one row now: the filter sits with the other chips, Upgrade stands out in the nav */
+.top-right .kf-btn { height: 26px; }
+.nav .nav-up { color: #ffd479; }
+.nav .nav-up:hover { color: #fff; }
+/* ---------------- one squared type voice for the classic look (Chakra Petch), /work keeps its own ---------------- */
+:root { --sans: var(--font-chip), "Helvetica Neue", Arial, sans-serif; }
+body { letter-spacing: 0.01em; }
+/* header icon buttons: a plain round button, the icon dead centre, no ring */
+.hd-ic { width: 32px; height: 32px; flex: none; display: inline-grid; place-items: center; padding: 0; border: 0 !important; border-radius: 50%; background: rgba(255,255,255,0.07); color: #e6e6e6; transition: background 0.15s, color 0.15s; }
+.hd-ic:hover { background: rgba(255,255,255,0.15); color: #fff; }
+.hd-ic svg { width: 16px; height: 16px; display: block; }
+.hd-ic.geo-pin.off { background: rgba(255,70,70,0.14); color: #ff6b6b; }
+.hd-ic.geo-pin.on { color: var(--live); }
+.top-right .kf-btn { border: 0; background: rgba(255,255,255,0.07); height: 32px; padding: 0 12px; }
+.top-right .kf-btn:hover { background: rgba(255,255,255,0.15); }
+.top-right .kf-btn.set { background: #fff; }
+/* where you are: a small blinking badge on the void instead of a chip in the bar */
+.where-badge { position: absolute; z-index: 7; left: max(22px, var(--safe-l)); top: calc(78px + var(--safe-t)); display: inline-flex; align-items: center; gap: 9px; height: 30px; padding: 0 14px 0 12px; border-radius: 999px;
+  background: rgba(10,12,14,0.78); border: 1px solid rgba(61,255,140,0.28); color: #d9ffe8; font: 500 10.5px/1 var(--font-chip), var(--sans); letter-spacing: 0.14em; text-transform: uppercase; animation: where-blink 2.4s ease-in-out infinite; }
+.where-badge i { width: 7px; height: 7px; border-radius: 50%; background: var(--live); box-shadow: 0 0 10px var(--live); animation: where-dot 1.2s ease-in-out infinite; }
+.where-badge:hover { border-color: rgba(61,255,140,0.6); }
+@keyframes where-blink { 50% { border-color: rgba(61,255,140,0.6); color: #fff; } }
+@keyframes where-dot { 50% { opacity: 0.25; transform: scale(0.7); } }
+@media (max-width: 720px) { .where-badge { top: calc(58px + var(--safe-t)); left: 12px; height: 26px; font-size: 9.5px; } }
+html[data-perf="low"] .where-badge, html[data-perf="low"] .where-badge i { animation: none; }
+/* one-row header: the count speaks for itself, the chips sit closer */
+.top-right { gap: 8px; }
+.top-right .live-txt { display: none; }
+.nav { gap: 22px; }
+@media (max-width: 1280px) { .brand-by { display: none; } .nav { gap: 16px; } }

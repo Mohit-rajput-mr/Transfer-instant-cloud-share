@@ -1,12 +1,16 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { LuArchive, LuCheck, LuChevronDown, LuFileText, LuImage, LuLayoutGrid, LuListFilter, LuMusic, LuVideo } from "react-icons/lu";
+import { LuArchive, LuCheck, LuChevronDown, LuFileText, LuImage, LuLayers, LuLayoutGrid, LuListFilter, LuMusic, LuUser, LuVideo, LuWifi } from "react-icons/lu";
 import { KINDS, type Kind } from "@/lib/skin-list";
 
 const ICON = { all: LuLayoutGrid, photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
 
-/** One "Filter" button: a small list of file types drops down from it (instead of a row of six icons). */
-export default function KindFilter({ kind, onKind, className = "" }: { kind: Kind; onKind: (k: Kind) => void; className?: string }) {
+type Scope = "all" | "near" | "mine";
+/** what to show (`near`: null where there is no nearby, inside a space) */
+type ScopeOpt = { value: Scope; set: (s: Scope) => void; near: number | null; mine: number };
+
+/** One "Filter" button: what to show and which file types drop down from it (instead of rows of icons). */
+export default function KindFilter({ kind, onKind, scope, className = "" }: { kind: Kind; onKind: (k: Kind) => void; scope?: ScopeOpt; className?: string }) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -19,15 +23,38 @@ export default function KindFilter({ kind, onKind, className = "" }: { kind: Kin
   }, [open]);
   const cur = KINDS.find((k) => k.id === kind);
   const I = ICON[kind];
+  const active = (kind !== "all" ? 1 : 0) + (scope && scope.value !== "all" ? 1 : 0);
+  const scopes: { id: Scope; name: string; icon: typeof LuLayers; n?: number | null }[] = scope
+    ? [
+        { id: "all", name: "Everything", icon: LuLayers },
+        ...(scope.near !== null ? [{ id: "near" as const, name: "Nearby", icon: LuWifi, n: scope.near }] : []),
+        ...(scope.mine ? [{ id: "mine" as const, name: "Mine", icon: LuUser, n: scope.mine }] : []),
+      ]
+    : [];
   return (
     <div className={`kf ${className}`} ref={box} data-no-pan>
-      <button className={`kf-btn${kind !== "all" ? " set" : ""}`} onClick={() => setOpen((o) => !o)} aria-haspopup="listbox" aria-expanded={open} title="Filter by file type">
+      <button className={`kf-btn${active ? " set" : ""}`} onClick={() => setOpen((o) => !o)} aria-haspopup="listbox" aria-expanded={open} title="Filter">
         {kind === "all" ? <LuListFilter aria-hidden /> : <I aria-hidden />}
-        <span>{kind === "all" ? "Filter" : cur?.name}</span>
+        <span>{kind === "all" ? (scope && scope.value !== "all" ? (scope.value === "near" ? "Nearby" : "Mine") : "Filter") : cur?.name}</span>
+        {active > 1 && <em className="kf-n">{active}</em>}
         <LuChevronDown className={`kf-chev${open ? " up" : ""}`} aria-hidden />
       </button>
       {open && (
         <div className="kf-menu" role="listbox" aria-label="Show only">
+          {scopes.length > 1 && (
+            <>
+              <span className="kf-sec">Show</span>
+              {scopes.map((o) => (
+                <button key={o.id} role="option" aria-selected={scope!.value === o.id} className={scope!.value === o.id ? "on" : ""} onClick={() => (scope!.set(o.id), setOpen(false))}>
+                  <o.icon aria-hidden />
+                  <span>{o.name}</span>
+                  {o.n ? <small className="kf-count">{o.n}</small> : null}
+                  {scope!.value === o.id && <LuCheck className="kf-ok" aria-hidden />}
+                </button>
+              ))}
+              <span className="kf-sec">File type</span>
+            </>
+          )}
           {KINDS.map((k) => {
             const KI = ICON[k.id];
             return (

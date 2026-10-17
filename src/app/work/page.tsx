@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Void from "@/components/Void";
+import WorkLook from "@/components/WorkLook";
 import "./work.css";
 
 const sans = Geist({ subsets: ["latin"], variable: "--font-work", display: "swap" });
@@ -19,6 +20,7 @@ export default function WorkPage() {
   return (
     <>
       <script dangerouslySetInnerHTML={{ __html: boot }} />
+      <WorkLook fonts={`${sans.variable} ${mono.variable}`} />
       <Void ui="work" />
     </>
   );

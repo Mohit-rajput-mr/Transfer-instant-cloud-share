@@ -521,7 +521,6 @@ html[data-ui="work"][data-theme="light"] img[src="/brand/emblem.svg"] { filter: 
   html[data-ui="work"] .w-dock .w-primary span { display: none; }
   html[data-ui="work"] .w-dock { flex-direction: row; }
   html[data-ui="work"] .w-dock .w-primary { order: 2; }
-  html[data-ui="work"] .w-dock > :nth-child(3) { order: 0; } html[data-ui="work"] .w-dock > :nth-child(4) { order: 1; } html[data-ui="work"] .w-dock > :nth-child(5) { order: 3; } html[data-ui="work"] .w-dock > :nth-child(6) { order: 4; }
   html[data-ui="work"] .map-tools.lg { left: max(12px, var(--safe-l)) !important; bottom: calc(76px + var(--safe-b)) !important; }
   html[data-ui="work"] .map-tools.lg > .mono { display: none; }
   html[data-ui="work"] .dock { bottom: calc(76px + var(--safe-b)) !important; }
@@ -616,3 +615,94 @@ html[data-ui="work"] .void.in-archive { box-shadow: inset 0 0 0 2px color-mix(in
 html[data-ui="work"] .arch-room .room-exit { height: 34px; display: inline-flex; align-items: center; gap: 7px; padding: 0 12px; font: 500 13px/1 var(--w-font) !important; text-transform: none !important; letter-spacing: 0 !important; }
 html[data-ui="work"] .arch-room .room-exit svg { width: 15px; height: 15px; }
 html[data-ui="work"] .arch-room .arch-all-btn { background: var(--w-accent) !important; color: #fff !important; border-color: var(--w-accent) !important; }
+html[data-ui="work"] .kf-sec { color: var(--w-text-3); font: 600 10.5px/1 var(--w-font); letter-spacing: 0.02em; text-transform: none; }
+html[data-ui="work"] .kf-count { color: var(--w-text-3); font: 500 11.5px/1 var(--w-font); }
+html[data-ui="work"] .kf-n { background: var(--w-accent); color: #fff; font-family: var(--w-font); }
+
+/* =====================================================================
+   Liquid glass for /work: bars, panels, nodes, cards and buttons are frosted panes over the canvas
+   (a soft light sits behind the grid so the glass has something to bend). Layered last: it wins.
+   ===================================================================== */
+html[data-ui="work"] {
+  --w-glass: color-mix(in srgb, var(--w-surface) 58%, transparent);
+  --w-glass-2: color-mix(in srgb, var(--w-raised) 62%, transparent);
+  --w-glass-edge: rgba(255,255,255,0.11);
+  --w-glass-shine: linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.015) 42%, rgba(255,255,255,0.03));
+  --w-glass-hi: inset 0 1px 0 rgba(255,255,255,0.13), inset 0 -1px 0 rgba(255,255,255,0.03);
+  --w-blur: blur(20px) saturate(170%);
+}
+html[data-ui="work"][data-theme="light"] {
+  --w-glass: rgba(255,255,255,0.6);
+  --w-glass-2: rgba(255,255,255,0.72);
+  --w-glass-edge: rgba(20,20,30,0.09);
+  --w-glass-shine: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(255,255,255,0.25) 45%, rgba(255,255,255,0.4));
+  --w-glass-hi: inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(255,255,255,0.5);
+}
+html[data-ui="work"] .void { background-image: radial-gradient(var(--w-dot) 1.1px, transparent 1.3px), radial-gradient(60% 50% at 18% 12%, color-mix(in srgb, var(--w-accent) 9%, transparent), transparent 70%), radial-gradient(55% 45% at 85% 88%, color-mix(in srgb, var(--w-info) 9%, transparent), transparent 70%); background-size: 22px 22px, 100% 100%, 100% 100%; }
+
+/* the panes */
+html[data-ui="work"] :is(.w-bar, .w-rail, .w-ghost, .w-fan button, .map-tools.lg > button, .map-tools.lg > .mono, .drawer, .drawer.lg, .pop, .spaces-pop, .task-board, .task-board.lg, .bub, .void.map .world .bub, .bs-card, .bs-top, .bs-tools, .bs-rail, .kf-btn, .kf-menu, .w-btn, .w-tabs, .area-pill, .dock-item, .dl-card, .geo-pop, .invite-card, .go-private, .zoom-bubble .blob, .orb.group .blob, .arch-bubble, .tb-route, .tb-acts.float, .wire-menu, .room-exit, .bub-timer, .tag) {
+  background-color: var(--w-glass) !important; background-image: var(--w-glass-shine) !important;
+  -webkit-backdrop-filter: var(--w-blur) !important; backdrop-filter: var(--w-blur) !important;
+  border-color: var(--w-glass-edge) !important;
+}
+html[data-ui="work"] :is(.w-bar, .w-rail) { box-shadow: var(--w-glass-hi) !important; }
+html[data-ui="work"] .w-bar { border-bottom: 1px solid var(--w-glass-edge) !important; }
+html[data-ui="work"] .w-rail { border-right: 1px solid var(--w-glass-edge) !important; }
+html[data-ui="work"] :is(.drawer, .pop, .spaces-pop, .task-board, .bub, .bs-card, .kf-menu, .geo-pop, .invite-card, .go-private, .dock-item, .dl-card, .zoom-bubble .blob, .orb.group .blob, .tb-route, .wire-menu) { box-shadow: var(--w-glass-hi), var(--w-shadow) !important; }
+html[data-ui="work"] :is(.drawer, .pop, .spaces-pop, .geo-pop, .invite-card, .go-private) { background-color: color-mix(in srgb, var(--w-surface) 78%, transparent) !important; box-shadow: var(--w-glass-hi), var(--w-shadow-l) !important; }
+html[data-ui="work"] .bub, html[data-ui="work"] .void.map .world .bub { border-left: 3px solid hsl(var(--bh, 210) 60% 58%) !important; }
+html[data-ui="work"] .bub-stack.mine .bub { border-left-color: var(--w-accent) !important; }
+/* the file nodes: small glass tiles (the life bar stays on top) */
+html[data-ui="work"] .orb-body:not(.bubble-body) { background-color: var(--w-glass-2) !important; -webkit-backdrop-filter: var(--w-blur); backdrop-filter: var(--w-blur);
+  background-image: linear-gradient(var(--w-ok), var(--w-ok)), var(--w-glass-shine) !important; background-size: calc(var(--life, 1) * (100% - 20px)) 2px, 100% 100% !important; background-position: 10px calc(100% - 5px), 0 0 !important; background-repeat: no-repeat !important;
+  border-color: var(--w-glass-edge) !important; box-shadow: var(--w-glass-hi), var(--w-shadow) !important; }
+html[data-ui="work"] .orb.dying .orb-body:not(.bubble-body) { background-image: linear-gradient(var(--w-warn), var(--w-warn)), var(--w-glass-shine) !important; border-color: var(--w-warn) !important; }
+html[data-ui="work"] .orb.launching .orb-body:not(.bubble-body) { background-image: linear-gradient(var(--w-info), var(--w-info)), var(--w-glass-shine) !important; }
+html[data-ui="work"] .orb.mine .orb-body:not(.bubble-body) { border-color: color-mix(in srgb, var(--w-accent) 50%, var(--w-glass-edge)) !important; }
+html[data-ui="work"] .orb.got .orb-body:not(.bubble-body) { border-color: color-mix(in srgb, var(--w-ok) 55%, var(--w-glass-edge)) !important; }
+html[data-ui="work"] .member .mball, html[data-ui="work"] .zsphere { background-color: var(--w-glass-2) !important; border-color: var(--w-glass-edge) !important; box-shadow: var(--w-glass-hi) !important; }
+html[data-ui="work"] .task-boards.mapped > .task-board.lifted { box-shadow: var(--w-glass-hi), 0 28px 70px -12px rgba(0,0,0,0.55), 0 0 0 1.5px var(--w-accent) !important; }
+/* map moving / low-end phones: plain panes (the blur is the costly part) */
+html[data-ui="work"] .map-view.moving .world *, html[data-ui="work"][data-perf="low"] * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+
+/* logo: the Orbit emblem, white on dark, near-black on light */
+html[data-ui="work"] .w-logo { color: var(--w-text); }
+html[data-ui="work"] .w-mark { display: block; width: 26px; height: 24px; background: currentColor; -webkit-mask: url(/brand/emblem.svg) center / contain no-repeat; mask: url(/brand/emblem.svg) center / contain no-repeat; }
+
+/* empty canvas: one quiet line, no card */
+html[data-ui="work"] .w-hint { position: absolute; z-index: 4; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0; color: var(--w-text-3); font: 500 14px/1.4 var(--w-font); pointer-events: none; white-space: nowrap; }
+
+/* ---------- the one Upload button, its three glass choices fan out above it ---------- */
+html[data-ui="work"] .w-up-wrap { position: relative; }
+html[data-ui="work"] .w-up { height: 44px !important; padding: 0 20px !important; border-radius: 12px !important; gap: 9px; }
+html[data-ui="work"] .w-up .i-x { display: none; }
+html[data-ui="work"] .w-dock.open .w-up .i-up { display: none; }
+html[data-ui="work"] .w-dock.open .w-up .i-x { display: block; }
+html[data-ui="work"] .w-fan { position: absolute; left: 50%; bottom: calc(100% + 12px); display: flex; gap: 10px; translate: -50% 0; pointer-events: none; }
+html[data-ui="work"] .w-fan button { width: 150px; height: auto !important; padding: 14px 14px 12px !important; display: flex !important; flex-direction: column; align-items: flex-start !important; gap: 4px !important; border-radius: 14px !important; border: 1px solid var(--w-glass-edge); color: var(--w-text);
+  box-shadow: var(--w-glass-hi), var(--w-shadow-l) !important; opacity: 0; transform: translateY(14px) scale(0.92); transition: opacity 0.18s, transform 0.32s cubic-bezier(0.2, 1.25, 0.35, 1); transition-delay: calc(var(--i) * 35ms); }
+html[data-ui="work"] .w-fan button svg { width: 20px !important; height: 20px !important; color: var(--w-accent); margin-bottom: 6px; }
+html[data-ui="work"] .w-fan button b { font: 600 14px/1.2 var(--w-font); }
+html[data-ui="work"] .w-fan button small { font: 400 11.5px/1.3 var(--w-font); color: var(--w-text-3); }
+html[data-ui="work"] .w-fan button:hover { background-color: color-mix(in srgb, var(--w-hover) 70%, transparent) !important; }
+html[data-ui="work"] .w-dock.open .w-fan { pointer-events: auto; }
+html[data-ui="work"] .w-dock.open .w-fan button { opacity: 1; transform: none; }
+@media (max-width: 720px) {
+  html[data-ui="work"] .w-up { width: 54px; height: 44px !important; padding: 0 !important; justify-content: center; }
+  html[data-ui="work"] .w-up span { display: none; }
+  html[data-ui="work"] .w-fan { flex-direction: column-reverse; left: 50%; gap: 8px; }
+  html[data-ui="work"] .w-fan button { width: min(250px, 80vw); flex-direction: row !important; align-items: center !important; gap: 12px !important; padding: 12px 14px !important; }
+  html[data-ui="work"] .w-fan button svg { margin: 0; }
+  html[data-ui="work"] .w-fan button small { display: none; }
+  html[data-ui="work"] .w-dock { background-color: var(--w-glass) !important; -webkit-backdrop-filter: var(--w-blur); backdrop-filter: var(--w-blur); border-top-color: var(--w-glass-edge) !important; }
+  html[data-ui="work"] .w-dock .w-ghost { background: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; border: 0 !important; }
+  html[data-ui="work"] .w-dock .w-up-wrap { order: 2; }
+}
+html[data-ui="work"] .w-upg { text-decoration: none; color: var(--w-accent); border-color: color-mix(in srgb, var(--w-accent) 40%, var(--w-glass-edge)) !important; }
+html[data-ui="work"] .w-upg:hover { color: var(--w-accent-2); }
+@media (max-width: 720px) {
+  html[data-ui="work"] .w-upg, html[data-ui="work"] .w-bar .w-btn:not(.w-upg) { display: none; }
+  html[data-ui="work"] .w-dock > :nth-child(1) { order: 0; } html[data-ui="work"] .w-dock > :nth-child(2) { order: 1; }
+  html[data-ui="work"] .w-dock > .w-up-wrap { order: 2; } html[data-ui="work"] .w-dock > :nth-child(4) { order: 3; }
+}

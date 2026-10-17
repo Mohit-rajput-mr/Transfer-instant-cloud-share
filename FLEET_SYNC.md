@@ -110,3 +110,6 @@ G. Earth button: owner rejected zoom-out→Earth; button kept. If owner says rem
 - All styling in `src/app/work/work.css`, scoped to `html[data-ui="work"]` → main page untouched. Chrome: `components/WorkChrome.tsx` (bar, rail, dock, empty).
 - Files = nodes, groups = wide node, bubbles = note cards, tasks = panels, wires grey. Skin forced to "work" (style picker hidden).
 - Test: `node shot.mjs /work out.png [desk|phone] [dark|light] "click=<sel>"` (scratch harness, mocks /api).
+- Shared (both looks): Filter dropdown (`KindFilter`: scope + file type), archive = room (`ArchiveRoom`, `ArchiveRestore`, `inArchive` in Void), wired files placed beside their task (`near` in lib/map.ts), room band fit, single-click preview on cards, wheel scrolls page when the map is empty.
+- Classic header: one row; Public void is a blinking badge on the void; search + plus open Spaces (`start: ":search" | ":create"`); Chakra Petch is the classic sans.
+- /upgrade: plans page (Free / Pro / Business, "coming soon", early access by email). /work: glass layer, one Upload button with a fan, Orbit emblem logo.
