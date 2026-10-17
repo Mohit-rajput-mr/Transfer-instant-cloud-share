@@ -1,5 +1,7 @@
 # Rules for any AI agent on this project
 
+- **Start by reading `FLEET_SYNC.md`** (handover: open tasks, what is done but not deployed, how to test).
+
 - **Always answer the owner SHORT.** Main points only, one line each. No long reports, no tables unless asked.
 - Live branch: `claude/festive-keller-rln4jk`. Vercel is NOT linked to GitHub: after pushing, deploy with the Vercel MCP
   `create_deployment` (project `orbit`, team `team_8pncmJWWU3ghEdA5XXAqbAIj`, `gitSource` github `Mohit-rajput-mr/Transfer-instant-cloud-share`, ref = branch, sha = commit, `target: production`).

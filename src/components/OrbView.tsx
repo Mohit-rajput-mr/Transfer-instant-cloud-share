@@ -288,6 +288,8 @@ export function bubbleLayout(n: number) {
   return { d, W, H, spots };
 }
 
+// kinds drawn as a file shape (a page, a photo, a clip, a box) rather than a ball
+const SHAPED = new Set(["photo", "video", "doc", "archive"]);
 const KIND_ICON = { photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
 /** what kind of file it is (photo, video, document, audio, archive), as a small badge on the ball */
 export function KindBadge(props: { kind: string }) {
@@ -765,7 +767,7 @@ export default function OrbView(props: {
           );
         })()
       ) : (
-      <div className="orb-body" style={{ "--life": up ? Math.max(0.03, launching) : frac } as CSSProperties}>
+      <div className={`orb-body${SHAPED.has(fileKind(orb.fileName, orb.mime)) ? " shaped" : ""}`} style={{ "--life": up ? Math.max(0.03, launching) : frac } as CSSProperties}>
         <div className="halo" />
         {mine && <span className="claim" />}
         <div className={`sphere${orb.thumb && orb.open && !up ? " thumbed" : ""}`} data-kind={fileKind(orb.fileName, orb.mime)}>{orb.thumb && orb.open && !up && <Thumb id={orb.id} fileName={orb.fileName} mime={orb.mime} />}</div>
@@ -773,6 +775,8 @@ export default function OrbView(props: {
           <circle className="track" cx="50" cy="50" r={R} />
           <circle className="life" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - (up ? Math.max(0.03, launching) : frac))} />
         </svg>
+        {/* a file-shaped ball shows its life as a slim bar under the shape (a round ring around a page looks broken) */}
+        <i className="lifebar" aria-hidden><b /></i>
         <KindBadge kind={fileKind(orb.fileName, orb.mime)} />
         <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : ext(orb.fileName)}</span>
         {props.onDestroy && mine && !up && phase !== "burning" && <span className="destroy" data-destroy="" role="button" aria-label={`Destroy ${orb.name}`} title="Destroy"><LuTrash2 /></span>}

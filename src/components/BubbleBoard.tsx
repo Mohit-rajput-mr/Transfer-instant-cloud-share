@@ -56,9 +56,57 @@ async function shareText(t: string, toast: (m: string) => void) {
   copyText(t, toast);
 }
 
+// ---- an edit, shown: for its first seconds the words that changed blink white to green, marked "edited" ----
+const EDIT_FOR = 5000;
+const lastText = new Map<string, string>();
+const edits = new Map<string, { at: number; changed: Set<number> }>();
+/** which words of `now` are new compared to `was` (longest common run of words kept, the rest changed) */
+function changedWords(was: string, now: string) {
+  const a = was.split(/\s+/).filter(Boolean), b = now.split(/\s+/).filter(Boolean);
+  if (a.length * b.length > 250_000) return new Set(b.map((_, i) => i));
+  const dp = Array.from({ length: a.length + 1 }, () => new Uint16Array(b.length + 1));
+  for (let i = a.length - 1; i >= 0; i--) for (let j = b.length - 1; j >= 0; j--) dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  const keep = new Set<number>();
+  for (let i = 0, j = 0; i < a.length && j < b.length; ) {
+    if (a[i] === b[j]) (keep.add(j), i++, j++);
+    else if (dp[i + 1][j] >= dp[i][j + 1]) i++;
+    else j++;
+  }
+  return new Set(b.map((_, i) => i).filter((i) => !keep.has(i)));
+}
+/** the words this device just saw change in this bubble (rewritten, not added to), for EDIT_FOR */
+function useEditMarks(b: Bubble) {
+  const was = lastText.get(b.id);
+  if (was !== undefined && was !== b.text && b.editedAt && b.added == null) edits.set(b.id, { at: Date.now(), changed: changedWords(was, b.text) });
+  lastText.set(b.id, b.text);
+  const e = edits.get(b.id);
+  const live = e && Date.now() - e.at < EDIT_FOR ? e : null;
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (!live) return;
+    const t = setTimeout(() => tick((n) => n + 1), EDIT_FOR - (Date.now() - live.at) + 50);
+    return () => clearTimeout(t);
+  }, [live]);
+  return live?.changed ?? null;
+}
+
 function Text({ b, now }: { b: Bubble; now: number }) {
   const fresh = b.added != null && b.added < b.text.length && now - Date.parse(b.updatedAt ?? b.createdAt) < NEW_FOR;
   const links = (t: string, k: string) => splitLinks(t).map((p, i) => (p.href ? <a key={k + i} href={p.href} target="_blank" rel="noopener noreferrer nofollow">{p.t}</a> : <span key={k + i}>{p.t}</span>));
+  const changed = useEditMarks(b);
+  if (changed?.size) {
+    let w = -1;
+    return (
+      <p>
+        <i className="bub-edited mono">edited</i>
+        {b.text.split(/(\s+)/).map((part, i) => {
+          if (!part || /^\s+$/.test(part)) return <span key={i}>{part}</span>;
+          w++;
+          return changed.has(w) ? <mark key={i} className="bub-chg">{part}</mark> : <span key={i}>{part}</span>;
+        })}
+      </p>
+    );
+  }
   if (!fresh) return <p>{links(b.text, "a")}</p>;
   return (
     <p>

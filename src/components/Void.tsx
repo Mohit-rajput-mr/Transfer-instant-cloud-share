@@ -1290,10 +1290,13 @@ export default function Void() {
     }, 300);
     return () => clearInterval(t);
   }, [tasks.length, archived]);
-  // small open files: decrypted quietly in the background so a double-click previews instantly
+  // every open file in sight: decrypted quietly in the background (lib/peek.ts) so a tap previews it at once
   useEffect(() => {
-    const t = setTimeout(() => warm(visible.filter((o) => !isPending(o.id))), 400);
-    return () => clearTimeout(t);
+    const go = () => warm(visible.filter((o) => !isPending(o.id) && !isIncoming(o.id)));
+    const t = setTimeout(go, 400);
+    // and again now and then: a file whose sender was busy (or a network blip) gets another try
+    const again = setInterval(() => document.visibilityState === "visible" && go(), 20_000);
+    return () => (clearTimeout(t), clearInterval(again));
   }, [visible]);
   const [vw, setVw] = useState({ w: 1440, h: 900 });
   useEffect(() => {

@@ -1424,6 +1424,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
           file={file ?? peekF}
           name={orb.fileName}
           failed={peekOff && !file}
+          thumb={orb.thumb && orb.open ? previewUrl(orb.id) : undefined}
           onClose={() => setViewing(false)}
           onDownload={file ? () => autoDownload(file) : () => (setViewing(false), void go())}
         />

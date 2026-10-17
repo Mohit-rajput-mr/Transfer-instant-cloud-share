@@ -23,7 +23,7 @@ const OWN_TOUCH = "input, textarea, select, .tb-acts, .tb-route, .map-tools, [da
 /**
  * The area, seen from above, with Google Maps' controls: drag to move, scroll / pinch to zoom at the pointer,
  * double-click to zoom in, arrow keys to move, + / - to zoom, 0 to go back. Until you move it yourself the view
- * follows the area as it grows. Zooming out past all of it (or the Earth button) goes up to the Earth.
+ * follows the area as it grows. Zooming out just shows more (smaller); the Earth button goes up to the globe.
  */
 // what picks a whole panel up: its header, or its own background (never a button, field or row inside it)
 const HANDLE = ".tb-head, .bub-stack.on-map > header";
@@ -40,7 +40,7 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
   empty?: boolean;
   /** what is on screen (only that needs drawing) */
   onRect?: (r: Rect) => void;
-  /** zoomed out past the whole area: up to the Earth */
+  /** the Earth button: up to the globe */
   onEarth?: () => void;
   /** a panel (task panel, bubble stack) was dragged by this much (world px) */
   onMoveItem?: (key: string, dx: number, dy: number) => void;
@@ -71,7 +71,8 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     const aw = Math.max(100, size.w - band.left - band.right), ah = Math.max(100, size.h - band.top - band.bottom);
     return Math.min(1, aw / W, ah / H);
   }, [size, band, W, H]);
-  const lowK = useCallback(() => allK() * 0.85, [allK]);
+  // zooming out goes well past the whole area (it all just gets smaller); the fit button brings the opening view back
+  const lowK = useCallback(() => Math.min(allK() * 0.5, 0.25), [allK]);
   const fitView = useCallback((): View => {
     const k = Math.max(allK(), OPEN_K);
     const aw = size.w - band.left - band.right, ah = size.h - band.top - band.bottom;
@@ -137,28 +138,16 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     stillT.current = window.setTimeout(() => box.current?.classList.remove("moving"), 180);
   }, []);
 
-  // zooming out against the edge a few times in a row goes up to the Earth
-  const push = useRef({ n: 0, t: 0 });
-  const outAtEdge = useCallback(() => {
-    const now = performance.now();
-    push.current = now - push.current.t < 700 ? { n: push.current.n + 1, t: now } : { n: 1, t: now };
-    if (push.current.n >= 4 && onEarth) {
-      push.current = { n: 0, t: 0 };
-      onEarth();
-    }
-  }, [onEarth]);
-
   const zoomAt = useCallback(
     (factor: number, cx: number, cy: number, animate: boolean) => {
       const v = viewRef.current;
-      if (factor < 1 && v.k <= lowK() + 1e-4) return outAtEdge();
       const k = Math.min(MAX_K, Math.max(lowK(), v.k * factor));
       const f = k / v.k;
       setFollow(false);
       moving();
       go(keepIn({ k, x: cx - (cx - v.x) * f, y: cy - (cy - v.y) * f }), animate);
     },
-    [lowK, keepIn, go, moving, outAtEdge],
+    [lowK, keepIn, go, moving],
   );
   const center = useCallback(() => ({ x: band.left + (size.w - band.left - band.right) / 2, y: band.top + (size.h - band.top - band.bottom) / 2 }), [band, size]);
   const panBy = useCallback(
@@ -323,12 +312,6 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     if (m.ps.length > 1 && s.d > 0) {
       const r = box.current!.getBoundingClientRect();
       const d = Math.hypot(m.ps[0].x - m.ps[1].x, m.ps[0].y - m.ps[1].y);
-      // pinching in against the edge: up to the Earth
-      if (d / s.d < 0.7 && s.v.k <= lowK() + 1e-4 && onEarth) {
-        pts.current.clear();
-        g.current = null;
-        return onEarth();
-      }
       const k = Math.min(MAX_K, Math.max(lowK(), s.v.k * (d / s.d)));
       const f = k / s.v.k, cx = s.x - r.left, cy = s.y - r.top;
       setView(keepIn({ k, x: cx - (cx - s.v.x) * f + (m.x - s.x), y: cy - (cy - s.v.y) * f + (m.y - s.y) }));

@@ -22,7 +22,7 @@ export function viewKind(name: string, type: string): ViewKind | null {
 const TEXT_MAX = 2 * 1024 * 1024;
 
 /** `file` may still be on its way (a background preview): the viewer opens at once and fills in when it lands. */
-export default function Viewer({ file, name, failed, onClose, onDownload }: { file: File | null; name?: string; failed?: boolean; onClose: () => void; onDownload?: () => void }) {
+export default function Viewer({ file, name, failed, thumb, onClose, onDownload }: { file: File | null; name?: string; failed?: boolean; /** the stored preview picture: shown at once while the full file is still on its way */ thumb?: string; onClose: () => void; onDownload?: () => void }) {
   const kind = file ? viewKind(file.name, file.type) : null;
   const url = useMemo(() => (file ? URL.createObjectURL(file) : ""), [file]);
   useEffect(() => () => void (url && URL.revokeObjectURL(url)), [url]);
@@ -70,7 +70,15 @@ export default function Viewer({ file, name, failed, onClose, onDownload }: { fi
           </div>
         </header>
         <div className="viewer-body">
-          <div className="viewer-none mono">{failed ? "No preview right now · use Download" : <i className="viewer-spin" aria-label="Opening" />}</div>
+          {thumb && !failed ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="viewer-media viewer-thumb" src={thumb} alt="" draggable={false} />
+              <i className="viewer-spin corner" aria-label="Loading the full file" />
+            </>
+          ) : (
+            <div className="viewer-none mono">{failed ? "No preview right now · use Download" : <i className="viewer-spin" aria-label="Opening" />}</div>
+          )}
         </div>
       </div>,
       document.body,

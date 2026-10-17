@@ -2901,9 +2901,9 @@ em.hq-tag { font-style: normal; }
 .world.far .lg, .world.far .bub { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 /* on the map nothing behind the world needs blurring through glass */
 .void.map .world .bub { -webkit-backdrop-filter: none; backdrop-filter: none; background-color: rgba(18,19,22,0.92); }
-/* low-end devices (or ones that drop frames): no glass blur, no idle motion, simple shadows */
-html[data-perf="low"] * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
-html[data-perf="low"] .lg { background-color: rgba(20,21,24,0.94); }
+/* low-end devices (or ones that drop frames): no glass blur on the many things in the map (the few cards, bars and
+   buttons keep theirs: they are see-through glass and need it to stay readable), no idle motion, simple shadows */
+html[data-perf="low"] .world * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 html[data-perf="low"] .orb, html[data-perf="low"] .orb *:not(.sphere), html[data-perf="low"] .bub-stack, html[data-perf="low"] .task-board, html[data-perf="low"] .geo-pin svg { animation: none !important; }
 html[data-perf="low"] .orb-anchor, html[data-perf="low"] .bub-stack.on-map, html[data-perf="low"] .task-board { transition-duration: 0.25s !important; }
 html[data-perf="low"] .bub, html[data-perf="low"] .task-board, html[data-perf="low"] .sphere { box-shadow: none !important; }
@@ -2950,3 +2950,16 @@ html[data-earth], html[data-earth] body { overflow: hidden; overscroll-behavior:
 .task-boards.mapped > .task-board.lifted, .bub-stack.on-map.lifted { z-index: 20; transition: none !important; cursor: grabbing; box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 0 1.5px rgba(255,255,255,0.35); }
 .bub-stack.on-map.lifted { filter: drop-shadow(0 18px 30px rgba(0,0,0,0.6)); box-shadow: none; }
 .task-boards.mapped > .task-board.dropped, .bub-stack.on-map.dropped { transition: none !important; }
+/* preview: the stored picture at once, the full file replaces it the moment it is decrypted */
+.viewer-thumb { filter: saturate(1.05); }
+.viewer-spin.corner { position: absolute; right: 18px; bottom: 18px; width: 22px; height: 22px; }
+
+/* life of a file-shaped ball: a slim bar under the shape instead of a round ring (OrbView .lifebar) */
+.lifebar { display: none; }
+[data-skin="orbit"] .orb-body.shaped > .ring { display: none; }
+[data-skin="orbit"] .orb-body.shaped > .lifebar { display: block; position: absolute; left: 28%; right: 28%; bottom: 1%; height: 4px; border-radius: 4px;
+  background: rgba(255,255,255,0.14); overflow: hidden; pointer-events: none; }
+.lifebar b { display: block; height: 100%; width: calc(var(--life, 1) * 100%); border-radius: inherit; background: hsl(var(--hue) 80% 72%); transition: width 1s linear; }
+.orb.dying .lifebar b { background: var(--danger); }
+.orb.launching .lifebar b { background: #fff; transition-duration: 0.4s; }
+.world.far .lifebar { display: none !important; }
