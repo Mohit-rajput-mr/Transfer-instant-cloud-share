@@ -1,0 +1,13 @@
+{
+  // Orbit's live updates (see src/index.ts). Deployed by Cloudflare Workers Builds from this folder on every push.
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "orbit-live",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "durable_objects": {
+    "bindings": [{ "name": "ROOM", "class_name": "Room" }]
+  },
+  // the free plan runs SQLite-backed Durable Objects
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  "observability": { "enabled": true }
+}

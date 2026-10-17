@@ -6,3 +6,5 @@
 - Bump `RELEASE` in `src/app/api/version/route.ts` only when open tabs must reload.
 - Supabase project `orbit` (`ntnfdvmzylxenjqwdsnp`). Save every DB change as a file in `supabase/migrations/`.
 - Public void is local: content carries an `area` (geohash-4, `src/lib/area.ts`); lists and realtime channels are per area + neighbours.
+- Live updates: Cloudflare Worker in `live/` (Durable Object per region / space). Deployed by Cloudflare Workers Builds
+  (root dir `live`) on push. The site uses it when Vercel env `NEXT_PUBLIC_LIVE_URL` (wss://…) is set, else Supabase Realtime.

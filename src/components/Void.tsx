@@ -33,6 +33,7 @@ import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange }
 import TaskBoard, { TaskWires, taskGroups } from "./TaskBoard";
 import { addTask, assignTask, burnTask, carryTasks, wireObject, editTask, isMyTask, moveTask, openInvite, parseTask, sealInvite, tickTask, type Task } from "@/lib/tasks";
 import { readSync, type SyncMsg } from "@/lib/sync";
+import { joinLive, liveOn, roomsFor, type Chan } from "@/lib/live";
 import { around } from "@/lib/area";
 import { asked, dropGps, fromIp, locate, markAsked, permission, where } from "@/lib/where";
 import LocationAsk from "./LocationAsk";
@@ -292,7 +293,7 @@ export default function Void() {
   const [pulse, setPulse] = useState(0);
   const [toasts, setToasts] = useState<{ id: number; text: string }[]>([]);
   const [extra, setExtra] = useState<Orb | null>(null);
-  const channel = useRef<RealtimeChannel | null>(null);
+  const channel = useRef<Chan | RealtimeChannel | null>(null);
   const known = useRef<Set<string> | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
@@ -810,7 +811,9 @@ export default function Void() {
   beams.current = { launch: onLaunchBeam, landed: onLandedBeam, gone: onGoneBeam, sync: onSyncBeam };
 
   // live updates: a space's own channel, or the channels of this area and the eight around it (sent on this area's)
-  const chanNames = space ? `orbit-s-${space.chan}` : area ? [area, ...around(area).filter((c) => c !== area)].map((c) => `orbit-a-${c}`).join(" ") : "orbit-void";
+  const chanNames = liveOn
+    ? roomsFor(space?.chan ?? null, area).join(" ")
+    : space ? `orbit-s-${space.chan}` : area ? [area, ...around(area).filter((c) => c !== area)].map((c) => `orbit-a-${c}`).join(" ") : "orbit-void";
   const myIdRef = useRef<string | null>(null);
   useEffect(() => {
     myIdRef.current = myId;
@@ -875,23 +878,44 @@ export default function Void() {
   useEffect(() => {
     // (with no channel left the connection closes by itself)
     if (!rtOn) return;
-    const chans = chanNames.split(" ").map((name, i) => {
-      const ch = supabase.channel(name, { config: { broadcast: { self: false } } });
-      ch.on("broadcast", { event: "pulse" }, () => {
+    // what someone else said, whichever way it came
+    const heard = async (event: string, payload: Record<string, unknown>) => {
+      if (event === "pulse") {
         scheduleRefresh();
-        setPulse((p) => p + 1);
-      });
-      ch.on("broadcast", { event: "launch" }, ({ payload }) => beams.current.launch(payload ?? {}));
-      ch.on("broadcast", { event: "landed" }, ({ payload }) => void beams.current.landed(payload ?? {}));
-      ch.on("broadcast", { event: "gone" }, ({ payload }) => beams.current.gone(payload ?? {}));
-      ch.on("broadcast", { event: "sync" }, ({ payload }) => beams.current.sync(payload ?? {}));
+        return setPulse((p) => p + 1);
+      }
+      if (event === "launch") return beams.current.launch(payload);
+      if (event === "landed") return void beams.current.landed(payload);
+      if (event === "gone") return beams.current.gone(payload);
+      if (event === "sync") return beams.current.sync(payload);
       // "go private with the team": only devices on the sender's network can open the passcode
-      ch.on("broadcast", { event: "invite" }, async ({ payload }) => {
-        const p = payload as { slug?: string; title?: string; by?: string; net?: string; seal?: { iv: string; c: string } } | undefined;
+      if (event === "invite") {
+        const p = payload as { slug?: string; title?: string; by?: string; net?: string; seal?: { iv: string; c: string } };
         if (!p?.slug || !p.seal || spaceRef.current || p.net !== netRef.current || !inviteKeyRef.current || !/^[a-z0-9-]{1,32}$/.test(p.slug)) return;
         const pass = await openInvite(inviteKeyRef.current, p.seal);
         if (pass) setInvite({ slug: p.slug, title: String(p.title ?? "").slice(0, 40), by: String(p.by ?? "").slice(0, 24), pass });
+      }
+    };
+    // Orbit's own Cloudflare rooms (lib/live.ts, live/): thousands online at once on the free plan
+    if (liveOn) {
+      const l = joinLive(chanNames.split(" "), spaceRef.current ? "" : areaRef.current, {
+        on: (e, p) => void heard(e, p),
+        status: (up) => {
+          setRtDown(!up);
+          if (!up) return;
+          channel.current = l.chan;
+          if (spaceRef.current && myIdRef.current) l.chan.track({ id: myIdRef.current });
+        },
+        presence: (ids) => setLive(new Set(ids)),
       });
+      return () => {
+        channel.current = null;
+        l.close();
+      };
+    }
+    const chans = chanNames.split(" ").map((name, i) => {
+      const ch = supabase.channel(name, { config: { broadcast: { self: false } } });
+      for (const ev of ["pulse", "launch", "landed", "gone", "sync", "invite"]) ch.on("broadcast", { event: ev }, ({ payload }) => void heard(ev, payload ?? {}));
       if (spaceRef.current) {
         ch.on("presence", { event: "sync" }, () => {
           const ids = new Set<string>();
@@ -914,7 +938,9 @@ export default function Void() {
       channel.current = null;
       chans.forEach((ch) => supabase.removeChannel(ch));
     };
-  }, [scheduleRefresh, chanNames, rtOn]);
+    // (on the Cloudflare rooms the area matters too: two areas can share the same regions)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduleRefresh, chanNames, rtOn, liveOn && !space ? area : ""]);
   // back from the background: whatever happened meanwhile
   const wasOn = useRef(true);
   useEffect(() => {
