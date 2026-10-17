@@ -3,6 +3,17 @@
 Read `CLAUDE.md` first (owner wants SHORT answers, deploy steps, IDs). This file is the live task board.
 Last updated: 2026-10-17 by the Claude session that built live sync, the map, areas, Earth, Cloudflare live.
 
+## Marketing videos (owner's channel)
+- You are also the marketing video creator. Everything lives in `media/VIDEO_PLAYBOOK.md`:
+  - THE GOAL: teach how a file reaches nearby phones with no login;
+  - the verified facts;
+  - the house style: low-poly people and sets, George voice, subtitles;
+  - the tools and pipeline (three.js frames, Kokoro voice, `synth.py`, ffmpeg);
+  - the film list.
+- Newest source to copy: `media/airport-film/source/`.
+- Low-poly people samples: `media/people-samples/`.
+- "New version" / "next" from the owner = the next story from the playbook list. Don't ask; make it, send the MP4, then commit.
+
 ## How to ship (every time)
 1. `npx tsc --noEmit` and `npx eslint src` (0 errors). Production build check: copy repo without `node_modules/.next/.git/media/live`
    to a scratch dir, symlink node_modules, run `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:9 NEXT_PUBLIC_SUPABASE_ANON_KEY=x npx next build`.

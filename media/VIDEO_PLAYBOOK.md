@@ -3,6 +3,47 @@
 Read this before making any video for this project. **Your role is the in-house marketing video creator.**
 You make short vertical videos that explain how Orbi Transfer works, so people get curious and try it.
 
+## THE GOAL (owner, latest — read first)
+The films are **education, not "upload and download"**. The viewer is the person who just *received* a file and wonders:
+"How did this reach my phone with no login, no name, no number? How did they find me?" Every film answers that with a
+simple visual explanation of the closed local network: the rough area, the live room, the locked file, the code, and the burn.
+Then each film teaches **one more thing**, chosen by you, for example:
+- why the server never slows down or crashes (it only signs tickets; the bytes fly straight to storage or phone to phone);
+- why storage never fills (everything burns; caps);
+- how big files (up to 20 GB) go in parts, several at once, and resume;
+- private Spaces (passcode room, members only, invisible to the public area);
+- open files (no code: anyone nearby can open them, like a public noticeboard);
+- tasks (files wired to a task, step colours);
+- end-to-end: the hosting platform never sees a file byte.
+Add your own creativity beyond the owner's list, but stay true to the facts below.
+**Whole world low-poly:** people in style 5 *and* the sets (faceted ground, low-poly trees, rocks, buildings, `flatShading: true`
+everywhere, flat pastel palette). No smooth or realistic props.
+When the owner says "new version" / "next", make the next film from the story list, without asking.
+
+## Verified mechanism facts (checked in code 2026-10-17; never claim beyond these)
+- **No account.** A device is a random id in localStorage; each file gets a random owner key kept on the sender's device.
+- **Area:** geohash-4 cell (about 39 × 20 km) + its 8 neighbours. GPS is turned into the cell on the phone; without GPS the
+  server guesses the area from the network (IP location). Safe wording: "others only ever see the rough area". (Do not say
+  "your exact location never leaves the phone": FLEET_SYNC task D may change that.)
+- **Live room:** Cloudflare Worker, one Durable Object room per region (geohash-3, about 156 km) or per private Space. Every open
+  Orbi tab joins its region's room; a new file sends a small note, not the file, and screens in the 9 cells show it within
+  about a second. Quiet rooms sleep. (Fallback: Supabase Realtime.)
+- **Locked on the sender's phone:** PBKDF2-SHA256 (310,000 rounds) turns the code into an AES-256-GCM key plus an "auth proof".
+  Encrypted in 8 MB chunks. The server keeps only a hash of the proof; 12 wrong tries lock the file.
+- **Open files** (no code) are still encrypted, with a public built-in code, so anyone nearby can open them. Never claim nobody
+  can open an open file.
+- **Unlock:** the receiver's phone derives the key from the code and sends the proof; the server returns a signed link that
+  lasts 3 hours; the bytes stream in and unlock chunk by chunk on the receiver's phone.
+- **Bytes never touch the website server:** the browser uploads straight to Cloudflare R2 using signed URLs. Parts are about
+  32 MB, 3 at a time; downloads use 4 ranges at once. Uploads resume after a drop (only the missing parts are sent).
+  Phone-to-phone (WebRTC P2P) is tried first; storage is the fallback. There is no TURN server, so P2P is not guaranteed.
+- **Max file size:** 20 GB. Folders and many files go as one bundle.
+- **Burn:** 5 to 30 minutes (default 30); after the download limit, within 10 minutes. The reaper deletes the stored objects.
+  Fair-use caps: 300 uploads/hour per network, 300 GB alive at once (past that it still sends P2P, it just isn't stored).
+- **Spaces:** a named room; private ones need a passcode (4+ characters). Joining gives the device its own pass. Space files
+  never appear in the public area, and only members can unlock them. The owner can remove members.
+- **Tasks:** files can be wired to a task with coloured steps; tasks burn too (Pro: up to 8 h).
+
 ## What the owner wants (always)
 - **Educational, not an ad.** Explain the mechanism simply; never trash other apps by name. The visuals do the explaining.
 - **Same aesthetic every time:** the Zack D. Films style (reference the owner liked):
