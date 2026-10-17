@@ -40,6 +40,18 @@ You make short vertical videos that explain how Orbi Transfer works, so people g
 - **Burns:** files expire after 30 minutes by default (tasks can keep them longer); no account, no trace.
 - Also true: works on any device with a browser, folders and many files go in one ball, team Spaces, preview before download.
 
+## Owner feedback (latest, wins over older notes)
+- **Never reuse wording.** Every film gets a fresh script: new lines, new jokes, new metaphors. Only the hook line stays.
+- **Explain it like to a simple person, in layers:** follow the file's whole journey with everyday pictures, not tech words:
+  1. sealed in a locked box (the passcode is the key and never leaves your phone);
+  2. cut into pieces, several flying at once (that's why it's quick);
+  3. the pieces wait in a vault, still locked;
+  4. Orbi rings the phones in your part of the city (the area, never the exact spot);
+  5. a guest taps and types the passcode; the pieces drop, click together and unlock;
+  6. after 30 minutes the vault burns every piece.
+- **New look for the mechanism each time** (same feel, never the same city blocks): e.g. the hex-tile toy town, the vault,
+  the holographic phone of `wedding-film/`. Invent a new visual for the next one.
+
 ## Story ideas for new versions (each one is a new film)
 Gym (send a workout video to your spotter) · airport gate (boarding pass to your partner) · concert (clips to friends nearby) ·
 classroom (slides to every student at once) · office meeting (the deck to the room) · wedding (photos to all guests) ·
@@ -75,7 +87,8 @@ Structure that works:
    Commit, push, and send the MP4.
 
 ## Films so far
-- `gym-film/`: the gym, bench-press video (latest, house style)
+- `wedding-film/`: wedding, passcode "cake", the photo's full journey (locked box → pieces → vault → ring → unlock → burn) (**latest, best explanation**)
+- `gym-film/`: the gym, bench-press video (house style)
 - `explainer-3d-stick/`: café story, stick people, George (house style)
 - `explainer-3d/`: same café story with mannequins (older)
 - `explainer-film/`: 2D motion-graphics explainer (older)

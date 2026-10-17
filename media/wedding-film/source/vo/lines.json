@@ -1,0 +1,90 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know why people are using Orbi Transfer?",
+   "dur": 2.837,
+   "at": 0.35
+  },
+  {
+   "key": "scene",
+   "text": "Picture a wedding. You just caught the perfect shot of the first dance.",
+   "dur": 3.968,
+   "at": 3.74
+  },
+  {
+   "key": "want",
+   "text": "And suddenly, every single guest wants a copy.",
+   "dur": 2.923,
+   "at": 8.01
+  },
+  {
+   "key": "old",
+   "text": "That usually means a group chat, forty phone numbers, and a lot of waiting.",
+   "dur": 4.544,
+   "at": 11.23
+  },
+  {
+   "key": "send",
+   "text": "Instead, you open Orbi Transfer, add a passcode, and tap send. Once.",
+   "dur": 4.757,
+   "at": 16.07
+  },
+  {
+   "key": "pop",
+   "text": "It shows up on every phone in the room. You just shout the passcode. Cake!",
+   "dur": 4.608,
+   "at": 21.13
+  },
+  {
+   "key": "how",
+   "text": "So what actually happens to that photo?",
+   "dur": 2.496,
+   "at": 26.29
+  },
+  {
+   "key": "pack",
+   "text": "First, your phone seals it inside a locked box. The passcode is the key, and the key never leaves your phone.",
+   "dur": 6.741,
+   "at": 29.33
+  },
+  {
+   "key": "pieces",
+   "text": "Then the box is cut into small pieces, and several fly out at the same time. That is why it is quick.",
+   "dur": 6.421,
+   "at": 36.37
+  },
+  {
+   "key": "vault",
+   "text": "The pieces wait in a vault online. Still locked. Without the passcode, nobody can open them.",
+   "dur": 5.76,
+   "at": 43.34
+  },
+  {
+   "key": "ring",
+   "text": "At that same moment, Orbi rings every phone in your part of the city. It knows the area, never your exact spot.",
+   "dur": 7.275,
+   "at": 49.41
+  },
+  {
+   "key": "land",
+   "text": "A guest taps it, types cake, and the pieces drop down, click back together, and unlock.",
+   "dur": 5.184,
+   "at": 57.23
+  },
+  {
+   "key": "burn",
+   "text": "Thirty minutes later, the vault burns every piece. No account. Nothing left behind.",
+   "dur": 5.44,
+   "at": 62.96
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. Try it at the next party.",
+   "dur": 3.307,
+   "at": 68.7
+  }
+ ],
+ "duration": 73.91
+}
