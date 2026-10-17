@@ -1,0 +1,67 @@
+<!doctype html><html><head><style>html,body{margin:0;background:#000}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"../wedding-film/source/lib/three.module.js"}}</script></head><body>
+<script type="module">
+import * as THREE from "three";
+const W=1800,H=1000;const SEX=new URLSearchParams(location.search).get("sex")||"m";const M=SEX==="m";
+const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});r.setSize(W,H);r.shadowMap.enabled=true;r.shadowMap.type=THREE.PCFSoftShadowMap;r.toneMapping=THREE.ACESFilmicToneMapping;r.outputColorSpace=THREE.SRGBColorSpace;document.body.appendChild(r.domElement);
+const s=new THREE.Scene();s.background=new THREE.Color(0x2a2c31);
+s.add(new THREE.HemisphereLight(0xffffff,0x3a3a44,1.4));
+const d=new THREE.DirectionalLight(0xffffff,2.4);d.position.set(2,5,6);d.castShadow=true;d.shadow.mapSize.set(2048,2048);Object.assign(d.shadow.camera,{left:-9,right:9,top:5,bottom:-2});s.add(d);
+const rim=new THREE.DirectionalLight(0x9fc3ff,1.2);rim.position.set(-4,3,-4);s.add(rim);
+const fl=new THREE.Mesh(new THREE.PlaneGeometry(40,20),new THREE.MeshStandardMaterial({color:0x3a3d44,roughness:0.9}));fl.rotation.x=-Math.PI/2;fl.receiveShadow=true;s.add(fl);
+const cam=new THREE.PerspectiveCamera(26,W/H,0.1,100);cam.position.set(0,1.25,8.6);cam.lookAt(0,0.92,0);
+const V=(x,y,z)=>new THREE.Vector3(x,y,z),UP=V(0,1,0),q=new THREE.Quaternion();
+// a body part = a lathe (profile of radii along the bone), placed between two joints
+function lathe(prof,seg){const pts=prof.map(([y,rr])=>new THREE.Vector2(rr,y));const g=new THREE.LatheGeometry(pts,seg);return g;}
+function part(g,mat,depth=1){const m=new THREE.Mesh(g,mat);m.castShadow=m.receiveShadow=true;m.userData.depth=depth;return m;}
+function place(m,a,b){const dv=b.clone().sub(a),L=dv.length();m.position.copy(a);m.quaternion.copy(q.setFromUnitVectors(UP,dv.normalize()));m.scale.set(1,L,m.userData.depth);}
+function human(style){
+  const facet=style.facet,seg=facet?6:20;
+  const mat=new THREE.MeshStandardMaterial({color:style.color,roughness:style.rough??0.6,flatShading:facet});
+  const g=new THREE.Group();
+  const P={
+    torso:part(lathe(M?[[0,0.125],[0.12,0.14],[0.3,0.125],[0.5,0.165],[0.7,0.205],[0.84,0.215],[0.93,0.19],[1,0.075]]:[[0,0.15],[0.1,0.168],[0.22,0.15],[0.42,0.105],[0.58,0.125],[0.68,0.16],[0.76,0.162],[0.84,0.14],[0.93,0.13],[1,0.06]],seg),mat,M?0.6:0.62),
+    neck:part(lathe([[0,0.05],[1,0.045]],seg),mat),
+    uArmL:part(lathe(M?[[0,0.062],[0.35,0.066],[0.7,0.055],[1,0.04]]:[[0,0.046],[0.5,0.042],[1,0.033]],seg),mat),uArmR:null,
+    fArmL:part(lathe(M?[[0,0.048],[0.25,0.054],[1,0.032]]:[[0,0.036],[0.3,0.037],[1,0.025]],seg),mat),fArmR:null,
+    thighL:part(lathe(M?[[0,0.085],[0.4,0.08],[1,0.05]]:[[0,0.098],[0.35,0.085],[1,0.048]],seg),mat),thighR:null,
+    shinL:part(lathe([[0,0.05],[0.3,0.052],[1,0.032]],seg),mat),shinR:null,
+  };
+  P.uArmR=P.uArmL.clone();P.fArmR=P.fArmL.clone();P.thighR=P.thighL.clone();P.shinR=P.shinL.clone();
+  for(const m of Object.values(P))g.add(m);
+  // joint balls so limbs flow into each other
+  const jG=facet?new THREE.IcosahedronGeometry(1,1):new THREE.SphereGeometry(1,20,14);
+  const joint=(p,rr)=>{const m=part(jG,mat);m.position.copy(p);m.scale.setScalar(rr);g.add(m);};
+  const SHX=M?0.215:0.165,HPX=M?0.1:0.115;
+  for(const sd of[-1,1]){joint(V(sd*SHX,1.41,0.02),M?0.072:0.052);joint(V(sd*0.22,1.12,0.1),0.044);joint(V(sd*HPX,0.93,0),M?0.085:0.098);joint(V(sd*0.11,0.5,0.03),0.052);joint(V(sd*0.12,0.08,0),0.036);}
+  const headG=facet?new THREE.IcosahedronGeometry(1,1):new THREE.SphereGeometry(1,32,24);
+  const head=part(headG,mat);head.scale.set(M?0.098:0.09,M?0.128:0.12,M?0.112:0.105);g.add(head);
+  if(M){head.scale.set(0.104,0.126,0.112);/* a short neck-to-jaw block keeps the face strong */}
+  else{const hs=facet?new THREE.IcosahedronGeometry(1,1):new THREE.SphereGeometry(1,28,18);
+    const cap=part(hs,mat);cap.scale.set(0.102,0.115,0.112);cap.position.set(0,1.695,0.035);g.add(cap);
+    const tail=part(facet?new THREE.CylinderGeometry(0.035,0.05,0.26,6):new THREE.CapsuleGeometry(0.042,0.2,6,14),mat);tail.position.set(0,1.56,-0.07);tail.rotation.x=0.25;g.add(tail);}
+  const handG=facet?new THREE.BoxGeometry(0.06,0.1,0.028):new THREE.CapsuleGeometry(0.026,0.05,6,12);
+  const hL=part(handG,mat),hR=part(handG,mat);g.add(hL,hR);
+  const footG=new THREE.BoxGeometry(0.09,0.06,0.25);const fL=part(footG,mat),fR=part(footG,mat);g.add(fL,fR);
+  if(style.wire){for(const m of [...Object.values(P),head]){const e=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry,1),new THREE.LineBasicMaterial({color:0x111111,transparent:true,opacity:0.45}));m.add(e);}}
+  // joints (metres) — phone-holding pose
+  const J={hip:V(0,0.95,0),chest:V(0,1.47,0.02),head:V(0,1.66,0.06)};
+  place(P.torso,J.hip.clone().add(V(0,-0.05,0)),J.chest);place(P.neck,V(0,1.44,0.02),V(0,1.56,0.05));
+  head.position.copy(J.head);head.rotation.x=0.35;
+  for(const sd of[-1,1]){const sh=V(sd*SHX,1.41,0.02),el=V(sd*(SHX+0.03),1.12,0.1),hd=V(sd*0.07,1.17,0.3);
+    place(sd<0?P.uArmR:P.uArmL,sh,el);place(sd<0?P.fArmR:P.fArmL,el,hd);(sd<0?hR:hL).position.copy(hd);(sd<0?hR:hL).rotation.set(-1.1,0,sd*0.3);
+    const hipJ=V(sd*HPX,0.93,0),knee=V(sd*0.11,0.5,0.03),ank=V(sd*0.12,0.08,0);
+    place(sd<0?P.thighR:P.thighL,hipJ,knee);place(sd<0?P.shinR:P.shinL,knee,ank);(sd<0?fR:fL).position.set(sd*0.12,0.03,0.06);}
+  const ph=new THREE.Mesh(new THREE.BoxGeometry(0.075,0.155,0.01),new THREE.MeshStandardMaterial({color:0x111111,roughness:0.3}));ph.position.set(0,1.24,0.31);ph.rotation.x=-0.75;g.add(ph);
+  const scr=new THREE.Mesh(new THREE.PlaneGeometry(0.068,0.145),new THREE.MeshBasicMaterial({color:0x3dff8c}));scr.position.set(0,1.244,0.314);scr.rotation.x=-0.75;scr.translateZ(0.006);g.add(scr);
+  return g;}
+const styles=[
+ {name:"1",facet:true,color:0xf2f2f2},
+ {name:"2",facet:true,color:0xd9dde3,wire:true},
+ {name:"3",facet:false,color:0x9a9ea6,rough:0.75},
+ {name:"4",facet:false,color:0xe9b9a0,rough:0.55},
+ {name:"5",facet:true,color:0x4fc3bd},
+];
+styles.forEach((st,i)=>{const h=human(st);h.position.set(-2.6+i*1.3,0,0);h.rotation.y=-0.2;s.add(h);});
+r.render(s,cam);window.done=true;
+</script></body></html>
