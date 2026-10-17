@@ -1,0 +1,409 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Orbi Transfer · how it works (vertical)</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; font-family: Inter, Arial, sans-serif; }
+  #stage { position: absolute; inset: 0; overflow: hidden; background: radial-gradient(120% 80% at 50% 35%, #0c0f17 0%, #04050a 60%, #000 100%); }
+  canvas { position: absolute; left: 0; top: 0; }
+  .abs { position: absolute; }
+  .disp { font-family: "D"; font-weight: 900; font-stretch: 125%; text-transform: uppercase; letter-spacing: -0.01em; }
+  .mono { font-family: "M"; text-transform: uppercase; letter-spacing: 0.16em; }
+  .glow { position: absolute; border-radius: 50%; filter: blur(140px); opacity: 0.35; }
+  /* hook */
+  #hook { left: 70px; right: 70px; top: 420px; z-index: 30; }
+  #hook .ln { display: block; font-size: 112px; line-height: 1.0; }
+  #hook .ln span { display: inline-block; opacity: 0; }
+  #hook .g { color: #3dff8c; }
+  #hook small { display: block; font-size: 30px; color: #3dff8c; margin-bottom: 34px; opacity: 0; }
+  /* phones */
+  .phone { position: absolute; width: 430px; height: 930px; border-radius: 70px; background: #0b0b0d; border: 3px solid #3a3d44; box-shadow: 0 0 0 9px #16181c, 0 60px 120px rgba(0,0,0,0.7), inset 0 0 0 2px #000; z-index: 20; transform-origin: 50% 50%; }
+  .phone .scr { position: absolute; inset: 12px; border-radius: 58px; overflow: hidden; background: #000; }
+  .phone .scr img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .phone .isl { position: absolute; left: 50%; top: 26px; width: 120px; height: 34px; margin-left: -60px; border-radius: 20px; background: #000; z-index: 3; }
+  .phone .lbl { position: absolute; left: 0; right: 0; top: -84px; text-align: center; font-size: 26px; color: #c8ccd2; }
+  .tap { position: absolute; width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; border: 5px solid #fff; opacity: 0; z-index: 4; }
+  .chip { position: absolute; z-index: 32; padding: 20px 34px; border-radius: 999px; background: rgba(20,22,28,0.92); border: 2px solid rgba(255,255,255,0.18); font-size: 40px; white-space: nowrap; opacity: 0; display: flex; align-items: center; gap: 16px; }
+  .chip i { width: 18px; height: 18px; border-radius: 50%; background: #3dff8c; box-shadow: 0 0 16px #3dff8c; }
+  /* big lines */
+  .big { position: absolute; left: 0; right: 0; text-align: center; z-index: 34; opacity: 0; }
+  #how .ln { display: block; font-size: 128px; line-height: 1.0; }
+  /* explainer heading */
+  .head { position: absolute; left: 70px; right: 70px; top: 240px; z-index: 34; opacity: 0; }
+  .head small { display: block; font-size: 28px; color: #3dff8c; margin-bottom: 18px; }
+  .head b { display: block; font-size: 76px; line-height: 1.02; }
+  .note { position: absolute; z-index: 33; font-size: 30px; color: #e8ecf0; padding: 16px 26px; border-radius: 18px; background: rgba(12,14,18,0.85); border: 1px solid rgba(255,255,255,0.18); opacity: 0; white-space: nowrap; }
+  /* captions */
+  #sub { position: absolute; left: 60px; right: 60px; top: 1500px; z-index: 60; text-align: center; font: 900 66px/1.1 "D"; font-stretch: 112%; text-transform: uppercase; text-shadow: 0 6px 0 rgba(0,0,0,0.6), 0 0 28px rgba(0,0,0,0.7); }
+  #sub b { display: inline-block; margin: 0 9px; }
+  #sub b.on { color: #0b0b0f; background: #3dff8c; border-radius: 14px; padding: 0 12px; text-shadow: none; }
+  /* end */
+  #endc { position: absolute; inset: 0; z-index: 70; opacity: 0; text-align: center; }
+  #endc .em { position: absolute; left: 50%; top: 470px; width: 300px; margin-left: -150px; }
+  #endc .lg { position: absolute; left: 90px; top: 830px; width: 900px; }
+  #endc .url { position: absolute; left: 50%; top: 1010px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font-size: 46px; letter-spacing: 0.06em; white-space: nowrap; }
+  #endc .try { position: absolute; left: 0; right: 0; top: 1160px; font-size: 32px; color: #3dff8c; }
+  #fade { position: absolute; inset: 0; background: #000; z-index: 90; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="stars" width="1080" height="1920"></canvas>
+  <div class="glow" id="g1" style="left:-300px;top:-200px;width:900px;height:900px;background:#2b3cff"></div>
+  <div class="glow" id="g2" style="left:400px;top:1200px;width:900px;height:900px;background:#00d39a"></div>
+  <canvas id="map" width="1080" height="1920" style="z-index:10"></canvas>
+  <canvas id="fx" width="1080" height="1920" style="z-index:40"></canvas>
+
+  <div id="hook"><small class="mono" id="hk0">Did you know?</small>
+    <span class="ln disp"><span>Do</span> <span>you</span> <span>know</span></span>
+    <span class="ln disp"><span>why</span> <span>people</span> <span>are</span></span>
+    <span class="ln disp"><span>using</span></span>
+    <span class="ln disp g"><span>Orbi</span> <span>Transfer?</span></span>
+  </div>
+
+  <div class="phone" id="pA"><div class="lbl mono">Your phone</div><div class="isl"></div><div class="scr"><img id="pAi" src="shots/empty.png" /><img id="pAi2" src="shots/one.png" style="opacity:0" /><div class="tap" id="tapA"></div></div></div>
+  <div class="phone" id="pB"><div class="lbl mono">Their phone</div><div class="isl"></div><div class="scr"><img id="pBi" src="shots/empty.png" /><img id="pBi2" src="shots/one.png" style="opacity:0" /><img id="pBi4" src="shots/many.png" style="opacity:0" /><img id="pBi3" src="shots/card.png" style="opacity:0" /></div></div>
+
+  <div class="chip mono" id="c1" style="left:120px;top:250px"><i></i>No login</div>
+  <div class="chip mono" id="c2" style="left:560px;top:250px"><i></i>No app</div>
+  <div class="chip mono" id="c3" style="left:300px;top:370px"><i></i>Instantly there</div>
+
+  <div class="big" id="how" style="top:640px"><span class="ln disp">So how</span><span class="ln disp">does it</span><span class="ln disp" style="color:#3dff8c">work?</span></div>
+
+  <div class="head" id="h1"><small class="mono">Step 1 · your area</small><b class="disp">Your phone finds its rough area</b></div>
+  <div class="head" id="h2"><small class="mono">Step 2 · one live sky</small><b class="disp">Everyone nearby sees it, live</b></div>
+  <div class="head" id="h3"><small class="mono">Step 3 · locked first</small><b class="disp">Locked on your phone before it leaves</b></div>
+  <div class="head" id="h4"><small class="mono">Step 4 · gone</small><b class="disp">30 minutes later, it burns up</b></div>
+  <div class="note mono" id="n1" style="left:300px;top:1240px">≈ 39 × 20 km cell</div>
+  <div class="note mono" id="n2" style="left:170px;top:1330px">Exact spot never leaves the phone</div>
+  <div class="note mono" id="n3" style="left:130px;top:1330px">Your cell + the 8 around it</div>
+  <div class="note mono" id="n4" style="left:120px;top:1370px">Passcode stays on your phone</div>
+  <div class="note mono" id="n5" style="left:240px;top:1290px">No account · no trace</div>
+
+  <div id="sub"></div>
+  <div id="endc"><img class="em" src="emblem.svg" /><img class="lg" src="logo.svg" /><div class="url mono">orbitransfer.com</div><div class="try mono">Try it on two phones</div></div>
+  <div id="fade"></div>
+</div>
+<script>
+const VO = { hook: 0.3, why: 3.0, how: 9.15, area: 10.6, near: 16.45, lock: 23.85, burn: 29.45, end: 33.1 };
+const DURATION = 37.0;
+window.VO = VO; window.DURATION = DURATION;
+let LINES = [];
+window.setLines = (l) => (LINES = l);
+
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, k) => a + (b - a) * k;
+const win = (t, a, b, fi = 0.3, fo = 0.3) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const S = (el, o) => { for (const k in o) el.style[k] = o[k]; };
+
+// ---------- stars ----------
+let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+const stars = Array.from({ length: 520 }, () => ({ x: rnd() * 1080, y: rnd() * 1920, r: rnd() * 1.6 + 0.3, z: rnd() * 0.8 + 0.2, tw: rnd() * 6.28 }));
+function drawStars(t) {
+  const c = $("stars").getContext("2d");
+  c.clearRect(0, 0, 1080, 1920);
+  for (const s of stars) {
+    const y = (s.y + t * 30 * s.z) % 1920;
+    c.fillStyle = `rgba(255,255,255,${0.2 + 0.55 * s.z * (0.75 + 0.25 * Math.sin(t * 1.3 + s.tw))})`;
+    c.beginPath(); c.arc(s.x, y, s.r, 0, 6.283); c.fill();
+  }
+}
+
+// ---------- the map (steps 1 & 2) ----------
+// a stylised city at night: streets, a river, and the area grid on top
+const CX = 540, CY = 860, CELL = 300; // centre cell, cell size on screen
+seed = 41;
+const roads = [];
+for (let i = 0; i < 46; i++) {
+  const horiz = rnd() < 0.5, p = rnd() * 1800 - 360, w = rnd() < 0.2 ? 5 : 2;
+  roads.push(horiz ? { x1: -400, y1: p + 60, x2: 1480, y2: p + 60 + (rnd() - 0.5) * 300, w } : { x1: p, y1: -200, x2: p + (rnd() - 0.5) * 300, y2: 2000, w });
+}
+const people = [];
+for (let gx = -1; gx <= 1; gx++) for (let gy = -1; gy <= 1; gy++) {
+  const n = gx === 0 && gy === 0 ? 4 : 2 + Math.floor(rnd() * 2);
+  for (let i = 0; i < n; i++) people.push({ x: CX + (gx + rnd() * 0.8 - 0.4) * CELL, y: CY + (gy + rnd() * 0.8 - 0.4) * CELL, d: rnd() * 1.4, inner: gx === 0 && gy === 0 });
+}
+// far away people (outside the 3×3): they never get the file
+for (let i = 0; i < 10; i++) { const a = rnd() * 6.28, r = 520 + rnd() * 260; people.push({ x: CX + Math.cos(a) * r, y: CY + Math.sin(a) * r, d: rnd() * 1.4, far: true }); }
+const ME = { x: CX - 70, y: CY + 40 };
+
+function drawMap(t) {
+  const c = $("map").getContext("2d");
+  c.clearRect(0, 0, 1080, 1920);
+  const on = win(t, 10.35, 23.75, 0.6, 0.5) * (1 - 0.8 * win(t, 21.5, 30, 0.4, 0.1));
+  if (!on) return;
+  // zoom: from the whole city into the grid
+  const z = lerp(1.9, 1, out(clamp((t - 10.35) / 2.2)));
+  c.save();
+  c.globalAlpha = on;
+  c.translate(CX, CY); c.scale(z, z); c.translate(-CX, -CY);
+  // streets + river
+  c.strokeStyle = "rgba(120,140,170,0.16)";
+  for (const r of roads) { c.lineWidth = r.w; c.beginPath(); c.moveTo(r.x1, r.y1); c.lineTo(r.x2, r.y2); c.stroke(); }
+  c.strokeStyle = "rgba(40,90,180,0.35)"; c.lineWidth = 34; c.beginPath(); c.moveTo(-300, 1500); c.bezierCurveTo(200, 1100, 600, 1400, 1400, 700); c.stroke();
+  // the grid
+  const gIn = clamp((t - 11.4) / 0.8);
+  c.strokeStyle = `rgba(255,255,255,${0.22 * gIn})`; c.lineWidth = 2; c.setLineDash([10, 10]);
+  for (let i = -3; i <= 3; i++) {
+    const x = CX + (i + 0.5) * CELL, y = CY + (i + 0.5) * CELL;
+    c.beginPath(); c.moveTo(x, CY - 3.5 * CELL); c.lineTo(x, CY + 3.5 * CELL); c.stroke();
+    c.beginPath(); c.moveTo(CX - 3.5 * CELL, y); c.lineTo(CX + 3.5 * CELL, y); c.stroke();
+  }
+  c.setLineDash([]);
+  // your cell lights up, then the 8 around it
+  const mine = clamp((t - 12.3) / 0.6), ring = clamp((t - 17.0) / 0.9);
+  for (let gx = -1; gx <= 1; gx++) for (let gy = -1; gy <= 1; gy++) {
+    const centre = gx === 0 && gy === 0;
+    const a = centre ? mine : ring;
+    if (!a) continue;
+    c.fillStyle = centre ? `rgba(61,255,140,${0.16 * a})` : `rgba(61,255,140,${0.07 * a})`;
+    c.strokeStyle = centre ? `rgba(61,255,140,${0.95 * a})` : `rgba(61,255,140,${0.45 * a})`;
+    c.lineWidth = centre ? 5 : 3;
+    const x = CX + (gx - 0.5) * CELL, y = CY + (gy - 0.5) * CELL;
+    c.fillRect(x + 3, y + 3, CELL - 6, CELL - 6); c.strokeRect(x + 3, y + 3, CELL - 6, CELL - 6);
+  }
+  // the exact spot: a pin that stays put (crossed out: it never leaves)
+  const pin = win(t, 13.2, 16.3, 0.3, 0.4);
+  if (pin) {
+    c.globalAlpha = on * pin;
+    c.fillStyle = "#ff5a5a"; c.beginPath(); c.arc(ME.x, ME.y - 70, 22, Math.PI, 0); c.lineTo(ME.x, ME.y - 26); c.closePath(); c.fill();
+    c.fillStyle = "#000"; c.beginPath(); c.arc(ME.x, ME.y - 70, 8, 0, 6.283); c.fill();
+    const k = clamp((t - 14.2) / 0.35);
+    c.strokeStyle = "#ff5a5a"; c.lineWidth = 7; c.beginPath(); c.moveTo(ME.x - 40, ME.y - 110); c.lineTo(lerp(ME.x - 40, ME.x + 40, k), lerp(ME.y - 110, ME.y - 20, k)); c.stroke();
+    c.globalAlpha = on;
+  }
+  // people (phones) in the area
+  const pIn = clamp((t - 16.9) / 0.8);
+  for (const p of people) {
+    const a = clamp((t - 16.9 - p.d * 0.5) / 0.4) * pIn;
+    if (!a) continue;
+    c.fillStyle = p.far ? `rgba(160,160,170,${0.45 * a})` : `rgba(255,255,255,${0.9 * a})`;
+    c.beginPath(); c.roundRect(p.x - 13, p.y - 22, 26, 44, 6); c.fill();
+    // they receive it
+    const got = !p.far && clamp((t - 19.2 - Math.hypot(p.x - ME.x, p.y - ME.y) / 900) / 0.35);
+    if (got) {
+      c.fillStyle = `rgba(61,255,140,${got})`; c.beginPath(); c.arc(p.x, p.y - 40, 11 * back(got), 0, 6.283); c.fill();
+      c.strokeStyle = `rgba(61,255,140,${0.6 * (1 - got)})`; c.lineWidth = 3; c.beginPath(); c.arc(p.x, p.y, 20 + got * 40, 0, 6.283); c.stroke();
+    }
+  }
+  // you
+  const pulse = (t * 1.2) % 1;
+  c.strokeStyle = `rgba(61,255,140,${0.7 * (1 - pulse)})`; c.lineWidth = 4; c.beginPath(); c.arc(ME.x, ME.y, 20 + pulse * 70, 0, 6.283); c.stroke();
+  c.fillStyle = "#3dff8c"; c.beginPath(); c.roundRect(ME.x - 17, ME.y - 28, 34, 56, 8); c.fill();
+  c.fillStyle = "#000"; c.font = "900 20px D"; c.textAlign = "center"; c.fillText("YOU", ME.x, ME.y + 58);
+  // the send: a wave out to every phone in the 9 cells
+  const w = clamp((t - 19.0) / 1.4);
+  if (w > 0 && w < 1) {
+    c.strokeStyle = `rgba(61,255,140,${0.8 * (1 - w)})`; c.lineWidth = 6;
+    c.beginPath(); c.arc(ME.x, ME.y, w * 900, 0, 6.283); c.stroke();
+  }
+  // beams to each nearby phone
+  if (t > 19.0) for (const p of people) {
+    if (p.far) continue;
+    const k = clamp((t - 19.0 - Math.hypot(p.x - ME.x, p.y - ME.y) / 900) / 0.3) * win(t, 19.0, 21.6, 0.1, 0.5);
+    if (!k) continue;
+    c.strokeStyle = `rgba(61,255,140,${0.35 * k})`; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(ME.x, ME.y); c.lineTo(lerp(ME.x, p.x, k), lerp(ME.y, p.y, k)); c.stroke();
+  }
+  c.restore();
+}
+
+// ---------- fx: the flying ball, the scrambled bytes, the burn ----------
+function ball(c, x, y, r, a, hue = 28) {
+  c.globalAlpha = a;
+  const g = c.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r);
+  g.addColorStop(0, `hsl(${hue} 90% 80%)`); g.addColorStop(0.5, `hsl(${hue} 70% 48%)`); g.addColorStop(1, `hsl(${hue} 60% 16%)`);
+  c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 6.283); c.fill();
+  c.strokeStyle = `hsla(${hue} 90% 70% / 0.5)`; c.lineWidth = 3; c.beginPath(); c.arc(x, y, r + 14, 0, 6.283); c.stroke();
+  c.globalAlpha = 1;
+}
+const HEX = "0123456789abcdef";
+seed = 99;
+const bytes = Array.from({ length: 60 }, () => ({ s: Array.from({ length: 4 }, () => HEX[Math.floor(rnd() * 16)]).join(""), d: rnd(), o: rnd() * 120 - 60 }));
+seed = 5;
+const embers = Array.from({ length: 140 }, () => ({ a: rnd() * 6.28, v: 120 + rnd() * 420, r: 2 + rnd() * 5, h: 15 + rnd() * 30, up: 60 + rnd() * 200 }));
+
+function lockIcon(c, x, y, s, closed, a, col = "#3dff8c") {
+  c.globalAlpha = a; c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 10 * s;
+  c.beginPath(); c.arc(x, y - 40 * s - (1 - closed) * 26 * s, 34 * s, Math.PI, 0); c.stroke();
+  c.beginPath(); c.roundRect(x - 54 * s, y - 40 * s, 108 * s, 86 * s, 14 * s); c.fill();
+  c.fillStyle = "#000"; c.beginPath(); c.arc(x, y, 11 * s, 0, 6.283); c.fill();
+  c.globalAlpha = 1;
+}
+function drawFx(t) {
+  const c = $("fx").getContext("2d");
+  c.clearRect(0, 0, 1080, 1920);
+  // why: the ball leaves phone A and lands on phone B
+  const fl = clamp((t - 6.25) / 0.9);
+  if (fl > 0 && fl < 1) {
+    const k = ease(fl);
+    const x = lerp(300, 780, k), y = lerp(860, 860, k) - Math.sin(k * Math.PI) * 360;
+    for (let i = 1; i <= 6; i++) { const kk = ease(clamp(fl - i * 0.035)); ball(c, lerp(300, 780, kk), 860 - Math.sin(kk * Math.PI) * 360, 40 - i * 4, 0.12); }
+    ball(c, x, y, 46, 1);
+  }
+  // lock: file → padlock → scrambled bytes through the cloud → unlocked on B
+  const L0 = 23.85;
+  const lk = win(t, L0 - 0.2, 28.4, 0.3, 0.35);
+  if (lk) {
+    const A = { x: 250, y: 1130 }, B = { x: 830, y: 1130 }, C = { x: 540, y: 760 };
+    // the cloud (server): it only ever sees noise
+    c.globalAlpha = lk; c.fillStyle = "rgba(255,255,255,0.08)"; c.strokeStyle = "rgba(255,255,255,0.35)"; c.lineWidth = 3;
+    c.beginPath(); c.arc(C.x - 70, C.y + 10, 60, 0, 6.283); c.arc(C.x, C.y - 30, 80, 0, 6.283); c.arc(C.x + 80, C.y + 10, 60, 0, 6.283); c.fill();
+    c.fillStyle = "#c8ccd2"; c.font = "700 24px M"; c.textAlign = "center"; c.fillText("SERVER SEES ONLY THIS", C.x, C.y + 120);
+    c.globalAlpha = 1;
+    // the file card on A, then it locks
+    const lockK = clamp((t - (L0 + 0.9)) / 0.5);
+    c.globalAlpha = lk * (1 - lockK * 0.6);
+    c.fillStyle = "#c86a2a"; c.beginPath(); c.roundRect(A.x - 80, A.y - 100, 160, 200, 22); c.fill();
+    c.fillStyle = "#fff"; c.font = "900 38px D"; c.fillText("JPG", A.x, A.y + 14);
+    c.globalAlpha = 1;
+    lockIcon(c, A.x, A.y + 10, 1.1, back(clamp((t - (L0 + 1.0)) / 0.45)), lk * lockK);
+    // bytes: A → cloud → B
+    for (const b of bytes) {
+      const ph = ((t - (L0 + 1.6)) * 0.55 + b.d) % 1;
+      if (t < L0 + 1.6 || t > 28.9) continue;
+      const leg = ph < 0.5 ? ph * 2 : (ph - 0.5) * 2;
+      const P = ph < 0.5 ? [A, C] : [C, B];
+      const x = lerp(P[0].x, P[1].x, leg) + Math.sin(ph * 9 + b.o) * 14, y = lerp(P[0].y - 120, P[1].y - (ph < 0.5 ? 0 : 120), leg) + b.o * 0.4;
+      c.globalAlpha = lk * 0.85 * Math.sin(ph * Math.PI);
+      c.fillStyle = "#3dff8c"; c.font = "700 26px M"; c.fillText(b.s, x, y);
+    }
+    c.globalAlpha = 1;
+    // the key never leaves A
+    const key = win(t, L0 + 2.6, 28.4, 0.3, 0.35);
+    if (key) {
+      c.globalAlpha = key; c.strokeStyle = "#ffd25a"; c.lineWidth = 9;
+      c.beginPath(); c.arc(A.x - 140, A.y + 190, 26, 0, 6.283); c.stroke();
+      c.beginPath(); c.moveTo(A.x - 114, A.y + 190); c.lineTo(A.x - 40, A.y + 190); c.moveTo(A.x - 60, A.y + 190); c.lineTo(A.x - 60, A.y + 214); c.stroke();
+      c.globalAlpha = 1;
+    }
+    // B unlocks
+    const un = clamp((t - (L0 + 3.4)) / 0.5);
+    lockIcon(c, B.x, B.y + 10, 1.1, 1 - un, lk * clamp((t - (L0 + 2.2)) / 0.4) * (1 - clamp((t - (L0 + 4.1)) / 0.4)));
+    if (un) {
+      c.globalAlpha = lk * clamp((t - (L0 + 4.0)) / 0.4);
+      c.fillStyle = "#c86a2a"; c.beginPath(); c.roundRect(B.x - 80, B.y - 100, 160, 200, 22); c.fill();
+      c.fillStyle = "#fff"; c.font = "900 38px D"; c.fillText("JPG", B.x, B.y + 14);
+      c.globalAlpha = 1;
+    }
+    c.globalAlpha = lk; c.fillStyle = "#c8ccd2"; c.font = "700 26px M";
+    c.fillText("YOU", A.x, A.y + 170); c.fillText("THEM", B.x, B.y + 170);
+    c.globalAlpha = 1;
+  }
+  // burn: the ball with its 30-minute ring, counting down, then embers
+  const B0 = 29.45;
+  const bn = win(t, B0 - 0.2, 33.0, 0.3, 0.3);
+  if (bn) {
+    const x = 540, y = 900;
+    const k = clamp((t - (B0 + 0.4)) / 2.0); // time running out
+    const gone = clamp((t - (B0 + 2.45)) / 0.25);
+    if (gone < 1) {
+      c.globalAlpha = bn * (1 - gone);
+      c.strokeStyle = "rgba(255,255,255,0.12)"; c.lineWidth = 14; c.beginPath(); c.arc(x, y, 230, 0, 6.283); c.stroke();
+      c.strokeStyle = k > 0.8 ? "#ff5a3c" : "#3dff8c"; c.beginPath(); c.arc(x, y, 230, -Math.PI / 2, -Math.PI / 2 + 6.283 * (1 - k)); c.stroke();
+      c.globalAlpha = 1;
+      ball(c, x, y, 150 * (1 - gone * 0.4), bn * (1 - gone), lerp(28, 8, k));
+      const secs = Math.max(0, Math.round(1800 * (1 - ease(k))));
+      c.globalAlpha = bn * (1 - gone); c.fillStyle = "#fff"; c.font = "900 64px M"; c.textAlign = "center";
+      c.fillText(`${String(Math.floor(secs / 60)).padStart(2, "0")}:${String(secs % 60).padStart(2, "0")}`, x, y + 340);
+      c.globalAlpha = 1;
+    }
+    if (gone > 0) {
+      const e = clamp((t - (B0 + 2.45)) / 1.0);
+      for (const m of embers) {
+        c.globalAlpha = bn * (1 - e);
+        c.fillStyle = `hsl(${m.h} 100% ${60 - e * 20}%)`;
+        c.beginPath(); c.arc(x + Math.cos(m.a) * m.v * out(e), y + Math.sin(m.a) * m.v * out(e) - m.up * e, m.r * (1 - e * 0.6), 0, 6.283); c.fill();
+      }
+      c.globalAlpha = 1;
+    }
+  }
+}
+
+// ---------- captions (word by word, timed across each line) ----------
+function caption(t) {
+  const el = $("sub");
+  let html = "";
+  for (const ln of LINES) {
+    const a = VO[ln.key];
+    if (t < a - 0.05 || t > a + ln.dur + 0.25) continue;
+    const words = ln.text.split(" ");
+    const total = words.reduce((s, w) => s + w.length + 2, 0);
+    // show the words in chunks of up to 4, the spoken word highlighted
+    let acc = 0, cur = 0;
+    const at = words.map((w) => { const s = a + (acc / total) * ln.dur; acc += w.length + 2; return s; });
+    for (let i = 0; i < words.length; i++) if (t >= at[i]) cur = i;
+    const start = Math.floor(cur / 4) * 4;
+    html = words.slice(start, start + 4).map((w, i) => `<b class="${start + i === cur ? "on" : ""}">${w}</b>`).join(" ");
+  }
+  el.innerHTML = html;
+}
+
+// ---------- the timeline ----------
+function phone(el, x, y, s, r, o) { S(el, { left: `${x - 215}px`, top: `${y - 465}px`, transform: `rotate(${r}deg) scale(${s})`, opacity: o }); }
+
+window.render = function (t) {
+  drawStars(t);
+  drawMap(t);
+  drawFx(t);
+  caption(t);
+  S($("g1"), { transform: `translate(${Math.sin(t * 0.3) * 80}px, ${t * 6}px)` });
+  S($("g2"), { transform: `translate(${Math.cos(t * 0.25) * 90}px, ${-t * 5}px)` });
+
+  // hook: words punch in one by one
+  const hw = [...document.querySelectorAll("#hook .ln > span")];
+  hw.forEach((w, i) => { const k = clamp((t - 0.3 - i * 0.2) / 0.22); S(w, { opacity: k, transform: `translateY(${(1 - out(k)) * 40}px) scale(${lerp(1.25, 1, out(k))})` }); });
+  S($("hk0"), { opacity: clamp(t / 0.3) });
+  S($("hook"), { opacity: 1 - clamp((t - 2.75) / 0.3), transform: `translateY(${-clamp((t - 2.75) / 0.3) * 60}px)` });
+
+  // why: two phones; A sends, it shows up on B
+  const pin = out(clamp((t - 2.85) / 0.6)), pout = clamp((t - 8.95) / 0.4);
+  phone($("pA"), 300, lerp(1300, 900, pin) - pout * 300, 0.9, -4 * pin, pin * (1 - pout));
+  phone($("pB"), 780, lerp(1300, 900, pin) - pout * 300, 0.9, 4 * pin, pin * (1 - pout));
+  const tap = clamp((t - 5.85) / 0.4);
+  S($("tapA"), { left: "80px", top: "860px", opacity: tap > 0 && tap < 1 ? 1 - tap : 0, transform: `scale(${0.5 + tap})` });
+  S($("pAi2"), { opacity: t > 5.9 && t < 6.4 ? 1 : 0 });
+  S($("pBi2"), { opacity: clamp((t - 7.1) / 0.25) });
+  S($("pBi3"), { opacity: 0 });
+  [["c1", 3.6], ["c2", 4.1], ["c3", 7.2]].forEach(([id, a]) => { const k = clamp((t - a) / 0.3); S($(id), { opacity: k * (1 - clamp((t - 8.9) / 0.3)), transform: `scale(${lerp(0.6, 1, back(k))})` }); });
+
+  // how
+  const hk = win(t, 9.1, 10.45, 0.25, 0.3);
+  S($("how"), { opacity: hk, transform: `scale(${lerp(1.3, 1, out(clamp((t - 9.1) / 0.35)))})` });
+
+  // steps
+  const heads = [["h1", 10.55, 16.35], ["h2", 16.4, 23.75], ["h3", 23.8, 29.35], ["h4", 29.4, 33.0]];
+  for (const [id, a, b] of heads) { const k = win(t, a, b, 0.35, 0.3); S($(id), { opacity: k, transform: `translateY(${(1 - out(clamp((t - a) / 0.4))) * 50}px)` }); }
+  const notes = [["n1", 12.6, 16.3], ["n2", 14.3, 16.3], ["n3", 17.3, 21.0], ["n4", 26.6, 28.3], ["n5", 31.5, 33.0]];
+  for (const [id, a, b] of notes) { const k = win(t, a, b, 0.3, 0.3); S($(id), { opacity: k, transform: `translateY(${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); }
+
+  // step 2 ends on their phone: the ball pops into their void (real screen)
+  const real = win(t, 21.5, 23.8, 0.4, 0.35);
+  if (real) {
+    phone($("pB"), 540, lerp(1600, 990, out(clamp((t - 21.5) / 0.5))), 0.9, 0, real);
+    S($("pBi4"), { opacity: clamp((t - 22.0) / 0.3) });
+  } else S($("pBi4"), { opacity: 0 });
+  // step 3 ends with the card on their phone, ready
+  const card = win(t, 28.25, 29.4, 0.3, 0.3);
+  if (card) { phone($("pB"), 540, 990, 0.9, 0, card); S($("pBi3"), { opacity: 1 }); }
+
+  document.querySelector("#pB .lbl").style.opacity = t < 9.5 ? 1 : 0;
+  // end card
+  const e = clamp((t - 33.0) / 0.5);
+  S($("endc"), { opacity: e });
+  document.querySelector("#endc .em").style.transform = `rotate(${(t - 33) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.25), clamp((t - (DURATION - 0.5)) / 0.5)) });
+};
+
+window.ready = Promise.all([document.fonts.ready, ...[...document.images].map((i) => i.decode().catch(() => {}))]);
+</script>
+</body>
+</html>
