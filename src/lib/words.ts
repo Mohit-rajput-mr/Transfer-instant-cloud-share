@@ -1,0 +1,90 @@
+"use client";
+
+// /work speaks plain office words: notes, files, workspace, send, expire, delete (instead of bubbles, objects, the
+// void, launch, burn, destroy). One pass over what is on screen, kept up by a MutationObserver, so every card and
+// toast follows without each component knowing about /work. What people wrote (notes, names, tasks) is never touched.
+
+const RULES: [RegExp, string][] = [
+  [/\bbubble board\b/gi, "notes board"],
+  [/\bbubble text\b/gi, "note"],
+  [/\bbubbles\b/gi, "notes"],
+  [/\bbubble\b/gi, "note"],
+  [/\bpublic void\b/gi, "public workspace"],
+  [/\bvoid\b/gi, "workspace"],
+  [/\bobjects\b/gi, "files"],
+  [/\bobject\b/gi, "file"],
+  [/\bdevices? in orbit\b/gi, "online"],
+  [/\bin orbit\b/gi, "online"],
+  [/\binto orbit\b/gi, "to the workspace"],
+  [/\blaunching\b/gi, "sending"],
+  [/\blaunched\b/gi, "sent"],
+  [/\blaunches\b/gi, "sends"],
+  [/\blaunch\b/gi, "send"],
+  [/\bburns? up\b/gi, "expires"],
+  [/\bburns in\b/gi, "expires in"],
+  [/\bburned\b/gi, "expired"],
+  [/\bburns\b/gi, "expires"],
+  [/\bburn\b/gi, "expire"],
+  [/\bdestroyed\b/gi, "deleted"],
+  [/\bdestroy\b/gi, "delete"],
+  [/\bspheres?\b/gi, "file"],
+  [/\bballs?\b/gi, "file"],
+];
+
+/** keep the case of what it replaces: "Bubble" → "Note", "BUBBLE" → "NOTE" */
+function cased(src: string, to: string) {
+  if (src === src.toUpperCase() && /[A-Z]/.test(src)) return to.toUpperCase();
+  if (src[0] === src[0].toUpperCase()) return to[0].toUpperCase() + to.slice(1);
+  return to;
+}
+export function workWords(s: string) {
+  if (!s || !/[a-z]/i.test(s)) return s;
+  let out = s;
+  for (const [re, to] of RULES) out = out.replace(re, (m) => cased(m, to));
+  return out;
+}
+
+// people's own words, and things they named
+const KEEP = "input, textarea, [contenteditable], script, style, .bub p, .bub-quote, .bub-stack header b, .tb-text, .tb-file, .tb-edit, .orb-label, .orb-by, .mname, .zname, .zoom-title b, .d-title, .note-out, .rich, .viewer-body, .viewer-name, .sp-title, .sp-card b, .room-name b, .w-title b, .bs-rail b, .bs-rail small, .dock-main .ellip, .dl-name, .tb-head b, .tw-tag, [data-keep-words]";
+const ATTRS = ["placeholder", "aria-label", "title"];
+
+function fixText(n: Text) {
+  const p = n.parentElement;
+  if (!p || p.closest(KEEP)) return;
+  const v = n.nodeValue ?? "";
+  const w = workWords(v);
+  if (w !== v) n.nodeValue = w;
+}
+function fixEl(el: Element) {
+  if (el.closest("script, style")) return;
+  const keep = !!el.closest(KEEP) && !el.matches("input, textarea");
+  for (const a of ATTRS) {
+    const v = el.getAttribute(a);
+    if (v == null || (keep && a !== "placeholder")) continue;
+    const w = workWords(v);
+    if (w !== v) el.setAttribute(a, w);
+  }
+}
+function sweep(root: Node) {
+  if (root.nodeType === Node.TEXT_NODE) return fixText(root as Text);
+  if (root.nodeType !== Node.ELEMENT_NODE) return;
+  const el = root as Element;
+  fixEl(el);
+  el.querySelectorAll("*").forEach(fixEl);
+  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  for (let t = walk.nextNode(); t; t = walk.nextNode()) fixText(t as Text);
+}
+
+/** start rewriting the page's words (returns a stop function) */
+export function speakWork() {
+  sweep(document.body);
+  const mo = new MutationObserver((list) => {
+    for (const m of list) {
+      if (m.type === "characterData") fixText(m.target as Text);
+      else if (m.type === "attributes") fixEl(m.target as Element);
+      else m.addedNodes.forEach(sweep);
+    }
+  });
+  mo.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+  return () => mo.disconnect();
+}

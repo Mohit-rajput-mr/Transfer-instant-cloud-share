@@ -12,8 +12,21 @@ export function TrashZone() {
   useEffect(() => setReady(true), []);
   useEffect(() => {
     const on = (e: Event) => setAt((e as CustomEvent<{ x: number; y: number } | null>).detail);
+    // a drag that ends anywhere (let go outside the window, Esc, the tab losing focus) always takes the zone away
+    const off = () => setAt(null);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && off();
     window.addEventListener("orbit:drag", on);
-    return () => window.removeEventListener("orbit:drag", on);
+    window.addEventListener("pointerup", off, true);
+    window.addEventListener("pointercancel", off, true);
+    window.addEventListener("blur", off);
+    window.addEventListener("keydown", esc);
+    return () => {
+      window.removeEventListener("orbit:drag", on);
+      window.removeEventListener("pointerup", off, true);
+      window.removeEventListener("pointercancel", off, true);
+      window.removeEventListener("blur", off);
+      window.removeEventListener("keydown", esc);
+    };
   }, []);
   const near = !!at && overTrash(at.x, at.y);
   useEffect(() => {

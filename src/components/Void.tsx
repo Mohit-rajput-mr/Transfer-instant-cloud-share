@@ -52,6 +52,7 @@ import { autoRemember, findDeviceSkin, skinName, toneOf, useLook } from "@/lib/s
 import { KINDS, fileKind, type Kind } from "@/lib/skin-list";
 import { WorkBar, WorkDock, WorkEmpty, WorkRail } from "./WorkChrome";
 import { readTheme } from "@/lib/theme";
+import { speakWork } from "@/lib/words";
 
 /** a task with a change applied the way the server will (so the screen updates before it answers) */
 function applyEdit(t: Task, c: { text?: string; route?: string[]; stage?: number }, by: string): Task {
@@ -199,7 +200,9 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     const d = document.documentElement;
     d.dataset.ui = "work";
     d.dataset.theme = readTheme();
+    const quiet = speakWork();
     return () => {
+      quiet();
       delete d.dataset.ui;
       delete d.dataset.theme;
     };
