@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { LuTrash2, LuUndo2 } from "react-icons/lu";
+import { LuArchive, LuUndo2 } from "react-icons/lu";
 import { overTrash, restore, setZone, useTrashList } from "@/lib/trash";
 import { Pop } from "./Spaces";
 
@@ -23,9 +23,9 @@ export function TrashZone() {
   return createPortal(
     <div className={`trash-zone${at ? " on" : ""}${near ? " near" : ""}`} aria-hidden={!at}>
       <div className="trash-hole" ref={setZone}>
-        <LuTrash2 aria-hidden />
-        <b>{near ? "Let go to trash" : "Drag here to trash"}</b>
-        <small className="mono">hidden on this browser only</small>
+        <LuArchive aria-hidden />
+        <b>{near ? "Let go to archive" : "Drag here to archive"}</b>
+        <small className="mono">kept on this device only</small>
       </div>
     </div>,
     document.body,
@@ -39,11 +39,11 @@ export function TrashButton() {
   if (!list.length) return null;
   return (
     <>
-      <button className="map-trash" onClick={() => setOpen(true)} aria-label={`Trash (${list.length})`} title="Trash: hidden on this browser"><LuTrash2 /><i>{list.length}</i></button>
+      <button className="map-trash" onClick={() => setOpen(true)} aria-label={`Archive space (${list.length})`} title="Archive space: kept on this device only"><LuArchive /><i>{list.length}</i></button>
       {open && createPortal(
-        <Pop label="Trash" onClose={() => setOpen(false)} small>
+        <Pop label="Archive space" onClose={() => setOpen(false)} small>
           <div className="trash-list">
-            <p className="mono dim">Hidden on this browser only. Everyone else still sees them until they burn up.</p>
+            <p className="mono dim">Archived on this device only. Everyone else still sees them until they burn up.</p>
             <ul>
               {[...list].reverse().map((t) => (
                 <li key={t.key}>

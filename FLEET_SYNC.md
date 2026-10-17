@@ -59,6 +59,25 @@ K. DONE + deployed: admin keeps each device's MOST RECENT exact spot after it go
    `exactSeen` to orbit_admin_overview (every device that ever shared GPS, last exact lat/lon, acc, city, last_seen,
    online). Admin layer "Last GPS seen" (dim pink #a0498f) shows the offline ones; "Exact · live" is the online ones.
    LocationAsk + privacy now say the exact spot is KEPT as the most recent location (not only shown live).
+L. DONE + deployed (mobile clean pass): drawer/bottom-sheet is now SOLID on phones (#121216, no backdrop blur,
+   no sheen/specular; `.drawer,.drawer.lg {...!important}` in the <=720px block) — Android no longer bleeds the void
+   through the glass so content stops reading as "scattered". Columns were never actually overlapping (measured).
+M. DONE + deployed: landed sends collapse into one "N in orbit" chip (LaunchDock: active cards stay, done ones fold
+   into `.dock-hist`, tap to expand list + Clear all). Globe button removed from client map (MapWorld onEarth unset;
+   EarthView still used for pick-my-area). Trash renamed to "Archive space" (slate/violet, LuArchive).
+N. DONE + deployed: drag/zoom "disappear then reappear" fixed — cull margin is now a full screen (world px) and the
+   visible set is frozen while the map moves, recomputed once on settle (MapWorld pushRect).
+
+## STILL OPEN (owner's live feedback, queued — need focused work)
+- **Realtime / presence "instant visible, no reload"**: joining a space from Android isn't shown live on iOS/laptop
+  until reload; space presence (live names) and first files need a reload. THE BIG ONE. Needs two-device harness,
+  investigate lib/sync.ts + lib/live.ts (Cloudflare) + space presence + lib/p2p.ts.
+- **Space view**: balls float OUTSIDE the glass container; can't scroll/pan inside a space. Bound balls to the
+  container and let the page scroll.
+- **Task naming**: NEW TASK card has no name field — let the owner name/rename a task.
+- **iOS location**: iPhone says "blocked"; make the flow work (or the pick-my-area fallback obvious) on Safari.
+- **Zoom lag on phone**: pinch-zoom janky; needs perf pass.
+
 E. **Files instantly on other devices**: tested OK locally via Cloudflare (stand-in ball appears ~1.3 s, bubbles ~1 s, across
    GPS-area and IP-area devices). Owner's failure was most likely an old tab still on the pre-Cloudflare build. If it
    happens again: check both tabs `/api/version` RELEASE, Cloudflare Requests count, browser console for WebSocket errors.

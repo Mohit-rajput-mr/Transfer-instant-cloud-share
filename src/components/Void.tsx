@@ -1824,7 +1824,7 @@ export default function Void() {
             toast("Back in the public void");
           }} />}
           {map ? (
-            <MapWorld W={map.W} H={map.H} band={MAP_BAND[mode]} fit={fitAll} empty={!map.spots.size} onRect={setRect} onEarth={space ? undefined : () => setEarth(true)}
+            <MapWorld W={map.W} H={map.H} band={MAP_BAND[mode]} fit={fitAll} empty={!map.spots.size} onRect={setRect}
               onMoveItem={(key, dx, dy) => {
                 const p = map.spots.get(key);
                 if (!p) return;

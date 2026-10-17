@@ -122,14 +122,22 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
   sizeRef.current = size;
   const onRectRef = useRef(onRect);
   onRectRef.current = onRect;
+  const pushRect = useCallback(() => {
+    const v = viewRef.current, sz = sizeRef.current;
+    // keep a whole screen of margin on every side (in world px, so zooming in never shrinks it): nothing within
+    // a screen of the edge is ever unmounted, so dragging and pinching never make things blink out and back
+    const m = Math.max(sz.w, sz.h, 360) / v.k;
+    if (sz.w) onRectRef.current?.({ x0: -v.x / v.k - m, y0: -v.y / v.k - m, x1: (sz.w - v.x) / v.k + m, y1: (sz.h - v.y) / v.k + m, k: v.k });
+  }, []);
   useEffect(() => {
     if (rectT.current) return;
+    // while the map is actively moving, leave the visible set alone; recompute once it settles (see moving())
+    if (box.current?.classList.contains("moving")) return;
     rectT.current = window.setTimeout(() => {
       rectT.current = 0;
-      const v = viewRef.current, sz = sizeRef.current, m = 260 / v.k;
-      if (sz.w) onRectRef.current?.({ x0: -v.x / v.k - m, y0: -v.y / v.k - m, x1: (sz.w - v.x) / v.k + m, y1: (sz.h - v.y) / v.k + m, k: v.k });
+      pushRect();
     }, 120);
-  }, [view, size]);
+  }, [view, size, pushRect]);
   useEffect(() => () => clearTimeout(rectT.current), []);
 
   // while the map moves nothing else animates or reacts to hover: every frame goes to the move
@@ -137,8 +145,11 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
   const moving = useCallback(() => {
     box.current?.classList.add("moving");
     clearTimeout(stillT.current);
-    stillT.current = window.setTimeout(() => box.current?.classList.remove("moving"), 180);
-  }, []);
+    stillT.current = window.setTimeout(() => {
+      box.current?.classList.remove("moving");
+      pushRect(); // movement settled: update the visible set once, in one go
+    }, 180);
+  }, [pushRect]);
 
   const zoomAt = useCallback(
     (factor: number, cx: number, cy: number, animate: boolean) => {

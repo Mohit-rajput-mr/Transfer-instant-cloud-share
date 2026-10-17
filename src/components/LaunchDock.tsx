@@ -74,17 +74,39 @@ export default function LaunchDock(props: {
   onDismiss: (key: string) => void;
   onOpenOwner: (id: string) => void;
 }) {
-  const { launches } = props;
+  const { launches, onDismiss } = props;
   const dl = useDownloads();
   const pending = usePendingCount();
+  const [histOpen, setHistOpen] = useState(false);
+  // in-progress (and errors) stay visible as cards; everything already in orbit folds into one quiet chip
+  const active = launches.filter((l) => !l.orb);
+  const done = launches.filter((l) => l.orb);
   if (!launches.length && !dl.jobs.length && !pending) return null;
   return (
     <div className="dock" aria-live="polite">
       <ResumeUploads />
       <DownloadCard />
-      {launches.slice(-3).map((l) => (
+      {active.slice(-3).map((l) => (
         <DockItem key={l.key} l={l} {...props} />
       ))}
+      {done.length > 0 && (
+        <div className={`dock-hist${histOpen ? " open" : ""}`}>
+          {histOpen && (
+            <div className="dock-hist-list">
+              {done.map((l) => (
+                <DockItem key={l.key} l={l} {...props} />
+              ))}
+              <button className="dock-hist-clear mono" onClick={() => done.forEach((l) => onDismiss(l.key))}>Clear all</button>
+            </div>
+          )}
+          <button className="dock-hist-chip lg lg-press" onClick={() => setHistOpen((o) => !o)} aria-expanded={histOpen}>
+            <i className="dock-hist-dot" aria-hidden />
+            <b>{done.length}</b>
+            <span className="mono">in orbit</span>
+            <svg viewBox="0 0 12 12" aria-hidden><path d={histOpen ? "M2.5 7.5L6 4l3.5 3.5" : "M2.5 4.5L6 8l3.5-3.5"} /></svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

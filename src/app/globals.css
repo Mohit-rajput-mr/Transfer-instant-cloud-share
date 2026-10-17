@@ -873,8 +873,19 @@ html.lg-refract :is(.top, .drawer, .send-menu, .up-pill, .up-card, .send-fab).lg
     translate: 0 calc(var(--kb, 0px) * -1);
     transition: translate var(--dur-3) var(--ease-out), max-height var(--dur-3) var(--ease-out);
     animation: sheet-in var(--dur-5) var(--spring-smooth) both;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.6);
+    will-change: translate;
   }
+  /* SOLID on phones: Android renders blur(22px) poorly and the busy void behind bleeds through a glass sheet,
+     so content reads as "scattered". A flat opaque sheet is clean and fast. !important beats every glass rule. */
+  .drawer, .drawer.lg { background: #121216 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  .drawer::before, .drawer::after, .drawer.lg::before, .drawer.lg::after { display: none !important; } /* no sheen / specular */
   .drawer.out { animation: sheet-out var(--dur-2) var(--ease-in) both; }
+  /* the two columns fade in together, no per-column slide: a staggered slide collides mid-animation on slow phones */
+  .drawer-body > *, .drawer-body > *:nth-child(2) { animation: fade-in var(--dur-2) var(--ease-out) both; animation-delay: 0s; }
+  /* the void behind just dims — no scale (a full-screen scale repaint stutters on Android) */
+  html.card-open .void { scale: 1; opacity: 0.55; }
   .drawer-head { height: 50px; padding: 12px 8px 0 20px; touch-action: none; cursor: grab; border-bottom-color: rgba(255,255,255,0.08); }
   .drawer-head::before {
     content: ""; position: absolute; left: 50%; top: 7px; width: 38px; height: 5px; margin-left: -19px; border-radius: 3px;
@@ -1086,6 +1097,16 @@ html.lg-refract :is(.top, .drawer, .send-menu, .up-pill, .up-card, .send-fab).lg
   position: fixed; right: max(24px, var(--safe-r)); bottom: calc(24px + var(--safe-b)); z-index: 37;
   width: min(340px, calc(100vw - 32px)); display: flex; flex-direction: column; gap: 8px; pointer-events: none;
 }
+/* landed sends fold into one quiet chip (tap to see them as a list) instead of a tall stack of cards */
+.dock-hist { pointer-events: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.dock-hist-chip { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 12px; border-radius: 999px;
+  background: rgba(20,20,24,0.9); border: 1px solid rgba(255,255,255,0.14); color: #eee; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.dock-hist-chip b { font-size: 13px; }
+.dock-hist-chip .mono { font-size: 11px; color: var(--dim); }
+.dock-hist-chip svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 1.6; fill: none; margin-left: 2px; }
+.dock-hist-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--live); box-shadow: 0 0 8px var(--live); }
+.dock-hist-list { display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 2px; }
+.dock-hist-clear { pointer-events: auto; align-self: center; color: var(--dim); font-size: 11px; padding: 4px 10px; }
 .dock-item {
   pointer-events: auto; position: relative; border-radius: 20px; padding: 10px 10px 10px 14px;
   display: flex; align-items: center; gap: 10px;
@@ -2834,18 +2855,18 @@ em.hq-tag { font-style: normal; }
 .map-tools button:hover { background: rgba(255,255,255,0.1); color: #fff; }
 .map-tools button.on { color: var(--live); }
 .map-tools svg { width: 16px; height: 16px; }
-.map-tools .map-trash { position: relative; color: #ff8a8a; }
-.map-trash i { position: absolute; right: -2px; top: -2px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 999px; font: 700 9px/15px var(--mono); font-style: normal; color: #0b0b0f; background: #ff8a8a; }
+.map-tools .map-trash { position: relative; color: #9fb0ff; }
+.map-trash i { position: absolute; right: -2px; top: -2px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 999px; font: 700 9px/15px var(--mono); font-style: normal; color: #0b0b0f; background: #9fb0ff; }
 /* the trash zone: rises from the bottom while something is dragged, opens up when it comes close */
 .trash-zone { position: fixed; left: 50%; bottom: calc(26px + var(--safe-b)); z-index: 90; translate: -50% 160%; opacity: 0; pointer-events: none; transition: translate 0.3s var(--ease-out), opacity 0.2s; }
 .trash-zone.on { translate: -50% 0; opacity: 1; }
-.trash-hole { width: 168px; height: 168px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; color: #ffd6d6;
-  background: radial-gradient(circle, rgba(255,70,70,0.28), rgba(60,0,0,0.55) 70%); border: 2px dashed rgba(255,120,120,0.7); box-shadow: 0 18px 50px rgba(0,0,0,0.6);
+.trash-hole { width: 168px; height: 168px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; color: #cdd6ff;
+  background: radial-gradient(circle, rgba(120,140,255,0.22), rgba(20,24,50,0.6) 70%); border: 2px dashed rgba(150,170,255,0.6); box-shadow: 0 18px 50px rgba(0,0,0,0.6);
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); transition: scale 0.2s var(--ease-out), background 0.2s, border-color 0.2s; }
 .trash-hole svg { width: 34px; height: 34px; }
 .trash-hole b { font: 800 12px/1.2 var(--sans); text-transform: uppercase; letter-spacing: 0.04em; }
 .trash-hole small { font-size: 9px; opacity: 0.75; }
-.trash-zone.near .trash-hole { scale: 1.22; color: #fff; border-style: solid; border-color: #ff5a5a; background: radial-gradient(circle, rgba(255,70,70,0.6), rgba(120,0,0,0.75) 70%); }
+.trash-zone.near .trash-hole { scale: 1.22; color: #fff; border-style: solid; border-color: #8aa0ff; background: radial-gradient(circle, rgba(120,140,255,0.5), rgba(30,36,80,0.8) 70%); }
 .trash-list { display: flex; flex-direction: column; gap: 12px; }
 .trash-list ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow: auto; }
 .trash-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 12px; background: rgba(255,255,255,0.05); }
