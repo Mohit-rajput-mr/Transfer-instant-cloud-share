@@ -1,5 +1,5 @@
 {
-  "name": "orbit-live",
+  "name": "transfer-instant-cloud-share",
   "private": true,
   "scripts": {
     "dev": "wrangler dev",

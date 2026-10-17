@@ -1,7 +1,7 @@
 {
   // Orbit's live updates (see src/index.ts). Deployed by Cloudflare Workers Builds from this folder on every push.
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "orbit-live",
+  "name": "transfer-instant-cloud-share",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
   "durable_objects": {
