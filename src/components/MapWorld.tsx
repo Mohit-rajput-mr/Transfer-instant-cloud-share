@@ -30,6 +30,7 @@ const OWN_TOUCH = "input, textarea, select, .tb-acts, .tb-route, .map-tools, [da
 // what picks a whole panel up: its header, or its own background (never a button, field or row inside it)
 const HANDLE = ".tb-head, .bub-stack.on-map > header";
 const INNER = "button, a, input, textarea, select, label, form, .tb-row";
+const TEXTY = "input, textarea, select, [contenteditable], .tb-edit, .tb-take, .tb-redeem, .tb-route";
 
 export default function MapWorld({ W, H, band, children, fit, empty, onRect, onEarth, onMoveItem }: {
   W: number;
@@ -229,9 +230,10 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     const t = e.target as Element;
     const el = t.closest?.<HTMLElement>("[data-map-key]");
     if (!el || !onMoveItem || pts.current.size) return false;
-    const onHandle = !!t.closest?.(HANDLE);
-    if (!onHandle && t.closest?.(INNER)) return false;
     const mouse = e.pointerType === "mouse";
+    // a mouse grabs a task panel anywhere but its text fields (a click that doesn't move still clicks)
+    const onHandle = !!t.closest?.(HANDLE) || (mouse && !!t.closest?.(".task-board") && !t.closest?.(TEXTY));
+    if (!onHandle && t.closest?.(INNER)) return false;
     const it = { id: e.pointerId, key: el.dataset.mapKey!, el, sx: e.clientX, sy: e.clientY, lx: e.clientX, ly: e.clientY, k: viewRef.current.k, armed: mouse, moved: false, timer: 0 };
     item.current = it;
     if (mouse)

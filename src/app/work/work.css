@@ -285,10 +285,10 @@ html[data-ui="work"] .tb-rbar i.past, html[data-ui="work"] .tb-rbar i.now { back
 html[data-ui="work"] .tb-acts button, html[data-ui="work"] .tb-archive, html[data-ui="work"] .tb-arrange, html[data-ui="work"] .tr-close { border-radius: 7px !important; color: var(--w-text-2) !important; }
 html[data-ui="work"] .tb-acts button:hover, html[data-ui="work"] .tb-archive:hover, html[data-ui="work"] .tb-arrange:hover, html[data-ui="work"] .tr-close:hover { background: var(--w-hover) !important; color: var(--w-text) !important; }
 html[data-ui="work"] .tb-acts.float { background: var(--w-surface) !important; border: 1px solid var(--w-border-2) !important; border-radius: 9px !important; box-shadow: var(--w-shadow) !important; }
-html[data-ui="work"] .tb-head { padding-right: 136px !important; }
+html[data-ui="work"] .tb-head { padding-right: 112px !important; }
 html[data-ui="work"] .tb-head > b, html[data-ui="work"] .tb-head > .wide { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-html[data-ui="work"] .tb-archive { right: 104px !important; top: 9px !important; border-radius: 7px !important; border: 1px solid var(--w-border) !important; }
-html[data-ui="work"] .tb-arrange { right: 42px !important; top: 9px !important; border-radius: 7px !important; border: 1px solid var(--w-border) !important; font: 500 11px/1 var(--w-font) !important; letter-spacing: 0 !important; text-transform: none !important; }
+html[data-ui="work"] .tb-archive { right: 74px !important; top: 9px !important; width: 28px !important; height: 28px !important; border-radius: 7px !important; border: 1px solid var(--w-border) !important; }
+html[data-ui="work"] .tb-arrange { right: 40px !important; top: 9px !important; width: 28px !important; height: 28px !important; padding: 0 !important; gap: 0 !important; justify-content: center; border-radius: 7px !important; border: 1px solid var(--w-border) !important; font: 500 0px/1 var(--w-font) !important; letter-spacing: 0 !important; text-transform: none !important; }
 html[data-ui="work"] .tb-edit input, html[data-ui="work"] .tb-take input { border-radius: 8px !important; border: 1px solid var(--w-border-2) !important; background: var(--w-canvas) !important; color: var(--w-text) !important; font: 400 14px/1.3 var(--w-font) !important; }
 html[data-ui="work"] .tb-edit button, html[data-ui="work"] .tb-take button, html[data-ui="work"] .tb-redeem button { background: var(--w-text) !important; color: var(--w-canvas) !important; border-radius: 7px !important; }
 html[data-ui="work"] .tb-compose-head .wide, html[data-ui="work"] .tb-compose-head b { font: 600 13.5px/1.2 var(--w-font) !important; text-transform: none !important; }
@@ -534,3 +534,24 @@ html[data-ui="work"][data-theme="light"] img[src="/brand/emblem.svg"] { filter: 
   html[data-ui="work"] .tb-head { padding-right: 82px !important; }
   html[data-ui="work"] .tb-archive { right: 44px !important; }
 }
+
+/* arrange: icon only (its title says what it does), so the task header keeps room for its name */
+html[data-ui="work"] .tb-arrange svg { width: 14px !important; height: 14px !important; }
+html[data-ui="work"] .tb-arrange.on { background: var(--w-text) !important; color: var(--w-canvas) !important; border-color: var(--w-text) !important; }
+
+/* picked up: the panel floats off the canvas (bigger shadow, a hair larger, accent edge) and settles on drop */
+html[data-ui="work"] .task-boards.mapped > .task-board.lifted, html[data-ui="work"] .bub-stack.on-map.lifted .bub { box-shadow: 0 28px 70px -12px rgba(0,0,0,0.55), 0 10px 24px rgba(0,0,0,0.3), 0 0 0 1.5px var(--w-accent) !important; }
+html[data-ui="work"][data-theme="light"] .task-boards.mapped > .task-board.lifted, html[data-ui="work"][data-theme="light"] .bub-stack.on-map.lifted .bub { box-shadow: 0 28px 60px -14px rgba(16,16,20,0.28), 0 8px 20px rgba(16,16,20,0.10), 0 0 0 1.5px var(--w-accent) !important; }
+html[data-ui="work"] .task-boards.mapped > .task-board.lifted, html[data-ui="work"] .bub-stack.on-map.lifted { scale: 1.025; rotate: -0.6deg; cursor: grabbing; animation: w-lift 0.16s cubic-bezier(0.2, 0, 0, 1) both !important; }
+html[data-ui="work"] .bub-stack.on-map.lifted { filter: none; }
+html[data-ui="work"] .task-boards.mapped > .task-board.dropped, html[data-ui="work"] .bub-stack.on-map.dropped { animation: w-settle 0.22s cubic-bezier(0.2, 0, 0, 1) both !important; }
+@keyframes w-lift { from { scale: 1; rotate: 0deg; } }
+@keyframes w-settle { from { scale: 1.025; rotate: -0.6deg; } }
+html[data-ui="work"] .task-boards.mapped > .task-board { cursor: grab; }
+html[data-ui="work"] .task-boards.mapped > .task-board :is(input, textarea) { cursor: text; }
+html[data-ui="work"] .trash-hole { width: 190px !important; height: 120px !important; border: 1.5px dashed var(--w-border-2) !important; border-radius: 14px !important; box-shadow: var(--w-shadow-l) !important; gap: 6px; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html[data-ui="work"] .trash-hole svg { width: 22px !important; height: 22px !important; }
+html[data-ui="work"] .trash-hole b { font: 600 13px/1.2 var(--w-font) !important; text-transform: none !important; letter-spacing: 0 !important; color: var(--w-text); }
+html[data-ui="work"] .trash-hole small { font: 400 11.5px/1.2 var(--w-font) !important; color: var(--w-text-3); opacity: 1; }
+html[data-ui="work"] .trash-zone.near .trash-hole { scale: 1.06 !important; border-style: solid !important; border-color: var(--w-danger) !important; background: color-mix(in srgb, var(--w-danger) 8%, var(--w-surface)) !important; color: var(--w-danger) !important; }
+html[data-ui="work"] .trash-zone { bottom: calc(74px + var(--safe-b)) !important; }
