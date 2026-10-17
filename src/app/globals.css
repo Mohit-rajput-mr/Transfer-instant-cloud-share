@@ -590,6 +590,7 @@ html.card-open .made { opacity: 0; pointer-events: none; }
 .hq .maplibregl-ctrl-attrib-button { filter: invert(1); }
 .gdot.live { margin: 0; }
 .gdot.exact { width: 11px; height: 11px; margin: 0; background: #ff4fd8; border: 2px solid #fff; z-index: 3; }
+.gdot.seen { width: 9px; height: 9px; margin: 0; background: #a0498f; border: 1.5px solid rgba(255,255,255,0.7); z-index: 2; opacity: 0.85; }
 .gdot.exact::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 1.5px solid #ff4fd8; animation: gpulse 1.6s ease-out infinite; }
 
 /* ---------- send choices ---------- */

@@ -17,6 +17,8 @@ export interface Overview {
   live: Pt[];
   /** online devices that shared their location: their exact spot (migration 017) */
   exact?: Exact[];
+  /** every device that ever shared GPS, at its most recent exact spot, online or not (migration 018) */
+  exactSeen?: Exact[];
   visitors: Pt[];
   points: (Pt & { k: "upload" | "download" })[];
   arcs: { a: number; b: number; c: number; d: number }[];
@@ -45,6 +47,8 @@ export interface Exact {
   city: string | null;
   cc: string | null;
   at: string;
+  /** exactSeen only: whether the device is online right now */
+  online?: boolean;
 }
 
 export interface Pt {

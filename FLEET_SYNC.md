@@ -55,6 +55,10 @@ I. DONE + deployed: trash (`lib/trash.ts`, `components/Trash.tsx`): dragging any
 J. DONE + deployed: location blocked/failed → `LocationBlocked` card with iPhone/Android/in-app steps and
    "Pick my area on the map" (Earth in picking mode; zooming in sets `where.ts` how:"pick", IP no longer overrides).
    Cause seen in data: owner's iPhone on mobile data had IP in Madrid while desktop GPS was Barcelona → different areas.
+K. DONE + deployed: admin keeps each device's MOST RECENT exact spot after it goes offline. Migration 018 adds
+   `exactSeen` to orbit_admin_overview (every device that ever shared GPS, last exact lat/lon, acc, city, last_seen,
+   online). Admin layer "Last GPS seen" (dim pink #a0498f) shows the offline ones; "Exact · live" is the online ones.
+   LocationAsk + privacy now say the exact spot is KEPT as the most recent location (not only shown live).
 E. **Files instantly on other devices**: tested OK locally via Cloudflare (stand-in ball appears ~1.3 s, bubbles ~1 s, across
    GPS-area and IP-area devices). Owner's failure was most likely an old tab still on the pre-Cloudflare build. If it
    happens again: check both tabs `/api/version` RELEASE, Cloudflare Requests count, browser console for WebSocket errors.
