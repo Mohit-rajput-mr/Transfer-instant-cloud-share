@@ -68,7 +68,22 @@ M. DONE + deployed: landed sends collapse into one "N in orbit" chip (LaunchDock
 N. DONE + deployed: drag/zoom "disappear then reappear" fixed — cull margin is now a full screen (world px) and the
    visible set is frozen while the map moves, recomputed once on settle (MapWorld pushRect).
 
+O. DONE + deployed: space live-presence — a joiner's NAME now appears instantly on every device (fetch the member
+   list the moment an unknown presence id arrives + refresh() when the socket connects; no more reload). Worker
+   presence was already correct; the lag was the client only refreshing names every 45 s.
+P. DONE + deployed: Exit + member buttons in a space worked on desktop but were DEAD on phones — `.room` (z-index 0)
+   sat under `.void.map .map-view` (z-index 2) which ate every tap. Lifted the room's top bar above the map and gave
+   `.room-exit` pointer-events back (globals.css near ".room { z-index: 0 }").
+Q. DONE + deployed: mobile task board — header no longer overlaps (Arrange hidden on phones, archive by the chevron,
+   progress bar dropped on narrow headers); added a drag-to-resize grip on the task list (`.tb-resize`, persists in
+   localStorage `orbit:tb-h`); composer says "Name the task". Rename = the pencil on your own tasks (already there).
+
 ## STILL OPEN (owner's live feedback, queued — need focused work)
+- **Space view layout**: balls still float OUTSIDE the glass container; bound them in. (Exit/scroll now fixed.)
+- **Full mobile-first rebuild** (owner wants real mobile components, not shrunk desktop): space screen, send/upload
+  sheet, deeper panels. Tasks got a first pass (Q). Next by owner's pick order after tasks.
+- **iOS location**: iPhone Safari says blocked; make the flow / pick-my-area fallback work on iOS.
+- **Zoom lag on phone**: pinch-zoom still janky; perf pass (the disappear/reappear was fixed in N).
 - **Realtime / presence "instant visible, no reload"**: joining a space from Android isn't shown live on iOS/laptop
   until reload; space presence (live names) and first files need a reload. THE BIG ONE. Needs two-device harness,
   investigate lib/sync.ts + lib/live.ts (Cloudflare) + space presence + lib/p2p.ts.
