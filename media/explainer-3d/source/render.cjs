@@ -18,7 +18,7 @@ const TYPES = { ".js": "text/javascript", ".html": "text/html", ".json": "applic
   const dur = await page.evaluate(() => window.DURATION);
   const frames = a === "still" ? b.split(",").map((s) => Math.round(+s * FPS)) : Array.from({ length: Math.min(Math.round(dur * FPS), +b || Infinity) - +a }, (_, i) => +a + i);
   const t0 = Date.now();
-  for (const f of frames) {
+  for (const f of frames.filter((f) => !fs.existsSync(path.join(outDir, `${String(f).padStart(5, "0")}.png`)))) {
     await page.evaluate((t) => window.render(t), f / FPS);
     await page.screenshot({ path: path.join(outDir, `${String(f).padStart(5, "0")}.png`) });
   }
