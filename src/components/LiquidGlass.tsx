@@ -1,5 +1,6 @@
 "use client";
 import { useEffect } from "react";
+import { isLow } from "@/lib/perf";
 
 type HapticKind = "light" | "success" | "warn";
 let hapticSwitch: HTMLLabelElement | null = null;
@@ -64,7 +65,8 @@ export default function LiquidGlass() {
     const fine = mq("(hover: hover) and (pointer: fine)");
     const calm = !mq("(prefers-reduced-motion: reduce)") && !mq("(prefers-reduced-transparency: reduce)");
     const cores = navigator.hardwareConcurrency ?? 4;
-    if (chromium && fine && calm && cores >= 4) root.classList.add("lg-refract");
+    // (the bending filter is the costliest thing on the page: never on a low-end device, lib/perf.ts)
+    if (chromium && fine && calm && cores >= 6 && !isLow()) root.classList.add("lg-refract");
 
     let raf = 0;
     let last: PointerEvent | null = null;

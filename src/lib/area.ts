@@ -44,6 +44,12 @@ function box(cell: string) {
   return { lat: (la[0] + la[1]) / 2, lon: (lo[0] + lo[1]) / 2, dLat: la[1] - la[0], dLon: lo[1] - lo[0] };
 }
 
+/** the middle of a cell, for a map */
+export const cellCenter = (cell: string) => {
+  const b = box(cell);
+  return { lat: b.lat, lon: b.lon };
+};
+
 /** a cell and the eight around it, always in the same order (so everyone in a cell asks for the same list) */
 export function around(cell: string) {
   const b = box(cell);

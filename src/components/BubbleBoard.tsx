@@ -145,8 +145,10 @@ export default function BubbleBoard(props: { bubbles: Bubble[]; onOpenBoard: (fo
       <>
         {stacks.map((s, i) => {
           const p = spots.get(`b:${s.key}`);
+          // off screen (or not placed yet): not drawn
+          if (!p) return null;
           return (
-            <section key={s.key} data-map-key={`b:${s.key}`} className={`bub-stack on-map${s.mine ? " mine" : ""}`} style={{ "--bh": s.hue, "--i": i, ...(p ? { left: p.x, top: p.y } : { visibility: "hidden" }) } as unknown as CSSProperties}>
+            <section key={s.key} data-map-key={`b:${s.key}`} className={`bub-stack on-map${s.mine ? " mine" : ""}`} style={{ "--bh": s.hue, "--i": i, left: p.x, top: p.y } as CSSProperties}>
               <StackHead s={s} onClick={() => props.onOpenBoard(s.key)} />
               {s.items.slice(0, 2).map((b) => (
                 <BubbleItem key={b.id} b={b} {...props} />

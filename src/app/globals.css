@@ -2885,3 +2885,62 @@ em.hq-tag { font-style: normal; }
 .tb-main.grabbable { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; cursor: grab; }
 @media (max-width: 720px) { .throw-zone { width: 150px; min-height: 124px; } }
 @media (prefers-reduced-motion: reduce) { .throw-zone, .throw-zone.hot i, .throw-zone.eat { animation: none; } .throw-chip.fly { transition-duration: 0.01s; } }
+
+/* =====================================================================
+   SPEED — lib/perf.ts, MapWorld (moving / far)
+   ===================================================================== */
+/* while the map moves every frame goes to the move: idle motion pauses, nothing reacts to hover */
+.map-view.moving .world { pointer-events: none; }
+.map-view.moving .world .orb, .map-view.moving .world .orb *, .map-view.moving .world .bub-timer circle { animation-play-state: paused !important; }
+.map-view.moving .world .orb-anchor, .map-view.moving .world .bub-stack.on-map, .map-view.moving .world .task-board { transition: none !important; }
+/* far out: just the shapes (names, stats and badges are too small to read, and cost to draw) */
+.world.far .orb { animation: none; }
+.world.far .orb-label, .world.far .orb-meta, .world.far .orb-by, .world.far .tags, .world.far .bubble, .world.far .claim,
+.world.far .halo, .world.far .shock, .world.far .sat, .world.far .edge-run, .world.far .mine-no, .world.far .zoom-cue { display: none !important; }
+.world.far .bub-stack .bub-acts, .world.far .bub-stack .bub-timer { display: none; }
+.world.far .lg, .world.far .bub { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+/* on the map nothing behind the world needs blurring through glass */
+.void.map .world .bub { -webkit-backdrop-filter: none; backdrop-filter: none; background-color: rgba(18,19,22,0.92); }
+/* low-end devices (or ones that drop frames): no glass blur, no idle motion, simple shadows */
+html[data-perf="low"] * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html[data-perf="low"] .lg { background-color: rgba(20,21,24,0.94); }
+html[data-perf="low"] .orb, html[data-perf="low"] .orb *:not(.sphere), html[data-perf="low"] .bub-stack, html[data-perf="low"] .task-board, html[data-perf="low"] .geo-pin svg { animation: none !important; }
+html[data-perf="low"] .orb-anchor, html[data-perf="low"] .bub-stack.on-map, html[data-perf="low"] .task-board { transition-duration: 0.25s !important; }
+html[data-perf="low"] .bub, html[data-perf="low"] .task-board, html[data-perf="low"] .sphere { box-shadow: none !important; }
+html[data-perf="low"] .world.glide { transition-duration: 0.35s; }
+.map-tools .map-earth { color: #9fd3ff; }
+
+/* =====================================================================
+   EARTH — components/EarthView.tsx
+   ===================================================================== */
+.earth-view { position: fixed; inset: 0; z-index: 12; background: #000; animation: fade-in 0.35s ease-out both; }
+.earth-map, .earth-map.maplibregl-map { position: absolute; inset: 0; }
+.earth-load { display: grid; place-items: center; color: #9a9a9a; font-size: 11px; }
+.earth-bar { position: absolute; z-index: 2; left: 50%; top: calc(96px + var(--safe-t)); translate: -50% 0; display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 18px;
+  border-radius: 999px; background: rgba(16,17,20,0.86); border: 1px solid rgba(255,255,255,0.16); max-width: calc(100vw - 24px); }
+.earth-bar b { font-size: 15px; text-transform: uppercase; }
+.earth-bar .mono { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.earth-bar .pill, .earth-ask .pill, .area-pill .pill { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.earth-bar .pill svg, .earth-ask .pill svg, .area-pill .pill svg { width: 14px; height: 14px; }
+.earth-ask { position: absolute; z-index: 2; left: 50%; bottom: calc(118px + var(--safe-b)); translate: -50% 0; display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 18px;
+  border-radius: 999px; background: rgba(16,17,20,0.9); border: 1px solid rgba(61,255,140,0.35); font-size: 13px; color: #eee; max-width: calc(100vw - 24px); flex-wrap: wrap; justify-content: center; }
+.earth-hint { position: absolute; z-index: 2; left: 50%; bottom: calc(88px + var(--safe-b)); translate: -50% 0; font-size: 9.5px; color: #8a8a8a; white-space: nowrap; pointer-events: none; }
+.earth-home { width: 16px; height: 16px; border-radius: 50%; background: #3dff8c; box-shadow: 0 0 0 4px rgba(61,255,140,0.25); animation: earth-ping 1.8s ease-out infinite; }
+@keyframes earth-ping { 0% { box-shadow: 0 0 0 0 rgba(61,255,140,0.55); } 100% { box-shadow: 0 0 0 22px rgba(61,255,140,0); } }
+.earth-view .maplibregl-ctrl-attrib { background: rgba(0,0,0,0.5) !important; color: #777; font-size: 10px; }
+.earth-view .maplibregl-ctrl-attrib a { color: #999; }
+/* local map: share-location / another-area nudge under the header */
+.area-pill { position: absolute; z-index: 9; left: 50%; top: calc(96px + var(--safe-t)); translate: -50% 0; display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 16px;
+  border-radius: 999px; background: rgba(16,17,20,0.88); border: 1px solid rgba(61,255,140,0.3); font-size: 12px; color: #ddd; max-width: calc(100vw - 20px); }
+.area-pill .pill { height: 30px; font-size: 10.5px; padding: 0 12px; }
+@media (max-width: 720px) {
+  .earth-bar { top: calc(66px + var(--safe-t)); padding-left: 14px; gap: 8px; }
+  .earth-bar .mono { display: none; }
+  .area-pill { top: calc(64px + var(--safe-t)); font-size: 11px; }
+  .area-pill > span { display: none; }
+  .earth-ask { bottom: calc(100px + var(--safe-b)); padding: 6px; gap: 6px; flex-wrap: nowrap; }
+  .earth-ask > span { display: none; }
+  .earth-hint { display: none; }
+}
+html[data-perf="low"] .earth-home { animation: none; }
+html[data-earth], html[data-earth] body { overflow: hidden; overscroll-behavior: none; }

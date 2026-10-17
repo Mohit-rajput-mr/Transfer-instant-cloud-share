@@ -37,6 +37,11 @@ import { around } from "@/lib/area";
 import { asked, dropGps, fromIp, locate, markAsked, permission, where } from "@/lib/where";
 import LocationAsk from "./LocationAsk";
 import TaskThrow, { type Grab } from "./TaskThrow";
+import dynamic from "next/dynamic";
+import { perf } from "@/lib/perf";
+import type { Rect } from "./MapWorld";
+// the globe (MapLibre) loads only when someone goes up to it
+const EarthView = dynamic(() => import("./EarthView"), { ssr: false, loading: () => <div className="earth-view earth-load"><span className="mono">Going up…</span></div> });
 import { GoPrivate, InviteCard } from "./TeamMove";
 import { bubbleName, burnBubble, editBubble, hueFor, isMine as isMyBubble, postBubble, senderOf, type Bubble } from "@/lib/bubbles";
 import StylePicker from "./StylePicker";
@@ -190,8 +195,15 @@ export default function Void() {
   // this network's private invite key (lib/tasks.ts sealInvite): never sent to anyone
   const inviteKeyRef = useRef("");
   netRef.current = net;
-  // the area this device is in (lib/area.ts): the public void shows it and the eight around it
+  // the area this device is in (lib/area.ts; what it posts goes there) and the area being looked at (the public
+  // void shows it and the eight around it). They are the same until you fly somewhere else on the Earth.
+  const [home, setHome] = useState("");
+  const homeRef = useRef(home);
+  homeRef.current = home;
   const [area, setArea] = useState("");
+  useEffect(() => setArea(home), [home]);
+  // up on the Earth (components/EarthView.tsx)
+  const [earth, setEarth] = useState(false);
   const areaRef = useRef(area);
   areaRef.current = area;
   const [gps, setGps] = useState(false);
@@ -249,8 +261,21 @@ export default function Void() {
   const toasted = useRef(new Set<string>());
   const [now, setNow] = useState(() => Date.now());
   const [panel, setPanel] = useState<Panel>(null);
-  // something of mine just went up: the map shows everything again so it is in sight
-  const [fitAll, setFitAll] = useState(0);
+  // something of mine just went up: the map shows everything again so it is in sight (and if this device was
+  // looking at another area, it goes back to its own, where the thing landed)
+  const [fitAll, setFitAllN] = useState(0);
+  const setFitAll = (f: (n: number) => number) => {
+    setFitAllN(f);
+    setArea(homeRef.current);
+  };
+  useEffect(() => void perf(), []);
+  // up on the Earth the page holds still (the globe takes every drag and scroll), and the sky stops drawing
+  useEffect(() => {
+    if (!earth) return;
+    window.scrollTo(0, 0);
+    document.documentElement.dataset.earth = "1";
+    return () => void delete document.documentElement.dataset.earth;
+  }, [earth]);
   // a task of mine picked up to be thrown into one of my spaces (components/TaskThrow.tsx)
   const [grab, setGrab] = useState<(Grab & { spaces: SpaceSession[] }) | null>(null);
   const [launches, setLaunches] = useState<Launch[]>([]);
@@ -642,7 +667,7 @@ export default function Void() {
         if (d.invite) inviteKeyRef.current = d.invite;
         if (d.net) setNet(d.net);
         // no shared location: the void is the one around this IP
-        if (fromIp(d.area)) setArea(d.area!);
+        if (fromIp(d.area)) setHome(d.area!);
         setAreaReady(true);
       })
       .catch(() => {});
@@ -867,7 +892,7 @@ export default function Void() {
   useEffect(() => {
     const w = where();
     if (w) {
-      setArea(w.area);
+      setHome(w.area);
       setGps(w.how === "gps");
       setAreaReady(true);
     }
@@ -876,7 +901,7 @@ export default function Void() {
     permission().then((p) => {
       if (p === "granted")
         locate()
-          .then((w) => (setArea(w.area), setGps(true)))
+          .then((w) => (setHome(w.area), setGps(true)))
           .catch(() => {});
       else if (p === "denied" && w?.how === "gps") {
         dropGps();
@@ -891,7 +916,7 @@ export default function Void() {
     try {
       const w = await locate();
       setGps(true);
-      setArea(w.area);
+      setHome(w.area);
       toast("Location on: you see what's around you");
     } catch (e) {
       markAsked();
@@ -1313,10 +1338,11 @@ export default function Void() {
       document.querySelectorAll<HTMLElement>(".world [data-map-key]").forEach((el) => {
         if (el.offsetWidth) next.set(el.dataset.mapKey!, { w: el.offsetWidth, h: el.offsetHeight });
       });
+      // (things off screen aren't drawn: they keep the size they last had)
       setSizes((prev) => ([...next].some(([k, v]) => {
         const p = prev.get(k);
         return !p || Math.abs(p.w - v.w) > 6 || Math.abs(p.h - v.h) > 6;
-      }) ? next : prev));
+      }) ? new Map([...prev, ...next]) : prev));
     }, 500);
     return () => clearInterval(t);
   }, [mapOn]);
@@ -1342,8 +1368,20 @@ export default function Void() {
       things.push({ key: `o:${alias.current.get(o.id) ?? o.id}`, w: L ? L.W + 60 : 210, h: L ? L.H + 120 : 250, born: Date.parse(o.createdAt) });
     }
     const { W, H } = worldSize(things, vw.w, Math.max(620, vw.h));
-    return { W, H, spots: place(things, W, H) };
+    return { W, H, spots: place(things, W, H), size: new Map(things.map((t) => [t.key, t])) };
   }, [mapOn, sizes, showTasks, tGroups, stacks, visible, groups, vw]);
+  // only what is on screen is drawn (the map tells what that is as it moves); everything else waits off screen
+  const [rect, setRect] = useState<Rect | null>(null);
+  const onScreen = useCallback(
+    (key: string) => {
+      if (!map || !rect) return true;
+      const p = map.spots.get(key), t = map.size.get(key);
+      if (!p || !t) return true;
+      return p.x + t.w / 2 > rect.x0 && p.x - t.w / 2 < rect.x1 && p.y + t.h / 2 > rect.y0 && p.y - t.h / 2 < rect.y1;
+    },
+    [map, rect],
+  );
+  const shownSpots = useMemo(() => (map ? new Map([...map.spots].filter(([k]) => onScreen(k))) : undefined), [map, onScreen]);
   const positions = useMemo(() => {
     if (grid) return grid.pos;
     if (!map) return layout(visible, mode);
@@ -1516,7 +1554,7 @@ export default function Void() {
   // a stand-in whose real sphere is already listed (the render of the swap): only the real one shows
   const replaced = new Set(visible.map((o) => alias.current.get(o.id)).filter((x): x is string => !!x));
 
-  const mapSpots = map?.spots;
+  const mapSpots = shownSpots;
   // location: green pin when this device shares it, red when not (a tap asks again)
   const pinButton = (cls: string) => (
     <button
@@ -1674,12 +1712,12 @@ export default function Void() {
             toast("Back in the public void");
           }} />}
           {map ? (
-            <MapWorld W={map.W} H={map.H} band={MAP_BAND[mode]} fit={fitAll} empty={!map.spots.size}>
+            <MapWorld W={map.W} H={map.H} band={MAP_BAND[mode]} fit={fitAll} empty={!map.spots.size} onRect={setRect} onEarth={space ? undefined : () => setEarth(true)}>
           {taskBoard}
           {notes.length > 0 && (
             <BubbleBoard bubbles={notes} {...bubbleActs} oneSide={tasks.length > 0 && !archived} onOpenBoard={(f) => setBoard(f)} spots={mapSpots} />
           )}
-          {visible.filter((o) => !replaced.has(o.id)).map((o, i) => (
+          {visible.filter((o) => !replaced.has(o.id) && onScreen(`o:${alias.current.get(o.id) ?? o.id}`)).map((o, i) => (
             <OrbView
               key={alias.current.get(o.id) ?? o.id}
               orb={o}
@@ -1760,6 +1798,37 @@ export default function Void() {
             <p className="mono">Longest life of any object.<br />The sender picks 5 to 30.</p>
           </div>
 
+          {earth && !space && (
+            <EarthView
+              home={home}
+              from={area}
+              gps={gps}
+              onEnter={(cell) => {
+                setArea(cell);
+                setEarth(false);
+                if (cell !== home) toast("You're looking at another area · what you post still goes to yours");
+              }}
+              onLocate={shareLocation}
+              onSpace={() => (setEarth(false), setPanel({ kind: "space" }))}
+              onClose={() => setEarth(false)}
+            />
+          )}
+          {!earth && !space && (area !== home || !gps) && !geoAsk && (
+            <div className="area-pill lg" data-no-pan>
+              {area !== home ? (
+                <>
+                  <span>Another area</span>
+                  <button className="pill solid lg-press" onClick={() => setArea(home)}>Back to my area</button>
+                </>
+              ) : (
+                <>
+                  <span>See what&apos;s right around you</span>
+                  <button className="pill solid lg-press" onClick={shareLocation}><LuMapPin aria-hidden /> Share location</button>
+                  <button className="pill lg-press" onClick={() => setPanel({ kind: "space" })}>Create your space</button>
+                </>
+              )}
+            </div>
+          )}
           {loaded && shown.length === 0 && !(map && map.spots.size) && (
             <div className="empty">
               <p className="mono">

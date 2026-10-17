@@ -5,6 +5,7 @@ import { LuArchive, LuArrowDown, LuArrowUp, LuRows3, LuCheck, LuChevronDown, LuF
 import { PRO_FOR_ALL, STAGES, TASK_LIVES, TASK_MAX, dropPro, forMe, isCancel, isMyTask, parseTask, proCode, redeemPro, type Task } from "@/lib/tasks";
 import { hueFor } from "@/lib/bubbles";
 import { formatBytes, type Orb } from "@/lib/client";
+import { isLow } from "@/lib/perf";
 
 export type TaskActs = {
   onAdd: (line: string, life: number) => Promise<void>;
@@ -321,6 +322,8 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
         </form>
       ))}
       {groups.map((g, gi) => {
+        // on the map, a panel off screen is not drawn
+        if (mapped && !props.spots!.has(`t:${g.key}`)) return null;
         const isOpen = (open || !!props.wiring) && !shut.has(g.key);
         const gDone = g.tasks.filter((t) => stepOf(t) === 3).length;
         return (
@@ -561,10 +564,13 @@ export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring, strai
   useEffect(() => {
     const el = svg.current;
     if (!el) return;
-    let raf = 0, last = 0;
+    let raf = 0, last = 0, drawn = "";
+    // a low-end device: taut cables, fewer redraws (lib/perf.ts)
+    const low = isLow();
+    const taut = straight || low;
     const draw = (now: number) => {
       raf = requestAnimationFrame(draw);
-      if (now - last < 40 || document.hidden) return;
+      if (now - last < (low ? 90 : 40) || document.hidden) return;
       last = now;
       const box = el.getBoundingClientRect();
       // the sphere itself (not the sphere + its name), so a cable meets the ball's middle
@@ -587,7 +593,7 @@ export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring, strai
           // the cable leaves the ball from its side facing the task
           const ang = Math.atan2(end.y - oy, end.x - ox), r = a.width * 0.44;
           const bx = ox + Math.cos(ang) * r, by = oy + Math.sin(ang) * r;
-          s += drawCable(straight ? `M${end.x.toFixed(1)} ${end.y.toFixed(1)} L${bx.toFixed(1)} ${by.toFixed(1)}` : cable(end.x, end.y, bx, by, now, k++ * 1.7), hue, op);
+          s += drawCable(taut ? `M${end.x.toFixed(1)} ${end.y.toFixed(1)} L${bx.toFixed(1)} ${by.toFixed(1)}` : cable(end.x, end.y, bx, by, now, k++ * 1.7), hue, op);
           s += `<g opacity="${op}"><rect x="${end.x - 3}" y="${end.y - 4}" width="7" height="8" rx="2" class="tw-pin"/><circle cx="${bx}" cy="${by}" r="5" class="tw-pin"/><circle cx="${bx}" cy="${by}" r="2.6" fill="hsl(${hue} 70% 58%)"/></g>`;
         }
         const n = num.get(o.task!);
@@ -609,7 +615,8 @@ export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring, strai
           s += `<circle cx="${ex}" cy="${ey}" r="${snap ? 7 : 5}" class="tw-pin${snap ? " hot" : ""}"/>`;
         }
       }
-      el.innerHTML = s;
+      // nothing moved: leave the SVG alone (rebuilding it is what costs)
+      if (s !== drawn) el.innerHTML = drawn = s;
       // plugs ride along with their balls
       for (const [id, btn] of plugs.current) {
         const a = ballRect(id);

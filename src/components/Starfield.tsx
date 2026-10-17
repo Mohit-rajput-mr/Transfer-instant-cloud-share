@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
+import { isLow } from "@/lib/perf";
 
 type Star = { x: number; y: number; z: number; r: number; tw: number };
 const BUCKETS = 6; // stars are batched by brightness: 6 fills per frame instead of one per star
@@ -13,7 +14,8 @@ export default function Starfield() {
   useEffect(() => {
     const canvas = ref.current!;
     const ctx = canvas.getContext("2d")!;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // a low-end device gets a still sky: drawn once, never animated (lib/perf.ts)
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches || isLow();
     const coarse = window.matchMedia("(pointer: coarse)").matches;
     const FPS = coarse ? 30 : 60;
     let w = 0, h = 0, dpr = 1, raf = 0, last = 0;
@@ -109,6 +111,8 @@ export default function Starfield() {
       raf = 0;
       if (!visible || document.hidden) return;
       raf = requestAnimationFrame(frame);
+      // the Earth view covers the sky: nothing to draw
+      if (document.documentElement.dataset.earth) return;
       if (ts - last < 1000 / FPS - 2) return;
       const dt = last ? Math.min(3, (ts - last) / 16.667) : 1; // speed is per time, not per frame (120 Hz safe)
       last = ts;
