@@ -1,0 +1,457 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Orbi Transfer · how it works (3D)</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1190px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .chip { padding: 22px 34px; border-radius: 26px; background: rgba(255,255,255,0.95); color: #111; font: 800 42px/1 "D"; font-stretch: 100%; display: flex; align-items: center; gap: 20px; white-space: nowrap; box-shadow: 0 20px 50px rgba(0,0,0,0.45); opacity: 0; }
+  .chip .x { position: absolute; right: -24px; top: -24px; width: 62px; height: 62px; border-radius: 50%; background: #ff3b3b; color: #fff; display: grid; place-items: center; font: 900 40px/1 Arial; transform: scale(0); }
+  .chip .ic { width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center; font-size: 36px; color: #fff; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(10,12,16,0.82); border: 2px solid rgba(255,255,255,0.25); font: 700 40px/1 "M"; letter-spacing: 0.06em; text-transform: uppercase; color: #eaf0f5; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; }
+  .redx { width: 150px; height: 150px; margin: -75px 0 0 -75px; opacity: 0; }
+  #ripple { width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 8px solid #fff; opacity: 0; }
+  #timer { left: 0; right: 0; top: 1330px; text-align: center; font: 800 96px/1 "M"; opacity: 0; }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #0d1220, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 300px; margin-left: -150px; }
+  #endc .lg { position: absolute; left: 90px; top: 880px; width: 900px; }
+  #endc .url { position: absolute; left: 50%; top: 1060px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; letter-spacing: 0.06em; white-space: nowrap; }
+  #endc .try { position: absolute; left: 0; right: 0; top: 1210px; font: 700 32px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov chip" id="o1" style="left:150px;top:380px"><div class="ic" style="background:#2fbf5b">☎</div>Their number<span class="x">✕</span></div>
+<div class="ov chip" id="o2" style="left:330px;top:560px"><div class="ic" style="background:#2a6bff">⬇</div>Download an app<span class="x">✕</span></div>
+<div class="ov chip" id="o3" style="left:190px;top:740px"><div class="ic" style="background:#8a4dff">@</div>Make an account<span class="x">✕</span></div>
+<div class="ov tag" id="t1"><b>≈ 39 × 20 km</b> · your area</div>
+<div class="ov tag" id="t2">Exact spot <b>stays on your phone</b></div>
+<div class="ov tag" id="t3">Your cell <b>+ the 8 around it</b></div>
+<div class="ov tag" id="t4">The server sees <b>only this</b></div>
+<div class="ov tag" id="t5">Passcode <b>never leaves your phone</b></div>
+<div class="ov tag" id="t6">No account · <b>no trace</b></div>
+<svg class="ov redx" id="rx" viewBox="0 0 100 100"><path d="M18 18 L82 82 M82 18 L18 82" stroke="#ff3b3b" stroke-width="16" stroke-linecap="round"/></svg>
+<div class="ov" id="ripple"></div>
+<div class="ov" id="timer">30:00</div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><img class="lg" src="logo.svg" /><div class="url">orbitransfer.com</div><div class="try">Try it on two phones</div></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "./lib/jsm/loaders/GLTFLoader.js";
+import * as SU from "./lib/jsm/utils/SkeletonUtils.js";
+import { aim } from "./lib/rig.js";
+
+const W = 1080, H = 1920;
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, k) => a + (b - a) * k;
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const S = (el, o) => Object.assign(el.style, o);
+let seed = 11; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+
+const LINES = (await (await fetch("vo/lines.json")).json());
+const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l]));
+const at = (k) => L[k].at, end = (k) => L[k].at + L[k].dur;
+window.DURATION = LINES.duration;
+
+// ---------- renderer ----------
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true });
+r.setPixelRatio(1); r.setSize(W, H, false);
+r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(42, W / H, 0.02, 4000);
+
+// ---------- helpers: textures ----------
+function canvasTex(w, h, draw, rep) {
+  const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  if (rep) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...rep); }
+  t.anisotropy = 4; return t;
+}
+const img = (src) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.src = src; });
+const IM = {};
+for (const k of ["empty", "one", "many", "card"]) IM[k] = await img(`shots/${k}.png`);
+IM.photo = await img("dusk.jpg");
+
+// ---------- world 1: the café ----------
+const cafe = new THREE.Group(); scene.add(cafe);
+const wood = canvasTex(512, 512, (g, w, h) => { g.fillStyle = "#7a4a2c"; g.fillRect(0, 0, w, h); for (let i = 0; i < 16; i++) { g.fillStyle = i % 2 ? "#6c3f25" : "#83512f"; g.fillRect(0, i * 32, w, 30); g.fillStyle = "rgba(0,0,0,0.25)"; g.fillRect(0, i * 32 + 30, w, 2); g.fillRect((i * 97) % w, i * 32, 2, 30); } }, [8, 8]);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ map: wood, roughness: 0.75 }));
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; cafe.add(floor);
+const wallM = new THREE.MeshStandardMaterial({ color: 0x2c6fb8, roughness: 0.85 });
+const wallBack = new THREE.Mesh(new THREE.BoxGeometry(16, 4, 0.3), wallM); wallBack.position.set(0, 2, -3.2); wallBack.receiveShadow = true; cafe.add(wallBack);
+const wallL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 4, 16), wallM); wallL.position.set(-5, 2, 1); wallL.receiveShadow = true; cafe.add(wallL);
+const wallR = new THREE.Mesh(new THREE.BoxGeometry(0.3, 4, 16), wallM); wallR.position.set(5, 2, 1); wallR.receiveShadow = true; cafe.add(wallR);
+const brick = canvasTex(256, 256, (g, w, h) => { g.fillStyle = "#b5653f"; g.fillRect(0, 0, w, h); g.fillStyle = "#8f4a2c"; for (let y = 0; y < 8; y++) for (let x = 0; x < 5; x++) g.fillRect(x * 56 + (y % 2) * 28 - 4, y * 32 + 2, 52, 28); }, [6, 2]);
+const brickWall = new THREE.Mesh(new THREE.PlaneGeometry(6, 4), new THREE.MeshStandardMaterial({ map: brick, roughness: 0.95 })); brickWall.position.set(-1.5, 2, -3.04); cafe.add(brickWall);
+// windows (glowing, a city outside)
+for (const x of [2.2, 3.7]) { const w = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.8), new THREE.MeshBasicMaterial({ color: 0x9fd4ff })); w.position.set(x, 2.0, -3.04); cafe.add(w); const f = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.9, 0.05), new THREE.MeshStandardMaterial({ color: 0x1b1b1b })); f.position.set(x, 2.0, -3.06); cafe.add(f); }
+// posters
+const poster = (col, txt) => canvasTex(256, 360, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, col); gr.addColorStop(1, "#111"); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.fillStyle = "#fff"; g.font = "900 46px D"; g.textAlign = "center"; g.fillText(txt, w / 2, h - 40); g.beginPath(); g.arc(w / 2, 140, 70, 0, 6.28); g.fillStyle = "rgba(255,255,255,0.85)"; g.fill(); });
+[[-4.84, 1.9, -0.6, "#ff7a3c", "COFFEE"], [-4.84, 1.9, 1.4, "#3ccfff", "JAZZ"]].forEach(([x, y, z, c, t]) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.26), new THREE.MeshStandardMaterial({ map: poster(c, t) })); p.position.set(x, y, z); p.rotation.y = Math.PI / 2; cafe.add(p); });
+// counter
+const counter = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.05, 0.7), new THREE.MeshStandardMaterial({ color: 0x3a2a20, roughness: 0.5 })); counter.position.set(2.6, 0.525, -2.4); counter.castShadow = counter.receiveShadow = true; cafe.add(counter);
+const ctop = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.06, 0.8), new THREE.MeshStandardMaterial({ color: 0xd9d4cc, roughness: 0.3 })); ctop.position.set(2.6, 1.08, -2.4); cafe.add(ctop);
+// tables
+function table(x, z) { const g = new THREE.Group(); const top = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.05, 40), new THREE.MeshStandardMaterial({ color: 0xe8e2d8, roughness: 0.35 })); top.position.y = 1.02; const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.0, 12), new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.6, roughness: 0.4 })); leg.position.y = 0.5; const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.03, 24), leg.material); foot.position.y = 0.015; [top, leg, foot].forEach((m) => { m.castShadow = m.receiveShadow = true; g.add(m); }); g.position.set(x, 0, z); cafe.add(g); return g; }
+table(0, 0); table(-2.8, -1.6); table(2.9, 1.6); table(-2.7, 2.4);
+// cups on our table
+for (const x of [-0.18, 0.2]) { const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.035, 0.1, 20), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 })); cup.position.set(x, 1.1, 0.12); cup.castShadow = true; cafe.add(cup); }
+// pendant lamps
+for (const [x, z] of [[0, 0], [-2.8, -1.6], [2.9, 1.6]]) { const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 1.5), new THREE.MeshBasicMaterial({ color: 0x111111 })); cord.position.set(x, 3.25, z); cafe.add(cord); const shade = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.22, 24, 1, true), new THREE.MeshStandardMaterial({ color: 0x1f1f1f, side: THREE.DoubleSide })); shade.position.set(x, 2.45, z); cafe.add(shade); const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffe1a8 })); bulb.position.set(x, 2.36, z); cafe.add(bulb); }
+// lights
+const hemi = new THREE.HemisphereLight(0xcfe3ff, 0x4a2a18, 1.0); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffeedd, 2.3); sun.position.set(3, 7, 5); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6, near: 1, far: 20 }); sun.shadow.bias = -0.0004; scene.add(sun);
+const warm = new THREE.PointLight(0xffc98a, 6, 6, 1.6); warm.position.set(0, 2.3, 0); cafe.add(warm);
+
+// ---------- people ----------
+const gl = new GLTFLoader();
+const xb = await new Promise((ok) => gl.load("lib/Xbot.glb", ok));
+const idleClip = xb.animations.find((a) => a.name === "idle");
+const SCREEN_W = 390, SCREEN_H = 844;
+function makePhone() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.155, 0.009), new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.25, metalness: 0.5 }));
+  g.add(body);
+  const c = document.createElement("canvas"); c.width = SCREEN_W; c.height = SCREEN_H;
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.069, 0.149), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
+  scr.position.z = 0.0047; g.add(scr);
+  const glow = new THREE.PointLight(0x9fd8ff, 0.25, 0.6, 2); glow.position.z = 0.06; g.add(glow);
+  return { g, c, ctx: c.getContext("2d"), tex, scr, state: null };
+}
+const people = [];
+function person(x, z, ry, tint, opt = {}) {
+  const o = SU.clone(xb.scene); o.position.set(x, 0, z); o.rotation.y = ry;
+  o.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; m.material = m.material.clone(); m.material.color = new THREE.Color(tint); m.material.roughness = 0.5; m.frustumCulled = false; } });
+  (opt.parent || cafe).add(o);
+  const mixer = new THREE.AnimationMixer(o); mixer.clipAction(idleClip).play();
+  const p = { o, mixer, phone: makePhone(), look: opt.look ?? 0.55, off: rnd() * 3, phoneOn: opt.phone !== false, hand: opt.hand || 1.16, B: (n) => o.getObjectByName("mixamorig" + n) };
+  if (p.phoneOn) (opt.parent || cafe).add(p.phone.g);
+  p.screen = opt.screen || "many";
+  people.push(p); return p;
+}
+const YOU = person(-0.62, 0.02, Math.PI / 2, 0x4fc3bd, { screen: "photo" });
+const FRIEND = person(0.62, -0.02, -Math.PI / 2, 0xf08a5d, { screen: "empty" });
+seed = 21;
+const crowdSpots = [[-2.8, -0.9, 0.3], [-3.4, -2.0, 1.2], [-2.2, -2.2, -0.4], [2.4, 1.0, -1.9], [3.4, 2.2, -2.6], [2.2, 2.3, 2.5], [-2.2, 2.8, 2.2], [-3.3, 1.9, 0.9], [1.6, -1.4, -0.4], [3.6, -1.2, -1.2], [-0.6, 2.9, 3.0], [0.9, 3.4, 2.8]];
+const tints = [0xc9ced6, 0xa7b0bd, 0xe0c6a8, 0x8fa8c8, 0xd6a3a3, 0xb7d4a8, 0xc9b6e0, 0xe8d39a];
+const crowd = crowdSpots.map(([x, z, ry], i) => person(x, z, ry, tints[i % tints.length], { screen: i % 3 === 0 ? "one" : "many", look: 0.4 + rnd() * 0.3 }));
+
+function posePerson(p, t) {
+  p.mixer.setTime(t * 0.9 + p.off);
+  p.o.updateMatrixWorld(true);
+  const toW = (a) => p.o.localToWorld(V(...a));
+  const h = p.hand;
+  aim(p.B("RightArm"), p.B("RightForeArm"), toW([-0.2, 1.04, 0.06]));
+  aim(p.B("RightForeArm"), p.B("RightHand"), toW([-0.06, h, 0.31]));
+  aim(p.B("LeftArm"), p.B("LeftForeArm"), toW([0.2, 1.04, 0.06]));
+  aim(p.B("LeftForeArm"), p.B("LeftHand"), toW([0.06, h - 0.01, 0.3]));
+  p.B("Head").rotation.x += p.look * 0.75; p.B("Neck").rotation.x += p.look * 0.3;
+  p.o.updateMatrixWorld(true);
+  if (p.phoneOn) {
+    const rh = p.B("RightHand").getWorldPosition(V()), lh = p.B("LeftHand").getWorldPosition(V());
+    const mid = rh.add(lh).multiplyScalar(0.5);
+    const fwd = V(Math.sin(p.o.rotation.y), 0, Math.cos(p.o.rotation.y));
+    p.phone.g.position.copy(mid).add(V(0, 0.07, 0)).add(fwd.multiplyScalar(0.03));
+    p.phone.g.lookAt(p.B("Head").getWorldPosition(V()).add(V(0, 0.02, 0)));
+  }
+}
+// what each phone shows: image keys, crossfades and the tap ripple, drawn into its screen texture
+function screen(p, draw) {
+  const c = p.phone.ctx;
+  const key = JSON.stringify(draw);
+  if (p.phone.state === key) return;
+  p.phone.state = key;
+  c.fillStyle = "#000"; c.fillRect(0, 0, SCREEN_W, SCREEN_H);
+  const put = (im, a = 1) => { c.globalAlpha = a; if (im === IM.photo) { c.fillStyle = "#000"; c.fillRect(0, 0, SCREEN_W, SCREEN_H); const s = SCREEN_W / im.width; c.drawImage(im, 0, (SCREEN_H - im.height * s) / 2 - 40, SCREEN_W, im.height * s); c.fillStyle = "#fff"; c.font = "600 22px Inter, Arial"; c.fillText("Photos", 20, 60); } else c.drawImage(im, 0, 0, SCREEN_W, SCREEN_H); c.globalAlpha = 1; };
+  for (const [k, a] of draw.layers) put(IM[k], a);
+  if (draw.tap) { const [x, y, k] = draw.tap; c.strokeStyle = `rgba(255,255,255,${1 - k})`; c.lineWidth = 8; c.beginPath(); c.arc(x, y, 20 + 50 * k, 0, 6.283); c.stroke(); c.fillStyle = `rgba(255,255,255,${0.35 * (1 - k)})`; c.beginPath(); c.arc(x, y, 26, 0, 6.283); c.fill(); }
+  if (draw.glow) { const g = c.createRadialGradient(195, 370, 10, 195, 370, 260); g.addColorStop(0, `rgba(61,255,140,${0.55 * draw.glow})`); g.addColorStop(1, "rgba(61,255,140,0)"); c.fillStyle = g; c.fillRect(0, 0, SCREEN_W, SCREEN_H); }
+  if (draw.lock) { c.fillStyle = `rgba(4,20,10,${0.75 * draw.lock})`; c.fillRect(0, 0, SCREEN_W, SCREEN_H); c.globalAlpha = draw.lock; c.fillStyle = "#3dff8c"; c.font = "700 20px M"; for (let i = 0; i < 26; i++) c.fillText(Array.from({ length: 24 }, (_, j) => "0123456789abcdef"[(i * 7 + j * 13) % 16]).join(""), 18, 120 + i * 26); c.globalAlpha = 1; }
+  p.phone.tex.needsUpdate = true;
+}
+
+// ---------- world 2: the city (seen from above) ----------
+const city = new THREE.Group(); scene.add(city); // shares the origin with the café; only one is visible at a time
+const CELL = 60, GRID = 9; // 9 × 9 cells around us; ours is the middle one
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(CELL * GRID * 1.6, CELL * GRID * 1.6), new THREE.MeshStandardMaterial({ color: 0x1b2433, roughness: 1 }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; city.add(ground);
+const winTex = canvasTex(64, 128, (g, w, h) => { g.fillStyle = "#2a3346"; g.fillRect(0, 0, w, h); for (let y = 6; y < h; y += 12) for (let x = 6; x < w; x += 12) { g.fillStyle = Math.random() < 0.45 ? "#ffd98a" : "#1a2130"; g.fillRect(x, y, 6, 7); } });
+const bMat = new THREE.MeshStandardMaterial({ map: winTex, roughness: 0.8, emissive: 0xffd98a, emissiveMap: winTex, emissiveIntensity: 0.35 });
+const roofMat = new THREE.MeshStandardMaterial({ color: 0x39455c, roughness: 0.9 });
+seed = 77;
+const span = CELL * GRID;
+const bGeo = new THREE.BoxGeometry(1, 1, 1);
+const blocks = new THREE.InstancedMesh(bGeo, [bMat, bMat, roofMat, roofMat, bMat, bMat], 2600);
+let bi = 0; const m4 = new THREE.Matrix4();
+for (let gx = -span / 2; gx < span / 2; gx += 12) for (let gz = -span / 2; gz < span / 2; gz += 12) {
+  if (bi >= 2600) break;
+  if (Math.abs(gx % 48) < 1 || Math.abs(gz % 48) < 1) continue; // avenues
+  const h = 3 + Math.pow(rnd(), 2.4) * (Math.hypot(gx, gz) < 120 ? 34 : 18);
+  m4.compose(V(gx + 6, h / 2, gz + 6), new THREE.Quaternion(), V(8 + rnd() * 2, h, 8 + rnd() * 2));
+  blocks.setMatrixAt(bi++, m4);
+}
+blocks.count = bi; blocks.castShadow = blocks.receiveShadow = true; city.add(blocks);
+// the grid of cells
+const gridMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
+const gp = [];
+for (let i = -GRID / 2; i <= GRID / 2; i++) { gp.push(i * CELL, 0.6, -span / 2, i * CELL, 0.6, span / 2, -span / 2, 0.6, i * CELL, span / 2, 0.6, i * CELL); }
+const gridGeo = new THREE.BufferGeometry(); gridGeo.setAttribute("position", new THREE.Float32BufferAttribute(gp, 3));
+const grid = new THREE.LineSegments(gridGeo, gridMat); city.add(grid);
+const cells = [];
+for (let gx = -1; gx <= 1; gx++) for (let gz = -1; gz <= 1; gz++) {
+  const c = new THREE.Mesh(new THREE.BoxGeometry(CELL - 2, 44, CELL - 2), new THREE.MeshBasicMaterial({ color: 0x3dff8c, transparent: true, opacity: 0, depthWrite: false }));
+  c.position.set(gx * CELL, 22, gz * CELL); c.userData.centre = gx === 0 && gz === 0; city.add(c); cells.push(c);
+  const e = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(CELL - 2, 0.1, CELL - 2)), new THREE.LineBasicMaterial({ color: 0x3dff8c, transparent: true, opacity: 0 }));
+  e.position.set(gx * CELL, 0.8, gz * CELL); e.userData.centre = c.userData.centre; city.add(e); cells.push(e);
+}
+// "you" in the city + the pin
+const meCity = V(-8, 0, 6);
+const youMark = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.6, 32), new THREE.MeshBasicMaterial({ color: 0x3dff8c })); youMark.position.copy(meCity).setY(40); city.add(youMark);
+const youBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 40, 12), new THREE.MeshBasicMaterial({ color: 0x3dff8c, transparent: true, opacity: 0.6 })); youBeam.position.copy(meCity).setY(20); city.add(youBeam);
+const pin = new THREE.Group(); const pinHead = new THREE.Mesh(new THREE.SphereGeometry(3.2, 24, 16), new THREE.MeshStandardMaterial({ color: 0xff3b3b, emissive: 0xff2020, emissiveIntensity: 0.5 })); pinHead.position.y = 8; const pinTip = new THREE.Mesh(new THREE.ConeGeometry(2.4, 6, 24), pinHead.material); pinTip.rotation.x = Math.PI; pinTip.position.y = 3.4; pin.add(pinHead, pinTip); pin.position.copy(meCity).setY(44); city.add(pin);
+// people dots across the area (ours and beyond)
+seed = 5;
+const dots = [];
+for (let i = 0; i < 70; i++) {
+  const x = (rnd() - 0.5) * CELL * 5.2, z = (rnd() - 0.5) * CELL * 5.2;
+  const inside = Math.abs(x) < CELL * 1.5 && Math.abs(z) < CELL * 1.5;
+  const d = new THREE.Mesh(new THREE.SphereGeometry(1.6, 16, 12), new THREE.MeshBasicMaterial({ color: inside ? 0xffffff : 0x7d8696, transparent: true, opacity: 0 }));
+  d.position.set(x, 46, z); d.userData = { inside, dist: Math.hypot(x - meCity.x, z - meCity.z), delay: rnd() }; city.add(d); dots.push(d);
+}
+const wave = new THREE.Mesh(new THREE.RingGeometry(0.96, 1, 96), new THREE.MeshBasicMaterial({ color: 0x3dff8c, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
+wave.rotation.x = -Math.PI / 2; wave.position.copy(meCity).setY(46); city.add(wave);
+const beamGeo = new THREE.BufferGeometry(); const beamPos = new Float32Array(70 * 6); beamGeo.setAttribute("position", new THREE.BufferAttribute(beamPos, 3));
+const beams = new THREE.LineSegments(beamGeo, new THREE.LineBasicMaterial({ color: 0x3dff8c, transparent: true, opacity: 0 })); city.add(beams);
+
+// ---------- world 3: the server room ----------
+const srv = new THREE.Group(); srv.position.set(3000, 0, 0); scene.add(srv);
+const srvFloor = new THREE.Mesh(new THREE.PlaneGeometry(40, 60), new THREE.MeshStandardMaterial({ color: 0x0d1626, roughness: 0.6, metalness: 0.3 })); srvFloor.rotation.x = -Math.PI / 2; srv.add(srvFloor);
+const ledTex = canvasTex(64, 256, (g, w, h) => { g.fillStyle = "#101826"; g.fillRect(0, 0, w, h); for (let y = 4; y < h; y += 10) { g.fillStyle = "#1b2638"; g.fillRect(4, y, w - 8, 7); for (let x = 8; x < w - 8; x += 9) { g.fillStyle = Math.random() < 0.35 ? (Math.random() < 0.8 ? "#3dff8c" : "#4aa8ff") : "#0b1018"; g.fillRect(x, y + 2, 3, 3); } } });
+const rackM = new THREE.MeshStandardMaterial({ map: ledTex, emissive: 0xffffff, emissiveMap: ledTex, emissiveIntensity: 0.8, roughness: 0.5 });
+for (const x of [-2.2, 2.2]) for (let z = -24; z <= 8; z += 1.25) { const rk = new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.6, 1.15), [rackM, rackM, new THREE.MeshStandardMaterial({ color: 0x0c0f16 }), new THREE.MeshStandardMaterial({ color: 0x0c0f16 }), rackM, rackM]); rk.position.set(x, 1.3, z); srv.add(rk); }
+const srvLight = new THREE.PointLight(0x4aa8ff, 30, 30, 1.5); srvLight.position.set(0, 4, -6); srv.add(srvLight);
+// scrambled bytes flying down the aisle
+const glyphs = "0123456789abcdef";
+const byteTex = [...Array(8)].map((_, i) => canvasTex(128, 48, (g) => { g.fillStyle = "#3dff8c"; g.font = "700 36px M"; g.fillText(Array.from({ length: 4 }, (_, j) => glyphs[(i * 5 + j * 11) % 16]).join(""), 6, 36); }));
+const bytes = [];
+seed = 9;
+for (let i = 0; i < 140; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: byteTex[i % 8], transparent: true, depthWrite: false, toneMapped: false })); s.scale.set(0.55, 0.2, 1); s.userData = { x: (rnd() - 0.5) * 2.4, y: 0.4 + rnd() * 2.4, ph: rnd(), sp: 0.5 + rnd() * 0.6 }; srv.add(s); bytes.push(s); }
+
+// ---------- world 4: the burn (a ball in the dark) ----------
+const burn = new THREE.Group(); burn.position.set(-3000, 0, 0); scene.add(burn);
+const orbTex = canvasTex(512, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "#ffd29a"); gr.addColorStop(0.5, "#e2752b"); gr.addColorStop(1, "#5a1d06"); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+const orb = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), new THREE.MeshStandardMaterial({ map: orbTex, roughness: 0.25, metalness: 0.2, emissive: 0x3a1204, emissiveIntensity: 0.6 })); orb.position.y = 2; burn.add(orb);
+const ringBg = new THREE.Mesh(new THREE.RingGeometry(1.45, 1.55, 128), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15, side: THREE.DoubleSide })); ringBg.position.y = 2; burn.add(ringBg);
+const ringFg = new THREE.Mesh(new THREE.RingGeometry(1.45, 1.55, 128, 1, 0, Math.PI * 2), new THREE.MeshBasicMaterial({ color: 0x3dff8c, side: THREE.DoubleSide, toneMapped: false })); ringFg.position.y = 2; burn.add(ringFg);
+const orbLight = new THREE.PointLight(0xff9a50, 30, 12, 1.4); orbLight.position.set(1.5, 3, 2.5); burn.add(orbLight);
+seed = 3;
+const emberN = 420, emberGeo = new THREE.BufferGeometry(), emberPos = new Float32Array(emberN * 3), emberDir = [];
+for (let i = 0; i < emberN; i++) { const a = rnd() * 6.283, b = Math.acos(2 * rnd() - 1), v = 0.6 + rnd() * 2.2; emberDir.push([Math.sin(b) * Math.cos(a) * v, Math.cos(b) * v + 0.6, Math.sin(b) * Math.sin(a) * v]); }
+emberGeo.setAttribute("position", new THREE.BufferAttribute(emberPos, 3));
+const embers = new THREE.Points(emberGeo, new THREE.PointsMaterial({ color: 0xffa04a, size: 0.06, transparent: true, opacity: 0, toneMapped: false })); burn.add(embers);
+// star backdrop for the dark scenes
+const starGeo = new THREE.BufferGeometry(); const sp = new Float32Array(1500 * 3); seed = 13; for (let i = 0; i < 1500; i++) { sp[i * 3] = (rnd() - 0.5) * 120; sp[i * 3 + 1] = (rnd() - 0.2) * 80; sp[i * 3 + 2] = -30 - rnd() * 40; }
+starGeo.setAttribute("position", new THREE.BufferAttribute(sp, 3)); burn.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.12 })));
+
+// ---------- the shots ----------
+function look(px, py, pz, tx, ty, tz, fov = 42) { cam.position.set(px, py, pz); cam.lookAt(tx, ty, tz); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } }
+function lookV(p, tgt, fov) { look(p.x, p.y, p.z, tgt.x, tgt.y, tgt.z, fov); }
+const project = (v) => { const p = v.clone().project(cam); return [(p.x + 1) / 2 * W, (1 - p.y) / 2 * H]; };
+const phoneWorld = (p) => p.phone.g.getWorldPosition(V());
+const headWorld = (p) => p.B("Head").getWorldPosition(V());
+function overShoulder(p, k, frac = 0.55, side = 0.06, up = 0.03, fov = 34) {
+  // between their eyes and the phone, a touch to the side: the screen fills the shot
+  const ph = phoneWorld(p), hd = headWorld(p);
+  const dir = ph.clone().sub(hd).normalize();
+  const right = V(0, 1, 0).cross(dir).normalize();
+  const c = ph.clone().lerp(hd, frac - k * 0.08).add(right.multiplyScalar(side)).add(V(0, up, 0));
+  lookV(c, ph, fov);
+}
+function scene3(name) { cafe.visible = name === "cafe"; city.visible = name === "city"; srv.visible = name === "srv"; burn.visible = name === "burn"; sun.visible = name !== "burn"; hemi.intensity = name === "cafe" ? 1.0 : name === "city" ? 0.7 : 0.25; scene.background = new THREE.Color(name === "cafe" ? 0x1d4f8c : name === "city" ? 0x0a1220 : 0x02040a); scene.fog = name === "city" ? new THREE.Fog(0x0a1220, 380, 900) : null; }
+
+// overlay helpers
+const chip = (id, t, a, xAt) => { const k = clamp((t - a) / 0.3), kx = clamp((t - xAt) / 0.25); S($(id), { opacity: k, transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${(id === "o2" ? 3 : -3) * k}deg)` }); S($(id).querySelector(".x"), { transform: `scale(${back(kx)})` }); };
+const tag = (id, t, a, b, x, y) => { const k = win(t, a, b, 0.3, 0.3); S($(id), { opacity: k, left: `${x}px`, top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+
+window.render = async function (t) {
+  // defaults
+  for (const id of ["o1", "o2", "o3"]) S($(id), { opacity: 0 });
+  for (const id of ["t1", "t2", "t3", "t4", "t5", "t6"]) S($(id), { opacity: 0 });
+  S($("rx"), { opacity: 0 }); S($("timer"), { opacity: 0 }); S($("flash"), { opacity: 0 });
+
+  // screens on every phone (default looks)
+  for (const p of crowd) screen(p, { layers: [[p.screen, 1]], glow: p === crowd[0] && t > at("live") ? clamp((t - at("live") - 1.6) / 0.3) : 0 });
+  // your phone: gallery → Orbi → send tap → launched → locked
+  const tapAt = at("send") + 2.4;
+  const yLayers = t < at("send") ? [["photo", 1]] : t < tapAt + 0.25 ? [["empty", 1]] : [["empty", 1], ["one", clamp((t - tapAt - 0.25) / 0.2)]];
+  screen(YOU, { layers: yLayers, tap: t > tapAt && t < tapAt + 0.45 ? [60, 771, (t - tapAt) / 0.45] : null, lock: t > at("lock") + 0.9 ? clamp((t - at("lock") - 0.9) / 0.4) : 0 });
+  // their phone: empty → the ball pops in
+  const popAt = at("pop") + 0.75;
+  screen(FRIEND, { layers: [["empty", 1], ["one", clamp((t - popAt) / 0.15)]], glow: t > popAt ? Math.max(0, 1 - (t - popAt) / 0.9) : 0 });
+
+  // people
+  FRIEND.look = t > at("pop") + 1.6 && t < at("how") ? lerp(0.55, -0.15, out(clamp((t - at("pop") - 1.6) / 0.4))) : 0.55;
+  YOU.look = t > at("old") && t < at("send") ? lerp(0.55, 0.0, out(clamp((t - at("old")) / 0.4))) : 0.55;
+  for (const p of people) posePerson(p, t);
+
+  // ---- shot list ----
+  if (t < at("cafe")) {
+    // hook: drift through a café where everyone is on their phone
+    scene3("cafe");
+    const k = ease(clamp(t / 3.6));
+    look(lerp(3.6, 1.9, k), lerp(1.75, 1.6, k), lerp(4.6, 3.2, k), lerp(-1.4, -0.6, k), 1.25, lerp(-0.8, 0, k), 46);
+  } else if (t < at("cafe") + 1.75) {
+    // you, at the table
+    scene3("cafe"); const k = (t - at("cafe")) / 1.75;
+    look(-0.62 + 1.05, 1.55, 0.02 + 1.35 - k * 0.2, -0.62, 1.32, 0.02, 34);
+  } else if (t < at("photo")) {
+    // your friend, across from you (over your shoulder)
+    scene3("cafe"); const k = (t - at("cafe") - 1.75) / 1.75;
+    look(-1.25, 1.62, 0.42 - k * 0.1, 0.62, 1.35, -0.02, 32);
+  } else if (t < at("old")) {
+    // the photo on your phone (over the shoulder)
+    scene3("cafe"); overShoulder(YOU, (t - at("photo")) / 2, 0.62, 0.08, 0.04, 38);
+  } else if (t < at("send")) {
+    // the old ways, struck out
+    scene3("cafe"); const k = (t - at("old")) / 3.4;
+    look(-0.62 + 1.0, 1.5, 0.02 + 0.55 + k * 0.1, -0.62, 1.48, 0.02, 34);
+    chip("o1", t, at("old") + 0.85, at("old") + 1.35); chip("o2", t, at("old") + 1.45, at("old") + 1.95); chip("o3", t, at("old") + 2.1, at("old") + 2.65);
+  } else if (t < at("pop")) {
+    // open the site, hit send: close on your screen
+    scene3("cafe"); const k = (t - at("send")) / 3.9;
+    overShoulder(YOU, k, 0.6, 0.04, 0.03, lerp(36, 30, ease(k)));
+  } else if (t < at("pop") + 1.55) {
+    // pops up on their phone
+    scene3("cafe"); overShoulder(FRIEND, (t - at("pop")) / 1.6, 0.62, -0.05, 0.03, 34);
+    S($("flash"), { opacity: t > popAt ? 0.25 * Math.max(0, 1 - (t - popAt) / 0.25) : 0 });
+  } else if (t < at("how")) {
+    // they look up: instantly
+    scene3("cafe"); const k = (t - at("pop") - 1.55) / 1.6;
+    look(0.62 - 1.0, 1.6, -0.02 - 0.9 + k * 0.1, 0.62, 1.45, -0.02, 32);
+  } else if (t < at("how") + 1.75) {
+    // so how does that work? crane up over the café
+    scene3("cafe"); const k = ease(clamp((t - at("how")) / 1.75));
+    look(lerp(1.6, 0.2, k), lerp(1.8, 11, k), lerp(2.6, 0.6, k), 0, lerp(1.2, 0, k), 0, lerp(42, 50, k));
+  } else if (t < at("sky")) {
+    // the city from above: your cell, then the pin that never moves
+    scene3("city"); const k = ease(clamp((t - at("how") - 1.75) / 6));
+    const p = meCity.clone();
+    look(p.x + lerp(10, 40, k), lerp(140, 330, k), p.z + lerp(70, 210, k), p.x * (1 - k), 0, p.z * (1 - k), 50);
+    const gA = clamp((t - at("area") - 0.6) / 0.8);
+    gridMat.opacity = 0.35 * gA;
+    for (const c of cells) c.material.opacity = c.userData.centre ? (c.isLineSegments ? gA : 0.3 * clamp((t - at("area") - 2.4) / 0.6)) : 0;
+    pin.visible = t > at("spot") - 0.2; pin.position.y = 44 + 10 * (1 - out(clamp((t - at("spot") + 0.2) / 0.4)));
+    youMark.visible = youBeam.visible = true;
+    for (const d of dots) d.material.opacity = 0; wave.material.opacity = 0; beams.material.opacity = 0;
+    if (t > at("area") + 2.4) tag("t1", t, at("area") + 2.4, at("spot"), 540, 380);
+    if (t > at("spot")) {
+      const [x, y] = project(pin.getWorldPosition(V()).add(V(0, 6, 0)));
+      S($("rx"), { left: `${x}px`, top: `${y}px`, opacity: clamp((t - at("spot") - 0.7) / 0.2), transform: `scale(${back(clamp((t - at("spot") - 0.7) / 0.3))})` });
+      tag("t2", t, at("spot") + 0.6, at("sky"), 540, 380);
+    }
+  } else if (t < at("live") + 1.5) {
+    // everyone in your cell and the 8 around it; then the send ripples out
+    scene3("city"); const k = (t - at("sky")) / (at("live") + 1.5 - at("sky"));
+    const p = meCity.clone(); const a = 0.5 + k * 0.6;
+    look(p.x + Math.sin(a) * 260, 300, p.z + Math.cos(a) * 260, 0, 0, 0, 50);
+    gridMat.opacity = 0.35; pin.visible = false;
+    const ring = clamp((t - at("sky") - 0.9) / 0.8);
+    for (const c of cells) c.material.opacity = c.isLineSegments ? (c.userData.centre ? 1 : ring * 0.85) : (c.userData.centre ? 0.3 : 0.16 * ring);
+    for (const d of dots) { const on = clamp((t - at("sky") - 1.6 - d.userData.delay * 1.2) / 0.3); d.material.opacity = on * (d.userData.inside ? 1 : 0.5); }
+    // the send: a wave, then each phone inside lights green
+    const sAt = at("live") + 0.2, w = clamp((t - sAt) / 1.4);
+    wave.scale.setScalar(1 + w * 120); wave.material.opacity = w > 0 && w < 1 ? 0.9 * (1 - w) : 0;
+    let n = 0;
+    for (const d of dots) {
+      if (!d.userData.inside) continue;
+      const got = clamp((t - sAt - d.userData.dist / 120) / 0.25);
+      if (got > 0) { d.material.color.setHex(0x3dff8c); d.scale.setScalar(1 + 0.6 * Math.sin(Math.PI * clamp(got))); } else { d.material.color.setHex(0xffffff); d.scale.setScalar(1); }
+      const kk = got * clamp((sAt + 1.5 - t) / 0.4 + 1);
+      beamPos.set([meCity.x, 46, meCity.z, lerp(meCity.x, d.position.x, got), 46, lerp(meCity.z, d.position.z, got)], n * 6); n++;
+    }
+    beamGeo.setDrawRange(0, n * 2); beamGeo.attributes.position.needsUpdate = true;
+    beams.material.opacity = t > sAt ? 0.6 * clamp((sAt + 1.6 - t) / 0.4 + 0.3) : 0;
+    tag("t3", t, at("sky") + 1.2, at("live"), 540, 380);
+  } else if (t < at("lock")) {
+    // close-ups: phones light up around the café
+    scene3("cafe");
+    const p = t < at("live") + 2.5 ? crowd[0] : crowd[3];
+    overShoulder(p, (t - at("live")) / 4, 0.62, 0.06, 0.03, 34);
+    if (p === crowd[3]) screen(crowd[3], { layers: [["empty", 1], ["one", clamp((t - at("live") - 2.7) / 0.15)]], glow: Math.max(0, 1 - Math.abs(t - at("live") - 2.9) / 0.5) });
+    if (p === crowd[0]) screen(crowd[0], { layers: [["empty", 1], ["one", clamp((t - at("live") - 1.7) / 0.15)]], glow: Math.max(0, 1 - Math.abs(t - at("live") - 1.9) / 0.5) });
+  } else if (t < at("bytes")) {
+    // locked on your phone before it leaves
+    scene3("cafe"); const k = (t - at("lock")) / 3;
+    overShoulder(YOU, k, 0.58, 0.04, 0.03, 32);
+  } else if (t < at("burn")) {
+    // only scrambled bytes travel: down the server aisle
+    scene3("srv"); const k = (t - at("bytes")) / (at("burn") - at("bytes"));
+    look(3000 + Math.sin(k * 2) * 0.4, 1.7, lerp(6, -6, k), 3000, 1.4, lerp(-6, -18, k), 50);
+    for (const b of bytes) { const u = b.userData, z = 8 - (((t * u.sp * 9 + u.ph * 34) % 34)); b.position.set(u.x, u.y, z); b.material.opacity = clamp((8 - z) / 3) * 0.95; }
+    tag("t4", t, at("bytes") + 0.3, at("bytes") + 2.0, 540, 380);
+    tag("t5", t, at("bytes") + 2.1, at("burn"), 540, 380);
+  } else {
+    // 30 minutes later it burns up
+    scene3("burn"); const k = clamp((t - at("burn") - 0.3) / 2.2), gone = clamp((t - at("burn") - 2.55) / 0.3);
+    look(-3000 + Math.sin(t * 0.3) * 0.4, 2.1, 6.2 - k * 0.6, -3000, 2, 0, 42);
+    orb.scale.setScalar(1 - gone * 0.95); orb.material.emissiveIntensity = 0.6 + k * 1.5; orb.rotation.y = t * 0.6;
+    ringFg.geometry.dispose(); ringFg.geometry = new THREE.RingGeometry(1.45, 1.55, 128, 1, Math.PI / 2, Math.PI * 2 * Math.max(0.0001, 1 - ease(k)));
+    ringFg.material.color.setHex(k > 0.8 ? 0xff5a3c : 0x3dff8c); ringFg.visible = ringBg.visible = gone < 1;
+    const e = clamp((t - at("burn") - 2.55) / 1.3);
+    for (let i = 0; i < emberN; i++) { const d = emberDir[i]; emberPos.set([d[0] * out(e) * 2.2, 2 + d[1] * out(e) * 2.2 - e * e * 0.8, d[2] * out(e) * 2.2], i * 3); }
+    emberGeo.attributes.position.needsUpdate = true; embers.material.opacity = e > 0 ? 1 - e : 0;
+    const secs = Math.max(0, Math.round(1800 * (1 - ease(k))));
+    $("timer").textContent = `${String(Math.floor(secs / 60)).padStart(2, "0")}:${String(secs % 60).padStart(2, "0")}`;
+    S($("timer"), { opacity: 1 - gone, top: "1330px", color: k > 0.8 ? "#ff6a4a" : "#fff" });
+    tag("t6", t, at("burn") + 2.9, at("end"), 540, 380);
+  }
+
+  // subtitles: 1–3 words at a time, in time with the voice
+  let sub = "";
+  for (const ln of LINES.lines) {
+    if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue;
+    const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0);
+    let acc = 0; const st = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; });
+    let cur = 0; for (let i = 0; i < words.length; i++) if (t >= st[i]) cur = i;
+    // chunks of up to 3 words, broken at punctuation
+    const chunks = []; let c = [];
+    words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!]$/.test(w)) { chunks.push(c); c = []; } }); if (c.length) chunks.push(c);
+    const ch = chunks.find((cc) => cc.includes(cur));
+    sub = ch.map((i) => words[i]).join(" ");
+  }
+  $("sub").textContent = sub;
+  S($("sub"), { opacity: t > at("end") - 0.1 ? 0 : 1 });
+
+  // end card
+  const e = clamp((t - at("end") + 0.1) / 0.45);
+  S($("endc"), { opacity: e });
+  document.querySelector("#endc .em").style.transform = `rotate(${(t - at("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>

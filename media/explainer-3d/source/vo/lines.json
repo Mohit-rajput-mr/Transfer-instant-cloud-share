@@ -1,0 +1,96 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know why people are using Orbi Transfer?",
+   "dur": 2.837,
+   "at": 0.35
+  },
+  {
+   "key": "cafe",
+   "text": "You're at a caf\u00e9. Your friend is sitting right across from you.",
+   "dur": 3.477,
+   "at": 3.74
+  },
+  {
+   "key": "photo",
+   "text": "You want to send them a photo.",
+   "dur": 1.877,
+   "at": 7.51
+  },
+  {
+   "key": "old",
+   "text": "Normally, you'd need their number, an app, or an account.",
+   "dur": 3.179,
+   "at": 9.69
+  },
+  {
+   "key": "send",
+   "text": "With Orbi Transfer, you just open the site, and hit send.",
+   "dur": 3.605,
+   "at": 13.17
+  },
+  {
+   "key": "pop",
+   "text": "And it pops up on their phone. Instantly.",
+   "dur": 2.581,
+   "at": 17.07
+  },
+  {
+   "key": "how",
+   "text": "So how does that work?",
+   "dur": 1.451,
+   "at": 20.21
+  },
+  {
+   "key": "area",
+   "text": "First, your phone works out its rough area. A cell about forty kilometres wide.",
+   "dur": 5.291,
+   "at": 22.21
+  },
+  {
+   "key": "spot",
+   "text": "Never your exact spot.",
+   "dur": 1.792,
+   "at": 27.8
+  },
+  {
+   "key": "sky",
+   "text": "Everyone in that cell, and the cells around it, shares one live sky.",
+   "dur": 4.373,
+   "at": 30.14
+  },
+  {
+   "key": "live",
+   "text": "So the moment you send something, it appears on their screens.",
+   "dur": 3.52,
+   "at": 34.81
+  },
+  {
+   "key": "lock",
+   "text": "But before it leaves your phone, it gets locked.",
+   "dur": 2.667,
+   "at": 38.88
+  },
+  {
+   "key": "bytes",
+   "text": "Only scrambled bytes travel. The passcode never does.",
+   "dur": 3.477,
+   "at": 41.85
+  },
+  {
+   "key": "burn",
+   "text": "And thirty minutes later, it burns up. No account. No trace.",
+   "dur": 4.053,
+   "at": 45.88
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. Try it on two phones.",
+   "dur": 3.157,
+   "at": 50.23
+  }
+ ],
+ "duration": 55.29
+}
