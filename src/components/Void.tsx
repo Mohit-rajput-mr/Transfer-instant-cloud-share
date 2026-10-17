@@ -442,9 +442,12 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
 
   // how dropped objects look (Style picker); a browser that never picked one asks for this computer's
   const { skin, pal } = useLook();
+  const dropToast = (id: number) => setToasts((t) => t.filter((x) => x.id !== id));
+  const toastSwipe = useRef<{ id: number; x: number; y: number } | null>(null);
   const toast = useCallback((text: string) => {
     const id = Math.random();
-    setToasts((t) => [...t.slice(-2), { id, text }]);
+    // the same notice twice in a row shows once
+    setToasts((t) => [...t.filter((x) => x.text !== text).slice(-1), { id, text }]);
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4000);
   }, []);
   useEffect(() => {
@@ -2378,7 +2381,22 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       )}
 
       <div className="toast" aria-live="polite">
-        {toasts.map((t) => <div key={t.id}>{t.text}</div>)}
+        {toasts.map((t) => (
+          // a tap or a swipe (any direction) sends it away
+          <div
+            key={t.id}
+            role="status"
+            onClick={() => dropToast(t.id)}
+            onPointerDown={(e) => (toastSwipe.current = { id: t.id, x: e.clientX, y: e.clientY })}
+            onPointerUp={(e) => {
+              const sw = toastSwipe.current;
+              toastSwipe.current = null;
+              if (sw && sw.id === t.id && Math.hypot(e.clientX - sw.x, e.clientY - sw.y) > 24) dropToast(t.id);
+            }}
+          >
+            {t.text}
+          </div>
+        ))}
       </div>
 
       {work && !panel && board === false && !inArchive && (

@@ -727,3 +727,4 @@ html[data-ui="work"] .sd-seg { border-radius: 10px; background: var(--w-canvas);
 html[data-ui="work"] .sd-seg button { border-radius: 7px; }
 html[data-ui="work"] .sd-kinds button, html[data-ui="work"] .sd-facts span { border-radius: 8px; background: var(--w-raised); }
 html[data-ui="work"] :is(.sd-seg button.on, .sd-kinds button.on) { background: var(--w-text); color: var(--w-canvas); }
+@media (max-width: 720px) { html[data-ui="work"] .toast { top: auto !important; bottom: calc(76px + var(--safe-b)); } }
