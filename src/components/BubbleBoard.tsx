@@ -70,15 +70,31 @@ function Text({ b, now }: { b: Bubble; now: number }) {
   );
 }
 
+/** Every bubble burns 30 minutes after it was posted: a ring drains down to it, red in the last 5. */
+const BUBBLE_LIFE = 30 * 60_000;
+function BurnTimer({ b, now }: { b: Bubble; now: number }) {
+  const left = Math.max(0, Date.parse(b.expiresAt) - now);
+  const life = Math.max(60_000, Date.parse(b.expiresAt) - Date.parse(b.createdAt)) || BUBBLE_LIFE;
+  const f = Math.min(1, left / life);
+  const late = left < 5 * 60_000;
+  return (
+    <span className={`bub-timer mono${late ? " late" : ""}`} title={`Burns in ${formatClock(left)}`} aria-label={`Burns in ${Math.ceil(left / 60_000)} minutes`} style={{ "--f": f } as CSSProperties}>
+      <svg viewBox="0 0 20 20" aria-hidden><circle cx="10" cy="10" r="8" /><circle className="fill" cx="10" cy="10" r="8" pathLength="100" /></svg>
+      {formatClock(left)}
+    </span>
+  );
+}
+
 export function BubbleItem({ b, now, toast, onBurn, onChange }: { b: Bubble } & Actions) {
   const mine = isMine(b.id);
   return (
     <article className={`bub${b.added != null ? " grew" : ""}`}>
+      <BurnTimer b={b} now={now} />
       <Text b={b} now={now} />
       <footer>
         <span className="mono dim">
           {ago(b.createdAt, now)}
-          {b.editedAt ? " · edited" : b.added != null ? " · updated" : ""} · {formatClock(Date.parse(b.expiresAt) - now)}
+          {b.editedAt ? " · edited" : b.added != null ? " · updated" : ""}
         </span>
         <span className="bub-acts">
           {mine && <button onClick={() => onChange({ id: b.id, mode: "append" })} aria-label="Add more" title="Add more"><LuPlus /></button>}

@@ -29,7 +29,8 @@ const KIND_ICON = { all: LuLayoutGrid, photo: LuImage, video: LuVideo, doc: LuFi
 import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, type BubbleChange } from "./BubbleBoard";
 import TaskBoard, { TaskWires } from "./TaskBoard";
-import { addTask, assignTask, burnTask, carryTasks, wireObject, editTask, isMyTask, moveTask, openInvite, sealInvite, tickTask, type Task } from "@/lib/tasks";
+import { addTask, assignTask, burnTask, carryTasks, wireObject, editTask, isMyTask, moveTask, openInvite, parseTask, sealInvite, tickTask, type Task } from "@/lib/tasks";
+import { readSync, type SyncMsg } from "@/lib/sync";
 import { GoPrivate, InviteCard } from "./TeamMove";
 import { bubbleName, burnBubble, editBubble, hueFor, isMine as isMyBubble, postBubble, senderOf, type Bubble } from "@/lib/bubbles";
 import StylePicker from "./StylePicker";
@@ -54,6 +55,38 @@ function applyEdit(t: Task, c: { text?: string; route?: string[]; stage?: number
     doneBy: done ? t.doneBy ?? (by || null) : null,
   };
 }
+
+/** A live change (lib/sync.ts): the record as it is now (null: gone), stamped with when it happened (server clock). */
+type Mark = { at: number; rec: { id: string } | null };
+// a list made up to this long after a change may still predate it (clocks are never exactly in step)
+const MARK_SLACK = 1500;
+/** The shared list as of `made`, with every change made after it laid on top: nothing burned comes back, nothing new blinks out. */
+function overlay<T extends { id: string }>(list: T[], kind: "b" | "t" | "o", made: number, marks: Map<string, Mark>) {
+  let stale = false;
+  const live = (id: string) => {
+    const m = marks.get(`${kind}:${id}`);
+    return m && made < m.at + MARK_SLACK ? m : null;
+  };
+  const out: T[] = [];
+  const seen = new Set<string>();
+  for (const x of list) {
+    seen.add(x.id);
+    const m = live(x.id);
+    if (!m) out.push(x);
+    else {
+      stale = true;
+      if (m.rec) out.push(m.rec as T);
+    }
+  }
+  for (const [k, m] of marks) {
+    if (!m.rec || !k.startsWith(`${kind}:`) || seen.has(m.rec.id) || made >= m.at + MARK_SLACK) continue;
+    stale = true;
+    out.push(m.rec as T);
+  }
+  return { list: out, stale };
+}
+const upsert = <T extends { id: string }>(list: T[], x: T) => (list.some((y) => y.id === x.id) ? list.map((y) => (y.id === x.id ? x : y)) : [x, ...list]);
+const iso = (ms: number) => new Date(ms).toISOString();
 
 /** Someone else's launch, announced over realtime the moment they press Launch (before it has landed). */
 type Incoming = { key: string; by: string | null; life: number; open: boolean; name: string; size: number; files: number; hue: number; createdAt: string; net: string | null; frac: number; seen: number };
@@ -281,6 +314,19 @@ export default function Void() {
   }, [toast]);
 
   const recent = useRef(new Map<string, Orb>());
+  // live changes (lib/sync.ts), kept over any cached list made before them
+  const marks = useRef(new Map<string, Mark>());
+  const staleTries = useRef(0);
+  const taskKey = (t: Task) => `${t.doneAt ?? ""}|${t.assignee ?? ""}|${t.stage}`;
+  // what changed about someone else's task, said once
+  const taskNews = (t: Task, was: string | undefined, me: string) => {
+    if (isMyTask(t.id)) return;
+    if (was === undefined) return toast(t.assignee && t.assignee.toLowerCase() === me ? `Task ${t.num} is for you: ${t.text}` : `New task ${t.num}${t.by ? ` from ${t.by}` : ""}: ${t.text}`);
+    const [wasDone, wasWho, wasStage] = was.split("|");
+    if (t.stage !== Number(wasStage) && t.stage >= 0) toast(`Task ${t.num} → ${t.route[t.stage] ?? "next stage"}`);
+    else if (t.doneAt && !wasDone) toast(`Task ${t.num} done${t.doneBy ? ` by ${t.doneBy}` : ""}`);
+    else if (t.assignee && t.assignee.toLowerCase() === me && wasWho !== t.assignee) toast(`Task ${t.num} is for you`);
+  };
   const removedRef = useRef<(sp: SpaceSession) => void>(() => {});
   // Coalesced fetch: at most one request in flight; bursts of triggers collapse into one follow-up.
   const inflight = useRef<Promise<void> | null>(null);
@@ -297,23 +343,26 @@ export default function Void() {
       if (sp && r?.status === 403) return removedRef.current(sp);
       if (!r?.ok) return;
       const d = (await r.json()) as { items: Orb[]; bubbles?: Bubble[]; tasks?: Task[]; online: number; now: number };
-      const ts = d.tasks ?? [];
+      // the edge may hand out a list a few seconds old: changes made since stay on top, and it asks again shortly
+      const made = Number(d.now) || 0;
+      const ov = { t: overlay(d.tasks ?? [], "t", made, marks.current), b: overlay(d.bubbles ?? [], "b", made, marks.current), o: overlay(d.items ?? [], "o", made, marks.current) };
+      const cut = Date.now() + skewRef.current - 120_000;
+      for (const [k, m] of marks.current) if (m.at < cut) marks.current.delete(k);
+      if (ov.t.stale || ov.b.stale || ov.o.stale) {
+        if (staleTries.current++ < 4) setTimeout(() => refresh(), 2500);
+      } else staleTries.current = 0;
+      d.items = ov.o.list;
+      const ts = ov.t.list;
       setTasks(ts);
       const me = (bubbleName() || roomRef.current?.handle || "").toLowerCase();
       if (knownTasks.current)
         for (const t of ts) {
           const was = knownTasks.current.get(t.id);
-          const now = `${t.doneAt ?? ""}|${t.assignee ?? ""}|${t.stage}`;
-          if (was === undefined && !isMyTask(t.id)) toast(t.assignee && t.assignee.toLowerCase() === me ? `Task ${t.num} is for you: ${t.text}` : `New task ${t.num}${t.by ? ` from ${t.by}` : ""}: ${t.text}`);
-          else if (was !== undefined && was !== now) {
-            const wasStage = Number(was.split("|")[2]);
-            if (t.stage !== wasStage && t.stage >= 0 && !isMyTask(t.id)) toast(`Task ${t.num} → ${t.route[t.stage] ?? "next stage"}`);
-            else if (t.doneAt && !was.startsWith(t.doneAt)) toast(`Task ${t.num} done${t.doneBy ? ` by ${t.doneBy}` : ""}`);
-            else if (t.assignee && t.assignee.toLowerCase() === me && was.split("|")[1] !== t.assignee) toast(`Task ${t.num} is for you`);
-          }
+          const now = taskKey(t);
+          if (was !== now) taskNews(t, was, me);
         }
-      knownTasks.current = new Map(ts.map((t) => [t.id, `${t.doneAt ?? ""}|${t.assignee ?? ""}|${t.stage}`]));
-      const bs = d.bubbles ?? [];
+      knownTasks.current = new Map(ts.map((t) => [t.id, taskKey(t)]));
+      const bs = ov.b.list;
       setNotes(bs);
       if (knownBubbles.current)
         for (const b of bs) {
@@ -323,7 +372,8 @@ export default function Void() {
           else if (was !== (b.updatedAt ?? "")) toast(`${b.by || "Someone"} ${b.editedAt ? "edited" : "added to"} a bubble`);
         }
       knownBubbles.current = new Map(bs.map((b) => [b.id, b.updatedAt ?? ""]));
-      setSkew(d.now - Date.now());
+      // a cached list is `age` seconds old: the server's clock moved on since it was made
+      setSkew(made + (Number(r.headers.get("age")) || 0) * 1000 - Date.now());
       // a launch that just landed stays put even if this list was cached a moment before it
       const ids = new Set(d.items.map((o) => o.id));
       const keep = [...recent.current.values()].filter((o) => !ids.has(o.id));
@@ -343,6 +393,8 @@ export default function Void() {
     });
     inflight.current = run;
     return run;
+    // taskNews / staleTries are stable refs and plain functions
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toast]);
 
   // Realtime pulses fan out to every open tab at once; random jitter spreads the refetches
@@ -362,6 +414,46 @@ export default function Void() {
   const beam = useCallback((event: "launch" | "landed" | "gone", payload: Record<string, unknown>) => {
     channel.current?.send({ type: "broadcast", event, payload });
   }, []);
+
+  // a change, here and now: shown on this screen and kept over older lists
+  const applySync = useCallback((m: SyncMsg) => {
+    const at = Date.now() + skewRef.current;
+    const put = (k: string, id: string, rec: { id: string } | null) => marks.current.set(`${k}:${id}`, { at, rec });
+    if (m.b) {
+      const b = m.b;
+      put("b", b.id, b);
+      knownBubbles.current?.set(b.id, b.updatedAt ?? "");
+      setNotes((bs) => upsert(bs, b));
+    }
+    if (m.t) {
+      const t = m.t;
+      put("t", t.id, t);
+      knownTasks.current?.set(t.id, taskKey(t));
+      setTasks((ts) => (ts.some((x) => x.id === t.id) ? ts.map((x) => (x.id === t.id ? t : x)) : [...ts, t]));
+    }
+    if (m.bg?.length) {
+      const gone = m.bg;
+      gone.forEach((id) => put("b", id, null));
+      setNotes((bs) => bs.filter((b) => !gone.includes(b.id)));
+    }
+    if (m.tg?.length) {
+      const gone = m.tg;
+      gone.forEach((id) => put("t", id, null));
+      setTasks((ts) => ts.filter((t) => !gone.includes(t.id)));
+    }
+    if (m.og?.length) {
+      const gone = m.og;
+      gone.forEach((id) => (put("o", id, null), recent.current.delete(id)));
+      setOrbs((list) => list.filter((o) => !gone.includes(o.id)));
+    }
+  }, []);
+  /** this screen changed something: every other screen gets the change itself, not just a nudge to re-fetch */
+  const sync = useCallback((m: SyncMsg) => {
+    applySync(m);
+    channel.current?.send({ type: "broadcast", event: "sync", payload: m });
+    // older open tabs only listen for the nudge
+    channel.current?.send({ type: "broadcast", event: "pulse", payload: { at: Date.now() } });
+  }, [applySync]);
 
   // ---- launches: the card closes on Launch, the ball is in the void at once, a small dock tracks it ----
   const [prog, setProg] = useState<Record<string, { stage: Stage; frac: number }>>({});
@@ -611,11 +703,7 @@ export default function Void() {
   const onGoneBeam = useCallback((p: Record<string, unknown>) => {
     // a sender destroyed objects: they leave every screen now (even ones that just landed here)
     const ids = Array.isArray(p?.ids) ? (p.ids as unknown[]).filter((x): x is string => typeof x === "string" && /^[a-z0-9]{4,12}$/.test(x)) : [];
-    if (ids.length) {
-      ids.forEach((id) => recent.current.delete(id));
-      setOrbs((list) => list.filter((o) => !ids.includes(o.id)));
-      return;
-    }
+    if (ids.length) return applySync({ og: ids });
     const k = p?.k;
     if (!validKey(k)) return;
     dropIncoming(k);
@@ -623,7 +711,26 @@ export default function Void() {
       waitFor.current = null;
       toast("That launch was cancelled");
     }
-  }, [dropIncoming, toast]);
+  }, [dropIncoming, toast, applySync]);
+
+  // someone changed a bubble or a task: it shows here now (the toasts say what, once)
+  const onSyncBeam = useCallback((p: Record<string, unknown>) => {
+    const m = readSync(p, Date.now() + skewRef.current);
+    if (m.b && knownBubbles.current) {
+      const was = knownBubbles.current.get(m.b.id);
+      if (!isMyBubble(m.b.id)) {
+        if (was === undefined) toast(`New bubble from ${m.b.by || "someone"}`);
+        else if (was !== (m.b.updatedAt ?? "")) toast(`${m.b.by || "Someone"} ${m.b.editedAt ? "edited" : "added to"} a bubble`);
+      }
+    }
+    if (m.t && knownTasks.current) {
+      const was = knownTasks.current.get(m.t.id);
+      if (was !== taskKey(m.t)) taskNews(m.t, was, (bubbleName() || roomRef.current?.handle || "").toLowerCase());
+    }
+    applySync(m);
+    // taskKey / taskNews are plain functions over refs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applySync, toast]);
 
   // a launch whose sender went quiet (closed the tab mid-upload) does not float forever
   useEffect(() => {
@@ -641,8 +748,8 @@ export default function Void() {
     return () => clearInterval(t);
   }, []);
 
-  const beams = useRef({ launch: onLaunchBeam, landed: onLandedBeam, gone: onGoneBeam });
-  beams.current = { launch: onLaunchBeam, landed: onLandedBeam, gone: onGoneBeam };
+  const beams = useRef({ launch: onLaunchBeam, landed: onLandedBeam, gone: onGoneBeam, sync: onSyncBeam });
+  beams.current = { launch: onLaunchBeam, landed: onLandedBeam, gone: onGoneBeam, sync: onSyncBeam };
 
   const chanName = space ? `orbit-s-${space.chan}` : "orbit-void";
   const myIdRef = useRef<string | null>(null);
@@ -690,6 +797,7 @@ export default function Void() {
     ch.on("broadcast", { event: "launch" }, ({ payload }) => beams.current.launch(payload ?? {}));
     ch.on("broadcast", { event: "landed" }, ({ payload }) => void beams.current.landed(payload ?? {}));
     ch.on("broadcast", { event: "gone" }, ({ payload }) => beams.current.gone(payload ?? {}));
+    ch.on("broadcast", { event: "sync" }, ({ payload }) => beams.current.sync(payload ?? {}));
     // "go private with the team": only devices on the sender's network can open the passcode
     ch.on("broadcast", { event: "invite" }, async ({ payload }) => {
       const p = payload as { slug?: string; title?: string; by?: string; net?: string; seal?: { iv: string; c: string } } | undefined;
@@ -888,7 +996,14 @@ export default function Void() {
   // launches in flight already float as stand-in spheres; the real one takes their place on landing
   const pending = useMemo(() => launches.filter((l) => !l.orb && !l.err).map(pendingOrb), [launches]);
   // other people's launches still on their way up
-  const arrivingOrbs = useMemo(() => Object.values(incoming).map(incomingOrb), [incoming]);
+  // (a stand-in whose real ball is already in the list goes, even if its "landed" message never arrived: no doubles)
+  const arrivingOrbs = useMemo(
+    () =>
+      Object.values(incoming)
+        .filter((i) => !orbs.some((o) => o.hue === i.hue && o.name === i.name && Math.abs(Date.parse(o.createdAt) - Date.parse(i.createdAt)) < 180_000))
+        .map(incomingOrb),
+    [incoming, orbs],
+  );
   const grouped = useMemo(
     () =>
       groupOrbs(
@@ -907,9 +1022,8 @@ export default function Void() {
     toast,
     onBurn: async (id: string) => {
       if (await burnBubble(id)) {
-        setNotes((bs) => bs.filter((b) => b.id !== id));
+        sync({ bg: [id] });
         toast("Bubble burned");
-        broadcast();
       }
     },
     onChange: (c: BubbleChange) => setPanel({ kind: "bubble", edit: c }),
@@ -1241,12 +1355,11 @@ export default function Void() {
         if (r?.ok || r?.status === 403) dropOwnerKey(id);
       }),
     );
-    mine.forEach((id) => recent.current.delete(id));
-    setOrbs((list) => list.filter((o) => !mine.includes(o.id)));
+    applySync({ og: mine });
     beam("gone", { ids: mine });
     toast(mine.length > 1 ? `${mine.length} objects destroyed` : "Object destroyed");
     broadcast();
-  }, [toast, broadcast, beam]);
+  }, [toast, broadcast, beam, applySync]);
   const listedUnlock = panel?.kind === "unlock" ? orbs.find((o) => o.id === panel.id) ?? extra : null;
   if (listedUnlock) keptUnlock.current = listedUnlock;
   else if (panel?.kind !== "unlock") keptUnlock.current = null;
@@ -1353,25 +1466,29 @@ export default function Void() {
               onArrange={mode === "desk" ? toggleArrange : undefined}
               onAdd={async (line, life) => {
                 try {
-                  const t = await addTask(line, bubbleName() || room?.handle || "", life);
+                  const by = bubbleName() || room?.handle || "";
+                  const t = await addTask(line, by, life);
                   toast(`Task ${t.num} added`);
-                  await refresh();
-                  broadcast();
+                  const at = Date.now() + skew, { text, assignee } = parseTask(line);
+                  sync({ t: { id: t.id, num: t.num, text, by: by || null, from: t.from, createdAt: iso(at), expiresAt: iso(at + (life ?? 30) * 60_000), doneAt: null, doneBy: null, assignee: assignee || null, route: [], stage: -1, log: [], editedAt: null } });
+                  refresh();
                 } catch (e) {
                   toast((e as Error).message);
                   throw e;
                 }
               }}
               onTick={(t, done) => {
-                setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, doneAt: done ? new Date().toISOString() : null, doneBy: done ? bubbleName() || room?.handle || null : null } : x)));
-                tickTask(t.id, done, bubbleName() || room?.handle || "").then(() => (refresh(), broadcast())).catch((e) => toast(e.message));
+                const next = { ...t, doneAt: done ? iso(Date.now() + skew) : null, doneBy: done ? bubbleName() || room?.handle || null : null };
+                applySync({ t: next });
+                tickTask(t.id, done, bubbleName() || room?.handle || "").then(() => sync({ t: next })).catch((e) => (marks.current.delete(`t:${t.id}`), toast(e.message), refresh()));
               }}
               onTake={(t, who) => {
-                setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, assignee: who || null } : x)));
-                assignTask(t.id, who).then(() => (toast(who ? `Task ${t.num} → ${who}` : `Task ${t.num} is open again`), refresh(), broadcast())).catch((e) => toast(e.message));
+                const next = { ...t, assignee: who || null };
+                applySync({ t: next });
+                assignTask(t.id, who).then(() => (toast(who ? `Task ${t.num} → ${who}` : `Task ${t.num} is open again`), sync({ t: next }))).catch((e) => (marks.current.delete(`t:${t.id}`), toast(e.message), refresh()));
               }}
               onBurn={(t) => {
-                burnTask(t.id).then((ok) => ok && (toast(`Task ${t.num} removed`), refresh(), broadcast()));
+                burnTask(t.id).then((ok) => ok && (toast(`Task ${t.num} removed`), sync({ tg: [t.id] })));
               }}
               onAttach={(t, what) => (what === "folder" ? pickFolder(t.id) : pickFiles(t.id))}
               onClose={() => (setTaskOpen(false), setComposing(false))}
@@ -1383,11 +1500,12 @@ export default function Void() {
               onEdit={async (t, change) => {
                 // shown at once; the server (and everyone else's screen) catches up in the background
                 const by = bubbleName() || room?.handle || "";
-                setTasks((ts) => ts.map((x) => (x.id === t.id ? applyEdit(x, change, by) : x)));
+                const next = applyEdit(t, change, by);
+                applySync({ t: next });
                 if (change.stage !== undefined) toast(change.stage < 0 ? `Task ${t.num} is back to not started` : `Task ${t.num} → ${(change.route ?? t.route)[change.stage]}`);
                 editTask(t.id, change, by)
-                  .then(() => (refresh(), broadcast()))
-                  .catch((e) => (toast((e as Error).message), refresh()));
+                  .then(() => sync({ t: next }))
+                  .catch((e) => (marks.current.delete(`t:${t.id}`), toast((e as Error).message), refresh()));
               }}
             />
           )}
@@ -1669,7 +1787,8 @@ export default function Void() {
           pulse={pulse}
           onClose={() => setPanel(null)}
           onDeleted={(id) => {
-            setOrbs((list) => list.filter((o) => o.id !== id));
+            applySync({ og: [id] });
+            beam("gone", { ids: [id] });
             setPanel(null);
             toast("Object destroyed");
             broadcast();
@@ -1746,8 +1865,9 @@ export default function Void() {
             try {
               await editBubble(id, text, mode);
               toast(mode === "edit" ? "Bubble edited" : "Added to your bubble");
-              await refresh();
-              broadcast();
+              const b = notes.find((x) => x.id === id), at = iso(Date.now() + skew), add = text.trim();
+              if (b) sync({ b: mode === "edit" ? { ...b, text: add, added: null, editedAt: at, updatedAt: at } : { ...b, text: `${b.text}\n${add}`.slice(0, 2000), added: b.text.length, updatedAt: at } });
+              refresh();
             } catch (e) {
               toast((e as Error).message);
               throw e;
@@ -1756,10 +1876,11 @@ export default function Void() {
           onClose={() => setPanel(null)}
           onPost={async (text, by) => {
             try {
-              await postBubble(text, by);
+              const r = await postBubble(text, by);
               toast("Bubble posted");
-              await refresh();
-              broadcast();
+              const at = Date.now() + skew;
+              sync({ b: { id: r.id, text: text.trim(), by: by.trim() || room?.handle || null, from: r.from, hue: r.hue, createdAt: iso(at), expiresAt: iso(at + 30 * 60_000), added: null, editedAt: null, updatedAt: null } });
+              refresh();
             } catch (e) {
               toast((e as Error).message);
               throw e;

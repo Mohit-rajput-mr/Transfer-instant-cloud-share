@@ -85,7 +85,8 @@ export const TASK_LIVES: [number, string][] = [[30, "30 min"], [60, "1 h"], [120
 export async function addTask(line: string, by = bubbleName(), life = 30) {
   const owner = toHex(crypto.getRandomValues(new Uint8Array(32)));
   const { text, assignee } = parseTask(line);
-  const d = await post("/api/tasks", { text, assignee, by, life, pro: proCode() || undefined, owner, from: await senderKey(), ...spaceBody() });
+  const from = await senderKey();
+  const d = await post("/api/tasks", { text, assignee, by, life, pro: proCode() || undefined, owner, from, ...spaceBody() });
   const m = read();
   m[d.id] = owner;
   const ids = Object.keys(m);
@@ -93,7 +94,7 @@ export async function addTask(line: string, by = bubbleName(), life = 30) {
   try {
     localStorage.setItem(OWN, JSON.stringify(m));
   } catch {}
-  return d as { id: string; num: number };
+  return { ...(d as { id: string; num: number }), from: from || null };
 }
 
 export const tickTask = (id: string, done: boolean, by = bubbleName()) => post("/api/tasks/done", { id, done, by, owner: read()[id], ...spaceBody() });

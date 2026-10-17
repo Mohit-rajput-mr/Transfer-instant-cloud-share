@@ -58,10 +58,11 @@ export async function postBubble(text: string, by: string, life = 30) {
     localStorage.setItem(NAME, by);
   } catch {}
   const from = await senderKey();
+  const hue = hueFor(from || `n:${by.toLowerCase()}`);
   const r = await fetch("/api/bubbles", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, by, life, owner, from, hue: hueFor(from || `n:${by.toLowerCase()}`), ...spaceBody() }),
+    body: JSON.stringify({ text, by, life, owner, from, hue, ...spaceBody() }),
   });
   const d = await r.json().catch(() => null);
   if (!r.ok || !d?.id) throw new Error(d?.error ?? "Could not post the bubble");
@@ -71,7 +72,7 @@ export async function postBubble(text: string, by: string, life = 30) {
   const ids = Object.keys(m);
   if (ids.length > 200) for (const k of ids.slice(0, ids.length - 200)) delete m[k];
   write(m);
-  return d.id as string;
+  return { id: d.id as string, from: from || null, hue };
 }
 
 export async function burnBubble(id: string) {
