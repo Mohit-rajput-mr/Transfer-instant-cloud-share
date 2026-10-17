@@ -46,6 +46,15 @@ D. DONE + deployed: admin exact live location. Device with location allowed → 
    → pulse sends lat/lon/acc/precise (early pulse on 100 m+ move, max every 15 s) → migration 017 keeps it 10 min
    → `orbit_admin_overview.exact` → pink "Exact (GPS)" markers on the admin globe (tip: label, coords, ±m, age).
    LocationAsk + privacy page now say the exact spot goes to Orbit's own map; others only see the rough area.
+H. DONE + deployed (3rd round): balls are always plain round balls in the sender's colour (no file shape, no
+   thumbnail; the picture only shows in preview). Bubbles drag from anywhere (not just the name row); phone drags no
+   longer jump (drop uses the last move point, `.bub-stack.on-map` touch-action none); phone world ≥ 1.5× widest panel.
+I. DONE + deployed: trash (`lib/trash.ts`, `components/Trash.tsx`): dragging any ball, bubble stack or task panel
+   shows a big trash zone at the bottom; dropping on it hides it in THIS browser only (localStorage `orbit:trash`).
+   Trash button (with count) in the zoom column lists them, Restore / Restore all.
+J. DONE + deployed: location blocked/failed → `LocationBlocked` card with iPhone/Android/in-app steps and
+   "Pick my area on the map" (Earth in picking mode; zooming in sets `where.ts` how:"pick", IP no longer overrides).
+   Cause seen in data: owner's iPhone on mobile data had IP in Madrid while desktop GPS was Barcelona → different areas.
 E. **Files instantly on other devices**: tested OK locally via Cloudflare (stand-in ball appears ~1.3 s, bubbles ~1 s, across
    GPS-area and IP-area devices). Owner's failure was most likely an old tab still on the pre-Cloudflare build. If it
    happens again: check both tabs `/api/version` RELEASE, Cloudflare Requests count, browser console for WebSocket errors.

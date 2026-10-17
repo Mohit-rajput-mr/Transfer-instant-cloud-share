@@ -5,14 +5,15 @@ import { areaOf, validArea } from "./area";
 // IP points to (rougher). Only the cell is kept on the device and used for the void; the exact fix (in memory only)
 // goes to Orbit with the heartbeat, for its own live map, and is never shown to other people.
 
-export type Where = { area: string; how: "gps" | "ip" };
+/** gps: the device shared its location; pick: chosen by hand on the map (location blocked); ip: the connection's guess */
+export type Where = { area: string; how: "gps" | "pick" | "ip" };
 const KEY = "orbit:area";
 const ASKED = "orbit:geo-asked";
 
 const load = (): Where | null => {
   try {
     const w = JSON.parse(localStorage.getItem(KEY) || "null") as Where | null;
-    return w && validArea(w.area) && (w.how === "gps" || w.how === "ip") ? w : null;
+    return w && validArea(w.area) && (w.how === "gps" || w.how === "pick" || w.how === "ip") ? w : null;
   } catch {
     return null;
   }
@@ -47,9 +48,13 @@ export const myArea = () => cur?.area ?? "";
 
 /** the server's guess from the IP: used only until (or unless) the device shares its location */
 export function fromIp(area: unknown) {
-  if (!validArea(area) || cur?.how === "gps" || cur?.area === area) return false;
+  if (!validArea(area) || cur?.how === "gps" || cur?.how === "pick" || cur?.area === area) return false;
   save({ area, how: "ip" });
   return true;
+}
+/** location blocked: the area picked by hand on the map, kept until the device shares its location */
+export function pickArea(area: string) {
+  if (validArea(area)) save({ area, how: "pick" });
 }
 /** location sharing turned off in the browser: back to the IP's area */
 export function dropGps() {

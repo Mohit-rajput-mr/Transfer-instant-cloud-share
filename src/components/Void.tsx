@@ -35,8 +35,10 @@ import { addTask, assignTask, burnTask, carryTasks, wireObject, editTask, isMyTa
 import { readSync, type SyncMsg } from "@/lib/sync";
 import { joinLive, liveOn, roomsFor, type Chan } from "@/lib/live";
 import { around } from "@/lib/area";
-import { asked, dropGps, fixNow, follow, fromIp, locate, markAsked, markSent, permission, where } from "@/lib/where";
-import LocationAsk from "./LocationAsk";
+import { asked, dropGps, fixNow, follow, fromIp, locate, markAsked, markSent, permission, pickArea, where } from "@/lib/where";
+import LocationAsk, { LocationBlocked } from "./LocationAsk";
+import { TrashZone } from "./Trash";
+import { useTrash } from "@/lib/trash";
 import TaskThrow, { type Grab } from "./TaskThrow";
 import dynamic from "next/dynamic";
 import { perf } from "@/lib/perf";
@@ -210,6 +212,10 @@ export default function Void() {
   const [gps, setGps] = useState(false);
   const [areaReady, setAreaReady] = useState(false);
   const [geoAsk, setGeoAsk] = useState(false);
+  // location refused or failed: how to fix it, or pick the area on the map (null: not shown)
+  const [geoFail, setGeoFail] = useState<"denied" | "failed" | null>(null);
+  // the Earth was opened to pick this device's area by hand
+  const [picking, setPicking] = useState(false);
   const [skew, setSkew] = useState(0);
   const skewRef = useRef(skew);
   skewRef.current = skew;
@@ -223,10 +229,14 @@ export default function Void() {
   const roomRef = useRef(room);
   roomRef.current = room;
   // bubble text in this void (or space)
-  const [notes, setNotes] = useState<Bubble[]>([]);
+  // what this browser put in the trash (lib/trash.ts) stays out of sight here, for everyone else it is still there
+  const trash = useTrash();
+  const [allNotes, setNotes] = useState<Bubble[]>([]);
+  const notes = useMemo(() => (trash.size ? allNotes.filter((b) => !trash.has(`b:${senderOf(b)}`)) : allNotes), [allNotes, trash]);
   const knownBubbles = useRef<Map<string, string> | null>(null);
   // tasks in this void/space, which one is in focus (only its files show), and the task a new send is wired to
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [allTasks, setTasks] = useState<Task[]>([]);
+  const tasks = useMemo(() => (trash.size ? allTasks.filter((t) => !trash.has(`t:${isMyTask(t.id) ? "me" : t.from || t.by || "someone"}`)) : allTasks), [allTasks, trash]);
   const knownTasks = useRef<Map<string, string> | null>(null);
   const [taskFocus, setTaskFocus] = useState<string | null>(null);
   const [wireTo, setWireTo] = useState<string | null>(null);
@@ -1009,8 +1019,15 @@ export default function Void() {
     } catch (e) {
       markAsked();
       setGps(false);
-      toast((e as { denied?: boolean }).denied ? "Location is blocked: allow it for this site in your browser settings, then tap the pin again" : (e as Error).message);
+      setGeoFail((e as { denied?: boolean }).denied ? "denied" : "failed");
     }
+  }, [toast]);
+  // location blocked: this device's area is the one picked on the map (lib/where.ts), not its connection's guess
+  const pickHere = useCallback((cell: string) => {
+    pickArea(cell);
+    setHome(cell);
+    setArea(cell);
+    toast("Your area is set: what you send goes here, and you see what's around it");
   }, [toast]);
   // a new area: its void (the first load waits for areaReady and asks with the area by then)
   useEffect(() => {
@@ -1211,11 +1228,12 @@ export default function Void() {
         alive.filter(
           (o) =>
             !(archived && o.task) &&
+            !trash.has(`o:${o.id}`) &&
             (scope === "all" || (scope === "near" ? o.netHash === net || !!ownerKey(o.id) : !!ownerKey(o.id))) &&
             (kind === "all" || fileKind(o.fileName, o.mime) === kind),
         ),
       ),
-    [alive, scope, net, kind, archived],
+    [alive, scope, net, kind, archived, trash],
   );
   const groups = grouped.groups;
   const bubbleActs = {
@@ -1249,11 +1267,11 @@ export default function Void() {
   }, [zoomFirst, viewing, sendPulse, refresh, broadcast]);
   const shown = useMemo(
     () => [
-      ...grouped.list,
+      ...grouped.list.filter((o) => !trash.has(`o:${o.id}`)),
       ...pending,
       ...(scope === "mine" ? [] : arrivingOrbs.filter((o) => scope === "all" || (!!net && o.netHash === net))),
     ],
-    [grouped, scope, net, pending, arrivingOrbs],
+    [grouped, scope, net, pending, arrivingOrbs, trash],
   );
   // Your balls are numbered 1..N in launch order, on the ball and on its dock row, so you can count yours at a glance.
   const badges = useMemo(() => {
@@ -1904,14 +1922,19 @@ export default function Void() {
               home={home}
               from={area}
               gps={gps}
+              picking={picking}
               onEnter={(cell) => {
-                setArea(cell);
                 setEarth(false);
-                if (cell !== home) toast("You're looking at another area · what you post still goes to yours");
+                if (picking) {
+                  setPicking(false);
+                  return pickHere(cell);
+                }
+                setArea(cell);
+                if (cell !== home) toast(gps ? "You're looking at another area · what you post still goes to yours" : "You're looking at another area · tap \"I'm here\" to make it yours");
               }}
               onLocate={shareLocation}
               onSpace={() => (setEarth(false), setPanel({ kind: "space" }))}
-              onClose={() => setEarth(false)}
+              onClose={() => (setEarth(false), setPicking(false))}
             />
           )}
           {!earth && !space && (area !== home || !gps) && !geoAsk && (
@@ -1919,7 +1942,8 @@ export default function Void() {
               {area !== home ? (
                 <>
                   <span>Another area</span>
-                  <button className="pill solid lg-press" onClick={() => setArea(home)}>Back to my area</button>
+                  {!gps && <button className="pill solid lg-press" onClick={() => pickHere(area)}><LuMapPin aria-hidden /> I&apos;m here</button>}
+                  <button className={`pill${gps ? " solid" : ""} lg-press`} onClick={() => setArea(home)}>Back to my area</button>
                 </>
               ) : (
                 <>
@@ -2125,6 +2149,15 @@ export default function Void() {
             sync({ tg: [t.id] });
             toast(`Task ${t.num} is in ${sp.title} now · open Spaces to see it there`);
           }}
+        />
+      )}
+      <TrashZone />
+      {geoFail && !panel && (
+        <LocationBlocked
+          reason={geoFail}
+          onPick={() => (setGeoFail(null), setPicking(true), setEarth(true))}
+          onRetry={() => (setGeoFail(null), void shareLocation())}
+          onClose={() => setGeoFail(null)}
         />
       )}
       {geoAsk && !panel && (

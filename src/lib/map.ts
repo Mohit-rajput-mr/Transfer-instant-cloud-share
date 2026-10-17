@@ -35,8 +35,8 @@ export function worldSize(things: Thing[], vw: number, vh: number) {
   const area = things.reduce((a, t) => a + (t.w + GAP) * (t.h + GAP), 0);
   const need = area / DENSITY / (vw * vh);
   const f = Math.max(1, Math.ceil(Math.sqrt(need) * 4) / 4);
-  // the widest thing must fit too
-  const minW = Math.max(0, ...things.map((t) => t.w + 2 * GAP));
+  // the widest thing must fit too, with room to drag it sideways (a phone screen is barely wider than a panel)
+  const minW = Math.max(0, ...things.map((t) => t.w * 1.5 + 2 * GAP));
   const minH = Math.max(0, ...things.map((t) => t.h + 2 * GAP));
   return { W: Math.max(vw * f, minW), H: Math.max(vh * f, minH), f };
 }

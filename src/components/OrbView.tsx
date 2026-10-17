@@ -6,8 +6,8 @@ import { setCardOrigin } from "./Panels";
 import { ext, formatBytes, formatClock, type Orb } from "@/lib/client";
 import { fileKind, toneOf, typeHue } from "@/lib/skin-list";
 import { LuArchive, LuFileText, LuImage, LuMusic, LuVideo } from "react-icons/lu";
-import { previewUrl } from "@/lib/preview";
 import { mapView } from "@/lib/map";
+import { dragAt, overTrash, toTrash } from "@/lib/trash";
 
 /** 7 → "7", 12 → "10+", 140 → "100+": a crowd stays readable */
 const crowd = (n: number) => (n >= 1000 ? "1k+" : n >= 100 ? "100+" : n >= 10 ? "10+" : String(n));
@@ -288,27 +288,11 @@ export function bubbleLayout(n: number) {
   return { d, W, H, spots };
 }
 
-// kinds drawn as a file shape (a page, a photo, a clip, a box) rather than a ball
-const SHAPED = new Set(["photo", "video", "doc", "archive"]);
 const KIND_ICON = { photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
 /** what kind of file it is (photo, video, document, audio, archive), as a small badge on the ball */
 export function KindBadge(props: { kind: string }) {
   const I = KIND_ICON[props.kind as keyof typeof KIND_ICON];
   return I ? <i className={`kind-badge k-${props.kind}`} aria-hidden><I /></i> : null;
-}
-
-/** the preview picture inside a ball (photo, a video's frame with a play mark, a PDF's first page) */
-export function Thumb(props: { id: string; fileName: string; mime?: string }) {
-  const [bad, setBad] = useState(false);
-  if (bad) return null;
-  const video = /^video\//.test(props.mime ?? "") || /\.(mp4|m4v|webm|mov)$/i.test(props.fileName);
-  return (
-    <>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="thumb" src={previewUrl(props.id)} alt="" loading="lazy" decoding="async" draggable={false} onError={() => setBad(true)} />
-      {video && <i className="thumb-play" aria-hidden />}
-    </>
-  );
 }
 
 export default function OrbView(props: {
@@ -362,7 +346,7 @@ export default function OrbView(props: {
   const suppressClick = useRef(false);
   const pressed = useRef<string | null>(null);
   // one ball inside a bubble, dragged on its own
-  const mdrag = useRef<{ id: number; el: HTMLElement; mid: string; sx: number; sy: number; x: number; y: number; w: number; h: number; armed: boolean; moved: boolean; hold: ReturnType<typeof setTimeout> | null; tr: ReturnType<typeof tracker>; cx: number; cy: number } | null>(null);
+  const mdrag = useRef<{ id: number; el: HTMLElement; mid: string; sx: number; sy: number; x: number; y: number; w: number; h: number; armed: boolean; moved: boolean; hold: ReturnType<typeof setTimeout> | null; tr: ReturnType<typeof tracker>; cx: number; cy: number; lx: number; ly: number } | null>(null);
   const off = offsets.get(orb.id) ?? { x: 0, y: 0 };
   // stagger slot is fixed at mount: re-indexing later must not replay the entrance
   const [idx] = useState(() => Math.min(props.index ?? 0, 20));
@@ -468,7 +452,7 @@ export default function OrbView(props: {
       const touch = e.pointerType !== "mouse";
       const tr = tracker();
       tr.start(e.clientX, e.clientY);
-      const md = { id: e.pointerId, el: mel, mid, sx: e.clientX, sy: e.clientY, x: at[0], y: at[1], w: box.width, h: box.height, armed: !touch, moved: false, hold: null as ReturnType<typeof setTimeout> | null, tr, cx: at[0], cy: at[1] };
+      const md = { id: e.pointerId, el: mel, mid, sx: e.clientX, sy: e.clientY, x: at[0], y: at[1], w: box.width, h: box.height, armed: !touch, moved: false, hold: null as ReturnType<typeof setTimeout> | null, tr, cx: at[0], cy: at[1], lx: e.clientX, ly: e.clientY };
       mdrag.current = md;
       if (touch) {
         // like the spheres: a short hold picks the ball up, a quick swipe still scrolls
@@ -537,6 +521,9 @@ export default function OrbView(props: {
       md.moved = true;
       const x = clampTo(md.x + dx / md.w, 0.08, 0.92), y = clampTo(md.y + dy / md.h, 0.1, 0.74);
       md.tr.move(e.clientX, e.clientY, md.w, md.h);
+      md.lx = e.clientX;
+      md.ly = e.clientY;
+      dragAt(e.clientX, e.clientY);
       md.cx = x;
       md.cy = y;
       md.el.style.left = `${x * 100}%`;
@@ -567,6 +554,7 @@ export default function OrbView(props: {
     d.vx = d.vx * 0.6 + ((e.clientX - d.lx) / d.k / dt) * 16 * 0.4;
     d.vy = d.vy * 0.6 + ((e.clientY - d.ly) / d.k / dt) * 16 * 0.4;
     d.lx = e.clientX; d.ly = e.clientY; d.lt = t;
+    dragAt(e.clientX, e.clientY);
     const c = clamp(d, d.ox + dx, d.oy + dy);
     d.tx = c.x; d.ty = c.y; d.tilt = Math.max(-18, Math.min(18, d.vx * 1.2));
     if (!d.raf) {
@@ -585,6 +573,13 @@ export default function OrbView(props: {
       if (md.moved) {
         suppressClick.current = true;
         setTimeout(() => (suppressClick.current = false), 450);
+        dragAt(null);
+        // let go over the trash: this file is hidden on this browser (lib/trash.ts)
+        if (overTrash(md.lx, md.ly)) {
+          md.el.classList.remove("lifted");
+          toTrash(`o:${md.mid}`, md.el.querySelector(".mname")?.textContent ?? "");
+          return;
+        }
         const [vx, vy] = md.tr.velocity();
         fling(md.el, md.mid, md.cx, md.cy, vx, vy, { x0: 0.08, x1: 0.92, y0: 0.1, y1: 0.74 });
       } else md.el.classList.remove("lifted");
@@ -611,6 +606,13 @@ export default function OrbView(props: {
     }
     d.armed = false;
     el?.classList.remove("dragging");
+    dragAt(null);
+    if (overTrash(d.lx, d.ly)) {
+      drag.current = null;
+      apply(d.ox, d.oy, 0);
+      toTrash(`o:${orb.id}`, orb.name);
+      return;
+    }
     el?.classList.add("flung");
     // momentum glide with soft bounces off the edges
     let { vx, vy } = d;
@@ -738,9 +740,8 @@ export default function OrbView(props: {
                       style={{ "--sh": m.hue, "--th": typeHue(m.fileName), "--mi": i, "--life": mf, left: `${x * 100}%`, top: `${y * 100}%` } as CSSProperties}
                       title={`${m.name} · ${formatBytes(m.size)} · ${formatClock(mleft)}`}
                     >
-                      <span className={`mball${m.thumb ? " thumbed" : ""}`} data-kind={fileKind(m.fileName)}>
+                      <span className="mball">
                         <KindBadge kind={fileKind(m.fileName)} />
-                        {m.thumb && <Thumb id={m.id} fileName={m.fileName} />}
                         <svg className="mring" viewBox="0 0 100 100" aria-hidden>
                           <circle className="track" cx="50" cy="50" r="48" />
                           <circle className="life" cx="50" cy="50" r="48" strokeDasharray={301.6} strokeDashoffset={301.6 * (1 - mf)} />
@@ -767,16 +768,15 @@ export default function OrbView(props: {
           );
         })()
       ) : (
-      <div className={`orb-body${SHAPED.has(fileKind(orb.fileName, orb.mime)) ? " shaped" : ""}`} style={{ "--life": up ? Math.max(0.03, launching) : frac } as CSSProperties}>
+      <div className="orb-body" style={{ "--life": up ? Math.max(0.03, launching) : frac } as CSSProperties}>
         <div className="halo" />
         {mine && <span className="claim" />}
-        <div className={`sphere${orb.thumb && orb.open && !up ? " thumbed" : ""}`} data-kind={fileKind(orb.fileName, orb.mime)}>{orb.thumb && orb.open && !up && <Thumb id={orb.id} fileName={orb.fileName} mime={orb.mime} />}</div>
+        {/* always a plain ball in the sender's colour: what is inside only shows in the preview */}
+        <div className="sphere" />
         <svg className="ring" viewBox="0 0 100 100">
           <circle className="track" cx="50" cy="50" r={R} />
           <circle className="life" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - (up ? Math.max(0.03, launching) : frac))} />
         </svg>
-        {/* a file-shaped ball shows its life as a slim bar under the shape (a round ring around a page looks broken) */}
-        <i className="lifebar" aria-hidden><b /></i>
         <KindBadge kind={fileKind(orb.fileName, orb.mime)} />
         <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : ext(orb.fileName)}</span>
         {props.onDestroy && mine && !up && phase !== "burning" && <span className="destroy" data-destroy="" role="button" aria-label={`Destroy ${orb.name}`} title="Destroy"><LuTrash2 /></span>}

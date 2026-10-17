@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { LuEarth, LuMaximize, LuMinus, LuPlus } from "react-icons/lu";
 import { mapView } from "@/lib/map";
+import { dragAt, overTrash, toTrash } from "@/lib/trash";
+import { TrashButton } from "./Trash";
 
 type View = { x: number; y: number; k: number };
 /** what covers the edges of the screen (header, send button…): the world is fitted inside the rest */
@@ -27,7 +29,7 @@ const OWN_TOUCH = "input, textarea, select, .tb-acts, .tb-route, .map-tools, [da
  */
 // what picks a whole panel up: its header, or its own background (never a button, field or row inside it)
 const HANDLE = ".tb-head, .bub-stack.on-map > header";
-const INNER = "button, a, input, textarea, select, label, form, .tb-row, .bub";
+const INNER = "button, a, input, textarea, select, label, form, .tb-row";
 
 export default function MapWorld({ W, H, band, children, fit, empty, onRect, onEarth, onMoveItem }: {
   W: number;
@@ -211,7 +213,7 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     return { ps, x: ps.reduce((a, p) => a + p.x, 0) / ps.length, y: ps.reduce((a, p) => a + p.y, 0) / ps.length };
   };
   // ---- a whole panel dragged around the map: a mouse grabs it at once, a finger holds it a moment first ----
-  const item = useRef<{ id: number; key: string; el: HTMLElement; sx: number; sy: number; k: number; armed: boolean; moved: boolean; timer: number } | null>(null);
+  const item = useRef<{ id: number; key: string; el: HTMLElement; sx: number; sy: number; lx: number; ly: number; k: number; armed: boolean; moved: boolean; timer: number } | null>(null);
   const grabItem = (e: React.PointerEvent) => {
     const t = e.target as Element;
     const el = t.closest?.<HTMLElement>("[data-map-key]");
@@ -219,7 +221,7 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     const onHandle = !!t.closest?.(HANDLE);
     if (!onHandle && t.closest?.(INNER)) return false;
     const mouse = e.pointerType === "mouse";
-    const it = { id: e.pointerId, key: el.dataset.mapKey!, el, sx: e.clientX, sy: e.clientY, k: viewRef.current.k, armed: mouse, moved: false, timer: 0 };
+    const it = { id: e.pointerId, key: el.dataset.mapKey!, el, sx: e.clientX, sy: e.clientY, lx: e.clientX, ly: e.clientY, k: viewRef.current.k, armed: mouse, moved: false, timer: 0 };
     item.current = it;
     if (mouse)
       try {
@@ -247,6 +249,8 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
       }
       return false;
     }
+    it.lx = e.clientX;
+    it.ly = e.clientY;
     if (!it.moved && Math.hypot(dx, dy) < 5) return true;
     if (!it.moved) {
       it.moved = true;
@@ -254,6 +258,7 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
       setFollow(false);
     }
     it.el.style.translate = `calc(-50% + ${dx / it.k}px) calc(-50% + ${dy / it.k}px)`;
+    dragAt(e.clientX, e.clientY);
     return true;
   };
   const dropItem = (e: React.PointerEvent) => {
@@ -264,9 +269,17 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     delete document.body.dataset.grab;
     it.el.classList.remove("lifted");
     if (!it.moved) return false;
-    // the drop lands where it was let go (no glide back from the old spot)
+    dragAt(null);
+    // let go over the trash: hidden on this browser (lib/trash.ts)
+    if (overTrash(it.lx, it.ly)) {
+      const label = it.el.getAttribute("aria-label") || it.el.querySelector("header b")?.textContent || "";
+      toTrash(it.key, it.key.startsWith("b:") ? `${label.replace(/ \(you\)$/, "")}'s bubbles` : label);
+      it.el.style.translate = "";
+      return true;
+    }
+    // the drop lands where it was last seen under the pointer (a lifted finger or a cancel can report 0,0)
     it.el.classList.add("dropped");
-    onMoveItem?.(it.key, (e.clientX - it.sx) / it.k, (e.clientY - it.sy) / it.k);
+    onMoveItem?.(it.key, (it.lx - it.sx) / it.k, (it.ly - it.sy) / it.k);
     requestAnimationFrame(() => {
       it.el.style.translate = "";
       requestAnimationFrame(() => it.el.classList.remove("dropped"));
@@ -354,6 +367,7 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
         {children}
       </div>
       <div className="map-tools lg" data-no-pan>
+        <TrashButton />
         {!empty && (
           <>
             <button onClick={() => zoomAt(1.35, center().x, center().y, true)} aria-label="Zoom in (+)" title="Zoom in (+)"><LuPlus /></button>

@@ -25,7 +25,7 @@ function features(cells: Cell[]): GeoJSON.FeatureCollection {
   };
 }
 
-export default function EarthView(props: { home: string; from: string; gps: boolean; onEnter: (cell: string) => void; onLocate: () => void; onSpace: () => void; onClose: () => void }) {
+export default function EarthView(props: { home: string; from: string; gps: boolean; /** choosing this device's area by hand (location blocked) */ picking?: boolean; onEnter: (cell: string) => void; onLocate: () => void; onSpace: () => void; onClose: () => void }) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<MLMap | null>(null);
   const [sum, setSum] = useState({ areas: 0, f: 0, b: 0, t: 0 });
@@ -168,12 +168,16 @@ export default function EarthView(props: { home: string; from: string; gps: bool
         <span className="mono dim">
           {loading ? "Looking around…" : sum.areas ? `${sum.areas} ${sum.areas > 1 ? "places" : "place"} live · ${sum.f} files · ${sum.b} bubbles · ${sum.t} tasks` : "Nothing live anywhere right now"}
         </span>
-        {validArea(props.home) && (
+        {validArea(props.home) && !props.picking && (
           <button className="pill lg-press" onClick={() => props.onEnter(props.home)}><LuHouse aria-hidden /> My area</button>
         )}
         <button className="dock-x lg-press" onClick={props.onClose} aria-label="Back"><LuX /></button>
       </div>
-      {!props.gps && (
+      {props.picking ? (
+        <div className="earth-ask lg" data-no-pan>
+          <span><LuMapPin aria-hidden /> Zoom into where you are right now: that place becomes your area</span>
+        </div>
+      ) : !props.gps && (
         <div className="earth-ask lg" data-no-pan>
           <span>See what&apos;s right around you</span>
           <button className="pill solid lg-press" onClick={props.onLocate}><LuMapPin aria-hidden /> Share location</button>
