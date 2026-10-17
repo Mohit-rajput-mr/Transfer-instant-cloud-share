@@ -26,7 +26,7 @@ const release = (id: string) => {
 import { downloading } from "@/lib/downloads";
 import { warm } from "@/lib/peek";
 import { createSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
-import { LuFlag, LuMessageCircle, LuLayers, LuMapPin, LuMapPinOff, LuMenu, LuOrbit, LuPalette, LuUser, LuWifi, LuSearch, LuPlus } from "react-icons/lu";
+import { LuFlag, LuMessageCircle, LuMapPin, LuMapPinOff, LuMenu, LuPalette, LuSearch, LuPlus, LuX } from "react-icons/lu";
 import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange } from "./BubbleBoard";
 import TaskBoard, { TaskWires, taskGroups } from "./TaskBoard";
@@ -239,6 +239,19 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const [geoAsk, setGeoAsk] = useState(false);
   // location refused or failed: how to fix it, or pick the area on the map (null: not shown)
   const [geoFail, setGeoFail] = useState<"denied" | "failed" | null>(null);
+  // the "share location / create your space" strip, closed for this visit
+  const [pillOff, setPillOffS] = useState(false);
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("orbit:pill-off") === "1") setPillOffS(true);
+    } catch {}
+  }, []);
+  const setPillOff = (v: boolean) => {
+    setPillOffS(v);
+    try {
+      sessionStorage.setItem("orbit:pill-off", v ? "1" : "0");
+    } catch {}
+  };
   // the Earth was opened to pick this device's area by hand
   const [picking, setPicking] = useState(false);
   const [skew, setSkew] = useState(0);
@@ -1883,13 +1896,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             <img src="/brand/emblem.svg" alt="" width={30} height={30} draggable={false} />
           </button>
           <span className="m-live" aria-label={`${online} ${online > 1 ? "devices" : "device"} ${space ? "in this space" : "in orbit"}`}><i />{online}</span>
-          <div className="m-scope" role="tablist" aria-label="Show">
-            <button role="tab" aria-selected={scope === "all"} className={scope === "all" ? "on" : ""} onClick={() => setScope("all")} aria-label="Everything"><LuLayers /></button>
-            {!space && <button role="tab" aria-selected={scope === "near"} className={scope === "near" ? "on" : ""} onClick={() => setScope("near")} aria-label={`Nearby, ${nearbyCount}`}><LuWifi />{nearbyCount ? <b>{nearbyCount}</b> : null}</button>}
-            {mineCount > 0 && <button role="tab" aria-selected={scope === "mine"} className={scope === "mine" ? "on" : ""} onClick={() => setScope(scope === "mine" ? "all" : "mine")} aria-label={`Mine, ${mineCount}`}><LuUser /><b>{mineCount}</b></button>}
-          </div>
+          <span className="m-sp" />
           {pinButton("m-ic lg-press")}
-          <button className={`m-ic lg-press${space ? " in" : ""}`} onClick={() => setPanel({ kind: "space" })} aria-label={space ? `Space: ${space.title}` : "Spaces"}><LuOrbit /></button>
           <button className="m-ic lg-press" onClick={() => setPanel({ kind: "menu" })} aria-label={kind === "all" ? "Menu" : "Menu, filter on"}><LuMenu />{kind !== "all" && <i className="m-dot" />}</button>
         </div>
         <div className="top-row">
@@ -2051,8 +2059,9 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
               onClose={() => (setEarth(false), setPicking(false))}
             />
           )}
-          {!earth && !space && !inArchive && (area !== home || !gps) && !geoAsk && (
+          {!earth && !space && !inArchive && (area !== home || !gps) && !geoAsk && !pillOff && (
             <div className="area-pill lg" data-no-pan>
+              <button className="area-x" onClick={() => setPillOff(true)} aria-label="Hide this" title="Hide"><LuX aria-hidden /></button>
               {area !== home ? (
                 <>
                   <span>Another area</span>
@@ -2077,7 +2086,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
                 {space ? `${space.title} is empty. Launch something: only people in this space see it` : scope === "near" ? "Nothing from your network yet" : (
                   <>
                     <span className="on-fine">The void is empty. Drop files, folders or text anywhere</span>
-                    <span className="on-touch">The void is empty. Tap upload to launch photos, videos, files or text</span>
+                    <span className="on-touch">The void is empty. Tap Send to launch photos, videos, files or text</span>
                   </>
                 )}
                 <span className="cursor" />
@@ -2301,6 +2310,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           taskCount={tasks.filter((t) => !t.doneAt).length}
           onClose={() => setPanel((p) => (p?.kind === "menu" ? null : p))}
           work={work ? { onBoard: () => setBoard(null) } : undefined}
+          onBoard={() => setBoard(null)}
+          scope={{ value: scope, set: setScope, near: space ? null : nearbyCount, mine: mineCount }}
         />
       )}
       {panel?.kind === "group" && groups.get(panel.id) && (

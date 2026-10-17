@@ -706,3 +706,24 @@ html[data-ui="work"] .w-upg:hover { color: var(--w-accent-2); }
   html[data-ui="work"] .w-dock > :nth-child(1) { order: 0; } html[data-ui="work"] .w-dock > :nth-child(2) { order: 1; }
   html[data-ui="work"] .w-dock > .w-up-wrap { order: 2; } html[data-ui="work"] .w-dock > :nth-child(4) { order: 3; }
 }
+
+/* side menu on /work */
+html[data-ui="work"] .side-menu { background-color: color-mix(in srgb, var(--w-surface) 82%, transparent) !important; background-image: var(--w-glass-shine); border-left: 1px solid var(--w-glass-edge); color: var(--w-text); box-shadow: var(--w-shadow-l); }
+html[data-ui="work"] .sd-where { color: var(--w-text-2); font: 500 12.5px/1 var(--w-font); letter-spacing: 0; text-transform: none; }
+html[data-ui="work"] .sd-x, html[data-ui="work"] .sd-ic { background: var(--w-raised); color: var(--w-text); border-radius: 9px; }
+html[data-ui="work"] .sd-send { border-radius: 12px; background: var(--w-accent); color: #fff; }
+html[data-ui="work"] .sd-send > svg { background: rgba(255,255,255,0.18); border-radius: 9px; }
+html[data-ui="work"] .sd-send b { font: 600 15px/1 var(--w-font); text-transform: none; }
+html[data-ui="work"] .sd-send small { color: rgba(255,255,255,0.8); font: 400 11px/1 var(--w-font); text-transform: none; letter-spacing: 0; }
+html[data-ui="work"] .sd-list { border-radius: 12px; background: var(--w-glass); border-color: var(--w-glass-edge); }
+html[data-ui="work"] .sd-row { color: var(--w-text); }
+html[data-ui="work"] .sd-row + .sd-row { border-top-color: var(--w-border); }
+html[data-ui="work"] .sd-txt b { font: 500 14px/1.2 var(--w-font); letter-spacing: 0; text-transform: none; }
+html[data-ui="work"] .sd-txt small { color: var(--w-text-3); }
+html[data-ui="work"] .sd-up .sd-ic, html[data-ui="work"] .sd-up b { color: var(--w-accent); }
+html[data-ui="work"] .sd-sec { color: var(--w-text-3); font: 600 11px/1 var(--w-font); letter-spacing: 0.02em; text-transform: none; }
+html[data-ui="work"] :is(.sd-seg button, .sd-kinds button, .sd-facts span) { font: 500 12px/1 var(--w-font); letter-spacing: 0; text-transform: none; color: var(--w-text-2); }
+html[data-ui="work"] .sd-seg { border-radius: 10px; background: var(--w-canvas); border-color: var(--w-border); }
+html[data-ui="work"] .sd-seg button { border-radius: 7px; }
+html[data-ui="work"] .sd-kinds button, html[data-ui="work"] .sd-facts span { border-radius: 8px; background: var(--w-raised); }
+html[data-ui="work"] :is(.sd-seg button.on, .sd-kinds button.on) { background: var(--w-text); color: var(--w-canvas); }
