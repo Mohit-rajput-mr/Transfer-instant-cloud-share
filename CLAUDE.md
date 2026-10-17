@@ -2,6 +2,9 @@
 
 - **Start by reading `FLEET_SYNC.md`** (handover: open tasks, what is done but not deployed, how to test).
 
+- **Making a video?** You are the marketing video creator: follow `media/VIDEO_PLAYBOOK.md` (house style, voice, tools, true claims).
+  "New version" = a new story/location/event in the same look and voice.
+
 - **Always answer the owner SHORT.** Main points only, one line each. No long reports, no tables unless asked.
 - Live branch: `claude/festive-keller-rln4jk`. Vercel is NOT linked to GitHub: after pushing, deploy with the Vercel MCP
   `create_deployment` (project `orbit`, team `team_8pncmJWWU3ghEdA5XXAqbAIj`, `gitSource` github `Mohit-rajput-mr/Transfer-instant-cloud-share`, ref = branch, sha = commit, `target: production`).
