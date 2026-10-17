@@ -2876,8 +2876,49 @@ em.hq-tag { font-style: normal; }
 .map-tools button:hover { background: rgba(255,255,255,0.1); color: #fff; }
 .map-tools button.on { color: var(--live); }
 .map-tools svg { width: 16px; height: 16px; }
-.map-tools .map-trash { position: relative; color: #9fb0ff; }
-.map-trash i { position: absolute; right: -2px; top: -2px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 999px; font: 700 9px/15px var(--mono); font-style: normal; color: #0b0b0f; background: #9fb0ff; }
+/* the archive bubble: a round button in the top-right corner, opens the archive space */
+.arch-bubble { position: fixed; z-index: 36; top: calc(96px + var(--safe-t)); right: max(16px, var(--safe-r)); width: 52px; height: 52px; border-radius: 50%;
+  display: grid; place-items: center; color: #cdd6ff; background: rgba(28,30,48,0.85); border: 1px solid rgba(150,170,255,0.4);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.14); }
+.arch-bubble svg { width: 20px; height: 20px; }
+.arch-bubble i { position: absolute; right: -3px; top: -3px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; font: 800 10px/18px var(--mono); font-style: normal; color: #0b0b0f; background: #9fb0ff; box-shadow: 0 0 0 2px #0a0a0f; }
+@media (max-width: 720px) { .arch-bubble { top: calc(132px + var(--safe-t)); width: 46px; height: 46px; } }
+
+/* the archive SPACE: a glass container (like a private space) with the archived items floating inside */
+.archive-space { position: fixed; inset: 0; z-index: 70; animation: fade-in 0.2s ease both; }
+.arch-scrim { position: absolute; inset: 0; background: rgba(4,5,8,0.72); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.arch-glass { position: absolute; inset: calc(80px + var(--safe-t)) 18px calc(24px + var(--safe-b)); border-radius: 34px; overflow: hidden;
+  background: radial-gradient(70% 55% at 50% 0%, rgba(150,170,255,0.12), transparent 70%), radial-gradient(120% 90% at 50% 50%, rgba(255,255,255,0.03), transparent 75%), rgba(9,10,16,0.9);
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  border: 1px solid rgba(150,170,255,0.18); box-shadow: 0 30px 90px rgba(0,0,0,0.6); animation: pop-sheet 0.4s var(--ease-out) both; }
+@keyframes pop-sheet { from { opacity: 0; transform: translateY(14px) scale(0.98); } }
+.arch-glass .c { position: absolute; background: linear-gradient(90deg, transparent, rgba(160,180,255,0.4) 12%, rgba(160,180,255,0.14) 50%, rgba(160,180,255,0.4) 88%, transparent); }
+.arch-glass .tl { left: 70px; right: 70px; top: 0; height: 1px; }
+.arch-glass .br { left: 70px; right: 70px; bottom: 0; height: 1px; }
+.arch-glass .tr, .arch-glass .bl { top: 70px; bottom: 70px; width: 1px; background: linear-gradient(180deg, transparent, rgba(160,180,255,0.32) 12%, rgba(160,180,255,0.1) 50%, rgba(160,180,255,0.32) 88%, transparent); }
+.arch-glass .tr { right: 0; } .arch-glass .bl { left: 0; }
+.arch-head { position: absolute; left: 24px; right: 20px; top: 18px; z-index: 2; display: flex; align-items: flex-start; gap: 12px; }
+.arch-name { display: flex; flex-direction: column; gap: 3px; min-width: 0; margin-right: auto; }
+.arch-name b { font-size: clamp(22px, 4vw, 36px); }
+.arch-all { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border-radius: 999px; background: #fff; color: #11131a; font-weight: 700; font-size: 13px; white-space: nowrap; }
+.arch-all svg { width: 15px; height: 15px; }
+.arch-x { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: #cfd3da; border: 1px solid rgba(255,255,255,0.18); }
+.arch-x svg { width: 16px; height: 16px; }
+.arch-float { position: absolute; inset: 86px 12px 12px; }
+.arch-ball { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 6px; width: 128px; text-align: center;
+  animation: arch-rise 0.5s var(--ease-out) both; animation-delay: calc(var(--ai, 0) * 50ms); }
+@keyframes arch-rise { from { opacity: 0; transform: translate(-50%, calc(-50% + 12px)) scale(0.9); } }
+.arch-orb { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; color: #e7ebff;
+  background: radial-gradient(130% 130% at 30% 25%, rgba(150,170,255,0.5), rgba(40,44,80,0.9) 70%); border: 1px solid rgba(170,185,255,0.5);
+  box-shadow: inset -6px -8px 18px rgba(0,0,0,0.45), 0 10px 26px rgba(0,0,0,0.5); transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2); }
+.arch-orb[data-kind="bubbles"] { background: radial-gradient(130% 130% at 30% 25%, rgba(120,255,170,0.45), rgba(20,50,36,0.9) 70%); border-color: rgba(120,255,170,0.5); }
+.arch-orb[data-kind="tasks"] { background: radial-gradient(130% 130% at 30% 25%, rgba(255,190,120,0.45), rgba(60,40,18,0.9) 70%); border-color: rgba(255,190,120,0.5); }
+.arch-orb svg { width: 26px; height: 26px; }
+.arch-ball:hover .arch-orb, .arch-ball:active .arch-orb { transform: scale(1.08); box-shadow: inset -6px -8px 18px rgba(0,0,0,0.45), 0 14px 32px rgba(0,0,0,0.6); }
+.arch-ball b { font-size: 12px; max-width: 124px; color: #eceefb; }
+.arch-ball small { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; color: #9aa0c0; text-transform: uppercase; letter-spacing: 0.04em; }
+.arch-ball small svg { width: 10px; height: 10px; }
+@media (max-width: 720px) { .arch-glass { inset: calc(126px + var(--safe-t)) 8px calc(16px + var(--safe-b)); border-radius: 26px; } .arch-ball { width: 104px; } .arch-orb { width: 60px; height: 60px; } }
 /* the trash zone: rises from the bottom while something is dragged, opens up when it comes close */
 .trash-zone { position: fixed; left: 50%; bottom: calc(26px + var(--safe-b)); z-index: 90; translate: -50% 160%; opacity: 0; pointer-events: none; transition: translate 0.3s var(--ease-out), opacity 0.2s; }
 .trash-zone.on { translate: -50% 0; opacity: 1; }

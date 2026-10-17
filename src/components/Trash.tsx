@@ -1,9 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { LuArchive, LuUndo2 } from "react-icons/lu";
+import { LuArchive, LuUndo2, LuX } from "react-icons/lu";
 import { overTrash, restore, setZone, useTrashList } from "@/lib/trash";
-import { Pop } from "./Spaces";
 
 /** The big trash zone: rises while anything on the map is dragged, opens up when the pointer comes close. */
 export function TrashZone() {
@@ -32,31 +31,56 @@ export function TrashZone() {
   );
 }
 
-/** What this browser put in the trash, each one back with a tap. */
+const kindOf = (key: string) => (key.startsWith("o:") ? "object" : key.startsWith("b:") ? "bubbles" : "tasks");
+// a steady scattered spot for each archived ball, so they float like objects in a space (not a flat list)
+function scatter(i: number, n: number): { x: number; y: number } {
+  const cols = Math.max(1, Math.min(4, Math.ceil(Math.sqrt(n))));
+  const col = i % cols, rowN = Math.ceil(n / cols), row = Math.floor(i / cols);
+  const jx = ((i * 2654435761) % 1000) / 1000 - 0.5, jy = ((i * 40503) % 1000) / 1000 - 0.5;
+  return { x: ((col + 0.5) / cols + jx * 0.1) * 100, y: ((row + 0.5) / Math.max(1, rowN) + jy * 0.12) * 100 };
+}
+
+/** The archive is its own little space: a glass container with the archived items floating inside, each tapped
+ *  to bring it back. Opened by the round bubble in the top-right corner. Kept on this device only. */
 export function TrashButton() {
   const list = useTrashList();
   const [open, setOpen] = useState(false);
   if (!list.length) return null;
-  return (
+  return createPortal(
     <>
-      <button className="map-trash" onClick={() => setOpen(true)} aria-label={`Archive space (${list.length})`} title="Archive space: kept on this device only"><LuArchive /><i>{list.length}</i></button>
-      {open && createPortal(
-        <Pop label="Archive space" onClose={() => setOpen(false)} small>
-          <div className="trash-list">
-            <p className="mono dim">Archived on this device only. Everyone else still sees them until they burn up.</p>
-            <ul>
-              {[...list].reverse().map((t) => (
-                <li key={t.key}>
-                  <span><small className="mono dim">{t.key.startsWith("o:") ? "object" : t.key.startsWith("b:") ? "bubbles" : "tasks"}</small>{t.label}</span>
-                  <button className="pill lg-press" onClick={() => restore(t.key)}><LuUndo2 aria-hidden /> Restore</button>
-                </li>
-              ))}
-            </ul>
-            <button className="cta lg-press" onClick={() => (restore(), setOpen(false))}><LuUndo2 aria-hidden /> Restore all</button>
+      <button className="arch-bubble lg lg-press" onClick={() => setOpen(true)} aria-label={`Archive space, ${list.length} ${list.length === 1 ? "item" : "items"}`} title="Archive space (kept on this device)">
+        <LuArchive aria-hidden />
+        <i>{list.length}</i>
+      </button>
+      {open && (
+        <div className="archive-space" role="dialog" aria-modal="true" aria-label="Archive space">
+          <div className="arch-scrim" onClick={() => setOpen(false)} />
+          <div className="arch-glass">
+            <span className="c tl" aria-hidden /><span className="c tr" aria-hidden /><span className="c bl" aria-hidden /><span className="c br" aria-hidden />
+            <div className="arch-head">
+              <div className="arch-name">
+                <span className="mono dim">archive space · {list.length} {list.length === 1 ? "item" : "items"} · this device only</span>
+                <b className="wide">Archive</b>
+              </div>
+              <button className="arch-all lg-press" onClick={() => (restore(), setOpen(false))}><LuUndo2 aria-hidden /> Restore all</button>
+              <button className="arch-x lg-press" onClick={() => setOpen(false)} aria-label="Close"><LuX /></button>
+            </div>
+            <div className="arch-float">
+              {list.map((t, i) => {
+                const p = scatter(i, list.length);
+                return (
+                  <button key={t.key} className="arch-ball lg-press" style={{ left: `${p.x}%`, top: `${p.y}%`, "--ai": i } as CSSProperties} onClick={() => restore(t.key)} title={`Restore ${t.label}`}>
+                    <span className="arch-orb" data-kind={kindOf(t.key)}><LuArchive aria-hidden /></span>
+                    <b className="ellip">{t.label}</b>
+                    <small className="mono"><LuUndo2 aria-hidden /> tap to restore</small>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </Pop>,
-        document.body,
+        </div>
       )}
-    </>
+    </>,
+    document.body,
   );
 }
