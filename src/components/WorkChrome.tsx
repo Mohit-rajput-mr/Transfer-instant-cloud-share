@@ -1,14 +1,14 @@
 "use client";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { LuArchive, LuCircleHelp, LuFileText, LuFolderUp, LuGlobe, LuImage, LuLayers, LuLayoutGrid, LuListChecks, LuLock, LuMenu, LuMessageSquareText, LuMoon, LuMusic, LuOrbit, LuShare2, LuStickyNote, LuSun, LuType, LuUpload, LuUser, LuVideo, LuWifi } from "react-icons/lu";
-import { KINDS, type Kind } from "@/lib/skin-list";
+import { LuCircleHelp, LuFileText, LuFolderUp, LuGlobe, LuImage, LuLayers, LuListChecks, LuLock, LuMenu, LuMessageSquareText, LuMoon, LuOrbit, LuShare2, LuStickyNote, LuSun, LuType, LuUpload, LuUser, LuVideo, LuWifi } from "react-icons/lu";
+import type { Kind } from "@/lib/skin-list";
 import { useTheme } from "@/lib/theme";
+import KindFilter from "./KindFilter";
 
 // The /work chrome: an editor-style top bar, a slim icon rail and a canvas action bar (phones: a bottom tab bar).
 // Everything here only calls into Void's own handlers, so /work does exactly what the main page does.
 
-const KIND_ICON = { all: LuLayoutGrid, photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
 
 export function WorkMark() {
   return (
@@ -75,12 +75,7 @@ export function WorkBar(p: {
       </div>
 
       <div className="w-right">
-        <div className="w-kinds" role="radiogroup" aria-label="Show only">
-          {KINDS.map((k) => {
-            const I = KIND_ICON[k.id];
-            return <button key={k.id} role="radio" aria-checked={p.kind === k.id} className={p.kind === k.id ? "on" : ""} onClick={() => p.onKind(k.id)} title={k.name} aria-label={k.name}><I /></button>;
-          })}
-        </div>
+        <KindFilter kind={p.kind} onKind={p.onKind} className="w-filter" />
         <span className="w-live" title={`${p.online} ${p.online > 1 ? "devices" : "device"} online${p.space ? " in this space" : " around you"}`}>
           <i />{p.online}<span> online</span>
         </span>

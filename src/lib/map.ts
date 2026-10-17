@@ -7,7 +7,8 @@
 /** the live view, read by code that turns pointer moves into world moves (OrbView's drag) */
 export const mapView = { on: false, k: 1 };
 
-export type Thing = { key: string; w: number; h: number; born: number };
+/** `near`: the key of what it belongs to (a file wired to a task panel): it is put down right beside that */
+export type Thing = { key: string; w: number; h: number; born: number; near?: string };
 export type Spot = { x: number; y: number };
 
 function hash(s: string) {
@@ -78,17 +79,42 @@ export function place(things: Thing[], W: number, H: number) {
   const live = new Set(things.map((t) => t.key));
   for (const k of spots.keys()) if (!live.has(k)) spots.delete(k);
   // what was moved by hand goes down first, exactly where it was put
-  const pinned = (t: Thing) => (pins.has(t.key) ? 0 : 1);
+  // then what others belong to (task panels), then what belongs to them (right beside), then everything else
+  const anchors = new Set(things.map((t) => t.near).filter(Boolean));
+  const order = (t: Thing) => (pins.has(t.key) ? 0 : anchors.has(t.key) ? 1 : t.near ? 2 : 3);
   const out = new Map<string, Spot>();
   const placed: { x: number; y: number; w: number; h: number }[] = [];
+  const rects = new Map<string, { x: number; y: number; w: number; h: number }>();
   const free = (r: { x: number; y: number; w: number; h: number }) => placed.reduce((a, p) => a + overlaps(r, p), 0);
-  for (const t of [...things].sort((a, b) => pinned(a) - pinned(b) || a.born - b.born || a.key.localeCompare(b.key))) {
+  for (const t of [...things].sort((a, b) => order(a) - order(b) || a.born - b.born || a.key.localeCompare(b.key))) {
     const mx = Math.min(0.5, (t.w / 2 + GAP) / W), my = Math.min(0.5, (t.h / 2 + GAP) / H);
     const clampF = (v: number, m: number) => Math.min(1 - m, Math.max(m, v));
     const at = (s: Spot) => ({ x: clampF(s.x, mx) * W, y: clampF(s.y, my) * H, w: t.w, h: t.h });
     let best: Spot | null = null;
+    const anchor = t.near ? rects.get(t.near) : undefined;
+    // close enough to what it belongs to: a short cable (edge to edge), never across the map
+    const near = (s: Spot) => {
+      if (!anchor) return true;
+      const gx = Math.max(0, Math.abs(s.x * W - anchor.x) - (anchor.w + t.w) / 2), gy = Math.max(0, Math.abs(s.y * H - anchor.y) - (anchor.h + t.h) / 2);
+      return Math.hypot(gx, gy) < 150;
+    };
     const had = pins.get(t.key) ?? spots.get(t.key);
-    if (had && (pins.has(t.key) || free(at(had)) === 0)) best = had;
+    if (had && (pins.has(t.key) || (free(at(had)) === 0 && near(had)))) best = had;
+    if (!best && anchor) {
+      // rings around the anchor, its right side first (where its cables leave), then above/below, then the left
+      const angles = [0, -0.5, 0.5, -1, 1, -1.5, 1.5, Math.PI, Math.PI - 0.6, Math.PI + 0.6];
+      search: for (let ring = 0; ring < 7; ring++) {
+        for (const a of angles) {
+          const rx = anchor.w / 2 + t.w / 2 + GAP + 24 + ring * 70, ry = anchor.h / 2 + t.h / 2 + GAP + ring * 60;
+          const c = { x: (anchor.x + Math.cos(a) * rx) / W, y: (anchor.y + Math.sin(a) * ry) / H };
+          if (c.x < mx || c.x > 1 - mx || c.y < my || c.y > 1 - my) continue;
+          if (free(at(c)) === 0) {
+            best = c;
+            break search;
+          }
+        }
+      }
+    }
     if (!best) {
       // the first thing in an empty world takes the middle; the rest try random spots
       const r = rng(hash(t.key));
@@ -107,6 +133,7 @@ export function place(things: Thing[], W: number, H: number) {
     spots.set(t.key, s);
     const r = at(s);
     placed.push(r);
+    rects.set(t.key, r);
     out.set(t.key, { x: r.x, y: r.y });
   }
   return out;

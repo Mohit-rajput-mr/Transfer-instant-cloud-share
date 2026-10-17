@@ -55,3 +55,6 @@ export function overTrash(x: number, y: number) {
   if (!r || !r.width) return false;
   return Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2)) < r.width / 2 + 36;
 }
+
+/** what an archived key was called when it went in */
+export const trashLabel = (key: string) => list.find((t) => t.key === key)?.label ?? "this";

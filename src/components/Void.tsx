@@ -26,8 +26,7 @@ const release = (id: string) => {
 import { downloading } from "@/lib/downloads";
 import { warm } from "@/lib/peek";
 import { createSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
-import { LuArchive, LuFileText, LuFlag, LuMessageCircle, LuImage, LuLayers, LuLayoutGrid, LuMapPin, LuMapPinOff, LuMenu, LuMusic, LuOrbit, LuPalette, LuUser, LuVideo, LuWifi } from "react-icons/lu";
-const KIND_ICON = { all: LuLayoutGrid, photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
+import { LuFlag, LuMessageCircle, LuLayers, LuMapPin, LuMapPinOff, LuMenu, LuOrbit, LuPalette, LuUser, LuWifi } from "react-icons/lu";
 import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange } from "./BubbleBoard";
 import TaskBoard, { TaskWires, taskGroups } from "./TaskBoard";
@@ -37,8 +36,8 @@ import { joinLive, liveOn, roomsFor, type Chan } from "@/lib/live";
 import { around } from "@/lib/area";
 import { asked, dropGps, fixNow, follow, fromIp, locate, markAsked, markSent, permission, pickArea, where } from "@/lib/where";
 import LocationAsk, { LocationBlocked } from "./LocationAsk";
-import { TrashZone } from "./Trash";
-import { useTrash } from "@/lib/trash";
+import { ArchiveRestore, ArchiveRoom, TrashZone } from "./Trash";
+import { trashLabel, useTrash } from "@/lib/trash";
 import TaskThrow, { type Grab } from "./TaskThrow";
 import dynamic from "next/dynamic";
 import { perf } from "@/lib/perf";
@@ -49,8 +48,9 @@ import { GoPrivate, InviteCard } from "./TeamMove";
 import { bubbleName, burnBubble, editBubble, hueFor, isMine as isMyBubble, postBubble, senderOf, type Bubble } from "@/lib/bubbles";
 import StylePicker from "./StylePicker";
 import { autoRemember, findDeviceSkin, skinName, toneOf, useLook } from "@/lib/skins";
-import { KINDS, fileKind, type Kind } from "@/lib/skin-list";
+import { fileKind, type Kind } from "@/lib/skin-list";
 import { WorkBar, WorkDock, WorkEmpty, WorkRail } from "./WorkChrome";
+import KindFilter from "./KindFilter";
 import { readTheme } from "@/lib/theme";
 import { speakWork } from "@/lib/words";
 
@@ -249,14 +249,45 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // bubble text in this void (or space)
   // what this browser put in the trash (lib/trash.ts) stays out of sight here, for everyone else it is still there
   const trash = useTrash();
+  // the archive space (this device only): everything archived, on its usual map, each with a restore button
+  const [inArchive, setInArchive] = useState(false);
+  useEffect(() => {
+    const on = () => (setInArchive(true), setPanel(null));
+    window.addEventListener("orbit:archive", on);
+    return () => window.removeEventListener("orbit:archive", on);
+  }, []);
+  // nothing left in it: back out
+  useEffect(() => {
+    if (inArchive && !trash.size) setInArchive(false);
+  }, [inArchive, trash]);
+  // inside it nothing is archived again (the drop zone is gone) and Esc walks out
+  useEffect(() => {
+    if (!inArchive) return;
+    document.body.dataset.archive = "1";
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && !document.querySelector(".drawer, .pop, .viewer") && setInArchive(false);
+    window.addEventListener("keydown", esc);
+    return () => (delete document.body.dataset.archive, window.removeEventListener("keydown", esc));
+  }, [inArchive]);
   const [allNotes, setNotes] = useState<Bubble[]>([]);
-  const notes = useMemo(() => (trash.size ? allNotes.filter((b) => !trash.has(`b:${senderOf(b)}`)) : allNotes), [allNotes, trash]);
+  const notes = useMemo(() => (inArchive ? allNotes.filter((b) => trash.has(`b:${senderOf(b)}`)) : trash.size ? allNotes.filter((b) => !trash.has(`b:${senderOf(b)}`)) : allNotes), [allNotes, trash, inArchive]);
   const knownBubbles = useRef<Map<string, string> | null>(null);
   // tasks in this void/space, which one is in focus (only its files show), and the task a new send is wired to
   const [allTasks, setTasks] = useState<Task[]>([]);
-  const tasks = useMemo(() => (trash.size ? allTasks.filter((t) => !trash.has(`t:${isMyTask(t.id) ? "me" : t.from || t.by || "someone"}`)) : allTasks), [allTasks, trash]);
+  const tasks = useMemo(() => {
+    const key = (t: Task) => `t:${isMyTask(t.id) ? "me" : t.from || t.by || "someone"}`;
+    return inArchive ? allTasks.filter((t) => trash.has(key(t))) : trash.size ? allTasks.filter((t) => !trash.has(key(t))) : allTasks;
+  }, [allTasks, trash, inArchive]);
   const knownTasks = useRef<Map<string, string> | null>(null);
   const [taskFocus, setTaskFocus] = useState<string | null>(null);
+  // a focused task dims everything else: a tap anywhere else (or Esc) brings it all back
+  useEffect(() => {
+    if (!taskFocus) return;
+    const down = (e: PointerEvent) => !(e.target as Element)?.closest?.(".task-board, .tb-acts, .wire-plug, .wire-menu") && setTaskFocus(null);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setTaskFocus(null);
+    window.addEventListener("pointerdown", down, true);
+    window.addEventListener("keydown", esc);
+    return () => (window.removeEventListener("pointerdown", down, true), window.removeEventListener("keydown", esc));
+  }, [taskFocus]);
   const [wireTo, setWireTo] = useState<string | null>(null);
   // the board shows once someone opens it, even before the first task
   const [taskOpen, setTaskOpen] = useState(false);
@@ -660,6 +691,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   }, []);
 
   const switchSpace = useCallback((s: SpaceSession | null) => {
+    setInArchive(false);
     setActiveSpace(s);
     spaceRef.current = s;
     setSpace(s);
@@ -1260,19 +1292,20 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         .map(incomingOrb),
     [incoming, orbs],
   );
-  const grouped = useMemo(
-    () =>
-      groupOrbs(
-        alive.filter(
-          (o) =>
-            !(archived && o.task) &&
-            !trash.has(`o:${o.id}`) &&
-            (scope === "all" || (scope === "near" ? o.netHash === net || !!ownerKey(o.id) : !!ownerKey(o.id))) &&
-            (kind === "all" || fileKind(o.fileName, o.mime) === kind),
-        ),
-      ),
-    [alive, scope, net, kind, archived, trash],
-  );
+  const grouped = useMemo(() => {
+    const base = alive.filter(
+      (o) =>
+        !(archived && o.task) &&
+        (scope === "all" || (scope === "near" ? o.netHash === net || !!ownerKey(o.id) : !!ownerKey(o.id))) &&
+        (kind === "all" || fileKind(o.fileName, o.mime) === kind),
+    );
+    if (!inArchive) return groupOrbs(base.filter((o) => !trash.has(`o:${o.id}`)));
+    // the archive: files archived one by one, and whole containers archived at once
+    const one = groupOrbs(base.filter((o) => trash.has(`o:${o.id}`)));
+    const all = groupOrbs(base.filter((o) => !trash.has(`o:${o.id}`)));
+    const whole = all.list.filter((o) => isGroup(o.id) && trash.has(`o:${o.id}`));
+    return { list: [...one.list, ...whole], groups: new Map([...one.groups, ...whole.map((o) => [o.id, all.groups.get(o.id) ?? []] as const)]) };
+  }, [alive, scope, net, kind, archived, trash, inArchive]);
   const groups = grouped.groups;
   const bubbleActs = {
     now: serverNow,
@@ -1305,11 +1338,11 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   }, [zoomFirst, viewing, sendPulse, refresh, broadcast]);
   const shown = useMemo(
     () => [
-      ...grouped.list.filter((o) => !trash.has(`o:${o.id}`)),
-      ...pending,
-      ...(scope === "mine" ? [] : arrivingOrbs.filter((o) => scope === "all" || (!!net && o.netHash === net))),
+      ...(inArchive ? grouped.list : grouped.list.filter((o) => !trash.has(`o:${o.id}`))),
+      ...(inArchive ? [] : pending),
+      ...(inArchive || scope === "mine" ? [] : arrivingOrbs.filter((o) => scope === "all" || (!!net && o.netHash === net))),
     ],
-    [grouped, scope, net, pending, arrivingOrbs, trash],
+    [grouped, scope, net, pending, arrivingOrbs, trash, inArchive],
   );
   // Your balls are numbered 1..N in launch order, on the ball and on its dock row, so you can count yours at a glance.
   const badges = useMemo(() => {
@@ -1392,7 +1425,9 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // (so its cable runs dead straight), unwired files get one lane below. The rows grow to share the height,
   // and the balls shrink when a lane is crowded, so nothing overlaps.
   const laneTasks = !archived && arranged && mode === "desk" && tasks.length > 0 && visible.length > 0;
-  const loose = laneTasks ? visible.filter((o) => !o.task || !tasks.some((t) => t.id === o.task)) : [];
+  // the task a ball (or a container, through any of its files) is wired to
+  const taskOf = (o: Orb) => (isGroup(o.id) ? groups.get(o.id)?.find((m) => m.task)?.task : o.task) ?? null;
+  const loose = laneTasks ? visible.filter((o) => !taskOf(o) || !tasks.some((t) => t.id === taskOf(o))) : [];
   const laneCount = tasks.length + (loose.length ? 1 : 0);
   // every lane fits on screen (the board never scrolls in Arranged): its height is the board's room split by the lanes
   const laneH = Math.round(Math.max(44, Math.min(150, (vw.h - 118 - 150 - 60) / Math.max(1, laneCount))));
@@ -1457,7 +1492,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     const bySender = (a: Orb, b: Orb) => (a.from ?? a.id).localeCompare(b.from ?? b.id) || a.createdAt.localeCompare(b.createdAt);
     const rows: { y: number; list: Orb[] }[] = tasks
       .filter((t) => lanes.y.has(t.id))
-      .map((t) => ({ y: lanes.y.get(t.id)!, list: visible.filter((o) => o.task === t.id).sort(bySender) }));
+      .map((t) => ({ y: lanes.y.get(t.id)!, list: visible.filter((o) => taskOf(o) === t.id).sort(bySender) }));
     if (loose.length) rows.push({ y: lanes.last + laneH / 2 + 8, list: [...loose].sort(bySender) });
     const span = Math.max(160, lanes.x1 - lanes.x0);
     const most = Math.max(1, ...rows.map((r) => r.list.length));
@@ -1499,6 +1534,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     if (!mapOn) return null;
     void pinTick;
     const things: Thing[] = [];
+    const taskKey = new Map(tGroups.flatMap((g) => g.tasks.map((t) => [t.id, `t:${g.key}`] as const)));
     const sz = (k: string, w: number, h: number) => sizes.get(k) ?? { w, h };
     if (showTasks)
       for (const g of tGroups) {
@@ -1515,7 +1551,10 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       if (swapIn.has(o.id)) continue;
       const n = isGroup(o.id) ? groups.get(o.id)?.length ?? 0 : 0;
       const L = n ? bubbleLayout(n) : null;
-      things.push({ key: `o:${alias.current.get(o.id) ?? o.id}`, w: L ? L.W + 60 : 210, h: L ? L.H + 120 : 250, born: Date.parse(o.createdAt) });
+      // wired to a task (a group: any of its files): it sits beside that task's panel
+      const wired = showTasks ? (n ? groups.get(o.id)?.find((m) => m.task)?.task : o.task) : null;
+      const near = wired ? taskKey.get(wired) : undefined;
+      things.push({ key: `o:${alias.current.get(o.id) ?? o.id}`, w: L ? L.W + 60 : 210, h: L ? L.H + 120 : 250, born: Date.parse(o.createdAt), near });
     }
     const { W, H } = worldSize(things, vw.w, Math.max(620, vw.h));
     return { W, H, spots: place(things, W, H), size: new Map(things.map((t) => [t.key, t])) };
@@ -1800,8 +1839,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       {work ? (
         <>
           <WorkBar
-            space={space?.title ?? null}
-            isPrivate={!!space?.priv}
+            space={inArchive ? "Archive" : space?.title ?? null}
+            isPrivate={inArchive || !!space?.priv}
             online={online}
             scope={scope}
             onScope={setScope}
@@ -1873,12 +1912,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           </div>
           <span />
           <div className="kinds-wrap">
-          <div className="kinds" role="radiogroup" aria-label="Show only">
-            {KINDS.map((k) => {
-              const I = KIND_ICON[k.id];
-              return <button key={k.id} role="radio" aria-checked={kind === k.id} className={kind === k.id ? "on" : ""} onClick={() => setKind(k.id)} title={k.name} aria-label={k.name}><I /></button>;
-            })}
-          </div>
+          <KindFilter kind={kind} onKind={setKind} />
           <div className="toggle" role="tablist" aria-label="Scope">
             <button className={scope === "all" ? "on" : ""} onClick={() => setScope("all")}>All</button>
             {!space && <button className={scope === "near" ? "on" : ""} onClick={() => setScope("near")}>Nearby{nearbyCount ? ` ${nearbyCount}` : ""}</button>}
@@ -1895,11 +1929,12 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
 
       <main className={menu && !menuOut ? "menu-open" : undefined} data-pal={pal}>
         <section
-          className={`void${map ? " map" : ""}${notes.length && !map ? " has-bubbles" : ""}${!map && (new Set(notes.map(senderOf)).size > 1 || (tasks.length && !archived)) ? " bub-two" : ""}${tasks.length && !archived && !map ? " has-tasks" : ""}${taskFocus ? " task-focus" : ""}${grid ? ` arranged${grid.tight ? " tight" : ""}` : ""}${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
+          className={`void${map ? " map" : ""}${notes.length && !map ? " has-bubbles" : ""}${!map && (new Set(notes.map(senderOf)).size > 1 || (tasks.length && !archived)) ? " bub-two" : ""}${tasks.length && !archived && !map ? " has-tasks" : ""}${taskFocus ? " task-focus" : ""}${grid ? ` arranged${grid.tight ? " tight" : ""}` : ""}${space || inArchive ? " in-space" : ""}${inArchive ? " in-archive" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
           id="void"
           style={(flow ? { "--n": rows } : { "--k-auto": grid ? grid.k : map ? 1 : crowdScale(visible.length), ...(grid ? { "--cell": `${grid.cell}px` } : null) }) as unknown as React.CSSProperties}
         >
-          {space && <SpaceRoom space={space} info={room} online={live} onKick={kick} onExit={() => {
+          {inArchive && <ArchiveRoom onExit={() => setInArchive(false)} />}
+          {space && !inArchive && <SpaceRoom space={space} info={room} online={live} onKick={kick} onExit={() => {
             switchSpace(null);
             toast("Back in the public void");
           }} />}
@@ -1916,6 +1951,10 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           {notes.length > 0 && (
             <BubbleBoard bubbles={notes} {...bubbleActs} oneSide={tasks.length > 0 && !archived} onOpenBoard={(f) => setBoard(f)} spots={mapSpots} />
           )}
+          {inArchive && [...map.spots].filter(([k]) => trash.has(k)).map(([k, p]) => {
+            const t = map.size.get(k);
+            return <ArchiveRestore key={`r-${k}`} k={k} x={p.x + (t ? t.w / 2 : 90) - 8} y={p.y - (t ? t.h / 2 : 90) - 8} label={trashLabel(k)} />;
+          })}
           {visible.filter((o) => !replaced.has(o.id) && onScreen(`o:${alias.current.get(o.id) ?? o.id}`)).map((o, i) => (
             <OrbView
               key={alias.current.get(o.id) ?? o.id}
@@ -2017,7 +2056,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
               onClose={() => (setEarth(false), setPicking(false))}
             />
           )}
-          {!earth && !space && (area !== home || !gps) && !geoAsk && (
+          {!earth && !space && !inArchive && (area !== home || !gps) && !geoAsk && (
             <div className="area-pill lg" data-no-pan>
               {area !== home ? (
                 <>
@@ -2336,10 +2375,10 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         {toasts.map((t) => <div key={t.id}>{t.text}</div>)}
       </div>
 
-      {work && !panel && board === false && (
+      {work && !panel && board === false && !inArchive && (
         <WorkDock onFiles={() => pickFiles()} onFolder={() => pickFolder()} onText={compose} onNote={() => setPanel({ kind: "bubble" })} onTasks={openTasks} onSpaces={() => setPanel({ kind: "space" })} />
       )}
-      {!work && !panel && board === false && !(menu && !menuOut) && (
+      {!work && !inArchive && !panel && board === false && !(menu && !menuOut) && (
         <button className={`bub-fab lg lg-press${compact ? " mini" : ""}`} onClick={() => setPanel({ kind: "bubble" })} aria-label="Bubble text: post a note everyone sees">
           <LuMessageCircle aria-hidden />
           <span>Bubble</span>
@@ -2428,7 +2467,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           }}
         />
       )}
-      {!work && !panel && board === false && (
+      {!work && !inArchive && !panel && board === false && (
         <button
           className={`send-fab lg lg-press${menu && !menuOut ? " open" : ""}${compact && !menu ? " mini" : ""}`}
           onClick={(e) => {

@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { LuArchive, LuUndo2, LuX } from "react-icons/lu";
+import { LuArchive, LuUndo2 } from "react-icons/lu";
 import { overTrash, restore, setZone, useTrashList } from "@/lib/trash";
 
 /** The big trash zone: rises while anything on the map is dragged, opens up when the pointer comes close. */
@@ -44,56 +44,47 @@ export function TrashZone() {
   );
 }
 
-const kindOf = (key: string) => (key.startsWith("o:") ? "object" : key.startsWith("b:") ? "bubbles" : "tasks");
-// a steady scattered spot for each archived ball, so they float like objects in a space (not a flat list)
-function scatter(i: number, n: number): { x: number; y: number } {
-  const cols = Math.max(1, Math.min(4, Math.ceil(Math.sqrt(n))));
-  const col = i % cols, rowN = Math.ceil(n / cols), row = Math.floor(i / cols);
-  const jx = ((i * 2654435761) % 1000) / 1000 - 0.5, jy = ((i * 40503) % 1000) / 1000 - 0.5;
-  return { x: ((col + 0.5) / cols + jx * 0.1) * 100, y: ((row + 0.5) / Math.max(1, rowN) + jy * 0.12) * 100 };
-}
 
-/** The archive is its own little space: a glass container with the archived items floating inside, each tapped
- *  to bring it back. Opened by the round bubble in the top-right corner. Kept on this device only. */
+/** The way into the archive: a round button with the count (only when something is archived). */
 export function TrashButton() {
   const list = useTrashList();
-  const [open, setOpen] = useState(false);
   if (!list.length) return null;
   return createPortal(
-    <>
-      <button className="arch-bubble lg lg-press" onClick={() => setOpen(true)} aria-label={`Archive space, ${list.length} ${list.length === 1 ? "item" : "items"}`} title="Archive space (kept on this device)">
-        <LuArchive aria-hidden />
-        <i>{list.length}</i>
-      </button>
-      {open && (
-        <div className="archive-space" role="dialog" aria-modal="true" aria-label="Archive space">
-          <div className="arch-scrim" onClick={() => setOpen(false)} />
-          <div className="arch-glass">
-            <span className="c tl" aria-hidden /><span className="c tr" aria-hidden /><span className="c bl" aria-hidden /><span className="c br" aria-hidden />
-            <div className="arch-head">
-              <div className="arch-name">
-                <span className="mono dim">archive space · {list.length} {list.length === 1 ? "item" : "items"} · this device only</span>
-                <b className="wide">Archive</b>
-              </div>
-              <button className="arch-all lg-press" onClick={() => (restore(), setOpen(false))}><LuUndo2 aria-hidden /> Restore all</button>
-              <button className="arch-x lg-press" onClick={() => setOpen(false)} aria-label="Close"><LuX /></button>
-            </div>
-            <div className="arch-float">
-              {list.map((t, i) => {
-                const p = scatter(i, list.length);
-                return (
-                  <button key={t.key} className="arch-ball lg-press" style={{ left: `${p.x}%`, top: `${p.y}%`, "--ai": i } as CSSProperties} onClick={() => restore(t.key)} title={`Restore ${t.label}`}>
-                    <span className="arch-orb" data-kind={kindOf(t.key)}><LuArchive aria-hidden /></span>
-                    <b className="ellip">{t.label}</b>
-                    <small className="mono"><LuUndo2 aria-hidden /> tap to restore</small>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-    </>,
+    <button className="arch-bubble lg lg-press" onClick={() => window.dispatchEvent(new CustomEvent("orbit:archive"))} aria-label={`Archive space, ${list.length} ${list.length === 1 ? "item" : "items"}`} title="Archive space (kept on this device)">
+      <LuArchive aria-hidden />
+      <i>{list.length}</i>
+    </button>,
     document.body,
+  );
+}
+
+/** Inside the archive: the same room as a private space, everything archived on its usual map (open, preview,
+ *  who's watching), plus Restore all / Exit. Each item has its own restore button (ArchiveRestore). */
+export function ArchiveRoom(props: { onExit: () => void }) {
+  const list = useTrashList();
+  return (
+    <div className="room arch-room" aria-label="Archive space">
+      <div className="room-glass glass" aria-hidden />
+      <div className="room-top">
+        <div className="room-name">
+          <span className="mono dim">archive space · {list.length} {list.length === 1 ? "item" : "items"} · this device only</span>
+          <b className="wide">Archive</b>
+        </div>
+        <button className="room-exit glass lg-press arch-all-btn" onClick={() => (restore(), props.onExit())}><LuUndo2 aria-hidden /> Restore all</button>
+        <button className="room-exit glass lg-press" onClick={props.onExit} aria-label="Exit the archive">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" /><path d="M10 16l-4-4 4-4" /><path d="M6 12h10" /></svg>
+          Exit
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** A small restore button pinned to an archived item's top-right corner (world coordinates on the map). */
+export function ArchiveRestore(props: { k: string; x: number; y: number; label: string }) {
+  return (
+    <button className="arch-restore lg-press" data-no-pan style={{ left: props.x, top: props.y }} onClick={() => restore(props.k)} title={`Restore ${props.label}`} aria-label={`Restore ${props.label}`}>
+      <LuUndo2 aria-hidden /><span>Restore</span>
+    </button>
   );
 }

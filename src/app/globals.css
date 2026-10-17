@@ -3074,3 +3074,29 @@ html[data-earth], html[data-earth] body { overflow: hidden; overscroll-behavior:
 .orb.dying .lifebar b { background: var(--danger); }
 .orb.launching .lifebar b { background: #fff; transition-duration: 0.4s; }
 .world.far .lifebar { display: none !important; }
+/* ---------------- Filter: one button, the file types drop down from it ---------------- */
+.kf { position: relative; justify-self: end; }
+.kf-btn { height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px 0 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); font: 500 10.5px/1 var(--font-chip, var(--sans)); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; transition: color 0.15s, border-color 0.15s, background 0.15s; }
+.kf-btn:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+.kf-btn.set { color: #000; background: #fff; border-color: #fff; }
+.kf-btn svg { width: 13px; height: 13px; flex: none; }
+.kf-chev { transition: rotate 0.2s; }
+.kf-chev.up { rotate: 180deg; }
+.kf-menu { position: absolute; z-index: 60; top: calc(100% + 8px); right: 0; min-width: 190px; padding: 5px; border-radius: 14px; display: flex; flex-direction: column; gap: 1px;
+  background: rgba(16,17,20,0.97); border: 1px solid rgba(255,255,255,0.14); box-shadow: 0 18px 50px rgba(0,0,0,0.6); animation: kf-in 0.16s var(--ease-out) both; }
+@keyframes kf-in { from { opacity: 0; transform: translateY(-4px); } }
+.kf-menu button { height: 34px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: 9px; color: #d6d6d6; font: 500 13px/1 var(--sans); text-align: left; }
+.kf-menu button:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.kf-menu button.on { color: #fff; }
+.kf-menu svg { width: 15px; height: 15px; flex: none; }
+.kf-ok { margin-left: auto; color: var(--live); }
+/* ---------------- Archive space: a private-space room of its own (this device only) ---------------- */
+.arch-restore { position: absolute; z-index: 40; translate: -88% -45%; height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 11px 0 9px; border-radius: 999px; pointer-events: auto;
+  background: #fff; color: #0b0b0f; font: 700 11px/1 var(--sans); white-space: nowrap; box-shadow: 0 8px 22px rgba(0,0,0,0.55); transition: scale 0.15s var(--ease-out); }
+.arch-restore:hover { scale: 1.06; }
+.arch-restore svg { width: 13px; height: 13px; }
+.arch-room .room-top { gap: 10px; }
+.arch-room .room-top .room-name { margin-right: auto; }
+.arch-room .arch-all-btn svg { width: 15px; height: 15px; }
+body[data-archive] .trash-zone { display: none; }
+body[data-archive] .arch-bubble { display: none; }
