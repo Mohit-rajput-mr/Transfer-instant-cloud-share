@@ -43,6 +43,28 @@ export function worldSize(things: Thing[], vw: number, vh: number) {
 
 // where each thing sits, as a fraction of the world (so a growing world spreads everyone out, nobody jumps)
 const spots = new Map<string, Spot>();
+// things this device moved by hand: they stay exactly there (the rest make room), remembered for the next visit
+const PINS = "orbit:pins";
+const pins: Map<string, Spot> = (() => {
+  try {
+    return new Map(Object.entries(JSON.parse(localStorage.getItem(PINS) || "{}")) as [string, Spot][]);
+  } catch {
+    return new Map();
+  }
+})();
+const savePins = () => {
+  try {
+    localStorage.setItem(PINS, JSON.stringify(Object.fromEntries([...pins].slice(-300))));
+  } catch {}
+};
+/** put a thing down where it was dragged (a fraction of the world) */
+export function pin(key: string, x: number, y: number) {
+  const s = { x: Math.min(1, Math.max(0, x)), y: Math.min(1, Math.max(0, y)) };
+  pins.delete(key);
+  pins.set(key, s);
+  spots.set(key, s);
+  savePins();
+}
 
 const overlaps = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) =>
   Math.max(0, Math.min(a.x + a.w / 2, b.x + b.w / 2) - Math.max(a.x - a.w / 2, b.x - b.w / 2) + GAP) *
@@ -55,16 +77,18 @@ const overlaps = (a: { x: number; y: number; w: number; h: number }, b: { x: num
 export function place(things: Thing[], W: number, H: number) {
   const live = new Set(things.map((t) => t.key));
   for (const k of spots.keys()) if (!live.has(k)) spots.delete(k);
+  // what was moved by hand goes down first, exactly where it was put
+  const pinned = (t: Thing) => (pins.has(t.key) ? 0 : 1);
   const out = new Map<string, Spot>();
   const placed: { x: number; y: number; w: number; h: number }[] = [];
   const free = (r: { x: number; y: number; w: number; h: number }) => placed.reduce((a, p) => a + overlaps(r, p), 0);
-  for (const t of [...things].sort((a, b) => a.born - b.born || a.key.localeCompare(b.key))) {
+  for (const t of [...things].sort((a, b) => pinned(a) - pinned(b) || a.born - b.born || a.key.localeCompare(b.key))) {
     const mx = Math.min(0.5, (t.w / 2 + GAP) / W), my = Math.min(0.5, (t.h / 2 + GAP) / H);
     const clampF = (v: number, m: number) => Math.min(1 - m, Math.max(m, v));
     const at = (s: Spot) => ({ x: clampF(s.x, mx) * W, y: clampF(s.y, my) * H, w: t.w, h: t.h });
     let best: Spot | null = null;
-    const had = spots.get(t.key);
-    if (had && free(at(had)) === 0) best = had;
+    const had = pins.get(t.key) ?? spots.get(t.key);
+    if (had && (pins.has(t.key) || free(at(had)) === 0)) best = had;
     if (!best) {
       // the first thing in an empty world takes the middle; the rest try random spots
       const r = rng(hash(t.key));

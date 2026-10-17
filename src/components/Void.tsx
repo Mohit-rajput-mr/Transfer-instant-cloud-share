@@ -6,7 +6,7 @@ import Uploader, { Icon } from "./Uploader";
 import LiquidGlass from "./LiquidGlass";
 import OrbView, { ORB_CAP, bubbleLayout, inheritSlot, pickHue, layout, type VoidMode } from "./OrbView";
 import MapWorld, { type Band } from "./MapWorld";
-import { place, worldSize, type Thing } from "@/lib/map";
+import { pin, place, worldSize, type Thing } from "@/lib/map";
 import { ComposePanel, GroupPanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin, type LaunchJob } from "./Panels";
 import LaunchDock, { isPending, pendingId, pendingOrb, type Launch } from "./LaunchDock";
 import { launch, type Stage } from "@/lib/transfer";
@@ -1381,8 +1381,11 @@ export default function Void() {
     }, 500);
     return () => clearInterval(t);
   }, [mapOn]);
+  // bumped when something is moved by hand (lib/map.ts pins it there)
+  const [pinTick, setPinTick] = useState(0);
   const map = useMemo(() => {
     if (!mapOn) return null;
+    void pinTick;
     const things: Thing[] = [];
     const sz = (k: string, w: number, h: number) => sizes.get(k) ?? { w, h };
     if (showTasks)
@@ -1404,7 +1407,7 @@ export default function Void() {
     }
     const { W, H } = worldSize(things, vw.w, Math.max(620, vw.h));
     return { W, H, spots: place(things, W, H), size: new Map(things.map((t) => [t.key, t])) };
-  }, [mapOn, sizes, showTasks, tGroups, stacks, visible, groups, vw]);
+  }, [mapOn, sizes, showTasks, tGroups, stacks, visible, groups, vw, pinTick]);
   // only what is on screen is drawn (the map tells what that is as it moves); everything else waits off screen
   const [rect, setRect] = useState<Rect | null>(null);
   const onScreen = useCallback(
@@ -1747,7 +1750,14 @@ export default function Void() {
             toast("Back in the public void");
           }} />}
           {map ? (
-            <MapWorld W={map.W} H={map.H} band={MAP_BAND[mode]} fit={fitAll} empty={!map.spots.size} onRect={setRect} onEarth={space ? undefined : () => setEarth(true)}>
+            <MapWorld W={map.W} H={map.H} band={MAP_BAND[mode]} fit={fitAll} empty={!map.spots.size} onRect={setRect} onEarth={space ? undefined : () => setEarth(true)}
+              onMoveItem={(key, dx, dy) => {
+                const p = map.spots.get(key);
+                if (!p) return;
+                pin(key, (p.x + dx) / map.W, (p.y + dy) / map.H);
+                setPinTick((n) => n + 1);
+              }}
+            >
           {taskBoard}
           {notes.length > 0 && (
             <BubbleBoard bubbles={notes} {...bubbleActs} oneSide={tasks.length > 0 && !archived} onOpenBoard={(f) => setBoard(f)} spots={mapSpots} />

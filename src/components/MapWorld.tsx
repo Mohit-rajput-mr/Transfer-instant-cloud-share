@@ -25,7 +25,11 @@ const OWN_TOUCH = "input, textarea, select, .tb-acts, .tb-route, .map-tools, [da
  * double-click to zoom in, arrow keys to move, + / - to zoom, 0 to go back. Until you move it yourself the view
  * follows the area as it grows. Zooming out past all of it (or the Earth button) goes up to the Earth.
  */
-export default function MapWorld({ W, H, band, children, fit, empty, onRect, onEarth }: {
+// what picks a whole panel up: its header, or its own background (never a button, field or row inside it)
+const HANDLE = ".tb-head, .bub-stack.on-map > header";
+const INNER = "button, a, input, textarea, select, label, form, .tb-row, .bub";
+
+export default function MapWorld({ W, H, band, children, fit, empty, onRect, onEarth, onMoveItem }: {
   W: number;
   H: number;
   band: Band;
@@ -38,6 +42,8 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
   onRect?: (r: Rect) => void;
   /** zoomed out past the whole area: up to the Earth */
   onEarth?: () => void;
+  /** a panel (task panel, bubble stack) was dragged by this much (world px) */
+  onMoveItem?: (key: string, dx: number, dy: number) => void;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<View>({ x: 0, y: 0, k: 1 });
@@ -215,8 +221,77 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     const ps = [...pts.current.values()];
     return { ps, x: ps.reduce((a, p) => a + p.x, 0) / ps.length, y: ps.reduce((a, p) => a + p.y, 0) / ps.length };
   };
+  // ---- a whole panel dragged around the map: a mouse grabs it at once, a finger holds it a moment first ----
+  const item = useRef<{ id: number; key: string; el: HTMLElement; sx: number; sy: number; k: number; armed: boolean; moved: boolean; timer: number } | null>(null);
+  const grabItem = (e: React.PointerEvent) => {
+    const t = e.target as Element;
+    const el = t.closest?.<HTMLElement>("[data-map-key]");
+    if (!el || !onMoveItem || pts.current.size) return false;
+    const onHandle = !!t.closest?.(HANDLE);
+    if (!onHandle && t.closest?.(INNER)) return false;
+    const mouse = e.pointerType === "mouse";
+    const it = { id: e.pointerId, key: el.dataset.mapKey!, el, sx: e.clientX, sy: e.clientY, k: viewRef.current.k, armed: mouse, moved: false, timer: 0 };
+    item.current = it;
+    if (mouse)
+      try {
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      } catch {}
+    else
+      it.timer = window.setTimeout(() => {
+        if (item.current !== it) return;
+        it.armed = true;
+        document.body.dataset.grab = "panel";
+        el.classList.add("lifted");
+        window.dispatchEvent(new CustomEvent("orbit:haptic", { detail: "light" }));
+      }, 320);
+    return mouse;
+  };
+  const moveItem = (e: React.PointerEvent) => {
+    const it = item.current;
+    if (!it || it.id !== e.pointerId) return false;
+    const dx = e.clientX - it.sx, dy = e.clientY - it.sy;
+    if (!it.armed) {
+      // a finger that moves before the hold is a pan of the map
+      if (Math.hypot(dx, dy) > 8) {
+        clearTimeout(it.timer);
+        item.current = null;
+      }
+      return false;
+    }
+    if (!it.moved && Math.hypot(dx, dy) < 5) return true;
+    if (!it.moved) {
+      it.moved = true;
+      it.el.classList.add("lifted");
+      setFollow(false);
+    }
+    it.el.style.translate = `calc(-50% + ${dx / it.k}px) calc(-50% + ${dy / it.k}px)`;
+    return true;
+  };
+  const dropItem = (e: React.PointerEvent) => {
+    const it = item.current;
+    if (!it || it.id !== e.pointerId) return false;
+    clearTimeout(it.timer);
+    item.current = null;
+    delete document.body.dataset.grab;
+    it.el.classList.remove("lifted");
+    if (!it.moved) return false;
+    // the drop lands where it was let go (no glide back from the old spot)
+    it.el.classList.add("dropped");
+    onMoveItem?.(it.key, (e.clientX - it.sx) / it.k, (e.clientY - it.sy) / it.k);
+    requestAnimationFrame(() => {
+      it.el.style.translate = "";
+      requestAnimationFrame(() => it.el.classList.remove("dropped"));
+    });
+    // the click that ends a drag never presses the header (folding the panel)
+    const stop = (ev: Event) => (ev.stopPropagation(), ev.preventDefault());
+    window.addEventListener("click", stop, { capture: true, once: true });
+    setTimeout(() => window.removeEventListener("click", stop, { capture: true }), 350);
+    return true;
+  };
+
   const down = (e: React.PointerEvent) => {
     if (e.button !== 0 && e.pointerType === "mouse") return;
+    if (grabItem(e)) return;
     // a second finger joins a pinch even if it lands on something
     const mouse = e.pointerType === "mouse";
     if (!pts.current.size && (e.target as Element).closest?.(mouse ? OWN : OWN_TOUCH)) return;
@@ -231,6 +306,7 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     setGlide(false);
   };
   const move = (e: React.PointerEvent) => {
+    if (moveItem(e)) return;
     if (!pts.current.has(e.pointerId) || !g.current) return;
     pts.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     const s = g.current, m = mid();
@@ -259,6 +335,7 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     } else setView(keepIn({ ...s.v, x: s.v.x + m.x - s.x, y: s.v.y + m.y - s.y }));
   };
   const up = (e: React.PointerEvent) => {
+    dropItem(e);
     if (!pts.current.delete(e.pointerId)) return;
     if (g.current?.moved && e.pointerType !== "mouse") {
       const stop = (ev: Event) => (ev.stopPropagation(), ev.preventDefault());

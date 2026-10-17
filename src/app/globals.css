@@ -2944,3 +2944,9 @@ html[data-perf="low"] .world.glide { transition-duration: 0.35s; }
 }
 html[data-perf="low"] .earth-home { animation: none; }
 html[data-earth], html[data-earth] body { overflow: hidden; overscroll-behavior: none; }
+
+/* a whole panel picked up off the map (MapWorld) */
+.task-boards.mapped > .task-board .tb-head, .bub-stack.on-map > header { cursor: grab; }
+.task-boards.mapped > .task-board.lifted, .bub-stack.on-map.lifted { z-index: 20; transition: none !important; cursor: grabbing; box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 0 1.5px rgba(255,255,255,0.35); }
+.bub-stack.on-map.lifted { filter: drop-shadow(0 18px 30px rgba(0,0,0,0.6)); box-shadow: none; }
+.task-boards.mapped > .task-board.dropped, .bub-stack.on-map.dropped { transition: none !important; }
