@@ -1,8 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { LuArrowLeft, LuBriefcase, LuCheck, LuMinus, LuMoon, LuRocket, LuSparkles, LuSun, LuZap } from "react-icons/lu";
-import { useTheme } from "@/lib/theme";
+import { LuArrowLeft, LuBriefcase, LuCheck, LuMinus, LuRocket, LuSparkles, LuZap } from "react-icons/lu";
 
 // Orbi plans. Free is everything that works today; Pro and Business are what is planned next (early access, no
 // payments yet), so every paid line is marked "soon" until it ships.
@@ -85,19 +84,17 @@ function Cell({ v }: { v: string | boolean }) {
 
 export default function Plans() {
   const [yearly, setYearly] = useState(true);
-  const [theme, setTheme] = useTheme();
   return (
     <main className="pl">
       <header className="pl-bar">
-        <button className="pl-back" onClick={() => (history.length > 1 ? history.back() : location.assign("/"))}><LuArrowLeft aria-hidden /> Back to Orbi</button>
-        <button className="pl-theme" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={theme === "light" ? "Dark mode" : "Light mode"}>{theme === "light" ? <LuMoon /> : <LuSun />}</button>
+        <button className="pl-back pill lg-press" onClick={() => (history.length > 1 ? history.back() : location.assign("/"))}><LuArrowLeft aria-hidden /> Back to Orbi</button>
       </header>
 
       <section className="pl-hero">
-        <span className="pl-kicker"><LuSparkles aria-hidden /> Plans</span>
-        <h1>Send it now. Keep it as long as you need.</h1>
+        <span className="pl-kicker lg"><LuSparkles aria-hidden /> Plans</span>
+        <h1 className="wide">Send it now.<br />Keep it as long as you need.</h1>
         <p>Orbi stays free for instant, encrypted sharing. Pro and Business add time, control and a real home for your team. Paid plans open soon: ask for early access and we&apos;ll set you up first.</p>
-        <div className="pl-bill" role="radiogroup" aria-label="Billing">
+        <div className="pl-bill lg" role="radiogroup" aria-label="Billing">
           <button role="radio" aria-checked={!yearly} className={!yearly ? "on" : ""} onClick={() => setYearly(false)}>Monthly</button>
           <button role="radio" aria-checked={yearly} className={yearly ? "on" : ""} onClick={() => setYearly(true)}>Yearly <em>save 25%</em></button>
         </div>
@@ -107,19 +104,19 @@ export default function Plans() {
         {PLANS.map((p) => {
           const price = yearly ? p.year : p.month;
           return (
-            <article key={p.id} className={`pl-card${p.best ? " best" : ""}`}>
+            <article key={p.id} className={`pl-card lg${p.best ? " best" : ""}`}>
               {p.best && <span className="pl-pop">Most popular</span>}
               <div className="pl-head">
                 <span className="pl-ic"><p.icon aria-hidden /></span>
-                <b>{p.name}</b>
+                <b className="wide">{p.name}</b>
                 <span className={`pl-tag${p.tag === "Today" ? " now" : ""}`}>{p.tag === "Today" ? "Available now" : "Coming soon"}</span>
               </div>
               <div className="pl-price">
-                <strong>${price}</strong>
+                <strong className="wide">${price}</strong>
                 <span>{p.per ? `${p.per}${yearly && price ? ", billed yearly" : ""}` : "forever"}</span>
               </div>
               <p className="pl-blurb">{p.blurb}</p>
-              {p.href.startsWith("/") ? <Link className="pl-cta" href={p.href}>{p.cta}</Link> : <a className="pl-cta" href={p.href}>{p.cta}</a>}
+              {p.href.startsWith("/") ? <Link className={`pl-cta lg-press${p.best ? " cta" : " lg"}`} href={p.href}>{p.cta}</Link> : <a className={`pl-cta lg-press${p.best ? " cta" : " lg"}`} href={p.href}>{p.cta}</a>}
               {p.lead && <span className="pl-lead">{p.lead}</span>}
               <ul>{p.points.map((x) => <li key={x}><LuCheck aria-hidden />{x}</li>)}</ul>
             </article>
@@ -128,8 +125,8 @@ export default function Plans() {
       </section>
 
       <section className="pl-table" aria-label="Compare plans">
-        <h2>Compare every feature</h2>
-        <div className="pl-grid">
+        <h2 className="wide">Compare every feature</h2>
+        <div className="pl-grid lg">
           <div className="pl-row pl-th"><span /><span>Free</span><span>Pro</span><span>Business</span></div>
           {TABLE.map((g) => (
             <div key={g.group} className="pl-group">
@@ -143,17 +140,17 @@ export default function Plans() {
       </section>
 
       <section className="pl-ideas">
-        <h2>On the way</h2>
+        <h2 className="wide">On the way</h2>
         <p>Ideas we are building next for Pro and Business. Tell us which one you want first.</p>
         <div className="pl-idea-grid">
           {IDEAS.map(([t, d]) => (
-            <div key={t} className="pl-idea"><b>{t}</b><span>{d}</span></div>
+            <div key={t} className="pl-idea lg"><b>{t}</b><span>{d}</span></div>
           ))}
         </div>
       </section>
 
       <section className="pl-faq">
-        <h2>Questions</h2>
+        <h2 className="wide">Questions</h2>
         <details><summary>Will the free plan stay free?</summary><p>Yes. Instant, encrypted sharing with no account stays free. Paid plans add time, storage and team tools on top.</p></details>
         <details><summary>Can Orbi read my files on a paid plan?</summary><p>No. Files are encrypted in your browser on every plan; the keys never reach our servers.</p></details>
         <details><summary>When can I pay?</summary><p>Paid plans are not open yet. Ask for early access and we&apos;ll contact you when your plan is ready, with an early-access price.</p></details>

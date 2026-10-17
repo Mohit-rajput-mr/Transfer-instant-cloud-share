@@ -1,12 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import WorkLook from "@/components/WorkLook";
+import Starfield from "@/components/Starfield";
+import LiquidGlass from "@/components/LiquidGlass";
 import Plans from "./Plans";
-import "../work/work.css";
 import "./upgrade.css";
-
-const sans = Geist({ subsets: ["latin"], variable: "--font-work", display: "swap" });
-const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-work-mono", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Upgrade",
@@ -14,14 +10,12 @@ export const metadata: Metadata = {
   alternates: { canonical: "/upgrade" },
 };
 
-// a direct load: the work look and theme before the first paint (WorkLook covers arriving from inside the app)
-const boot = `(function(){var d=document.documentElement;d.dataset.ui="work";d.classList.add(${JSON.stringify(sans.variable)},${JSON.stringify(mono.variable)});var t="dark";try{if(localStorage.getItem("orbit:work-theme")==="light")t="light"}catch(e){}d.dataset.theme=t})()`;
-
+// the classic look: the same sky and liquid glass as the void
 export default function UpgradePage() {
   return (
     <>
-      <script dangerouslySetInnerHTML={{ __html: boot }} />
-      <WorkLook fonts={`${sans.variable} ${mono.variable}`} />
+      <Starfield />
+      <LiquidGlass />
       <Plans />
     </>
   );
