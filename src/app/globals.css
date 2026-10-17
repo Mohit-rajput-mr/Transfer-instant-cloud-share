@@ -2755,6 +2755,11 @@ em.hq-tag { font-style: normal; }
    title. Arrange is a desktop lane feature (needs the wide layout) so it is hidden; archive sits by the chevron. */
 @media (max-width: 720px) {
   .tb-arrange { display: none; }
+  /* a grip the owner drags to resize the task list */
+  .tb-resize { display: flex; align-items: center; justify-content: center; height: 20px; cursor: ns-resize; touch-action: none; -webkit-tap-highlight-color: transparent; }
+  .tb-resize span { width: 40px; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.28); transition: background var(--dur-1), width var(--dur-1); }
+  .tb-resize:active span { background: rgba(255,255,255,0.55); width: 56px; }
+  .tb-list { overscroll-behavior: contain; }
   .tb-archive { right: 44px; top: 11px; transform: none; }
   .task-board.open .tb-archive { top: 11px; }
   .tb-head { padding-right: 82px; gap: 8px; }
