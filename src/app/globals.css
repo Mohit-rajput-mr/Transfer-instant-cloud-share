@@ -2751,6 +2751,16 @@ em.hq-tag { font-style: normal; }
 .tb-arrange:hover { background: rgba(255,255,255,0.08); }
 .tb-arrange.on { background: linear-gradient(180deg, #f4f6f8, #b9c0c8); color: #15181c; border-color: transparent; }
 .task-board:has(.tb-arrange) .tb-bar { margin-right: 92px; }
+/* MOBILE task header: the desktop offsets (right:152/44) land mid-header on a narrow board and collide with the
+   title. Arrange is a desktop lane feature (needs the wide layout) so it is hidden; archive sits by the chevron. */
+@media (max-width: 720px) {
+  .tb-arrange { display: none; }
+  .tb-archive { right: 44px; top: 11px; transform: none; }
+  .task-board.open .tb-archive { top: 11px; }
+  .tb-head { padding-right: 82px; gap: 8px; }
+  .tb-head .tb-bar { display: none; }        /* no room on a phone header; the "n/n done" count is enough */
+  .task-board:has(.tb-arrange) .tb-bar { margin-right: 0; }
+}
 .void.arranged .orb { --drift: 0; }
 .void.arranged .orb-anchor { transition: left 0.7s var(--ease-out), top 0.7s var(--ease-out); }
 
