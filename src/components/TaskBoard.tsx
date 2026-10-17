@@ -88,6 +88,30 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
     m.addEventListener("change", on);
     return () => m.removeEventListener("change", on);
   }, []);
+  // the task list can be resized by dragging its grip; the chosen height is kept per device
+  const [tbH, setTbH] = useState<number | null>(null);
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("orbit:tb-h");
+      if (v) setTbH(Math.max(120, Math.min(900, +v)));
+    } catch {}
+  }, []);
+  const resizing = useRef<{ y: number; h: number } | null>(null);
+  const onResizeDown = (e: React.PointerEvent) => {
+    const grip = e.currentTarget as HTMLElement;
+    const list = grip.previousElementSibling as HTMLElement | null;
+    resizing.current = { y: e.clientY, h: tbH ?? list?.getBoundingClientRect().height ?? 240 };
+    try { grip.setPointerCapture(e.pointerId); } catch {}
+  };
+  const onResizeMove = (e: React.PointerEvent) => {
+    const r = resizing.current;
+    if (!r) return;
+    setTbH(Math.max(110, Math.min(window.innerHeight * 0.75, r.h + (e.clientY - r.y))));
+  };
+  const onResizeUp = () => {
+    if (resizing.current && tbH) try { localStorage.setItem("orbit:tb-h", String(Math.round(tbH))); } catch {}
+    resizing.current = null;
+  };
   const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null);
   const hideT = useRef<ReturnType<typeof setTimeout> | null>(null);
   const keep = () => hideT.current && (clearTimeout(hideT.current), (hideT.current = null));
@@ -282,7 +306,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
               autoFocus
               value={line}
               onChange={(e) => setLine(e.target.value.slice(0, TASK_MAX + 26))}
-              placeholder="Write the task… (@name to assign)"
+              placeholder="Name the task… (@name to assign)"
               aria-label="New task"
               enterKeyHint="done"
             />
@@ -343,7 +367,10 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                 <LuRows3 aria-hidden />{props.arranged ? "Arranged" : "Arrange"}
               </button>
             )}
-            {isOpen && <ol className="tb-list">{g.tasks.map((t) => row(t, props.tasks.indexOf(t)))}</ol>}
+            {isOpen && <ol className="tb-list" style={tbH ? ({ maxHeight: `${tbH}px` } as CSSProperties) : undefined}>{g.tasks.map((t) => row(t, props.tasks.indexOf(t)))}</ol>}
+            {isOpen && narrow && g.tasks.length > 1 && (
+              <div className="tb-resize" onPointerDown={onResizeDown} onPointerMove={onResizeMove} onPointerUp={onResizeUp} onPointerCancel={onResizeUp} role="separator" aria-label="Drag to resize the task list" title="Drag to resize"><span /></div>
+            )}
           </aside>
         );
       })}
