@@ -504,9 +504,8 @@ export default function Void() {
   /** this screen changed something: every other screen gets the change itself, not just a nudge to re-fetch */
   const sync = useCallback((m: SyncMsg) => {
     applySync(m);
+    // (the change itself is enough: no extra "re-fetch" nudge, half the messages on the free plan)
     channel.current?.send({ type: "broadcast", event: "sync", payload: m });
-    // older open tabs only listen for the nudge
-    channel.current?.send({ type: "broadcast", event: "pulse", payload: { at: Date.now() } });
   }, [applySync]);
 
   // ---- launches: the card closes on Launch, the ball is in the void at once, a small dock tracks it ----
@@ -550,11 +549,12 @@ export default function Void() {
       beam("launch", { ...info, net: netRef.current, f: frac, by: spaceRef.current?.handle ?? null });
     };
     announce();
-    const keepAlive = setInterval(announce, 4000);
+    // (every 6 s, progress at most every 1.5 s: few live messages, well inside the 20 s a quiet launch is kept)
+    const keepAlive = setInterval(announce, 6000);
     const onProgress = (st: Stage, f: number) => {
       report(key, st, f);
       frac = st === "uploading" ? f : st === "finalizing" || st === "done" ? 1 : 0;
-      if (Date.now() - beamed > 500) announce();
+      if (Date.now() - beamed > 1500) announce();
     };
     launch({ file: job.file, name: job.name, passcode: job.passcode, maxDownloads: job.maxDownloads, life: job.life, open: job.open, group: job.group, task: job.task, hue: l.hue, signal: l.abort.signal, onProgress })
       .then((orb) => {
@@ -675,8 +675,8 @@ export default function Void() {
 
   useEffect(() => {
     sendPulse();
-    // within the server's 50 s "online" window, but fewer requests than every 25 s
-    const t = setInterval(sendPulse, 40_000);
+    // within the server's 120 s "online" window (migration 016): few requests, well inside the free plan
+    const t = setInterval(sendPulse, 90_000);
     const onVis = () => document.visibilityState === "visible" && sendPulse();
     document.addEventListener("visibilitychange", onVis);
     return () => {
@@ -846,9 +846,35 @@ export default function Void() {
       toast((e as Error).message);
     }
   }, [loadRoom, toast]);
+  // The live connection is the scarce thing on the free plan (about 200 at once): a tab holds one only while it is
+  // looked at, and lets go a minute after it goes to the background. Coming back it reconnects and catches up.
+  const [rtOn, setRtOn] = useState(true);
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const on = () => {
+      clearTimeout(t);
+      if (document.visibilityState === "visible") setRtOn(true);
+      // (a tab still sending or receiving a file keeps it: transfers talk over the same connection)
+      else t = setTimeout(function off() {
+        if (heldIds().length || downloading()) t = setTimeout(off, 60_000);
+        else setRtOn(false);
+      }, 60_000);
+    };
+    document.addEventListener("visibilitychange", on);
+    return () => (clearTimeout(t), document.removeEventListener("visibilitychange", on));
+  }, []);
+  // no live connection to be had (the plan is full, or the network blocks it): the cached list every few seconds instead
+  const [rtDown, setRtDown] = useState(false);
+  useEffect(() => {
+    if (!rtDown) return;
+    const t = setInterval(() => document.visibilityState === "visible" && refresh(), 8000);
+    return () => clearInterval(t);
+  }, [rtDown, refresh]);
   // realtime broadcast only (no presence): constant cost per message, scales with Supabase's fan-out; in the public
   // void only the people around hear it
   useEffect(() => {
+    // (with no channel left the connection closes by itself)
+    if (!rtOn) return;
     const chans = chanNames.split(" ").map((name, i) => {
       const ch = supabase.channel(name, { config: { broadcast: { self: false } } });
       ch.on("broadcast", { event: "pulse" }, () => {
@@ -875,7 +901,10 @@ export default function Void() {
       }
       // the first is this device's own (space or area): everything it says goes there
       ch.subscribe((status) => {
-        if (status !== "SUBSCRIBED" || i) return;
+        if (i) return;
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") return setRtDown(true);
+        if (status !== "SUBSCRIBED") return;
+        setRtDown(false);
         channel.current = ch;
         if (spaceRef.current && myIdRef.current) ch.track({ id: myIdRef.current }).catch(() => {});
       });
@@ -885,7 +914,13 @@ export default function Void() {
       channel.current = null;
       chans.forEach((ch) => supabase.removeChannel(ch));
     };
-  }, [scheduleRefresh, chanNames]);
+  }, [scheduleRefresh, chanNames, rtOn]);
+  // back from the background: whatever happened meanwhile
+  const wasOn = useRef(true);
+  useEffect(() => {
+    if (rtOn && !wasOn.current) refresh();
+    wasOn.current = rtOn;
+  }, [rtOn, refresh]);
 
   // where this device is: its last area at once; a location already allowed is refreshed quietly; a first visit is
   // asked (after a moment) whether to share it
