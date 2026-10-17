@@ -21,7 +21,7 @@ You make short vertical videos that explain how Orbi Transfer works, so people g
 | Thing | Setting |
 |---|---|
 | Format | 1080×1920, 30 fps, 45–60 s, H.264 CRF 19 + AAC 256k |
-| People | **Stick people**: ball head, thin rounded limbs (capsules), one flat colour each, built from primitives (see `explainer-3d-stick/source/film.html`, `person()` / `posePerson()`). No downloaded character models. |
+| People | **Low-poly colour men and women** (owner's pick, style 5 in `people-samples/`): faceted lathe limbs, one flat colour each, men muscular, women with hair and a feminine build, built from primitives (see `airport-film/source/film.html`, `person(x,z,ry,tint,{sex})` / `posePerson()`). Mix both sexes in every crowd. No downloaded character models. |
 | Colours | lead "you" teal `#4fc3bd`, friend coral `#f08a5d`, crowd soft greys/pastels; brand green `#3dff8c` for signal, beams, rings |
 | Sets | warm real places (wood floor, brick, blue walls, pendant lamps), the city from above with the green area cells, a server aisle of scrambled bytes, the 30-minute burn |
 | Phone screens | **real captures** of orbitransfer.com (`explainer-film/source/capture.cjs` → `shots/`), drawn into the phone screen texture |
@@ -68,7 +68,7 @@ Structure that works:
 9. End card.
 
 ## How to build one (tools that work in this sandbox)
-1. Copy the latest film: `cp -r media/explainer-3d-stick/source media/<new-name>/source` and rewrite the story:
+1. Copy the latest film: `cp -r media/airport-film/source media/<new-name>/source` and rewrite the story:
    - `LINES` in `vo.py`;
    - the sets and shots in `film.html` (shots are `if (t < at("key"))` blocks keyed to the voice lines).
 2. Voice: `pip install kokoro-onnx soundfile`, then download `kokoro-v1.0.onnx` and `voices-v1.0.bin` from
@@ -87,7 +87,8 @@ Structure that works:
    Commit, push, and send the MP4.
 
 ## Films so far
-- `wedding-film/`: wedding, passcode "cake", the photo's full journey (locked box → pieces → vault → ring → unlock → burn) (**latest, best explanation**)
+- `airport-film/`: arrivals gate, code "tram", a whole folder as luggage (suitcase → bags on belts → baggage hold → radar → carousel → shredder), low-poly men and women (**latest**)
+- `wedding-film/`: wedding, passcode "cake", the photo's full journey (locked box → pieces → vault → ring → unlock → burn)
 - `gym-film/`: the gym, bench-press video (house style)
 - `explainer-3d-stick/`: café story, stick people, George (house style)
 - `explainer-3d/`: same café story with mannequins (older)
