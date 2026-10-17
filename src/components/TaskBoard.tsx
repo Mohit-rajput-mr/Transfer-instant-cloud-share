@@ -39,11 +39,25 @@ export function wiredBy(task: string, orbs: Orb[]) {
   return [...m.values()];
 }
 
+export type TaskGroup = { key: string; mine: boolean; name: string; tasks: Task[] };
+/** one panel per person who writes tasks (yours first), never merged */
+export function taskGroups(tasks: Task[]): TaskGroup[] {
+  const m = new Map<string, TaskGroup>();
+  for (const t of tasks) {
+    const mineT = isMyTask(t.id);
+    const key = mineT ? "me" : t.from || t.by || "someone";
+    const g = m.get(key) ?? { key, mine: mineT, name: mineT ? "Your tasks" : `${t.by || "Someone"}'s tasks`, tasks: [] };
+    g.tasks.push(t);
+    m.set(key, g);
+  }
+  return [...m.values()].sort((a, b) => Number(b.mine) - Number(a.mine));
+}
+
 /**
  * Tasks, one line each: a big orange dot, "TASK 1", the line, who it is for, and a tick anyone can set.
  * Files wired to a task hang off its dot (TaskWires). Tapping a task shows only its files.
  */
-export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: string; focus: string | null; onFocus: (id: string | null) => void; onClose: () => void; /** a cable is being plugged in: the tasks light up as targets */ wiring?: boolean; arranged?: boolean; onArrange?: () => void; /** arranged: each row is a lane this tall, its files on the same line */ laneH?: number; /** the Tasks button in the bar opened the new-task box */ composing?: boolean; onComposed?: () => void; /** hide every task panel with its files (this device) */ onArchive?: () => void } & TaskActs) {
+export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: string; focus: string | null; onFocus: (id: string | null) => void; onClose: () => void; /** a cable is being plugged in: the tasks light up as targets */ wiring?: boolean; arranged?: boolean; onArrange?: () => void; /** arranged: each row is a lane this tall, its files on the same line */ laneH?: number; /** the Tasks button in the bar opened the new-task box */ composing?: boolean; onComposed?: () => void; /** hide every task panel with its files (this device) */ onArchive?: () => void; /** the map (lib/map.ts): each panel's centre in the world */ spots?: Map<string, { x: number; y: number }> } & TaskActs) {
   const [line, setLine] = useState("");
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(true);
@@ -117,7 +131,8 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
 
   // phones start folded (one slim row); wide screens open
   useEffect(() => {
-    if (window.matchMedia("(max-width: 720px)").matches) setOpen(false);
+    // (on the map every panel shows its tasks: there is room, you zoom instead)
+    if (window.matchMedia("(max-width: 720px)").matches && !mappedAtStart.current) setOpen(false);
   }, []);
 
   const add = async () => {
@@ -141,18 +156,9 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
     return m;
   }, [props.orbs]);
 
-  // one panel per person who writes tasks (yours first), never merged
-  const groups = useMemo(() => {
-    const m = new Map<string, { key: string; mine: boolean; name: string; tasks: Task[] }>();
-    for (const t of props.tasks) {
-      const mineT = isMyTask(t.id);
-      const key = mineT ? "me" : t.from || t.by || "someone";
-      const g = m.get(key) ?? { key, mine: mineT, name: mineT ? "Your tasks" : `${t.by || "Someone"}'s tasks`, tasks: [] };
-      g.tasks.push(t);
-      m.set(key, g);
-    }
-    return [...m.values()].sort((a, b) => Number(b.mine) - Number(a.mine));
-  }, [props.tasks]);
+  const groups = useMemo(() => taskGroups(props.tasks), [props.tasks]);
+  const mappedAtStart = useRef(!!props.spots);
+  const mapped = !!props.spots;
   const [shut, setShut] = useState<Set<string>>(new Set());
   const row = (t: Task, i: number) => {
               const w = wired.get(t.id) ?? [];
@@ -221,9 +227,9 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
               };
 
   return (
-    <div className={`task-boards${props.laneH ? " lanes" : ""}${props.wiring ? " wiring" : ""}`} style={props.laneH ? ({ "--lane-h": `${props.laneH}px` } as CSSProperties) : undefined}>
-      {(props.composing || !total) && (
-        <form className="task-board lg tb-compose" onSubmit={(e) => { e.preventDefault(); add(); }}>
+    <div className={`task-boards${props.laneH ? " lanes" : ""}${props.wiring ? " wiring" : ""}${mapped ? " mapped" : ""}`} style={props.laneH ? ({ "--lane-h": `${props.laneH}px` } as CSSProperties) : undefined}>
+      {(props.composing || !total) && portalIf(mapped, (
+        <form className={`task-board lg tb-compose${mapped ? " floating" : ""}`} onSubmit={(e) => { e.preventDefault(); add(); }}>
           <div className="tb-compose-head">
             <b>New task</b>
             <button type="button" className="tr-close" onClick={() => (total ? props.onComposed?.() : props.onClose())} aria-label="Close"><LuX /></button>
@@ -273,12 +279,12 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
             <button className="tb-private mono" onClick={props.onGoPrivate}><LuLock aria-hidden /> Go private with the team</button>
           )}
         </form>
-      )}
+      ))}
       {groups.map((g, gi) => {
         const isOpen = (open || !!props.wiring) && !shut.has(g.key);
         const gDone = g.tasks.filter((t) => stepOf(t) === 3).length;
         return (
-          <aside key={g.key} className={`task-board lg${isOpen ? " open" : ""}${props.wiring ? " wiring" : ""}${props.laneH ? ` lanes${props.laneH < 62 ? " tight" : ""}` : ""}${g.mine ? " mine" : " theirs"}`} aria-label={g.name}>
+          <aside key={g.key} data-map-key={`t:${g.key}`} style={mapped ? spotStyle(props.spots!.get(`t:${g.key}`)) : undefined} className={`task-board lg${isOpen ? " open" : ""}${props.wiring ? " wiring" : ""}${props.laneH ? ` lanes${props.laneH < 62 ? " tight" : ""}` : ""}${g.mine ? " mine" : " theirs"}`} aria-label={g.name}>
             <button className="tb-head" onClick={() => (narrow && gi === 0 && groups.length === 1 ? setOpen((o) => !o) : setShut((x) => { const n = new Set(x); if (n.has(g.key)) n.delete(g.key); else n.add(g.key); if (!open) setOpen(true); return n; }))} aria-expanded={isOpen}>
               <i className="task-dot" aria-hidden />
               <b>{g.mine ? "Tasks" : g.name}</b>
@@ -311,6 +317,11 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
     </div>
   );
 }
+
+/** on the map a panel sits centred on its spot (hidden until it has one) */
+const spotStyle = (p?: { x: number; y: number }): CSSProperties => (p ? { left: p.x, top: p.y } : { visibility: "hidden" });
+/** the new-task box floats over the map (it is not a place in the world) */
+const portalIf = (on: boolean, el: React.ReactElement) => (on && typeof document !== "undefined" ? createPortal(el, document.body) : el);
 
 const left = (iso: string) => {
   const m = Math.max(0, Math.round((Date.parse(iso) - Date.now()) / 60000));

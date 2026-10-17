@@ -7,6 +7,7 @@ import { ext, formatBytes, formatClock, type Orb } from "@/lib/client";
 import { fileKind, toneOf, typeHue } from "@/lib/skin-list";
 import { LuArchive, LuFileText, LuImage, LuMusic, LuVideo } from "react-icons/lu";
 import { previewUrl } from "@/lib/preview";
+import { mapView } from "@/lib/map";
 
 /** 7 → "7", 12 → "10+", 140 → "100+": a crowd stays readable */
 const crowd = (n: number) => (n >= 1000 ? "1k+" : n >= 100 ? "100+" : n >= 10 ? "10+" : String(n));
@@ -193,6 +194,8 @@ type Drag = {
   tx: number; ty: number; tilt: number; // latest target, painted once per frame
   // geometry cached at pick-up so moves never force a layout read
   bw: number; bh: number; bx: number; by: number;
+  /** the map's zoom at pick-up (1 off the map) */
+  k: number;
 };
 
 const HOLD_MS = 280;
@@ -376,7 +379,7 @@ export default function OrbView(props: {
   const clamp = (d: Drag, x: number, y: number) => {
     const m = 40;
     const cx = Math.min(d.bw - m - d.bx, Math.max(m - d.bx, x));
-    const cy = Math.min(d.bh - m - d.by, Math.max(90 - d.by, y));
+    const cy = Math.min(d.bh - m - d.by, Math.max((mapView.on ? m : 90) - d.by, y));
     return { x: cx, y: cy, hitX: cx !== x, hitY: cy !== y };
   };
 
@@ -393,6 +396,8 @@ export default function OrbView(props: {
       body()?.style.removeProperty("scale");
     };
     const wheel = (e: WheelEvent) => {
+      // on the map the wheel zooms the map (a click opens the container)
+      if (mapView.on) return;
       const up = e.deltaY < 0 || (e.ctrlKey && e.deltaY < 0);
       if (!up && acc <= 0) return;
       e.preventDefault();
@@ -489,12 +494,15 @@ export default function OrbView(props: {
     // where the anchor really sits (phones place it with `translate`, which offsetLeft/Top ignore),
     // minus the user's own drag offset that clamp() adds back
     const ar = a?.getBoundingClientRect();
+    // on the zoomed map a screen pixel is 1/k of a world pixel
+    const K = mapView.on ? mapView.k : 1;
     const d: Drag = {
       id: e.pointerId, touch, sx: e.clientX, sy: e.clientY, ox: cur.x, oy: cur.y, armed: false, moved: false, hold: null,
       vx: 0, vy: 0, lx: e.clientX, ly: e.clientY, lt: performance.now(), raf: 0, tx: cur.x, ty: cur.y, tilt: 0,
-      bw: box?.width ?? window.innerWidth, bh: box?.height ?? window.innerHeight,
-      bx: ar && box ? ar.left - box.left - cur.x : a?.offsetLeft ?? 0,
-      by: ar && box ? ar.top - box.top - cur.y : a?.offsetTop ?? 0,
+      bw: (box?.width ?? window.innerWidth) / K, bh: (box?.height ?? window.innerHeight) / K,
+      bx: ar && box ? (ar.left - box.left) / K - cur.x : a?.offsetLeft ?? 0,
+      by: ar && box ? (ar.top - box.top) / K - cur.y : a?.offsetTop ?? 0,
+      k: K,
     };
     drag.current = d;
     if (touch) {
@@ -536,12 +544,13 @@ export default function OrbView(props: {
     }
     const d = drag.current;
     if (!d || d.id !== e.pointerId) return;
-    const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
+    const dx = (e.clientX - d.sx) / d.k, dy = (e.clientY - d.sy) / d.k;
     if (!d.moved) {
       if (Math.hypot(dx, dy) < 6) return;
       if (!d.armed) {
         // touch before the hold: a sideways flick picks it up straight away, anything else is a scroll
-        if (d.touch && !(Math.abs(dx) > Math.abs(dy) * 1.2)) {
+        // (on the map any swipe moves the map: only a hold picks a ball up)
+        if (d.touch && (mapView.on || !(Math.abs(dx) > Math.abs(dy) * 1.2))) {
           if (d.hold) clearTimeout(d.hold);
           drag.current = null;
           return;
@@ -553,8 +562,8 @@ export default function OrbView(props: {
       d.moved = true;
     }
     const t = performance.now(), dt = Math.max(1, t - d.lt);
-    d.vx = d.vx * 0.6 + ((e.clientX - d.lx) / dt) * 16 * 0.4;
-    d.vy = d.vy * 0.6 + ((e.clientY - d.ly) / dt) * 16 * 0.4;
+    d.vx = d.vx * 0.6 + ((e.clientX - d.lx) / d.k / dt) * 16 * 0.4;
+    d.vy = d.vy * 0.6 + ((e.clientY - d.ly) / d.k / dt) * 16 * 0.4;
     d.lx = e.clientX; d.ly = e.clientY; d.lt = t;
     const c = clamp(d, d.ox + dx, d.oy + dy);
     d.tx = c.x; d.ty = c.y; d.tilt = Math.max(-18, Math.min(18, d.vx * 1.2));

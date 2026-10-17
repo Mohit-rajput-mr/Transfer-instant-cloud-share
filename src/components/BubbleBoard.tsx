@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
 import { LuCopy, LuLayoutDashboard, LuMaximize, LuMessageCircle, LuMinus, LuPencil, LuPlus, LuSearch, LuShare2, LuTrash2, LuX } from "react-icons/lu";
+import { createPortal } from "react-dom";
 import { Pop } from "./Spaces";
 import { BUBBLE_MAX, bubbleName, hueFor, isMine, senderOf, splitLinks, type Bubble } from "@/lib/bubbles";
 import { formatClock } from "@/lib/client";
@@ -134,10 +135,33 @@ const useNarrow = () => {
  * Bubbles in the void: people take turns right and left (you first, on the right), a couple each side,
  * newest bubble on top. More people than fit → the board, which holds everyone.
  */
-export default function BubbleBoard(props: { bubbles: Bubble[]; onOpenBoard: (focus: string | null) => void; /** the left side is taken (tasks): everyone on the right */ oneSide?: boolean } & Actions) {
+export default function BubbleBoard(props: { bubbles: Bubble[]; onOpenBoard: (focus: string | null) => void; /** the left side is taken (tasks): everyone on the right */ oneSide?: boolean; /** the map (lib/map.ts): each person's stack centred on its spot in the world */ spots?: Map<string, { x: number; y: number }> } & Actions) {
   const stacks = useStacks(props.bubbles);
   const narrow = useNarrow();
   if (!stacks.length) return null;
+  if (props.spots) {
+    const spots = props.spots;
+    return (
+      <>
+        {stacks.map((s, i) => {
+          const p = spots.get(`b:${s.key}`);
+          return (
+            <section key={s.key} data-map-key={`b:${s.key}`} className={`bub-stack on-map${s.mine ? " mine" : ""}`} style={{ "--bh": s.hue, "--i": i, ...(p ? { left: p.x, top: p.y } : { visibility: "hidden" }) } as unknown as CSSProperties}>
+              <StackHead s={s} onClick={() => props.onOpenBoard(s.key)} />
+              {s.items.slice(0, 2).map((b) => (
+                <BubbleItem key={b.id} b={b} {...props} />
+              ))}
+              {s.items.length > 2 && <button className="bub-more mono" onClick={() => props.onOpenBoard(s.key)}>+{s.items.length - 2} more</button>}
+            </section>
+          );
+        })}
+        {createPortal(
+          <button className="bub-open lg lg-press" onClick={() => props.onOpenBoard(null)}><LuLayoutDashboard aria-hidden /><b>Board</b></button>,
+          document.body,
+        )}
+      </>
+    );
+  }
   // you first, then whoever spoke last
   const order = [...stacks].sort((a, b) => Number(b.mine) - Number(a.mine) || b.last - a.last);
   const PER_SIDE = 2;

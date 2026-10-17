@@ -4,7 +4,9 @@ import Link from "next/link";
 import Starfield from "./Starfield";
 import Uploader, { Icon } from "./Uploader";
 import LiquidGlass from "./LiquidGlass";
-import OrbView, { ORB_CAP, inheritSlot, pickHue, layout, type VoidMode } from "./OrbView";
+import OrbView, { ORB_CAP, bubbleLayout, inheritSlot, pickHue, layout, type VoidMode } from "./OrbView";
+import MapWorld, { type Band } from "./MapWorld";
+import { place, worldSize, type Thing } from "@/lib/map";
 import { ComposePanel, GroupPanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin, type LaunchJob } from "./Panels";
 import LaunchDock, { isPending, pendingId, pendingOrb, type Launch } from "./LaunchDock";
 import { launch, type Stage } from "@/lib/transfer";
@@ -27,8 +29,8 @@ import { createSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, le
 import { LuArchive, LuFileText, LuFlag, LuMessageCircle, LuImage, LuLayers, LuLayoutGrid, LuMenu, LuMusic, LuOrbit, LuPalette, LuUser, LuVideo, LuWifi } from "react-icons/lu";
 const KIND_ICON = { all: LuLayoutGrid, photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
 import MobileMenu from "./MobileMenu";
-import BubbleBoard, { BubbleCompose, BubbleSpace, type BubbleChange } from "./BubbleBoard";
-import TaskBoard, { TaskWires } from "./TaskBoard";
+import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange } from "./BubbleBoard";
+import TaskBoard, { TaskWires, taskGroups } from "./TaskBoard";
 import { addTask, assignTask, burnTask, carryTasks, wireObject, editTask, isMyTask, moveTask, openInvite, parseTask, sealInvite, tickTask, type Task } from "@/lib/tasks";
 import { readSync, type SyncMsg } from "@/lib/sync";
 import { GoPrivate, InviteCard } from "./TeamMove";
@@ -119,6 +121,16 @@ type Panel =
   | { kind: "bubble"; edit?: BubbleChange }
   | { kind: "private" }
   | null;
+
+// on the map the header, the send button and the zoom tools cover the screen's edges
+const MAP_BAND: Record<VoidMode, Band> = {
+  desk: { top: 124, bottom: 118, left: 24, right: 84 },
+  tall: { top: 124, bottom: 118, left: 20, right: 72 },
+  phone: { top: 70, bottom: 96, left: 10, right: 10 },
+  short: { top: 56, bottom: 60, left: 60, right: 60 },
+};
+// the map holds far more than a fixed sky
+const MAP_CAP = 160;
 
 // more balls in the void, smaller balls, so they all have room
 const crowdScale = (n: number) => (n <= 5 ? 1 : n <= 8 ? 0.86 : n <= 12 ? 0.74 : 0.64);
@@ -226,6 +238,8 @@ export default function Void() {
   const toasted = useRef(new Set<string>());
   const [now, setNow] = useState(() => Date.now());
   const [panel, setPanel] = useState<Panel>(null);
+  // something of mine just went up: the map shows everything again so it is in sight
+  const [fitAll, setFitAll] = useState(0);
   const [launches, setLaunches] = useState<Launch[]>([]);
   // ids handed over from a stand-in sphere to its real one: no burn-up, no second entrance
   const swapped = useRef(new Set<string>());
@@ -486,6 +500,7 @@ export default function Void() {
     };
     setLaunches((ls) => [...ls, l]);
     setPanel(null);
+    setFitAll((n) => n + 1);
     // Every other open tab sees the ball right now, and watches it fill up, instead of after the upload.
     const info = { k: key, name: l.name, size: l.size, files: l.files, hue: l.hue, at: l.createdAt, life: job.life, o: job.open };
     let frac = 0;
@@ -1067,8 +1082,22 @@ export default function Void() {
     for (const i of Object.values(incoming)) m.set(incomingId(i.key), i.frac);
     return m;
   }, [dockLaunches, incoming]);
+  // Arrange (tasks): every task gets a lane, its files line up in it grouped by sender; the rest share a last lane
+  const [arranged, setArranged] = useState(false);
+  useEffect(() => {
+    try {
+      setArranged(localStorage.getItem("orbit:arranged") === "1");
+    } catch {}
+  }, []);
+  const toggleArrange = () =>
+    setArranged((a) => {
+      try {
+        localStorage.setItem("orbit:arranged", a ? "0" : "1");
+      } catch {}
+      return !a;
+    });
   // The void can only hold so many spheres (fewer on a phone); keep yours, then nearby, then the newest.
-  const cap = ORB_CAP[mode];
+  const cap = !(mode === "desk" && arranged && tasks.length) ? MAP_CAP : ORB_CAP[mode];
   const visible = useMemo(() => {
     if (shown.length <= cap) return shown;
     const rank = (o: Orb) => (ownerKey(o.id) || isPending(o.id) ? 2 : 0) + (o.netHash === net ? 1 : 0);
@@ -1081,8 +1110,9 @@ export default function Void() {
       return;
     }
     const t = setInterval(() => {
-      // phones stack the board above the sky instead (nothing to push sideways into)
-      const board = window.innerWidth > 720 ? document.querySelector<HTMLElement>(".task-boards")?.getBoundingClientRect() : undefined;
+      // phones stack the board above the sky instead (nothing to push sideways into); the map gives everything its own spot
+      const onMap = !!document.querySelector(".void.map");
+      const board = window.innerWidth > 720 && !onMap ? document.querySelector<HTMLElement>(".task-boards")?.getBoundingClientRect() : undefined;
       document.querySelectorAll<HTMLElement>(".void .orb-anchor[data-orb]").forEach((a) => {
         const was = parseFloat(a.dataset.push || "0");
         const body = (a.querySelector(".orb-body") ?? a.querySelector(".orb"))?.getBoundingClientRect();
@@ -1106,20 +1136,6 @@ export default function Void() {
     const t = setTimeout(() => warm(visible.filter((o) => !isPending(o.id))), 400);
     return () => clearTimeout(t);
   }, [visible]);
-  // Arrange (tasks): every task gets a lane, its files line up in it grouped by sender; the rest share a last lane
-  const [arranged, setArranged] = useState(false);
-  useEffect(() => {
-    try {
-      setArranged(localStorage.getItem("orbit:arranged") === "1");
-    } catch {}
-  }, []);
-  const toggleArrange = () =>
-    setArranged((a) => {
-      try {
-        localStorage.setItem("orbit:arranged", a ? "0" : "1");
-      } catch {}
-      return !a;
-    });
   const [vw, setVw] = useState({ w: 1440, h: 900 });
   useEffect(() => {
     const on = () => setVw({ w: window.innerWidth, h: window.innerHeight });
@@ -1210,7 +1226,61 @@ export default function Void() {
     // loose is derived from visible + tasks
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [laneTasks, lanes, tasks, visible, laneH]);
-  const positions = useMemo(() => grid?.pos ?? layout(visible, mode), [grid, visible, mode]);
+  // ---- the map (lib/map.ts): every task panel, bubble stack and ball gets its own random spot in one world ----
+  const mapOn = !laneTasks;
+  const stacks = useStacks(notes);
+  const tGroups = useMemo(() => taskGroups(tasks), [tasks]);
+  const showTasks = !archived && (tasks.length > 0 || taskOpen);
+  // what each panel really measures on screen (estimates until then)
+  const [sizes, setSizes] = useState<Map<string, { w: number; h: number }>>(() => new Map());
+  useEffect(() => {
+    if (!mapOn) return;
+    const t = setInterval(() => {
+      const next = new Map<string, { w: number; h: number }>();
+      document.querySelectorAll<HTMLElement>(".world [data-map-key]").forEach((el) => {
+        if (el.offsetWidth) next.set(el.dataset.mapKey!, { w: el.offsetWidth, h: el.offsetHeight });
+      });
+      setSizes((prev) => ([...next].some(([k, v]) => {
+        const p = prev.get(k);
+        return !p || Math.abs(p.w - v.w) > 6 || Math.abs(p.h - v.h) > 6;
+      }) ? next : prev));
+    }, 500);
+    return () => clearInterval(t);
+  }, [mapOn]);
+  const map = useMemo(() => {
+    if (!mapOn) return null;
+    const things: Thing[] = [];
+    const sz = (k: string, w: number, h: number) => sizes.get(k) ?? { w, h };
+    if (showTasks)
+      for (const g of tGroups) {
+        const k = `t:${g.key}`;
+        things.push({ key: k, ...sz(k, 344, 58 + 52 * g.tasks.length), born: Math.min(...g.tasks.map((t) => Date.parse(t.createdAt))) });
+      }
+    for (const st of stacks) {
+      const k = `b:${st.key}`;
+      things.push({ key: k, ...sz(k, 300, 44 + 118 * Math.min(2, st.items.length) + (st.items.length > 2 ? 34 : 0)), born: st.first });
+    }
+    // a ball keeps the spot its stand-in had while it was uploading
+    const swapIn = new Set(visible.map((o) => alias.current.get(o.id)).filter(Boolean));
+    for (const o of visible) {
+      if (swapIn.has(o.id)) continue;
+      const n = isGroup(o.id) ? groups.get(o.id)?.length ?? 0 : 0;
+      const L = n ? bubbleLayout(n) : null;
+      things.push({ key: `o:${alias.current.get(o.id) ?? o.id}`, w: L ? L.W + 60 : 210, h: L ? L.H + 120 : 250, born: Date.parse(o.createdAt) });
+    }
+    const { W, H } = worldSize(things, vw.w, Math.max(620, vw.h));
+    return { W, H, spots: place(things, W, H) };
+  }, [mapOn, sizes, showTasks, tGroups, stacks, visible, groups, vw]);
+  const positions = useMemo(() => {
+    if (grid) return grid.pos;
+    if (!map) return layout(visible, mode);
+    const out = new Map<string, { x: number; y: number }>();
+    for (const o of visible) {
+      const p = map.spots.get(`o:${alias.current.get(o.id) ?? o.id}`);
+      if (p) out.set(o.id, { x: (p.x / map.W) * 100, y: (p.y / map.H) * 100 });
+    }
+    return out;
+  }, [grid, map, visible, mode]);
   // a ball is the same colour on every device: the hue stored with it, never a local re-shuffle
   // wired files wear their sender's colour, so each team is easy to spot across tasks
   const colors = useMemo(() => new Map(visible.map((o) => [o.id, o.task ? hueFor(o.from ?? o.id) : ((o.hue % 360) + 360) % 360])), [visible]);
@@ -1366,13 +1436,74 @@ export default function Void() {
   const unlockOrb = listedUnlock ?? (panel?.kind === "unlock" && keptUnlock.current?.id === panel.id ? keptUnlock.current : null);
   // Phones stack the spheres in rows (see layout()); the void is as tall as its rows, including a
   // sphere that is still burning up in the last one.
-  const flow = mode !== "desk" && (visible.length > 0 || ghosts.length > 0);
+  const flow = !map && mode !== "desk" && (visible.length > 0 || ghosts.length > 0);
   const lastRow = flow ? Math.max(0, ...[...positions.values()].map((p) => p.y)) : 0;
   const rows = flow ? Math.max(lastRow + 1, ...ghosts.map((g) => Math.min(g.pos.y + 1, lastRow + 3))) : 1;
 
   // a stand-in whose real sphere is already listed (the render of the swap): only the real one shows
   const replaced = new Set(visible.map((o) => alias.current.get(o.id)).filter((x): x is string => !!x));
 
+  const mapSpots = map?.spots;
+  const taskBoard = showTasks && (
+    <TaskBoard
+      tasks={tasks}
+      orbs={alive}
+      me={bubbleName() || room?.handle || ""}
+      focus={taskFocus}
+      onFocus={setTaskFocus}
+      onOpenFile={open}
+      onPreviewFile={(o) => preview(o.id)}
+      wiring={wiring}
+      arranged={laneTasks}
+      laneH={laneTasks ? laneH : undefined}
+      onArrange={mode === "desk" ? toggleArrange : undefined}
+      onAdd={async (line, life) => {
+        try {
+          const by = bubbleName() || room?.handle || "";
+          const t = await addTask(line, by, life);
+          toast(`Task ${t.num} added`);
+          setFitAll((n) => n + 1);
+          const at = Date.now() + skew, { text, assignee } = parseTask(line);
+          sync({ t: { id: t.id, num: t.num, text, by: by || null, from: t.from, createdAt: iso(at), expiresAt: iso(at + (life ?? 30) * 60_000), doneAt: null, doneBy: null, assignee: assignee || null, route: [], stage: -1, log: [], editedAt: null } });
+          refresh();
+        } catch (e) {
+          toast((e as Error).message);
+          throw e;
+        }
+      }}
+      onTick={(t, done) => {
+        const next = { ...t, doneAt: done ? iso(Date.now() + skew) : null, doneBy: done ? bubbleName() || room?.handle || null : null };
+        applySync({ t: next });
+        tickTask(t.id, done, bubbleName() || room?.handle || "").then(() => sync({ t: next })).catch((e) => (marks.current.delete(`t:${t.id}`), toast(e.message), refresh()));
+      }}
+      onTake={(t, who) => {
+        const next = { ...t, assignee: who || null };
+        applySync({ t: next });
+        assignTask(t.id, who).then(() => (toast(who ? `Task ${t.num} → ${who}` : `Task ${t.num} is open again`), sync({ t: next }))).catch((e) => (marks.current.delete(`t:${t.id}`), toast(e.message), refresh()));
+      }}
+      onBurn={(t) => {
+        burnTask(t.id).then((ok) => ok && (toast(`Task ${t.num} removed`), sync({ tg: [t.id] })));
+      }}
+      onAttach={(t, what) => (what === "folder" ? pickFolder(t.id) : pickFiles(t.id))}
+      onClose={() => (setTaskOpen(false), setComposing(false))}
+      composing={composing}
+      spots={mapSpots}
+      onArchive={() => (setArchived(true), setComposing(false), setArranged(false), toast("Tasks archived with their files · Tasks in the bar brings them back"))}
+      onComposed={() => setComposing(false)}
+      onGoPrivate={space ? undefined : () => setPanel({ kind: "private" })}
+      onMove={(t, dir) => moveTask(t.id, dir).then(() => (refresh(), broadcast())).catch((e) => toast(e.message))}
+      onEdit={async (t, change) => {
+        // shown at once; the server (and everyone else's screen) catches up in the background
+        const by = bubbleName() || room?.handle || "";
+        const next = applyEdit(t, change, by);
+        applySync({ t: next });
+        if (change.stage !== undefined) toast(change.stage < 0 ? `Task ${t.num} is back to not started` : `Task ${t.num} → ${(change.route ?? t.route)[change.stage]}`);
+        editTask(t.id, change, by)
+          .then(() => sync({ t: next }))
+          .catch((e) => (marks.current.delete(`t:${t.id}`), toast((e as Error).message), refresh()));
+      }}
+    />
+  );
   return (
     <>
       <Starfield />
@@ -1443,120 +1574,20 @@ export default function Void() {
 
       <main className={menu && !menuOut ? "menu-open" : undefined} data-pal={pal}>
         <section
-          className={`void${notes.length ? " has-bubbles" : ""}${new Set(notes.map(senderOf)).size > 1 || (tasks.length && !archived) ? " bub-two" : ""}${tasks.length && !archived ? " has-tasks" : ""}${taskFocus ? " task-focus" : ""}${grid ? ` arranged${grid.tight ? " tight" : ""}` : ""}${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
+          className={`void${map ? " map" : ""}${notes.length && !map ? " has-bubbles" : ""}${!map && (new Set(notes.map(senderOf)).size > 1 || (tasks.length && !archived)) ? " bub-two" : ""}${tasks.length && !archived && !map ? " has-tasks" : ""}${taskFocus ? " task-focus" : ""}${grid ? ` arranged${grid.tight ? " tight" : ""}` : ""}${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
           id="void"
-          style={(flow ? { "--n": rows } : { "--k-auto": grid ? grid.k : crowdScale(visible.length), ...(grid ? { "--cell": `${grid.cell}px` } : null) }) as unknown as React.CSSProperties}
+          style={(flow ? { "--n": rows } : { "--k-auto": grid ? grid.k : map ? 1 : crowdScale(visible.length), ...(grid ? { "--cell": `${grid.cell}px` } : null) }) as unknown as React.CSSProperties}
         >
           {space && <SpaceRoom space={space} info={room} online={live} onKick={kick} onExit={() => {
             switchSpace(null);
             toast("Back in the public void");
           }} />}
-          {!archived && (tasks.length > 0 || taskOpen) && (
-            <TaskBoard
-              tasks={tasks}
-              orbs={alive}
-              me={bubbleName() || room?.handle || ""}
-              focus={taskFocus}
-              onFocus={setTaskFocus}
-              onOpenFile={open}
-              onPreviewFile={(o) => preview(o.id)}
-              wiring={wiring}
-              arranged={laneTasks}
-              laneH={laneTasks ? laneH : undefined}
-              onArrange={mode === "desk" ? toggleArrange : undefined}
-              onAdd={async (line, life) => {
-                try {
-                  const by = bubbleName() || room?.handle || "";
-                  const t = await addTask(line, by, life);
-                  toast(`Task ${t.num} added`);
-                  const at = Date.now() + skew, { text, assignee } = parseTask(line);
-                  sync({ t: { id: t.id, num: t.num, text, by: by || null, from: t.from, createdAt: iso(at), expiresAt: iso(at + (life ?? 30) * 60_000), doneAt: null, doneBy: null, assignee: assignee || null, route: [], stage: -1, log: [], editedAt: null } });
-                  refresh();
-                } catch (e) {
-                  toast((e as Error).message);
-                  throw e;
-                }
-              }}
-              onTick={(t, done) => {
-                const next = { ...t, doneAt: done ? iso(Date.now() + skew) : null, doneBy: done ? bubbleName() || room?.handle || null : null };
-                applySync({ t: next });
-                tickTask(t.id, done, bubbleName() || room?.handle || "").then(() => sync({ t: next })).catch((e) => (marks.current.delete(`t:${t.id}`), toast(e.message), refresh()));
-              }}
-              onTake={(t, who) => {
-                const next = { ...t, assignee: who || null };
-                applySync({ t: next });
-                assignTask(t.id, who).then(() => (toast(who ? `Task ${t.num} → ${who}` : `Task ${t.num} is open again`), sync({ t: next }))).catch((e) => (marks.current.delete(`t:${t.id}`), toast(e.message), refresh()));
-              }}
-              onBurn={(t) => {
-                burnTask(t.id).then((ok) => ok && (toast(`Task ${t.num} removed`), sync({ tg: [t.id] })));
-              }}
-              onAttach={(t, what) => (what === "folder" ? pickFolder(t.id) : pickFiles(t.id))}
-              onClose={() => (setTaskOpen(false), setComposing(false))}
-              composing={composing}
-              onArchive={() => (setArchived(true), setComposing(false), setArranged(false), toast("Tasks archived with their files · Tasks in the bar brings them back"))}
-              onComposed={() => setComposing(false)}
-              onGoPrivate={space ? undefined : () => setPanel({ kind: "private" })}
-              onMove={(t, dir) => moveTask(t.id, dir).then(() => (refresh(), broadcast())).catch((e) => toast(e.message))}
-              onEdit={async (t, change) => {
-                // shown at once; the server (and everyone else's screen) catches up in the background
-                const by = bubbleName() || room?.handle || "";
-                const next = applyEdit(t, change, by);
-                applySync({ t: next });
-                if (change.stage !== undefined) toast(change.stage < 0 ? `Task ${t.num} is back to not started` : `Task ${t.num} → ${(change.route ?? t.route)[change.stage]}`);
-                editTask(t.id, change, by)
-                  .then(() => sync({ t: next }))
-                  .catch((e) => (marks.current.delete(`t:${t.id}`), toast((e as Error).message), refresh()));
-              }}
-            />
-          )}
-          {!archived && tasks.length > 0 && (
-            <TaskWires
-              tasks={tasks}
-              orbs={visible}
-              focus={taskFocus}
-              mine={new Set(visible.filter((o) => !isGroup(o.id) && !isPending(o.id) && ownerKey(o.id)).map((o) => o.id))}
-              onWiring={setWiring}
-              straight={!!grid}
-              onConnect={(orb, task) => {
-                const t = tasks.find((x) => x.id === task);
-                setOrbs((os) => os.map((o) => (o.id === orb ? { ...o, task } : o)));
-                wireObject(orb, task)
-                  .then(() => (toast(`Wired to Task ${t?.num ?? ""}`), refresh(), broadcast()))
-                  .catch((e) => (toast(e.message), refresh()));
-              }}
-            />
-          )}
-          {taskFocus && /^t[a-z0-9]{9}$/.test(taskFocus) && visible.some((o) => o.task === taskFocus) && <style>{`.void.task-focus .orb-anchor:not([data-task="${taskFocus}"]){opacity:.38;transition:opacity .3s}`}</style>}
+          {map ? (
+            <MapWorld W={map.W} H={map.H} band={MAP_BAND[mode]} fit={fitAll} empty={!map.spots.size}>
+          {taskBoard}
           {notes.length > 0 && (
-            <BubbleBoard bubbles={notes} {...bubbleActs} oneSide={tasks.length > 0 && !archived} onOpenBoard={(f) => setBoard(f)} />
+            <BubbleBoard bubbles={notes} {...bubbleActs} oneSide={tasks.length > 0 && !archived} onOpenBoard={(f) => setBoard(f)} spots={mapSpots} />
           )}
-          <div className="ghost-type" aria-hidden>
-            <span className="wide">Drop</span>
-            <span className="wide">Lock</span>
-            <span className="wide">Beam</span>
-            <span className="wide">Burn.</span>
-            <p className="mono">Anything dropped here floats in the void, encrypted, until it burns up. No accounts. No traces.</p>
-          </div>
-          <div className="ghost-big" aria-hidden>
-            <div className="wide">30 Min</div>
-            <p className="mono">Longest life of any object.<br />The sender picks 5 to 30.</p>
-          </div>
-
-          {loaded && shown.length === 0 && (
-            <div className="empty">
-              <p className="mono">
-                {space ? `${space.title} is empty. Launch something: only people in this space see it` : scope === "near" ? "Nothing from your network yet" : (
-                  <>
-                    <span className="on-fine">The void is empty. Drop files, folders or text anywhere</span>
-                    <span className="on-touch">The void is empty. Tap upload to launch photos, videos, files or text</span>
-                  </>
-                )}
-                <span className="cursor" />
-              </p>
-              <Uploader onFiles={() => pickFiles()} onFolder={() => pickFolder()} onText={compose} folderSub={touch ? "a folder, or many files at once" : undefined} />
-            </div>
-          )}
-
           {visible.filter((o) => !replaced.has(o.id)).map((o, i) => (
             <OrbView
               key={alias.current.get(o.id) ?? o.id}
@@ -1597,6 +1628,104 @@ export default function Void() {
               skin={g.orb.skin ?? skin}
             />
           ))}
+            </MapWorld>
+          ) : (
+            <>
+          {taskBoard}
+            </>
+          )}
+          {!archived && tasks.length > 0 && (
+            <TaskWires
+              tasks={tasks}
+              orbs={visible}
+              focus={taskFocus}
+              mine={new Set(visible.filter((o) => !isGroup(o.id) && !isPending(o.id) && ownerKey(o.id)).map((o) => o.id))}
+              onWiring={setWiring}
+              straight={!!grid}
+              onConnect={(orb, task) => {
+                const t = tasks.find((x) => x.id === task);
+                setOrbs((os) => os.map((o) => (o.id === orb ? { ...o, task } : o)));
+                wireObject(orb, task)
+                  .then(() => (toast(`Wired to Task ${t?.num ?? ""}`), refresh(), broadcast()))
+                  .catch((e) => (toast(e.message), refresh()));
+              }}
+            />
+          )}
+          {taskFocus && /^t[a-z0-9]{9}$/.test(taskFocus) && visible.some((o) => o.task === taskFocus) && <style>{`.void.task-focus .orb-anchor:not([data-task="${taskFocus}"]){opacity:.38;transition:opacity .3s}`}</style>}
+          {!map && (<>
+          {notes.length > 0 && (
+            <BubbleBoard bubbles={notes} {...bubbleActs} oneSide={tasks.length > 0 && !archived} onOpenBoard={(f) => setBoard(f)} spots={mapSpots} />
+          )}
+          </>)}
+          <div className="ghost-type" aria-hidden>
+            <span className="wide">Drop</span>
+            <span className="wide">Lock</span>
+            <span className="wide">Beam</span>
+            <span className="wide">Burn.</span>
+            <p className="mono">Anything dropped here floats in the void, encrypted, until it burns up. No accounts. No traces.</p>
+          </div>
+          <div className="ghost-big" aria-hidden>
+            <div className="wide">30 Min</div>
+            <p className="mono">Longest life of any object.<br />The sender picks 5 to 30.</p>
+          </div>
+
+          {loaded && shown.length === 0 && (
+            <div className="empty">
+              <p className="mono">
+                {space ? `${space.title} is empty. Launch something: only people in this space see it` : scope === "near" ? "Nothing from your network yet" : (
+                  <>
+                    <span className="on-fine">The void is empty. Drop files, folders or text anywhere</span>
+                    <span className="on-touch">The void is empty. Tap upload to launch photos, videos, files or text</span>
+                  </>
+                )}
+                <span className="cursor" />
+              </p>
+              <Uploader onFiles={() => pickFiles()} onFolder={() => pickFolder()} onText={compose} folderSub={touch ? "a folder, or many files at once" : undefined} />
+            </div>
+          )}
+
+          {!map && (<>
+          {visible.filter((o) => !replaced.has(o.id)).map((o, i) => (
+            <OrbView
+              key={alias.current.get(o.id) ?? o.id}
+              orb={o}
+              index={i}
+              pos={positions.get(o.id)!}
+              now={serverNow}
+              mine={isGroup(o.id) ? !!groups.get(o.id)?.some((m) => ownerKey(m.id)) : !!ownerKey(o.id) || isPending(o.id)}
+              nearby={!!net && o.netHash === net}
+              watchers={isGroup(o.id) ? o.watchers ?? 0 : watchers(o.id)}
+              onOpen={open}
+              onPreview={preview}
+              onMemberHint={(id) => (lastOpen.current = { id, at: Date.now() })}
+              phase={arriving.has(o.id) ? "arriving" : undefined}
+              hue={colors.get(o.id)}
+              skin={o.skin ?? skin}
+              launching={upFrac.get(o.id)}
+              incoming={isIncoming(o.id)}
+              badge={badges.get(o.id)}
+              got={gotIds.has(o.id)}
+              onDestroy={isGroup(o.id) ? () => destroy((groups.get(o.id) ?? []).map((m) => m.id)) : ownerKey(o.id) ? () => destroy([o.id]) : undefined}
+              onDestroyMember={isGroup(o.id) ? (id) => destroy([id]) : undefined}
+              group={isGroup(o.id) ? groups.get(o.id)?.map((m) => ({ id: m.id, name: m.name, hue: m.hue, size: m.size, got: hasGot(m.id), fileName: m.fileName, expiresAt: m.expiresAt, life: m.life ?? 30, watchers: watchers(m.id), mine: !!ownerKey(m.id), thumb: !!(m.thumb && m.open) })) : undefined}
+            />
+          ))}
+          {ghosts.map((g) => (
+            <OrbView
+              key={`ghost-${g.orb.id}`}
+              orb={g.orb}
+              pos={g.pos}
+              now={serverNow}
+              mine={g.mine}
+              nearby={false}
+              watchers={0}
+              onOpen={noop}
+              phase="burning"
+              hue={g.hue}
+              skin={g.orb.skin ?? skin}
+            />
+          ))}
+          </>)}
         </section>
 
         <section className="how" id="how">
@@ -1878,6 +2007,7 @@ export default function Void() {
             try {
               const r = await postBubble(text, by);
               toast("Bubble posted");
+              setFitAll((n) => n + 1);
               const at = Date.now() + skew;
               sync({ b: { id: r.id, text: text.trim(), by: by.trim() || room?.handle || null, from: r.from, hue: r.hue, createdAt: iso(at), expiresAt: iso(at + 30 * 60_000), added: null, editedAt: null, updatedAt: null } });
               refresh();

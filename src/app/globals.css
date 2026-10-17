@@ -2807,3 +2807,33 @@ em.hq-tag { font-style: normal; }
 @media (hover: hover) { .wire-menu button:hover { background: rgba(255,255,255,0.08); } }
 /* the delete button sits bottom-left, so it never covers the file-type badge (bottom-right) or the wire plug (right) */
 .orb .orb-body > .destroy { right: auto; left: 2%; top: auto; bottom: 6%; }
+
+/* =====================================================================
+   THE MAP — one world you drag and zoom (components/MapWorld.tsx, lib/map.ts)
+   ===================================================================== */
+.void.map .map-view { position: absolute; inset: 0; z-index: 2; overflow: hidden; touch-action: none; cursor: grab; }
+.void.map .map-view:active { cursor: grabbing; }
+.world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.world.glide { transition: transform 0.6s var(--ease-out); }
+/* every ball sits exactly on its spot (no sky bands, no side columns) */
+.void.map .orb-anchor { left: var(--x) !important; top: var(--y) !important; }
+.void.map .task-boards.mapped { position: absolute; inset: 0; width: auto; max-height: none; overflow: visible; display: block; pointer-events: none; }
+.task-boards.mapped > .task-board { position: absolute; width: 344px; translate: -50% -50%; pointer-events: auto; transition: left 0.7s var(--ease-out), top 0.7s var(--ease-out); }
+.task-boards.mapped .tb-list { max-height: none; overflow: visible; }
+.bub-stack.on-map { position: absolute; z-index: 6; width: 300px; translate: -50% -50%; transition: left 0.7s var(--ease-out), top 0.7s var(--ease-out); }
+/* the new-task box floats over the map, where the board used to start */
+.tb-compose.floating { position: fixed; z-index: 40; left: max(22px, var(--safe-l)); top: calc(118px + var(--safe-t)); width: 344px; }
+.void.map .ghost-type, .void.map .ghost-big { opacity: 0.35; }
+.map-tools { position: absolute; z-index: 20; right: max(18px, var(--safe-r)); top: 50%; translate: 0 -50%; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px;
+  border-radius: 18px; background: rgba(20,20,22,0.72); border: 1px solid rgba(255,255,255,0.16); }
+.map-tools button { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 12px; color: #ddd; }
+.map-tools button:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.map-tools button.on { color: var(--live); }
+.map-tools svg { width: 16px; height: 16px; }
+.map-tools .mono { font-size: 9.5px; color: #aaa; padding: 2px 0; font-variant-numeric: tabular-nums; }
+.void.map { min-height: 0; }
+@media (max-width: 720px) {
+  .map-tools { top: 46%; right: max(8px, var(--safe-r)); padding: 3px; border-radius: 14px; }
+  .map-tools button { width: 30px; height: 30px; }
+  .tb-compose.floating { left: 10px; right: 10px; width: auto; top: calc(70px + var(--safe-t)); }
+}
