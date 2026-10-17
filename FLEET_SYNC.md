@@ -87,3 +87,10 @@ G. Earth button: owner rejected zoom-out→Earth; button kept. If owner says rem
 ## Owner preferences learned
 - Answer SHORT, main points one line each. Wants things "instant", smooth on low-end phones, free plans.
 - Ships straight to production on the live branch; deploy after each verified step.
+
+## /work (Orbi Work) — branch `claude/work`, PREVIEW only (owner must approve before production)
+- Same Void with `ui="work"` (`src/app/work/page.tsx`): editor look from the owner's n8n / neutral-grey samples. Dark default, light toggle (`lib/theme.ts`, `orbit:work-theme`).
+- All styling in `src/app/work/work.css`, scoped to `html[data-ui="work"]` → main page untouched. Chrome: `components/WorkChrome.tsx` (bar, rail, dock, empty).
+- Files = nodes, groups = wide node, bubbles = note cards, tasks = panels, wires grey. Skin forced to "work" (style picker hidden).
+- Test: `node shot.mjs /work out.png [desk|phone] [dark|light] "click=<sel>"` (scratch harness, mocks /api).
+- To ship: merge `claude/work` into the live branch, deploy production.
