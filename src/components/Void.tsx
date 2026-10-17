@@ -35,7 +35,7 @@ import { addTask, assignTask, burnTask, carryTasks, wireObject, editTask, isMyTa
 import { readSync, type SyncMsg } from "@/lib/sync";
 import { joinLive, liveOn, roomsFor, type Chan } from "@/lib/live";
 import { around } from "@/lib/area";
-import { asked, dropGps, fromIp, locate, markAsked, permission, where } from "@/lib/where";
+import { asked, dropGps, fixNow, follow, fromIp, locate, markAsked, markSent, permission, where } from "@/lib/where";
 import LocationAsk from "./LocationAsk";
 import TaskThrow, { type Grab } from "./TaskThrow";
 import dynamic from "next/dynamic";
@@ -655,12 +655,18 @@ export default function Void() {
   const viewing = panel?.kind === "unlock" ? panel.id : null;
   const viewingRef = useRef<string | null>(null);
   viewingRef.current = viewing;
+  const lastPulse = useRef(0);
   const sendPulse = useCallback(() => {
     if (document.visibilityState !== "visible") return Promise.resolve();
+    lastPulse.current = Date.now();
+    // location shared: the exact spot goes to Orbit (its live map); others only ever see the rough area
+    const f = fixNow();
+    markSent(f);
+    const exact = f ? { lat: f.lat, lon: f.lon, acc: f.acc, precise: true } : {};
     return fetch("/api/pulse", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ deviceId: deviceId(), viewing: viewingRef.current, ...deviceInfo() }),
+      body: JSON.stringify({ deviceId: deviceId(), viewing: viewingRef.current, ...deviceInfo(), ...exact }),
       keepalive: true,
     })
       .then((r) => r.json())
@@ -972,6 +978,27 @@ export default function Void() {
     });
     return () => clearTimeout(t);
   }, []);
+  // while location is allowed: follow the device; a walk into another cell moves its void, a move of 100 m+ tells
+  // Orbit early (at most every 15 s)
+  const movedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!gps) return;
+    const stop = follow(
+      (w) => setHome(w.area),
+      () => {
+        if (movedTimer.current) return;
+        movedTimer.current = setTimeout(() => {
+          movedTimer.current = null;
+          sendPulse();
+        }, Math.max(0, lastPulse.current + 15_000 - Date.now()));
+      },
+    );
+    return () => {
+      stop();
+      if (movedTimer.current) clearTimeout(movedTimer.current);
+      movedTimer.current = null;
+    };
+  }, [gps, sendPulse]);
   const shareLocation = useCallback(async () => {
     setGeoAsk(false);
     try {

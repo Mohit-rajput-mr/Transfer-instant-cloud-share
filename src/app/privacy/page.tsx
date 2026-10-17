@@ -30,7 +30,7 @@ export default function Privacy() {
         <li><b>Spaces</b>: a space&apos;s name, whether it is private, a keyed hash of its passcode, the names members chose and a keyed hash of each member&apos;s device ID, kept encrypted until the space is removed. Your saved spaces live in your own browser (IndexedDB).</li>
       </ul>
       <h2>Usage statistics</h2>
-      <p>To keep the service running we keep anonymous usage stats: your approximate location (country, city, coordinates rounded to about 1 km, derived by our host from your connection), browser, OS, device type, and when you visit, upload or download. Detailed events are kept for 30 days; daily totals per country, city, device type and route (city to city) are kept longer. This is never linked to your name, never sold and never shared.</p>
+      <p>To keep the service running we keep anonymous usage stats: your approximate location (country, city, coordinates rounded to about 1 km, derived by our host from your connection; if you share your location in the browser, your exact position instead, shown only on Orbit&apos;s own internal live map and never to other people), browser, OS, device type, and when you visit, upload or download. Detailed events are kept for 30 days; daily totals per country, city, device type and route (city to city) are kept longer. This is never linked to your name, never sold and never shared.</p>
       <h2>No accounts, no ads</h2>
       <p>There are no accounts, no ads and no third-party trackers. Hosting is provided by Vercel, Supabase and Cloudflare.</p>
       <h2>Tip</h2>

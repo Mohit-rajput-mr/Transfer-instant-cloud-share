@@ -4,13 +4,13 @@ import maplibregl, { type GeoJSONSource, type Map as MLMap } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Overview, Pt } from "./types";
 
-export type Layer = "live" | "visitors" | "uploads" | "downloads" | "routes";
+export type Layer = "live" | "exact" | "visitors" | "uploads" | "downloads" | "routes";
 
 // Vector map on a true 3D globe: roads, borders and labels are drawn by the GPU at every zoom,
 // so text stays razor-sharp instead of being a stretched picture. Data: OpenFreeMap (OSM).
 const STYLE = "https://tiles.openfreemap.org/styles/dark";
 
-const DOT: Record<Exclude<Layer, "routes" | "live">, string> = {
+const DOT: Record<Exclude<Layer, "routes" | "live" | "exact">, string> = {
   visitors: "#ffffff",
   uploads: "#59b8ff",
   downloads: "#ffa045",
@@ -121,6 +121,7 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
   const map = useRef<MLMap | null>(null);
   const ready = useRef(false);
   const liveMarkers = useRef<maplibregl.Marker[]>([]);
+  const exactMarkers = useRef<maplibregl.Marker[]>([]);
   const centred = useRef(false);
   const spinRef = useRef(spin);
   spinRef.current = spin;
@@ -290,6 +291,7 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
       clearTimeout(idle);
       ro.disconnect();
       liveMarkers.current.forEach((mk) => mk.remove());
+      exactMarkers.current.forEach((mk) => mk.remove());
       m.remove();
       map.current = null;
       ready.current = false;
@@ -337,6 +339,17 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
           const el = document.createElement("div");
           el.className = "gdot live";
           el.dataset.tip = `${p.n} ${LABEL.live[0]} · ${[p.city, p.cc].filter(Boolean).join(", ")} · ${p.lat.toFixed(2)}, ${p.lon.toFixed(2)}`;
+          return new maplibregl.Marker({ element: el }).setLngLat([p.lon, p.lat]).addTo(m);
+        })
+      : [];
+    // devices that shared their location: their exact spot, with how precise the device says it is
+    exactMarkers.current.forEach((mk) => mk.remove());
+    exactMarkers.current = on.has("exact")
+      ? (d?.exact ?? []).map((p) => {
+          const el = document.createElement("div");
+          el.className = "gdot exact";
+          const ago = Math.max(0, Math.round((Date.now() - Date.parse(p.at)) / 1000));
+          el.dataset.tip = [p.label || "device", [p.city, p.cc].filter(Boolean).join(", "), `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`, p.acc != null ? `±${Math.round(p.acc)} m` : "", `${ago}s ago`].filter(Boolean).join(" · ");
           return new maplibregl.Marker({ element: el }).setLngLat([p.lon, p.lat]).addTo(m);
         })
       : [];

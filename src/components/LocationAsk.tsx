@@ -12,7 +12,7 @@ export default function LocationAsk(props: { onAllow: () => Promise<void>; onLat
         <i className="geo-ring" aria-hidden><LuMapPin /></i>
         <h3 className="wide">See what&apos;s around you</h3>
         <p>Orbit shows the bubbles, tasks and files of people near you. Share your location so everyone in the same place sees each other.</p>
-        <p className="mono dim">Only a rough area is used (about 20 to 40 km). Your exact spot never leaves this device.</p>
+        <p className="mono dim">Other people only ever see your rough area (about 20 to 40 km). Your exact spot is shared with Orbit while the site is open, for Orbit&apos;s own live map.</p>
         <button
           className="cta lg-press"
           disabled={busy}

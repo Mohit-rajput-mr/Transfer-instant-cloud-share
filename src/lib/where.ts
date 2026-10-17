@@ -2,7 +2,8 @@
 import { areaOf, validArea } from "./area";
 
 // Where this device is in the void (lib/area.ts). Shared location → the cell it is really in; otherwise the cell its
-// IP points to (rougher). Only the cell is kept and sent, never the coordinates.
+// IP points to (rougher). Only the cell is kept on the device and used for the void; the exact fix (in memory only)
+// goes to Orbit with the heartbeat, for its own live map, and is never shown to other people.
 
 export type Where = { area: string; how: "gps" | "ip" };
 const KEY = "orbit:area";
@@ -24,6 +25,23 @@ const save = (w: Where) => {
   } catch {}
 };
 
+export type Fix = { lat: number; lon: number; acc: number; at: number };
+let fix: Fix | null = null;
+let sent: Fix | null = null;
+const FIX_FOR = 10 * 60_000;
+const setFix = (c: GeolocationCoordinates) => {
+  fix = { lat: c.latitude, lon: c.longitude, acc: Math.round(c.accuracy), at: Date.now() };
+  return fix;
+};
+/** the last exact position, while fresh: sent with the heartbeat */
+export const fixNow = () => (fix && Date.now() - fix.at < FIX_FOR ? fix : null);
+export const markSent = (f: Fix | null) => (sent = f);
+/** metres between two fixes */
+const dist = (a: Fix, b: Fix) => {
+  const r = Math.PI / 180, x = (b.lon - a.lon) * r * Math.cos(((a.lat + b.lat) / 2) * r), y = (b.lat - a.lat) * r;
+  return Math.hypot(x, y) * 6_371_000;
+};
+
 export const where = () => cur;
 export const myArea = () => cur?.area ?? "";
 
@@ -35,6 +53,7 @@ export function fromIp(area: unknown) {
 }
 /** location sharing turned off in the browser: back to the IP's area */
 export function dropGps() {
+  fix = sent = null;
   if (cur?.how === "gps") save({ area: cur.area, how: "ip" });
 }
 
@@ -67,6 +86,7 @@ export function locate(): Promise<Where> {
     if (!navigator.geolocation) return rej(new Error("This browser can't share its location"));
     navigator.geolocation.getCurrentPosition(
       (p) => {
+        setFix(p.coords);
         const w: Where = { area: areaOf(p.coords.latitude, p.coords.longitude), how: "gps" };
         save(w);
         res(w);
@@ -75,4 +95,24 @@ export function locate(): Promise<Where> {
       { enableHighAccuracy: false, timeout: 12_000, maximumAge: 10 * 60_000 },
     );
   });
+}
+
+/** while location is allowed: follow the device. `onArea` when it walks into another cell, `onMoved` when it is
+ * more than 100 m from the position Orbit last heard. Returns the stop function. */
+export function follow(onArea: (w: Where) => void, onMoved: () => void) {
+  if (!navigator.geolocation) return () => {};
+  const id = navigator.geolocation.watchPosition(
+    (p) => {
+      const f = setFix(p.coords);
+      const area = areaOf(f.lat, f.lon);
+      if (cur?.area !== area || cur.how !== "gps") {
+        save({ area, how: "gps" });
+        onArea(cur!);
+      }
+      if (!sent || dist(sent, f) > 100) onMoved();
+    },
+    () => {},
+    { enableHighAccuracy: true, timeout: 30_000, maximumAge: 15_000 },
+  );
+  return () => navigator.geolocation.clearWatch(id);
 }

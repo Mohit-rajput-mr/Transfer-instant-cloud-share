@@ -15,6 +15,8 @@ export interface Overview {
   os: Record<string, number>;
   forms: Record<string, number>;
   live: Pt[];
+  /** online devices that shared their location: their exact spot (migration 017) */
+  exact?: Exact[];
   visitors: Pt[];
   points: (Pt & { k: "upload" | "download" })[];
   arcs: { a: number; b: number; c: number; d: number }[];
@@ -32,6 +34,17 @@ export interface Day {
   bytes_down: number;
   views: number;
   reports: number;
+}
+
+export interface Exact {
+  lat: number;
+  lon: number;
+  /** metres, as the device reported it */
+  acc: number | null;
+  label: string | null;
+  city: string | null;
+  cc: string | null;
+  at: string;
 }
 
 export interface Pt {

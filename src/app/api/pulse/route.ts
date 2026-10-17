@@ -9,6 +9,12 @@ export async function POST(req: NextRequest) {
   const deviceId = clean(b?.deviceId, 40);
   if (!deviceId) return NextResponse.json({ error: "bad request" }, { status: 400 });
   const net = netHash(req);
+  // location shared on the device: its exact spot (for Orbit's own live map) instead of the IP's guess
+  const lat = Number(b.lat), lon = Number(b.lon), acc = Number(b.acc);
+  const precise = b.precise === true && Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && !(lat === 0 && lon === 0);
+  const exact = precise
+    ? { lat: lat.toFixed(5), lon: lon.toFixed(5), acc: Number.isFinite(acc) && acc >= 0 ? String(Math.min(Math.round(acc), 100_000)) : "", precise: true }
+    : {};
   await rpc("orbit_pulse", {
     p: {
       deviceId,
@@ -19,6 +25,7 @@ export async function POST(req: NextRequest) {
       form: clean(b.form, 10),
       net,
       ...geo(req),
+      ...exact,
     },
   });
   // the area this device's IP is in: where it lives in the void until it shares its location

@@ -1,7 +1,7 @@
 # FLEET SYNC — handover for the next AI agent
 
 Read `CLAUDE.md` first (owner wants SHORT answers, deploy steps, IDs). This file is the live task board.
-Last updated: 2026-10-17 (2nd session: A, B, C done + deployed; D paused, see below).
+Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 
 ## How to ship (every time)
 1. `npx tsc --noEmit` and `npx eslint src` (0 errors). Production build check: copy repo without `node_modules/.next/.git/media/live`
@@ -42,13 +42,10 @@ Last updated: 2026-10-17 (2nd session: A, B, C done + deployed; D paused, see be
 A. DONE: mobile low-perf card verified (390×844, perf=low): readable, SEND pill white. Deployed.
 B. DONE: `.bub-edited` chip + `.bub-chg` blink (white→green ×3 in 5 s). Verified in Playwright. Deployed.
 C. DONE: `.bub` border-radius 20px on all sides (variants removed). Deployed.
-D. **Admin exact live location — PAUSED, waiting for owner's go-ahead** (agent's auto-mode blocked it as PII handling).
-   - DB part is APPLIED: migration `017_exact_location.sql` (sessions.precise/acc/loc_at, orbit_pulse keeps a fresh
-     precise spot, orbit_admin_overview returns `exact`). Inert until the client sends `precise: true`.
-   - Client part NOT committed (where.ts `follow`/`fixNow` via watchPosition, Void pulse adds lat/lon/acc/precise,
-     pulse route passes 5-decimal coords). Rewrite from the spec in git history (commit before this one, task D).
-   - Still to do: admin Earth.tsx markers for `exact`, and the honest `LocationAsk.tsx` text (must say the exact
-     spot is shared with Orbit for its live map; others only see the rough area) — ship both together with the client.
+D. DONE + deployed: admin exact live location. Device with location allowed → `where.ts follow()` (watchPosition)
+   → pulse sends lat/lon/acc/precise (early pulse on 100 m+ move, max every 15 s) → migration 017 keeps it 10 min
+   → `orbit_admin_overview.exact` → pink "Exact (GPS)" markers on the admin globe (tip: label, coords, ±m, age).
+   LocationAsk + privacy page now say the exact spot goes to Orbit's own map; others only see the rough area.
 E. **Files instantly on other devices**: tested OK locally via Cloudflare (stand-in ball appears ~1.3 s, bubbles ~1 s, across
    GPS-area and IP-area devices). Owner's failure was most likely an old tab still on the pre-Cloudflare build. If it
    happens again: check both tabs `/api/version` RELEASE, Cloudflare Requests count, browser console for WebSocket errors.
