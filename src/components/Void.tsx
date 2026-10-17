@@ -26,13 +26,16 @@ const release = (id: string) => {
 import { downloading } from "@/lib/downloads";
 import { warm } from "@/lib/peek";
 import { createSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
-import { LuArchive, LuFileText, LuFlag, LuMessageCircle, LuImage, LuLayers, LuLayoutGrid, LuMenu, LuMusic, LuOrbit, LuPalette, LuUser, LuVideo, LuWifi } from "react-icons/lu";
+import { LuArchive, LuFileText, LuFlag, LuMessageCircle, LuImage, LuLayers, LuLayoutGrid, LuMapPin, LuMapPinOff, LuMenu, LuMusic, LuOrbit, LuPalette, LuUser, LuVideo, LuWifi } from "react-icons/lu";
 const KIND_ICON = { all: LuLayoutGrid, photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
 import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange } from "./BubbleBoard";
 import TaskBoard, { TaskWires, taskGroups } from "./TaskBoard";
 import { addTask, assignTask, burnTask, carryTasks, wireObject, editTask, isMyTask, moveTask, openInvite, parseTask, sealInvite, tickTask, type Task } from "@/lib/tasks";
 import { readSync, type SyncMsg } from "@/lib/sync";
+import { around } from "@/lib/area";
+import { asked, dropGps, fromIp, locate, markAsked, permission, where } from "@/lib/where";
+import LocationAsk from "./LocationAsk";
 import { GoPrivate, InviteCard } from "./TeamMove";
 import { bubbleName, burnBubble, editBubble, hueFor, isMine as isMyBubble, postBubble, senderOf, type Bubble } from "@/lib/bubbles";
 import StylePicker from "./StylePicker";
@@ -186,6 +189,13 @@ export default function Void() {
   // this network's private invite key (lib/tasks.ts sealInvite): never sent to anyone
   const inviteKeyRef = useRef("");
   netRef.current = net;
+  // the area this device is in (lib/area.ts): the public void shows it and the eight around it
+  const [area, setArea] = useState("");
+  const areaRef = useRef(area);
+  areaRef.current = area;
+  const [gps, setGps] = useState(false);
+  const [areaReady, setAreaReady] = useState(false);
+  const [geoAsk, setGeoAsk] = useState(false);
   const [skew, setSkew] = useState(0);
   const skewRef = useRef(skew);
   skewRef.current = skew;
@@ -352,7 +362,9 @@ export default function Void() {
     }
     const run = (async () => {
       const sp = spaceRef.current;
-      const r = await fetch(sp ? `/api/spaces/${sp.slug}/transfers` : "/api/transfers", sp ? { headers: spaceHeaders(), cache: "no-store" } : undefined).catch(() => null);
+      const a = areaRef.current;
+      const r = await fetch(sp ? `/api/spaces/${sp.slug}/transfers` : `/api/transfers${a ? `?a=${around(a).join(",")}` : ""}`, sp ? { headers: spaceHeaders(), cache: "no-store" } : undefined).catch(() => null);
+      if (!sp && areaRef.current !== a) return; // moved to another area while this was in flight
       if (spaceRef.current !== sp) return; // switched while this was in flight
       if (sp && r?.status === 403) return removedRef.current(sp);
       if (!r?.ok) return;
@@ -553,7 +565,7 @@ export default function Void() {
 
   // initial load, polling fallback, deep link
   useEffect(() => {
-    if (!spaceReady) return;
+    if (!spaceReady || !areaReady) return;
     me.current = deviceId();
     refresh();
     // new / landed / destroyed balls arrive instantly over realtime; this is only the safety net
@@ -567,7 +579,7 @@ export default function Void() {
       clearInterval(t);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [refresh, spaceReady]);
+  }, [refresh, spaceReady, areaReady]);
 
   // back into the space this device was last in (no setup twice), and ?space= invite links
   useEffect(() => {
@@ -623,9 +635,12 @@ export default function Void() {
       keepalive: true,
     })
       .then((r) => r.json())
-      .then((d: { net?: string; invite?: string }) => {
+      .then((d: { net?: string; invite?: string; area?: string }) => {
         if (d.invite) inviteKeyRef.current = d.invite;
         if (d.net) setNet(d.net);
+        // no shared location: the void is the one around this IP
+        if (fromIp(d.area)) setArea(d.area!);
+        setAreaReady(true);
       })
       .catch(() => {});
   }, []);
@@ -766,7 +781,8 @@ export default function Void() {
   const beams = useRef({ launch: onLaunchBeam, landed: onLandedBeam, gone: onGoneBeam, sync: onSyncBeam });
   beams.current = { launch: onLaunchBeam, landed: onLandedBeam, gone: onGoneBeam, sync: onSyncBeam };
 
-  const chanName = space ? `orbit-s-${space.chan}` : "orbit-void";
+  // live updates: a space's own channel, or the channels of this area and the eight around it (sent on this area's)
+  const chanNames = space ? `orbit-s-${space.chan}` : area ? [area, ...around(area).filter((c) => c !== area)].map((c) => `orbit-a-${c}`).join(" ") : "orbit-void";
   const myIdRef = useRef<string | null>(null);
   useEffect(() => {
     myIdRef.current = myId;
@@ -802,41 +818,95 @@ export default function Void() {
       toast((e as Error).message);
     }
   }, [loadRoom, toast]);
-  // realtime broadcast only (no presence): constant cost per message, scales with Supabase's fan-out
+  // realtime broadcast only (no presence): constant cost per message, scales with Supabase's fan-out; in the public
+  // void only the people around hear it
   useEffect(() => {
-    const ch = supabase.channel(chanName, { config: { broadcast: { self: false } } });
-    ch.on("broadcast", { event: "pulse" }, () => {
-      scheduleRefresh();
-      setPulse((p) => p + 1);
-    });
-    ch.on("broadcast", { event: "launch" }, ({ payload }) => beams.current.launch(payload ?? {}));
-    ch.on("broadcast", { event: "landed" }, ({ payload }) => void beams.current.landed(payload ?? {}));
-    ch.on("broadcast", { event: "gone" }, ({ payload }) => beams.current.gone(payload ?? {}));
-    ch.on("broadcast", { event: "sync" }, ({ payload }) => beams.current.sync(payload ?? {}));
-    // "go private with the team": only devices on the sender's network can open the passcode
-    ch.on("broadcast", { event: "invite" }, async ({ payload }) => {
-      const p = payload as { slug?: string; title?: string; by?: string; net?: string; seal?: { iv: string; c: string } } | undefined;
-      if (!p?.slug || !p.seal || spaceRef.current || p.net !== netRef.current || !inviteKeyRef.current || !/^[a-z0-9-]{1,32}$/.test(p.slug)) return;
-      const pass = await openInvite(inviteKeyRef.current, p.seal);
-      if (pass) setInvite({ slug: p.slug, title: String(p.title ?? "").slice(0, 40), by: String(p.by ?? "").slice(0, 24), pass });
-    });
-    if (spaceRef.current) {
-      ch.on("presence", { event: "sync" }, () => {
-        const ids = new Set<string>();
-        for (const list of Object.values(ch.presenceState())) for (const p of list as { id?: string }[]) if (p.id) ids.add(p.id);
-        setLive(ids);
+    const chans = chanNames.split(" ").map((name, i) => {
+      const ch = supabase.channel(name, { config: { broadcast: { self: false } } });
+      ch.on("broadcast", { event: "pulse" }, () => {
+        scheduleRefresh();
+        setPulse((p) => p + 1);
       });
-    }
-    ch.subscribe((status) => {
-      if (status !== "SUBSCRIBED") return;
-      channel.current = ch;
-      if (spaceRef.current && myIdRef.current) ch.track({ id: myIdRef.current }).catch(() => {});
+      ch.on("broadcast", { event: "launch" }, ({ payload }) => beams.current.launch(payload ?? {}));
+      ch.on("broadcast", { event: "landed" }, ({ payload }) => void beams.current.landed(payload ?? {}));
+      ch.on("broadcast", { event: "gone" }, ({ payload }) => beams.current.gone(payload ?? {}));
+      ch.on("broadcast", { event: "sync" }, ({ payload }) => beams.current.sync(payload ?? {}));
+      // "go private with the team": only devices on the sender's network can open the passcode
+      ch.on("broadcast", { event: "invite" }, async ({ payload }) => {
+        const p = payload as { slug?: string; title?: string; by?: string; net?: string; seal?: { iv: string; c: string } } | undefined;
+        if (!p?.slug || !p.seal || spaceRef.current || p.net !== netRef.current || !inviteKeyRef.current || !/^[a-z0-9-]{1,32}$/.test(p.slug)) return;
+        const pass = await openInvite(inviteKeyRef.current, p.seal);
+        if (pass) setInvite({ slug: p.slug, title: String(p.title ?? "").slice(0, 40), by: String(p.by ?? "").slice(0, 24), pass });
+      });
+      if (spaceRef.current) {
+        ch.on("presence", { event: "sync" }, () => {
+          const ids = new Set<string>();
+          for (const list of Object.values(ch.presenceState())) for (const p of list as { id?: string }[]) if (p.id) ids.add(p.id);
+          setLive(ids);
+        });
+      }
+      // the first is this device's own (space or area): everything it says goes there
+      ch.subscribe((status) => {
+        if (status !== "SUBSCRIBED" || i) return;
+        channel.current = ch;
+        if (spaceRef.current && myIdRef.current) ch.track({ id: myIdRef.current }).catch(() => {});
+      });
+      return ch;
     });
     return () => {
       channel.current = null;
-      supabase.removeChannel(ch);
+      chans.forEach((ch) => supabase.removeChannel(ch));
     };
-  }, [scheduleRefresh, chanName]);
+  }, [scheduleRefresh, chanNames]);
+
+  // where this device is: its last area at once; a location already allowed is refreshed quietly; a first visit is
+  // asked (after a moment) whether to share it
+  useEffect(() => {
+    const w = where();
+    if (w) {
+      setArea(w.area);
+      setGps(w.how === "gps");
+      setAreaReady(true);
+    }
+    // nothing known yet: the heartbeat brings the IP's area; never wait on it for long
+    const t = setTimeout(() => setAreaReady(true), 2500);
+    permission().then((p) => {
+      if (p === "granted")
+        locate()
+          .then((w) => (setArea(w.area), setGps(true)))
+          .catch(() => {});
+      else if (p === "denied" && w?.how === "gps") {
+        dropGps();
+        setGps(false);
+      }
+      if (p !== "granted" && !asked()) setTimeout(() => setGeoAsk(true), 1400);
+    });
+    return () => clearTimeout(t);
+  }, []);
+  const shareLocation = useCallback(async () => {
+    setGeoAsk(false);
+    try {
+      const w = await locate();
+      setGps(true);
+      setArea(w.area);
+      toast("Location on: you see what's around you");
+    } catch (e) {
+      markAsked();
+      setGps(false);
+      toast((e as { denied?: boolean }).denied ? "Location is blocked: allow it for this site in your browser settings, then tap the pin again" : (e as Error).message);
+    }
+  }, [toast]);
+  // a new area: its void (the first load waits for areaReady and asks with the area by then)
+  useEffect(() => {
+    if (!area || !areaReady || spaceRef.current) return;
+    setIncoming({});
+    known.current = null;
+    knownBubbles.current = null;
+    knownTasks.current = null;
+    refresh();
+    // areaReady only gates the first time
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [area, refresh]);
 
   // opening / closing an object updates live-viewer counts everywhere right away
   const firstView = useRef(true);
@@ -1444,6 +1514,17 @@ export default function Void() {
   const replaced = new Set(visible.map((o) => alias.current.get(o.id)).filter((x): x is string => !!x));
 
   const mapSpots = map?.spots;
+  // location: green pin when this device shares it, red when not (a tap asks again)
+  const pinButton = (cls: string) => (
+    <button
+      className={`${cls} geo-pin${gps ? " on" : " off"}`}
+      onClick={() => (gps ? toast("Location on: you see what's within your area (about 20 to 40 km) and the areas around it") : shareLocation())}
+      aria-label={gps ? "Location on" : "Location off: tap to share it and see what's around you"}
+      title={gps ? "Location on" : "Location off: tap to turn it on"}
+    >
+      {gps ? <LuMapPin aria-hidden /> : <LuMapPinOff aria-hidden />}
+    </button>
+  );
   const taskBoard = showTasks && (
     <TaskBoard
       tasks={tasks}
@@ -1522,6 +1603,7 @@ export default function Void() {
             {!space && <button role="tab" aria-selected={scope === "near"} className={scope === "near" ? "on" : ""} onClick={() => setScope("near")} aria-label={`Nearby, ${nearbyCount}`}><LuWifi />{nearbyCount ? <b>{nearbyCount}</b> : null}</button>}
             {mineCount > 0 && <button role="tab" aria-selected={scope === "mine"} className={scope === "mine" ? "on" : ""} onClick={() => setScope(scope === "mine" ? "all" : "mine")} aria-label={`Mine, ${mineCount}`}><LuUser /><b>{mineCount}</b></button>}
           </div>
+          {pinButton("m-ic lg-press")}
           <button className={`m-ic lg-press${space ? " in" : ""}`} onClick={() => setPanel({ kind: "space" })} aria-label={space ? `Space: ${space.title}` : "Spaces"}><LuOrbit /></button>
           <button className="m-ic lg-press" onClick={() => setPanel({ kind: "menu" })} aria-label={kind === "all" ? "Menu" : "Menu, filter on"}><LuMenu />{kind !== "all" && <i className="m-dot" />}</button>
         </div>
@@ -1540,6 +1622,7 @@ export default function Void() {
           </nav>
           <div className="top-right">
             <span className="live" aria-label={`${online} ${online > 1 ? "devices" : "device"} in orbit`}><span className="dot" /><b>{online}</b><span className="live-txt">{space ? "in this space" : online > 1 ? "devices in orbit" : "device in orbit"}</span></span>
+            {pinButton("pill lg-press geo-chip")}
             <button className="pill lg-press style-chip" onClick={() => setPanel({ kind: "style" })} aria-label={`Style: ${skinName(skin)}. Change how files look`} title="Style"><LuPalette aria-hidden /></button>
             <button className={`pill lg-press space-chip${space ? " in" : ""}`} onClick={() => setPanel({ kind: "space" })} aria-label={space ? `Space: ${space.title}. Change space` : "Public void. Open spaces"}>
               <i className="space-dot" />{space ? space.title : "Public void"}
@@ -1846,6 +1929,16 @@ export default function Void() {
           onClose={() => setZoom(null)}
         />
         </div>
+      )}
+      {geoAsk && !panel && (
+        <LocationAsk
+          onAllow={shareLocation}
+          onLater={() => {
+            markAsked();
+            setGeoAsk(false);
+            toast("You can turn location on anytime with the red pin at the top");
+          }}
+        />
       )}
       {panel?.kind === "style" && <StylePicker onClose={() => setPanel(null)} toast={toast} />}
       {panel?.kind === "menu" && (

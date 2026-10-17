@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { del } from "@vercel/blob";
 import type { NextRequest } from "next/server";
 import { abortAllUploads, objectKey, previewKey, removeObjects } from "./r2";
+import { areaOf, validArea } from "./area";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -73,6 +74,18 @@ export function geo(req: NextRequest): Geo {
     lon: num(h("x-vercel-ip-longitude")),
   };
 }
+
+/** The area something posted belongs to: the one the device sent (from its location), else the one its IP is in. */
+export function areaFor(req: NextRequest, given: unknown) {
+  if (validArea(given)) return given;
+  const g = geo(req);
+  return g.lat && g.lon ? areaOf(Number(g.lat), Number(g.lon)) : "";
+}
+/** `?a=` on a list request: up to nine cells (yours and the ones around it) */
+export const areasParam = (v: string | null) => {
+  const list = (v ?? "").split(",").filter(validArea).slice(0, 9);
+  return list.length ? list : null;
+};
 
 export async function removeBlobs(urls: (string | null | undefined)[]) {
   // p2p:<id> objects may have an encrypted copy in R2 (deletes there are free; a missing one is fine)

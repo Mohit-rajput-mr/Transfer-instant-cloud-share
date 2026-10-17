@@ -1,5 +1,6 @@
 "use client";
 import { deviceId } from "./client";
+import { myArea } from "./where";
 
 /** This device's pass into a space. Kept in IndexedDB so it is never set up twice. */
 export interface SpaceSession {
@@ -79,7 +80,8 @@ export const setActiveSpace = (s: SpaceSession | null) => {
   active = s;
 };
 /** Fields every space-aware request carries. */
-export const spaceBody = () => (active ? { space: active.slug, spaceToken: active.token, deviceId: deviceId() } : { deviceId: deviceId() });
+/** (and the area this device is in: what it posts in the public void belongs there, lib/area.ts) */
+export const spaceBody = () => ({ ...(active ? { space: active.slug, spaceToken: active.token } : null), deviceId: deviceId(), area: myArea() || undefined });
 export const spaceHeaders = (): Record<string, string> => (active ? { "x-device": deviceId(), "x-space-token": active.token } : {});
 
 async function post<T>(url: string, body: unknown): Promise<T> {

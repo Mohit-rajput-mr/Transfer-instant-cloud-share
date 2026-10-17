@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MAX_FILE_BYTES, MAX_LABEL } from "@/lib/limits";
-import { clean, geo, isB64, isHex, netHash, newId, reap, rpc, sha256 } from "@/lib/server";
+import { areaFor, areasParam, clean, geo, isB64, isHex, netHash, newId, reap, rpc, sha256 } from "@/lib/server";
 import { validSkin } from "@/lib/skin-list";
 import { LIVES, burnedUp, cleanGroup, member, tagName, untag, validFrom, validTask } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
 
-// Same answer for everyone, so the CDN serves it: database load stays ~1 query/second
-// per region no matter how many people are watching the void.
-export async function GET() {
+// Same answer for everyone in an area (?a= is the area and the eight around it, lib/area.ts), so the CDN serves
+// it: database load stays ~1 query/second per area no matter how many people are watching.
+export async function GET(req: NextRequest) {
   await reap();
+  const areas = areasParam(req.nextUrl.searchParams.get("a"));
   const [r, bubbles, tasks] = await Promise.all([
-    rpc<{ items: { name?: unknown; expiresAt?: unknown }[]; online: number }>("orbit_list2", {}),
-    rpc<unknown[]>("orbit_bubble_list", { p_space: null }).catch(() => []),
-    rpc<unknown[]>("orbit_task_list", { p_space: null }).catch(() => []),
+    rpc<{ items: { name?: unknown; expiresAt?: unknown }[]; online: number }>("orbit_list3", { p_areas: areas }),
+    rpc<unknown[]>("orbit_bubble_list2", { p_space: null, p_areas: areas }).catch(() => []),
+    rpc<unknown[]>("orbit_task_list2", { p_space: null, p_areas: areas }).catch(() => []),
   ]);
   // objects inside a space never show in the public void; short-lived ones leave on time
   const items = (r.items ?? []).map(untag).filter((o) => !o.space && !burnedUp(o));
@@ -67,6 +68,7 @@ export async function POST(req: NextRequest) {
       // the sender picks the colour (spread away from what's already floating); every device draws exactly this hue
       hue: Number.isInteger(b.hue) && b.hue >= 0 && b.hue < 360 ? b.hue : Math.floor(Math.random() * 360),
       ...geo(req),
+      area: areaFor(req, b.area),
     },
     });
   } catch (e) {

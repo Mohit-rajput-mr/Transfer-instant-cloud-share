@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { clean, geo, netHash, netInviteKey, rpc, validId } from "@/lib/server";
+import { areaFor, clean, geo, netHash, netInviteKey, rpc, validId } from "@/lib/server";
 
 export const dynamic = "force-dynamic";
 
@@ -21,5 +21,6 @@ export async function POST(req: NextRequest) {
       ...geo(req),
     },
   });
-  return NextResponse.json({ net, invite: netInviteKey(req) }, { headers: { "Cache-Control": "no-store" } });
+  // the area this device's IP is in: where it lives in the void until it shares its location
+  return NextResponse.json({ net, invite: netInviteKey(req), area: areaFor(req, null) }, { headers: { "Cache-Control": "no-store" } });
 }

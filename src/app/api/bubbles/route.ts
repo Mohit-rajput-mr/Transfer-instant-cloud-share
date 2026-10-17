@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isHex, netHash, newId, rpc, sha256 } from "@/lib/server";
+import { areaFor, isHex, netHash, newId, rpc, sha256 } from "@/lib/server";
 import { LIVES, cleanHandle, member, validFrom } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
         id, body: text, by, from: validFrom(b.from) ? b.from : "", owner: sha256(b.owner), net: netHash(req), space: space ?? "",
         hue: Number.isInteger(b.hue) && b.hue >= 0 && b.hue < 360 ? b.hue : Math.floor(Math.random() * 360),
         life: LIVES.includes(Number(b.life)) ? Number(b.life) : 30,
+        area: areaFor(req, b.area),
       },
     });
   } catch (e) {
