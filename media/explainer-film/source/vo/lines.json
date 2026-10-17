@@ -4,42 +4,42 @@
   {
    "key": "hook",
    "text": "Do you know why people are using Orbi Transfer?",
-   "dur": 2.325
+   "dur": 2.56
   },
   {
    "key": "why",
    "text": "No login. No app. Open the site, send a file, and it shows up on the phone next to you. Instantly.",
-   "dur": 5.781
+   "dur": 5.845
   },
   {
    "key": "how",
    "text": "So how does it work?",
-   "dur": 1.109
+   "dur": 1.323
   },
   {
    "key": "area",
    "text": "Your phone works out its rough area. A cell about forty kilometres wide. Never your exact spot.",
-   "dur": 5.504
+   "dur": 5.632
   },
   {
    "key": "near",
    "text": "Everyone in your cell, and the cells around it, shares one live sky. Send something, and it appears on their screens in real time.",
-   "dur": 7.019
+   "dur": 7.189
   },
   {
    "key": "lock",
    "text": "But before it leaves your phone, it's locked. Only scrambled bytes travel. The passcode never does.",
-   "dur": 5.227
+   "dur": 5.355
   },
   {
    "key": "burn",
    "text": "Thirty minutes later, it burns up. No account. No trace.",
-   "dur": 3.179
+   "dur": 3.371
   },
   {
    "key": "end",
    "text": "Orbi Transfer dot com. Try it on two phones.",
-   "dur": 2.859
+   "dur": 2.987
   }
  ]
 }

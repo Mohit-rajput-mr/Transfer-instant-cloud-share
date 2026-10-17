@@ -1,4 +1,4 @@
-# Voiceover: Kokoro (open model, run locally), voice "af_heart". python3 vo.py /path/to/kokoro-model-dir
+# Voiceover: Kokoro (open model, run locally), voice "am_michael" (male). python3 vo.py /path/to/kokoro-model-dir
 import json, sys, soundfile as sf
 from kokoro_onnx import Kokoro
 M = sys.argv[1] if len(sys.argv) > 1 else "/tmp/claude-0/tts"
@@ -15,7 +15,7 @@ LINES = [
 ]
 out = []
 for key, text in LINES:
-    s, sr = k.create(text.replace("Orbi", "Orbee"), voice="af_heart", speed=1.12, lang="en-us")
+    s, sr = k.create(text.replace("Orbi", "Orbee"), voice="am_michael", speed=1.22, lang="en-us")
     sf.write(f"vo/{key}.wav", s, sr)
     out.append({"key": key, "text": text, "dur": round(len(s) / sr, 3)})
     print(key, round(len(s) / sr, 2))

@@ -1,4 +1,4 @@
-# Orbi Transfer — "how it works" explainer (37 s, 1080×1920, vertical, voiceover)
+# Orbi Transfer — "how it works" explainer (37 s, 1080×1920, vertical, male voiceover)
 
 `OrbiTransfer-how-it-works.mp4` · cover `cover.jpg`. For TikTok / Instagram Reels / YouTube Shorts.
 An explainer, not an ad: opens on the question, then shows the mechanism. Phone screens are real captures of orbitransfer.com.
