@@ -1,0 +1,96 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know why people are using Orbi Transfer?",
+   "dur": 2.837,
+   "at": 0.35
+  },
+  {
+   "key": "cafe",
+   "text": "Your buddy just hit a new record on the bench press. And you filmed the whole thing.",
+   "dur": 4.821,
+   "at": 3.74
+  },
+  {
+   "key": "photo",
+   "text": "Now he wants that video. Right now.",
+   "dur": 2.496,
+   "at": 8.86
+  },
+  {
+   "key": "old",
+   "text": "But you're on different phones, and you don't even have his number.",
+   "dur": 3.264,
+   "at": 11.65
+  },
+  {
+   "key": "send",
+   "text": "So you open Orbi Transfer, and hit send.",
+   "dur": 2.837,
+   "at": 15.22
+  },
+  {
+   "key": "pop",
+   "text": "And it pops up on his phone. Instantly.",
+   "dur": 2.517,
+   "at": 18.36
+  },
+  {
+   "key": "how",
+   "text": "But how does it know he's right there?",
+   "dur": 2.048,
+   "at": 21.42
+  },
+  {
+   "key": "area",
+   "text": "Your phone works out its rough area. A cell about forty kilometres wide. The gym, and the streets around it.",
+   "dur": 6.997,
+   "at": 24.02
+  },
+  {
+   "key": "spot",
+   "text": "Never your exact spot.",
+   "dur": 1.792,
+   "at": 31.32
+  },
+  {
+   "key": "sky",
+   "text": "Everyone in that cell, and the cells around it, shares one live sky.",
+   "dur": 4.373,
+   "at": 33.66
+  },
+  {
+   "key": "live",
+   "text": "So the second you hit send, it lands on the screens nearby.",
+   "dur": 3.669,
+   "at": 38.33
+  },
+  {
+   "key": "lock",
+   "text": "But before it leaves your phone, it gets locked.",
+   "dur": 2.667,
+   "at": 42.55
+  },
+  {
+   "key": "bytes",
+   "text": "Only scrambled bytes travel. Even the server can't watch the lift.",
+   "dur": 4.075,
+   "at": 45.52
+  },
+  {
+   "key": "burn",
+   "text": "And thirty minutes later, it burns up. No account. No trace.",
+   "dur": 4.053,
+   "at": 50.14
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. Try it at your next workout.",
+   "dur": 3.541,
+   "at": 54.5
+  }
+ ],
+ "duration": 59.94
+}

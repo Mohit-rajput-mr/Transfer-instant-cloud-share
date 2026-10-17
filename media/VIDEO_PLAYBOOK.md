@@ -75,7 +75,8 @@ Structure that works:
    Commit, push, and send the MP4.
 
 ## Films so far
-- `explainer-3d-stick/`: café story, stick people, George (**current house style**)
+- `gym-film/`: the gym, bench-press video (latest, house style)
+- `explainer-3d-stick/`: café story, stick people, George (house style)
 - `explainer-3d/`: same café story with mannequins (older)
 - `explainer-film/`: 2D motion-graphics explainer (older)
 - `social-film/`, `launch-film*/`, `intro-film/`, `office-film/`, `spaces-film/`, `team-film/`: earlier promo films by other agents (female voice, not the house style now)
