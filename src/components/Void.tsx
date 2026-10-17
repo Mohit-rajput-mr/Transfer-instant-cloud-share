@@ -266,6 +266,11 @@ export default function Void() {
   const [board, setBoard] = useState<string | null | false>(false);
   const [live, setLive] = useState<Set<string>>(new Set());
   const myId = room?.members.find((m) => m.you)?.id ?? null;
+  // the member ids we already have a name for: a presence id we don't know means someone just joined, so pull the
+  // member list at once instead of waiting for the 45 s refresh (that was the "reload to see them" lag)
+  const memberIdsRef = useRef<Set<string>>(new Set());
+  memberIdsRef.current = new Set(room?.members.map((m) => m.id) ?? []);
+  const presenceSeenT = useRef(0);
   // incoming launch the user tapped: it opens by itself the moment it lands
   const waitFor = useRef<string | null>(null);
   const landedKeys = useRef(new Set<string>());
@@ -846,6 +851,19 @@ export default function Void() {
       if ((e as { status?: number }).status === 403 && spaceRef.current === sp) removedRef.current(sp);
     }
   }, []);
+  // presence (who is live) arrives instantly; a live id we have no name for means someone just joined, so fetch the
+  // member list right away (debounced) rather than waiting for the 45 s tick or a reload
+  const onPresence = useCallback((ids: string[]) => {
+    setLive(new Set(ids));
+    if (!spaceRef.current) return;
+    const unknown = ids.some((id) => id !== myIdRef.current && !memberIdsRef.current.has(id));
+    if (unknown && Date.now() - presenceSeenT.current > 1500) {
+      presenceSeenT.current = Date.now();
+      loadRoom();
+    }
+  }, [loadRoom]);
+  const onPresenceRef = useRef(onPresence);
+  onPresenceRef.current = onPresence;
   useEffect(() => {
     setRoom(null);
     setLive(new Set());
@@ -921,8 +939,10 @@ export default function Void() {
           if (!up) return;
           channel.current = l.chan;
           if (spaceRef.current && myIdRef.current) l.chan.track({ id: myIdRef.current });
+          // the socket is live: pull anything created during the handshake, so the first send is never missed
+          refresh();
         },
-        presence: (ids) => setLive(new Set(ids)),
+        presence: (ids) => onPresenceRef.current(ids),
       });
       return () => {
         channel.current = null;
@@ -936,7 +956,7 @@ export default function Void() {
         ch.on("presence", { event: "sync" }, () => {
           const ids = new Set<string>();
           for (const list of Object.values(ch.presenceState())) for (const p of list as { id?: string }[]) if (p.id) ids.add(p.id);
-          setLive(ids);
+          onPresenceRef.current([...ids]);
         });
       }
       // the first is this device's own (space or area): everything it says goes there

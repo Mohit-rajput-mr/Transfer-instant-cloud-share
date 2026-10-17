@@ -1445,6 +1445,12 @@ html.lg-refract :is(.top, .drawer, .send-menu, .up-pill, .up-card, .send-fab).lg
   background: radial-gradient(50% 100% at 50% 100%, rgba(255,255,255,0.95), rgba(255,255,255,0.35) 40%, transparent 75%); filter: blur(0.5px); }
 
 .room { z-index: 0; }
+/* in map mode the map-view (z-index 2) covers the room and eats taps, so the Exit/member buttons were dead on
+   phones. Lift the room's top bar above the map and give the buttons their taps back; the empty room still passes
+   taps through to the map (pointer-events stays none except on the buttons). */
+.void.map .room { z-index: 3; }
+.room-top { z-index: 3; }
+.room-exit { pointer-events: auto; position: relative; z-index: 1; }
 .room-glass.glass { border-radius: 40px; }
 .void .empty { z-index: 4; }
 .room-top { align-items: flex-start; }
