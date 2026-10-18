@@ -82,6 +82,7 @@ When the owner says "new version" / "next", make the next film from the story li
 - Also true: works on any device with a browser, folders and many files go in one ball, team Spaces, preview before download.
 
 ## Owner feedback (latest, wins over older notes)
+- **No "within the city" wording** (2026-10-18): show one place (a house, an office) and the true same-Wi-Fi "Nearby". Go under the layers, not the same 2–3 claims. AirDrop comparison is fine when asked; keep its facts current and fair.
 - **The voice must have feeling, not robotic** (2026-10-18). Use `concert-film/source/vo.py` (Chatterbox + George reference,
   emotion per line, auto-checked takes). Write lines to be *spoken*: reactions, short punchy sentences, real exclamations.
   Setup: venv, `pip install --extra-index-url https://download.pytorch.org/whl/cpu chatterbox-tts faster-whisper jiwer soundfile "setuptools<81"`.
@@ -132,7 +133,8 @@ Structure that works:
    Commit, push, and send the MP4.
 
 ## Films so far
-- `concert-film/`: arena encore, code "rock", the clip as a song (guitar case → notes flying at once → backstage door → stadium light wave → song plays → stage goes dark), Chatterbox voice with feeling (**latest**)
+- `party-film/`: AirDrop vs Orbi at a house party, code "disco"; deeper layers (same-Wi-Fi fingerprint → Nearby, live room note, 3 parts up + resend + 4 streams down, 310,000× key, 12 tries, 30-min burn) (**latest**)
+- `concert-film/`: arena encore, code "rock", the clip as a song (guitar case → notes flying at once → backstage door → stadium light wave → song plays → stage goes dark), Chatterbox voice with feeling
 - `airport-film/`: arrivals gate, code "tram", a whole folder as luggage (suitcase → bags on belts → baggage hold → radar → carousel → shredder), low-poly men and women (MP4 rendered 2026-10-18, 79 s)
 - `wedding-film/`: wedding, passcode "cake", the photo's full journey (locked box → pieces → vault → ring → unlock → burn)
 - `gym-film/`: the gym, bench-press video (house style)
