@@ -292,7 +292,7 @@ async function main() {
 
   // ===== 1. space: create a private space "Studio Nova" with a passcode
   if (want("space")) startRec("space");
-  await wait(400);
+  await wait(200);
   await click(rail("Spaces"));
   await wait(400);
   await shot("spaces");
@@ -305,7 +305,7 @@ async function main() {
   await type(handle, ME);
   await shot("space-form");
   await click(page.getByRole("button", { name: /Create private space/ }));
-  await wait(1300);
+  await wait(1000);
   await shot("space-in");
   if (want("space")) await stopRec(600);
 
@@ -351,7 +351,7 @@ async function main() {
   const rich = rowOf("Richard's task");
   if (want("route")) startRec("route");
   await wait(300);
-  await click(rich.locator(".tb-main"), { dbl: true, pause: 300 });
+  await click(rich.locator(".tb-main"), { dbl: true, pause: 150 });
   const panel = page.locator(".tb-route");
   await panel.waitFor({ state: "visible", timeout: 5000 });
   await shot("route-open");
@@ -367,11 +367,11 @@ async function main() {
   const pickColour = async (i, colour) => {
     const sw = await centre(panel.locator(".tr-line li").nth(i).locator(".tr-swatch"));
     await point(sw.x, sw.y);
-    await wait(300);
+    await wait(220);
     // down into the palette first (it hangs under the swatch), then along it: the pointer never leaves
     const pal = await panel.locator(".tr-line li").nth(i).locator(".tr-palette").boundingBox();
     await point(sw.x, pal.y + pal.height / 2);
-    await click(panel.locator(".tr-line li").nth(i).locator(".tr-palette").getByRole("radio", { name: colour }), { pause: 350 });
+    await click(panel.locator(".tr-line li").nth(i).locator(".tr-palette").getByRole("radio", { name: colour }), { pause: 220 });
   };
   await pickColour(1, "Purple");
   await pickColour(3, "Green");
