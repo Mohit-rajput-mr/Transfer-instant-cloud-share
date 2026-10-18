@@ -1,0 +1,20 @@
+[
+ {"key":"hook","text":"Right now, your phone knows where you are, almost to the metre. And it has never said a single word to the satellites that told it.","emo":1.15,"gap":0.45},
+ {"key":"why","text":"So how does it find you? It's a race against time. And at the very end, Albert Einstein shows up.","emo":1.05,"gap":0.4},
+ {"key":"sats","text":"About thirty GPS satellites circle the Earth, twenty thousand kilometres up. Every one of them carries atomic clocks.","emo":0.9,"gap":0.3},
+ {"key":"shout","text":"And all day long, they shout just two things. What time it is, and exactly where they are.","emo":1.0,"gap":0.35},
+ {"key":"listen","text":"Your phone just listens. The signal flies at the speed of light, but it still arrives a tiny bit late.","emo":0.95,"gap":0.3},
+ {"key":"dist","text":"And that delay is a distance. Late by this much? Then that satellite is exactly this far away.","emo":1.05,"gap":0.35},
+ {"key":"bubble","text":"So you're somewhere on a giant bubble around it. A second satellite, and the bubbles cross in a ring. A third, and the ring shrinks to just two points.","emo":1.0,"gap":0.3},
+ {"key":"space","text":"One of them is floating out in space. So, it's the other one. That's you.","emo":1.1,"gap":0.4},
+ {"key":"catch","text":"But there's a catch. Your phone's clock is cheap. Off by one millionth of a second, and you're three hundred metres off.","emo":1.0,"gap":0.3},
+ {"key":"fourth","text":"So it listens to a fourth satellite, just to fix its own clock.","emo":0.9,"gap":0.45},
+ {"key":"crazy","text":"And now the crazy part. Up there, time itself runs faster.","emo":1.2,"gap":0.35},
+ {"key":"gain","text":"Gravity is weaker, so their clocks tick faster. Their speed slows them a little. Add it up, and they gain thirty eight millionths of a second every day.","emo":1.0,"gap":0.3},
+ {"key":"drift","text":"Sounds like nothing? Leave it alone, and your map would drift about ten kilometres every single day.","emo":1.1,"gap":0.35},
+ {"key":"fix","text":"So engineers tune those clocks to tick slightly slow before launch. Einstein's relativity, fixing your map, every time you open it.","emo":1.0,"gap":0.45},
+ {"key":"reveal","text":"Your phone never asked the sky where you are. It just listened to clocks.","emo":1.05,"gap":0.5},
+ {"key":"orbi","text":"Orbi Transfer uses your location the gentle way. Your phone turns it into a rough area, tens of kilometres wide.","emo":0.9,"gap":0.3},
+ {"key":"orbi2","text":"Other people only ever see that rough area, so files pop up on screens near you. In anonymous mode, no location is shown at all. And thirty minutes later, the files are gone.","emo":0.95,"gap":0.4},
+ {"key":"end","text":"Orbi Transfer dot com. Now you know how your phone finds you.","emo":0.8,"gap":0.0}
+]

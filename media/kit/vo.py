@@ -13,7 +13,15 @@ LINES = [(l["key"], l["text"], l["emo"], l["gap"]) for l in json.load(open("scri
 torch.set_num_threads(4)
 tts = ChatterboxTTS.from_pretrained(device="cpu")
 asr = WhisperModel("small.en", device="cpu", compute_type="int8")
-norm = lambda s: re.sub(r"[^a-z0-9 ]", "", s.lower().replace(".com", " dot com").replace("orbytransfer", "orbi transfer").replace("orbitransfer", "orbi transfer").replace("orbee", "orbi").replace("orby", "orbi").replace("thirty", "30").replace("twelve", "12").replace("three hundred and ten thousand", "310000").replace("310,000", "310000").replace("one two three", "123").replace("twenty four", "24").replace("fifteen hundred", "1500").replace("two thousand", "2000")).split()
+# spoken numbers vs Whisper's digits: compare both as digits
+NUMS = [("three hundred and ten thousand", "310000"), ("twenty thousand", "20000"), ("thirty eight", "38"), ("three hundred", "300"),
+        ("fifteen hundred", "1500"), ("two thousand", "2000"), ("twenty four", "24"), ("one two three", "123"), ("thirty", "30"),
+        ("twelve", "12"), ("forty", "40"), ("twenty", "20"), ("ten", "10"), ("four", "4"), ("three", "3"), ("two", "2"), ("one", "1")]
+def norm(s):
+    s = s.lower().replace(".com", " dot com").replace("orbytransfer", "orbi transfer").replace("orbitransfer", "orbi transfer").replace("orbee", "orbi").replace("orby", "orbi")
+    s = re.sub(r"(\d),(\d)", r"\1\2", s).replace("%", " percent")
+    for w, d in NUMS: s = re.sub(rf"\b{w}\b", d, s)
+    return re.sub(r"[^a-z0-9 ]", " ", s).split()
 
 
 def trim(y, sr):
