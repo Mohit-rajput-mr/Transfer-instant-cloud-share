@@ -817,3 +817,12 @@ html[data-ui="work"] .wire-plug { transition: opacity .15s; }
 html[data-ui="work"] .w-anon-exit { height: 26px !important; padding: 0 10px !important; margin-left: 6px; font: 600 12px/1 var(--w-font) !important; background: var(--w-text) !important; color: var(--w-canvas) !important; border-radius: 7px !important; }
 html[data-ui="work"] .tb-added button { width: auto !important; flex: none !important; }
 html[data-ui="work"] .tr-up button { width: auto !important; font-family: var(--w-font) !important; } html[data-ui="work"] .tr-up .ghost { border-color: var(--w-border-2) !important; color: var(--w-text-2) !important; } html[data-ui="work"] .tr-save { font-family: var(--w-font) !important; }
+html[data-ui="work"][data-theme="light"] .tb-route :is(.tr-title-in, .tr-line input){color:var(--w-text)!important;background:var(--w-canvas)!important;border-color:var(--w-border-2)!important}
+html[data-ui="work"][data-theme="light"] .tb-route .tr-title-in{font-family:var(--w-font)}
+html[data-ui="work"][data-theme="light"] .tb-route .tr-line input:focus{border-color:var(--w-accent)!important}
+html[data-ui="work"][data-theme="light"] .tb-route .tr-line li:not(.now):not(.past) > button > i{background:var(--w-surface);border-color:var(--w-border-2)}
+html[data-ui="work"][data-theme="light"] .tb-route .tr-line li::before{background:var(--w-border-2)}
+html[data-ui="work"][data-theme="light"] .tb-route .tr-presets button:not(.tr-custom){color:var(--w-text-2);border-color:var(--w-border-2)}
+html[data-ui="work"][data-theme="light"] .tb-route :is(.tr-head .mono, .tr-hint, .tr-presets > .mono.dim){color:var(--w-text-3)}
+html[data-ui="work"][data-theme="light"] .tb-route .tr-go button{color:var(--w-text-2)}
+html[data-ui="work"][data-theme="light"] .tb-route .tr-go .tr-cancel{color:#e53935}
