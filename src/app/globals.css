@@ -3238,3 +3238,6 @@ html[data-perf="low"] .where-badge, html[data-perf="low"] .where-badge i { anima
   .toast { top: auto !important; bottom: calc(80px + var(--safe-b)); left: 12px; right: 12px; }
   .toast > div { font-size: 10px; padding: 9px 14px; border-radius: 14px; }
 }
+/* notices live at the bottom centre on every screen: never on top of the bar or the location strip */
+.toast { top: auto !important; bottom: calc(36px + var(--safe-b)); left: 50%; right: auto; translate: -50% 0; width: min(560px, calc(100vw - 32px)); }
+@media (max-width: 720px) { .toast { bottom: calc(80px + var(--safe-b)); } }
