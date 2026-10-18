@@ -4,7 +4,7 @@
 // email, no payments, no card form), so every paid line carries "soon" or "planned". The `yearly` toggle drives every
 // price on the page. Styles: ./upgrade.css (ug-*) on top of ../site.css (sx-*).
 
-import { useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { Arrow, Check, Ghost, HardLink, SecHead, Ticker } from "@/components/SiteChrome";
 import { FAQ } from "./faq";
@@ -291,7 +291,22 @@ function Period({ p, yearly }: { p: Plan; yearly: boolean }) {
   );
 }
 
-function PlanCta({ p }: { p: Plan }) {
+// which paid plans Stripe can sell right now (keys and prices set in Vercel): asked once per page
+let onP: Promise<{ business?: boolean; pro?: boolean }> | null = null;
+const payOn = () => (onP ??= fetch("/api/checkout", { cache: "no-store" }).then((r) => r.json()).catch(() => ({})));
+
+function PlanCta({ p, yearly }: { p: Plan; yearly: boolean }) {
+  const [on, setOn] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  useEffect(() => {
+    if (p.id === "free") return;
+    let live = true;
+    payOn().then((s) => live && setOn(!!s[p.id as "pro" | "business"]));
+    return () => {
+      live = false;
+    };
+  }, [p.id]);
   if (p.id === "free")
     return (
       <>
@@ -303,6 +318,30 @@ function PlanCta({ p }: { p: Plan }) {
         </HardLink>
       </>
     );
+  if (on) {
+    // Stripe Checkout: card details never touch Orbi; Business picks its seat count there
+    const go = async () => {
+      setBusy(true);
+      setErr("");
+      try {
+        const r = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: p.id, billing: yearly ? "yearly" : "monthly", seats: 1 }) });
+        const j = (await r.json()) as { url?: string; error?: string };
+        if (j.url) return void (location.href = j.url);
+        setErr(j.error || "Checkout is unavailable right now");
+      } catch {
+        setErr("Checkout is unavailable right now");
+      }
+      setBusy(false);
+    };
+    return (
+      <>
+        <button type="button" className="sx-pill solid" onClick={go} disabled={busy}>
+          {busy ? "Opening checkout…" : `Subscribe to ${p.id === "pro" ? "Pro" : "Business"}`} <Arrow dir="up-right" />
+        </button>
+        {err && <span className="sx-label" role="alert">{err}</span>}
+      </>
+    );
+  }
   return (
     <a href={ask(p.id === "pro" ? "Pro" : "Business")} className="sx-pill">
       {p.id === "pro" ? "Get early access" : "Talk to us"} <Arrow dir="up-right" />
@@ -447,7 +486,7 @@ export default function Plans() {
                 </p>
                 <p className="sx-body ug-blurb">{p.blurb}</p>
                 <div className="ug-pcta">
-                  <PlanCta p={p} />
+                  <PlanCta p={p} yearly={yearly} />
                 </div>
                 <p className="sx-label ug-lead">{p.lead}</p>
                 <ul className="ug-list">

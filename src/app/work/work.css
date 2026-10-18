@@ -7,7 +7,7 @@
 html[data-ui="work"] {
   --w-canvas: #1b1b1c; --w-dot: #2e2e31; --w-surface: #242426; --w-raised: #2c2c2f; --w-hover: #333337; --w-press: #3a3a3e;
   --w-border: #38383c; --w-border-2: #4a4a50; --w-text: #ececee; --w-text-2: #a3a3a9; --w-text-3: #6f6f76;
-  --w-accent: #ff6d5a; --w-accent-2: #ff8473; --w-accent-ink: #fff; --w-ok: #3ecf8e; --w-warn: #f5a524; --w-danger: #f04438; --w-info: #7c8cff;
+  --w-accent: #ededee; --w-accent-2: #ffffff; --w-accent-ink: #111113; --w-ok: #3ecf8e; --w-warn: #f5a524; --w-danger: #f04438; --w-info: #7c8cff;
   --w-wire: #77777e; --w-wire-on: #b9b9c0; --w-port: #8a8a91; --w-scrim: rgba(8,8,9,0.6);
   --w-shadow-s: 0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 2px rgba(0,0,0,0.3);
   --w-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 10px 30px -8px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.25);
@@ -23,7 +23,7 @@ html[data-ui="work"] {
 html[data-ui="work"][data-theme="light"] {
   --w-canvas: #f6f6f5; --w-dot: #d9d9d6; --w-surface: #ffffff; --w-raised: #f4f4f3; --w-hover: #ededec; --w-press: #e4e4e2;
   --w-border: #e3e3e0; --w-border-2: #cfcfcb; --w-text: #18181b; --w-text-2: #5d5d65; --w-text-3: #9a9aa1;
-  --w-accent: #f25a45; --w-accent-2: #ff6d5a; --w-ok: #16a36a; --w-warn: #c98100; --w-danger: #d92d20; --w-info: #4f5fe8;
+  --w-accent: #18181b; --w-accent-2: #333338; --w-accent-ink: #ffffff; --w-ok: #16a36a; --w-warn: #c98100; --w-danger: #d92d20; --w-info: #4f5fe8;
   --w-wire: #a9a9b0; --w-wire-on: #5d5d65; --w-port: #a4a4ab; --w-scrim: rgba(20,20,22,0.28);
   --w-shadow-s: 0 1px 2px rgba(16,16,20,0.06);
   --w-shadow: 0 1px 2px rgba(16,16,20,0.05), 0 8px 24px -6px rgba(16,16,20,0.10);
@@ -115,7 +115,7 @@ html[data-ui="work"] .w-rail button, html[data-ui="work"] .w-rail a { position: 
 html[data-ui="work"] .w-rail button:hover, html[data-ui="work"] .w-rail a:hover { background: var(--w-hover); color: var(--w-text); }
 html[data-ui="work"] .w-rail button.on { background: var(--w-raised); color: var(--w-text); box-shadow: 0 0 0 1px var(--w-border); }
 html[data-ui="work"] .w-rail svg { width: 18px; height: 18px; }
-html[data-ui="work"] .w-rail em { position: absolute; right: 2px; top: 2px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--w-accent); color: #fff; font: 600 10px/16px var(--w-font); font-style: normal; text-align: center; }
+html[data-ui="work"] .w-rail em { position: absolute; right: 2px; top: 2px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--w-accent); color: var(--w-accent-ink); font: 600 10px/16px var(--w-font); font-style: normal; text-align: center; }
 
 /* ---------- canvas ---------- */
 html[data-ui="work"] main { background: var(--w-canvas); }
@@ -201,7 +201,7 @@ html[data-ui="work"] .orb.launching .orb-body:not(.bubble-body) { background-ima
 /* downloaded: the green check, bottom right */
 html[data-ui="work"] .got-mark { position: absolute; right: -7px; bottom: -7px; top: auto; left: auto; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--w-ok); color: #fff; box-shadow: 0 0 0 2.5px var(--w-canvas); z-index: 4; transform: none; }
 html[data-ui="work"] .got-mark svg { width: 12px; height: 12px; stroke-width: 3; }
-html[data-ui="work"] .mine-no { position: absolute; left: -8px; top: -8px; width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; background: var(--w-accent); color: #fff; font: 600 10.5px/1 var(--w-font); box-shadow: 0 0 0 2.5px var(--w-canvas); }
+html[data-ui="work"] .mine-no { position: absolute; left: -8px; top: -8px; width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; background: var(--w-accent); color: var(--w-accent-ink); font: 600 10.5px/1 var(--w-font); box-shadow: 0 0 0 2.5px var(--w-canvas); }
 html[data-ui="work"] .destroy { width: 26px !important; height: 26px !important; border-radius: 7px !important; background: var(--w-surface) !important; border: 1px solid var(--w-border-2) !important; color: var(--w-text-2) !important; box-shadow: var(--w-shadow-s) !important; }
 html[data-ui="work"] .destroy:hover { color: var(--w-danger) !important; border-color: var(--w-danger) !important; }
 html[data-ui="work"] .destroy svg { width: 13px !important; height: 13px !important; }
@@ -392,7 +392,7 @@ html[data-ui="work"] .sp-tabs button.on { background: var(--w-raised) !important
 html[data-ui="work"] .sp-lock { color: var(--w-ok) !important; }
 html[data-ui="work"] .join-bubble, html[data-ui="work"] .join-wrap { background: var(--w-surface) !important; border: 1px solid var(--w-border-2) !important; border-radius: 12px !important; box-shadow: var(--w-shadow-l) !important; }
 html[data-ui="work"] .join-input { border: 1px solid var(--w-border-2) !important; border-radius: 8px !important; background: var(--w-canvas) !important; color: var(--w-text) !important; }
-html[data-ui="work"] .join-go, html[data-ui="work"] .sp-go { background: var(--w-accent) !important; color: #fff !important; border-radius: 8px !important; }
+html[data-ui="work"] .join-go, html[data-ui="work"] .sp-go { background: var(--w-accent) !important; color: var(--w-accent-ink) !important; border-radius: 8px !important; }
 html[data-ui="work"] .room-glass { display: none !important; }
 html[data-ui="work"] .room-top { top: 16px !important; width: calc(100% - 140px) !important; left: 50% !important; }
 html[data-ui="work"] .room-name b { font: 600 18px/1.2 var(--w-font) !important; text-transform: none !important; letter-spacing: -0.01em !important; color: var(--w-text); }
@@ -434,7 +434,7 @@ html[data-ui="work"] .m-kinds button, html[data-ui="work"] .m-facts span { borde
 html[data-ui="work"] .m-kinds button.on { background: var(--w-text) !important; color: var(--w-canvas) !important; border-color: var(--w-text) !important; }
 html[data-ui="work"] .m-facts span svg { color: var(--w-ok); }
 html[data-ui="work"] .m-about { border-radius: 9px !important; border-color: var(--w-border-2) !important; color: var(--w-text-2) !important; }
-html[data-ui="work"] .m-tile.solid { background: var(--w-accent) !important; color: #fff !important; border-color: var(--w-accent) !important; }
+html[data-ui="work"] .m-tile.solid { background: var(--w-accent) !important; color: var(--w-accent-ink) !important; border-color: var(--w-accent) !important; }
 html[data-ui="work"] .up-card, html[data-ui="work"] .up-pill { background: var(--w-surface) !important; border: 1px solid var(--w-border-2) !important; border-radius: 10px !important; box-shadow: var(--w-shadow-s) !important; color: var(--w-text) !important; }
 html[data-ui="work"] .up-goo { filter: none !important; display: none; }
 
@@ -486,7 +486,7 @@ html[data-ui="work"] .bs-rail b, html[data-ui="work"] .bs-rail strong { color: v
 html[data-ui="work"] .bs-rail button:hover, html[data-ui="work"] .bs-rail li:hover { background: var(--w-hover) !important; }
 html[data-ui="work"] .bs-tools button { color: var(--w-text-2); border-radius: 7px; }
 html[data-ui="work"] .bs-tools button:hover { background: var(--w-hover); color: var(--w-text); }
-html[data-ui="work"] .bs-post { background: var(--w-accent) !important; color: #fff !important; border-radius: 8px !important; }
+html[data-ui="work"] .bs-post { background: var(--w-accent) !important; color: var(--w-accent-ink) !important; border-radius: 8px !important; }
 
 /* ---------- light theme touch-ups ---------- */
 html[data-ui="work"][data-theme="light"] .got-mark, html[data-ui="work"][data-theme="light"] .mine-no { box-shadow: 0 0 0 2.5px var(--w-canvas); }
@@ -517,7 +517,7 @@ html[data-ui="work"][data-theme="light"] img[src="/brand/emblem.svg"] { filter: 
   html[data-ui="work"] .w-dock { left: 0; right: 0; bottom: 0; transform: none; gap: 0; padding: 6px max(6px, var(--safe-l)) calc(6px + var(--safe-b)) max(6px, var(--safe-r)); background: var(--w-surface); border-top: 1px solid var(--w-border); justify-content: space-around; }
   html[data-ui="work"] .w-dock button { flex: 1; height: 50px; flex-direction: column; gap: 4px; padding: 0; border: 0; background: none; box-shadow: none; color: var(--w-text-2); font: 500 10.5px/1 var(--w-font); border-radius: 10px; }
   html[data-ui="work"] .w-dock button svg { width: 20px; height: 20px; }
-  html[data-ui="work"] .w-dock .w-primary { flex: 0 0 auto; width: 54px; height: 44px; margin: 3px 4px; background: var(--w-accent); color: #fff; border-radius: 12px; box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--w-accent) 80%, transparent); }
+  html[data-ui="work"] .w-dock .w-primary { flex: 0 0 auto; width: 54px; height: 44px; margin: 3px 4px; background: var(--w-accent); color: var(--w-accent-ink); border-radius: 12px; box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--w-accent) 80%, transparent); }
   html[data-ui="work"] .w-dock .w-primary span { display: none; }
   html[data-ui="work"] .w-dock { flex-direction: row; }
   html[data-ui="work"] .w-dock .w-primary { order: 2; }
@@ -553,14 +553,14 @@ html[data-ui="work"] .task-boards.mapped > .task-board :is(input, textarea) { cu
 html[data-ui="work"] .arch-bubble { top: calc(64px + var(--safe-t)) !important; right: max(14px, var(--safe-r)) !important; width: 38px !important; height: 38px !important; border-radius: 9px !important; background: var(--w-surface) !important; border: 1px solid var(--w-border-2) !important; color: var(--w-text-2) !important; box-shadow: var(--w-shadow-s) !important; }
 html[data-ui="work"] .arch-bubble:hover { background: var(--w-hover) !important; color: var(--w-text) !important; }
 html[data-ui="work"] .arch-bubble svg { width: 17px !important; height: 17px !important; }
-html[data-ui="work"] .arch-bubble i { background: var(--w-accent) !important; color: #fff !important; font-family: var(--w-font) !important; box-shadow: 0 0 0 2px var(--w-canvas) !important; }
+html[data-ui="work"] .arch-bubble i { background: var(--w-accent) !important; color: var(--w-accent-ink) !important; font-family: var(--w-font) !important; box-shadow: 0 0 0 2px var(--w-canvas) !important; }
 html[data-ui="work"] .archive-space { animation: w-fade 0.16s both !important; }
 html[data-ui="work"] .arch-scrim { background: var(--w-scrim) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 html[data-ui="work"] .arch-glass { inset: calc(68px + var(--safe-t)) calc(16px + var(--safe-r)) calc(16px + var(--safe-b)) calc(72px + var(--safe-l)) !important; border-radius: 16px !important; background: var(--w-surface) !important; border: 1px solid var(--w-border-2) !important; box-shadow: var(--w-shadow-l) !important;
   background-image: radial-gradient(var(--w-dot) 1.1px, transparent 1.3px) !important; background-size: 22px 22px !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 html[data-ui="work"] .arch-glass .c { display: none !important; }
 html[data-ui="work"] .arch-name b { font: 600 20px/1.2 var(--w-font) !important; letter-spacing: -0.015em !important; text-transform: none !important; color: var(--w-text); }
-html[data-ui="work"] .arch-all { height: 34px !important; border-radius: 8px !important; background: var(--w-accent) !important; color: #fff !important; font: 500 13px/1 var(--w-font) !important; }
+html[data-ui="work"] .arch-all { height: 34px !important; border-radius: 8px !important; background: var(--w-accent) !important; color: var(--w-accent-ink) !important; font: 500 13px/1 var(--w-font) !important; }
 html[data-ui="work"] .arch-x { width: 34px !important; height: 34px !important; border-radius: 8px !important; border: 1px solid var(--w-border-2) !important; color: var(--w-text-2) !important; background: var(--w-surface) !important; }
 html[data-ui="work"] .arch-orb { width: 64px !important; height: 64px !important; border-radius: 14px !important; background: var(--w-raised) !important; border: 1.5px solid var(--w-border-2) !important; box-shadow: var(--w-shadow) !important; color: var(--w-info) !important; animation: none !important; }
 html[data-ui="work"] .arch-orb[data-kind="bubbles"] { color: var(--w-ok) !important; }
@@ -604,20 +604,20 @@ html[data-ui="work"] .trash-hole svg { width: 30px !important; height: 30px !imp
 @keyframes w-drop { 50% { transform: translateY(4px); } }
 html[data-ui="work"] .trash-hole b { font: 600 13px/1.2 var(--w-font) !important; color: var(--w-text) !important; text-transform: none !important; }
 html[data-ui="work"] .trash-hole small { font: 400 11px/1.25 var(--w-font) !important; color: var(--w-text-2) !important; }
-html[data-ui="work"] .trash-zone.near .trash-hole { scale: 1.14 !important; border-style: solid !important; border-color: var(--w-accent) !important; background: var(--w-accent) !important; color: #fff !important; animation: none; }
+html[data-ui="work"] .trash-zone.near .trash-hole { scale: 1.14 !important; border-style: solid !important; border-color: var(--w-accent) !important; background: var(--w-accent) !important; color: var(--w-accent-ink) !important; animation: none; }
 html[data-ui="work"] .trash-zone.near .trash-hole b, html[data-ui="work"] .trash-zone.near .trash-hole small { color: #fff !important; }
 html[data-ui="work"] .trash-zone.near .trash-hole svg { animation: none; transform: translateY(3px) scale(1.1); }
 @media (max-width: 720px) { html[data-ui="work"] .trash-zone { bottom: calc(84px + var(--safe-b)) !important; right: 16px !important; } html[data-ui="work"] .trash-hole { width: 128px !important; height: 128px !important; } }
 
 /* archive space: the room bar + restore buttons */
-html[data-ui="work"] .arch-restore { height: 26px; border-radius: 7px; padding: 0 10px 0 8px; background: var(--w-accent); color: #fff; font: 600 11.5px/1 var(--w-font); box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--w-accent) 60%, transparent); }
+html[data-ui="work"] .arch-restore { height: 26px; border-radius: 7px; padding: 0 10px 0 8px; background: var(--w-accent); color: var(--w-accent-ink); font: 600 11.5px/1 var(--w-font); box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--w-accent) 60%, transparent); }
 html[data-ui="work"] .void.in-archive { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--w-warn) 45%, transparent); }
 html[data-ui="work"] .arch-room .room-exit { height: 34px; display: inline-flex; align-items: center; gap: 7px; padding: 0 12px; font: 500 13px/1 var(--w-font) !important; text-transform: none !important; letter-spacing: 0 !important; }
 html[data-ui="work"] .arch-room .room-exit svg { width: 15px; height: 15px; }
-html[data-ui="work"] .arch-room .arch-all-btn { background: var(--w-accent) !important; color: #fff !important; border-color: var(--w-accent) !important; }
+html[data-ui="work"] .arch-room .arch-all-btn { background: var(--w-accent) !important; color: var(--w-accent-ink) !important; border-color: var(--w-accent) !important; }
 html[data-ui="work"] .kf-sec { color: var(--w-text-3); font: 600 10.5px/1 var(--w-font); letter-spacing: 0.02em; text-transform: none; }
 html[data-ui="work"] .kf-count { color: var(--w-text-3); font: 500 11.5px/1 var(--w-font); }
-html[data-ui="work"] .kf-n { background: var(--w-accent); color: #fff; font-family: var(--w-font); }
+html[data-ui="work"] .kf-n { background: var(--w-accent); color: var(--w-accent-ink); font-family: var(--w-font); }
 
 /* =====================================================================
    Liquid glass for /work: bars, panels, nodes, cards and buttons are frosted panes over the canvas
@@ -638,7 +638,7 @@ html[data-ui="work"][data-theme="light"] {
   --w-glass-shine: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(255,255,255,0.25) 45%, rgba(255,255,255,0.4));
   --w-glass-hi: inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(255,255,255,0.5);
 }
-html[data-ui="work"] .void { background-image: radial-gradient(var(--w-dot) 1.1px, transparent 1.3px), radial-gradient(60% 50% at 18% 12%, color-mix(in srgb, var(--w-accent) 9%, transparent), transparent 70%), radial-gradient(55% 45% at 85% 88%, color-mix(in srgb, var(--w-info) 9%, transparent), transparent 70%); background-size: 22px 22px, 100% 100%, 100% 100%; }
+html[data-ui="work"] .void { background-image: radial-gradient(var(--w-dot) 1.1px, transparent 1.3px), radial-gradient(60% 50% at 18% 12%, rgba(255,255,255,0.05), transparent 70%), radial-gradient(55% 45% at 85% 88%, rgba(255,255,255,0.035), transparent 70%); background-size: 22px 22px, 100% 100%, 100% 100%; }
 
 /* the panes */
 html[data-ui="work"] :is(.w-bar, .w-rail, .w-ghost, .w-fan button, .map-tools.lg > button, .map-tools.lg > .mono, .drawer, .drawer.lg, .pop, .spaces-pop, .task-board, .task-board.lg, .bub, .void.map .world .bub, .bs-card, .bs-top, .bs-tools, .bs-rail, .kf-btn, .kf-menu, .w-btn, .w-tabs, .area-pill, .dock-item, .dl-card, .geo-pop, .invite-card, .go-private, .zoom-bubble .blob, .orb.group .blob, .arch-bubble, .tb-route, .tb-acts.float, .wire-menu, .room-exit, .bub-timer, .tag) {
@@ -711,7 +711,7 @@ html[data-ui="work"] .w-upg:hover { color: var(--w-accent-2); }
 html[data-ui="work"] .side-menu { background-color: color-mix(in srgb, var(--w-surface) 82%, transparent) !important; background-image: var(--w-glass-shine); border-left: 1px solid var(--w-glass-edge); color: var(--w-text); box-shadow: var(--w-shadow-l); }
 html[data-ui="work"] .sd-where { color: var(--w-text-2); font: 500 12.5px/1 var(--w-font); letter-spacing: 0; text-transform: none; }
 html[data-ui="work"] .sd-x, html[data-ui="work"] .sd-ic { background: var(--w-raised); color: var(--w-text); border-radius: 9px; }
-html[data-ui="work"] .sd-send { border-radius: 12px; background: var(--w-accent); color: #fff; }
+html[data-ui="work"] .sd-send { border-radius: 12px; background: var(--w-accent); color: var(--w-accent-ink); }
 html[data-ui="work"] .sd-send > svg { background: rgba(255,255,255,0.18); border-radius: 9px; }
 html[data-ui="work"] .sd-send b { font: 600 15px/1 var(--w-font); text-transform: none; }
 html[data-ui="work"] .sd-send small { color: rgba(255,255,255,0.8); font: 400 11px/1 var(--w-font); text-transform: none; letter-spacing: 0; }
@@ -729,3 +729,21 @@ html[data-ui="work"] .sd-kinds button, html[data-ui="work"] .sd-facts span { bor
 html[data-ui="work"] :is(.sd-seg button.on, .sd-kinds button.on) { background: var(--w-text); color: var(--w-canvas); }
 @media (max-width: 720px) { html[data-ui="work"] .toast { top: auto !important; bottom: calc(76px + var(--safe-b)); } }
 html[data-ui="work"] .toast { top: auto !important; bottom: calc(76px + var(--safe-b)); }
+
+/* ---------- monochrome liquid glass: the Upload button is a clear pane, no colour (white / black / grey only) ---------- */
+html[data-ui="work"] .w-dock .w-primary, html[data-ui="work"] .w-dock .w-up {
+  background-color: color-mix(in srgb, var(--w-text) 9%, transparent) !important;
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.03) 48%, rgba(255,255,255,0.07)) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%);
+  color: var(--w-text) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(255,255,255,0.04), 0 10px 28px -10px rgba(0,0,0,0.6) !important;
+}
+html[data-ui="work"] .w-dock .w-primary:hover, html[data-ui="work"] .w-dock .w-up:hover { background-color: color-mix(in srgb, var(--w-text) 15%, transparent) !important; }
+html[data-ui="work"][data-theme="light"] .w-dock .w-primary, html[data-ui="work"][data-theme="light"] .w-dock .w-up {
+  background-color: rgba(255,255,255,0.55) !important;
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.55)) !important;
+  border-color: rgba(20,20,24,0.12) !important;
+  box-shadow: inset 0 1px 0 #fff, 0 10px 26px -12px rgba(16,16,20,0.3) !important;
+}
+html[data-ui="work"] .w-fan button svg { color: var(--w-text) !important; }

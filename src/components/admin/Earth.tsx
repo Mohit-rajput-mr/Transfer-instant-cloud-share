@@ -54,10 +54,8 @@ function arc(a: [number, number], b: [number, number], steps = 64): [number, num
   return out;
 }
 
-/** A route as a visible curve. Between two places: the great circle, bowed to one side so routes read
- *  as arcs (and two directions don't overlap). Within the same place (an office, a home: no precise
- *  location, so both ends land on the same coordinates): a small loop that leaves the spot and comes
- *  back, so local transfers still show. */
+/** A route as a visible curve: the great circle, bowed to one side so routes read as arcs (and two
+ *  directions don't overlap). Same-place transfers draw no line: they show in the place summary. */
 export function route(from: [number, number], to: [number, number]): [number, number][] {
   const [ax, ay] = from;
   let bx = to[0];
@@ -67,16 +65,6 @@ export function route(from: [number, number], to: [number, number]): [number, nu
   const dx = bx - ax;
   const dy = by - ay;
   const len = Math.hypot(dx, dy);
-  if (len < 0.05) {
-    // loop of ~3 km radius, rising north of the spot
-    const r = 0.03;
-    const out: [number, number][] = [];
-    for (let i = 0; i <= 48; i++) {
-      const t = (i / 48) * 2 * Math.PI;
-      out.push([ax + (r * Math.sin(t)) / Math.max(0.2, Math.cos((ay * Math.PI) / 180)), ay + r - r * Math.cos(t)]);
-    }
-    return out;
-  }
   if (len > 60) return arc([ax, ay], [bx, by]);
   // short and medium hops: a quadratic curve bowed 22% of its length to the left
   const k = 0.22 * len;
@@ -128,6 +116,55 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
   spinRef.current = spin;
   const latest = useRef({ data, layers, routes });
   latest.current = { data, layers, routes };
+  const pinRef = useRef<maplibregl.Popup | null>(null);
+  const hoverRef = useRef<maplibregl.Popup | null>(null);
+
+  /** Everything at one place (same city, ~25 km): uploads, downloads, devices, GPS, transfers. */
+  const summary = ([lon, lat]: [number, number], head?: string) => {
+    const { data: d, routes: hist } = latest.current;
+    const R = 0.25;
+    const near = (p: { lat: number; lon: number }) => Math.abs(p.lat - lat) < R && Math.abs(p.lon - lon) < R;
+    const sum = (l: { n: number; lat: number; lon: number }[] | undefined) => (l ?? []).filter(near).reduce((t, p) => t + p.n, 0);
+    const pts = d?.points ?? [];
+    const lines = (hist ?? d?.arcs ?? []) as RouteLine[];
+    const sameN = lines.filter((r) => same(r) && near({ lat: r.a, lon: r.b })).reduce((t, r) => t + (r.n ?? 1), 0);
+    const outN = lines.filter((r) => !same(r) && near({ lat: r.a, lon: r.b })).reduce((t, r) => t + (r.n ?? 1), 0);
+    const inN = lines.filter((r) => !same(r) && near({ lat: r.c, lon: r.d })).reduce((t, r) => t + (r.n ?? 1), 0);
+    const gps = (d?.exactSeen ?? []).filter(near);
+    const any = [...(d?.visitors ?? []), ...pts, ...(d?.live ?? []), ...gps].find((p) => near(p) && (p.city || p.cc));
+    const where = any ? [any.city, any.cc].filter(Boolean).join(", ") : "";
+    const row = (n: number, one: string, many = one + "s") => (n ? `<div><b>${n}</b> ${n === 1 ? one : many}</div>` : "");
+    const body =
+      row(sum(pts.filter((p) => p.k === "upload")), "upload") +
+      row(sum(pts.filter((p) => p.k === "download")), "download") +
+      row(sameN, "transfer in this place", "transfers in this place") +
+      row(outN, "sent to elsewhere", "sent to elsewhere") +
+      row(inN, "received from elsewhere", "received from elsewhere") +
+      row(sum(d?.live), "online now", "online now") +
+      row(sum(d?.visitors), "device") +
+      row(gps.length, "device with GPS", "devices with GPS");
+    return [
+      head ? `<div>${esc(head)}</div>` : "",
+      `<span>${esc(where) || "here"} · ${lat.toFixed(2)}, ${lon.toFixed(2)}</span>`,
+      body || "<div><span>nothing else here</span></div>",
+    ].join("");
+  };
+  /** DOM markers (live, GPS): same summary on hover, pinned on click / tap */
+  const marker = (m: MLMap, cls: string, p: { lat: number; lon: number }, head: string) => {
+    const el = document.createElement("div");
+    el.className = `gdot ${cls}`;
+    const c: [number, number] = [p.lon, p.lat];
+    el.addEventListener("mouseenter", () => {
+      if (!pinRef.current?.isOpen()) hoverRef.current?.setLngLat(c).setHTML(summary(c, head)).addTo(m);
+    });
+    el.addEventListener("mouseleave", () => hoverRef.current?.remove());
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      hoverRef.current?.remove();
+      pinRef.current?.setLngLat(c).setHTML(summary(c, head)).addTo(m);
+    });
+    return new maplibregl.Marker({ element: el }).setLngLat(c).addTo(m);
+  };
 
   // build the map once
   useEffect(() => {
@@ -148,6 +185,9 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
     map.current = m;
 
     const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: "globe-pop", offset: 10 });
+    pinRef.current = new maplibregl.Popup({ closeButton: true, closeOnClick: true, className: "globe-pop pinned", offset: 10, maxWidth: "280px" });
+    hoverRef.current = popup;
+    const pinned = pinRef.current;
 
     // A tile that fails to load (slow network, a busy tile server) would leave a dark hole in the map
     // for good. Retry: reload that source a moment later, at most every 3 s, up to 20 times.
@@ -196,22 +236,6 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
           "line-gradient": ["interpolate", ["linear"], ["line-progress"], 0, "#59b8ff", 1, "#ffa045"],
         },
       });
-      // transfers within one place (same office, same city): a glowing ring sized by how many, so they
-      // stay visible from space, where a loop of a few km is smaller than a pixel
-      m.addSource("local", { type: "geojson", data: empty });
-      m.addLayer({
-        id: "local",
-        type: "circle",
-        source: "local",
-        paint: {
-          "circle-radius": ["interpolate", ["linear"], ["get", "n"], 1, 7, 10, 11, 60, 16, 300, 22],
-          "circle-color": "rgba(255,160,69,0.10)",
-          "circle-stroke-color": "#ffa045",
-          "circle-stroke-width": 2,
-          "circle-stroke-opacity": 0.9,
-          "circle-pitch-alignment": "viewport",
-        },
-      });
       const tip = (id: string, html: (p: Record<string, unknown>, e: maplibregl.MapLayerMouseEvent) => [number, number, string]) => {
         m.on("mousemove", id, (e) => {
           const f = e.features?.[0];
@@ -226,7 +250,6 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
         });
       };
       tip("routes", (p, e) => [e.lngLat.lng, e.lngLat.lat, `<b>${p.n}</b> transfer${p.n === 1 ? "" : "s"}<br/><span>${esc(p.label) || "route"}</span>`]);
-      tip("local", (p) => [Number(p.lon), Number(p.lat), `<b>${p.n}</b> transfer${p.n === 1 ? "" : "s"} in the same place<br/><span>${esc(p.label)}</span>`]);
       for (const k of Object.keys(DOT) as (keyof typeof DOT)[]) {
         m.addSource(k, { type: "geojson", data: empty });
         m.addLayer({
@@ -241,19 +264,25 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
             "circle-pitch-alignment": "viewport", // round from every angle
           },
         });
+        // hover: what happened at this place; click / tap: keep it open
+        const at = (e: maplibregl.MapLayerMouseEvent) => {
+          const p = e.features?.[0]?.properties as { lat: number; lon: number } | undefined;
+          return p ? ([Number(p.lon), Number(p.lat)] as [number, number]) : null;
+        };
         m.on("mouseenter", k, (e) => {
           m.getCanvas().style.cursor = "pointer";
-          const f = e.features?.[0];
-          if (!f) return;
-          const p = f.properties as { n: number; where: string; lat: number; lon: number };
-          popup
-            .setLngLat([p.lon, p.lat])
-            .setHTML(`<b>${p.n}</b> ${LABEL[k][p.n === 1 ? 0 : 1]}<br/><span>${esc(p.where)} · ${Number(p.lat).toFixed(2)}, ${Number(p.lon).toFixed(2)}</span>`)
-            .addTo(m);
+          const c = at(e);
+          if (c && !pinned.isOpen()) popup.setLngLat(c).setHTML(summary(c)).addTo(m);
         });
         m.on("mouseleave", k, () => {
           m.getCanvas().style.cursor = "";
           popup.remove();
+        });
+        m.on("click", k, (e) => {
+          const c = at(e);
+          if (!c) return;
+          popup.remove();
+          pinned.setLngLat(c).setHTML(summary(c)).addTo(m);
         });
       }
       ready.current = true;
@@ -312,58 +341,36 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
     const lines = (hist ?? d?.arcs ?? []) as RouteLine[];
     set("routes", {
       type: "FeatureCollection",
-      features: lines.map((a) => ({
+      features: lines.filter((a) => !same(a)).map((a) => ({
         type: "Feature",
         geometry: { type: "LineString", coordinates: route([a.b, a.a], [a.d, a.c]) },
         properties: { n: a.n ?? 1, label: a.label ?? "" },
       })),
     });
-    // one ring per place, adding up every same-place route there
-    const rings = new Map<string, { lat: number; lon: number; n: number; label: string }>();
-    for (const a of lines.filter(same)) {
-      const k = `${a.a.toFixed(2)},${a.b.toFixed(2)}`;
-      const r = rings.get(k) ?? { lat: a.a, lon: a.b, n: 0, label: a.label ?? "" };
-      r.n += a.n ?? 1;
-      rings.set(k, r);
-    }
-    set("local", {
-      type: "FeatureCollection",
-      features: [...rings.values()].map((r) => ({ type: "Feature", geometry: { type: "Point", coordinates: [r.lon, r.lat] }, properties: r })),
-    });
     for (const id of ["visitors", "uploads", "downloads", "routes"] as Layer[])
       m.setLayoutProperty(id, "visibility", on.has(id) ? "visible" : "none");
-    m.setLayoutProperty("local", "visibility", on.has("routes") ? "visible" : "none");
 
     // live users: DOM markers so they can pulse
     liveMarkers.current.forEach((mk) => mk.remove());
     liveMarkers.current = on.has("live")
       ? (d?.live ?? []).map((p) => {
-          const el = document.createElement("div");
-          el.className = "gdot live";
-          el.dataset.tip = `${p.n} ${LABEL.live[0]} · ${[p.city, p.cc].filter(Boolean).join(", ")} · ${p.lat.toFixed(2)}, ${p.lon.toFixed(2)}`;
-          return new maplibregl.Marker({ element: el }).setLngLat([p.lon, p.lat]).addTo(m);
+          return marker(m, "live", p, `${p.n} ${LABEL.live[0]}`);
         })
       : [];
     // devices that shared their location: their exact spot, with how precise the device says it is
     exactMarkers.current.forEach((mk) => mk.remove());
     exactMarkers.current = on.has("exact")
       ? (d?.exact ?? []).map((p) => {
-          const el = document.createElement("div");
-          el.className = "gdot exact";
           const ago = Math.max(0, Math.round((Date.now() - Date.parse(p.at)) / 1000));
-          el.dataset.tip = [p.label || "device", [p.city, p.cc].filter(Boolean).join(", "), `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`, p.acc != null ? `±${Math.round(p.acc)} m` : "", `${ago}s ago`].filter(Boolean).join(" · ");
-          return new maplibregl.Marker({ element: el }).setLngLat([p.lon, p.lat]).addTo(m);
+          return marker(m, "exact", p, [p.label || "device", `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`, p.acc != null ? `±${Math.round(p.acc)} m` : "", `${ago}s ago`].filter(Boolean).join(" · "));
         })
       : [];
     // the last exact spot of every device that ever shared GPS, kept after it goes offline (dimmer than the live ones)
     seenMarkers.current.forEach((mk) => mk.remove());
     seenMarkers.current = on.has("exactSeen")
       ? (d?.exactSeen ?? []).filter((p) => !p.online).map((p) => {
-          const el = document.createElement("div");
-          el.className = "gdot seen";
           const ago = Math.max(0, Math.round((Date.now() - Date.parse(p.at)) / 60000));
-          el.dataset.tip = [p.label || "device", [p.city, p.cc].filter(Boolean).join(", "), `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`, p.acc != null ? `±${Math.round(p.acc)} m` : "", `last seen ${ago < 60 ? ago + "m" : Math.round(ago / 60) + "h"} ago`].filter(Boolean).join(" · ");
-          return new maplibregl.Marker({ element: el }).setLngLat([p.lon, p.lat]).addTo(m);
+          return marker(m, "seen", p, [p.label || "device", `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`, p.acc != null ? `±${Math.round(p.acc)} m` : "", `last seen ${ago < 60 ? ago + "m" : Math.round(ago / 60) + "h"} ago`].filter(Boolean).join(" · "));
         })
       : [];
 

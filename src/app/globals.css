@@ -579,12 +579,16 @@ html.card-open .made { opacity: 0; pointer-events: none; }
 .gdot.live { width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; background: #3dff8c; z-index: 2; }
 .gdot.live::after { content: ""; position: absolute; inset: -1px; border-radius: 50%; border: 1.5px solid #3dff8c; animation: gpulse 1.6s ease-out infinite; }
 @keyframes gpulse { from { transform: scale(1); opacity: 0.9; } to { transform: scale(4); opacity: 0; } }
-.gdot:hover::before { content: attr(data-tip); position: absolute; left: 12px; top: -8px; white-space: nowrap; background: rgba(10,10,10,0.9); border: 1px solid #333; border-radius: 8px; padding: 4px 8px; font: 10.5px var(--mono); color: #eee; z-index: 5; }
 
 .earth.maplibregl-map { position: absolute; inset: 0; background: #000; }
 .globe-pop .maplibregl-popup-content { background: rgba(10,10,10,0.92); border: 1px solid #333; border-radius: 10px; padding: 6px 10px; font: 11px var(--mono); color: #eee; box-shadow: none; }
 .globe-pop .maplibregl-popup-content span { color: #888; }
 .globe-pop .maplibregl-popup-tip { display: none; }
+.globe-pop .maplibregl-popup-content div { line-height: 1.55; }
+.globe-pop .maplibregl-popup-content span { display: block; margin-bottom: 3px; }
+.globe-pop.pinned .maplibregl-popup-content { padding: 8px 26px 8px 10px; border-color: #555; }
+.globe-pop .maplibregl-popup-close-button { color: #888; font-size: 15px; right: 4px; top: 3px; }
+.globe-pop .maplibregl-popup-close-button:hover { background: none; color: #fff; }
 .hq .maplibregl-ctrl-attrib { background: rgba(0,0,0,0.5) !important; color: #777; font-size: 10px; }
 .hq .maplibregl-ctrl-attrib a { color: #999; }
 .hq .maplibregl-ctrl-attrib-button { filter: invert(1); }

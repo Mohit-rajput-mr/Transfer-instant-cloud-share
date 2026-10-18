@@ -477,9 +477,9 @@ export default function About() {
               <span className="ln">Made by</span>
               <span className="ln">
                 <span className="sx-out ab-nb">
-                  nobody.
+                  a developer.
                   {/* the spec's 300 × 24 strokes, flattened to the box's real ~30:1 shape so the chalk scales evenly */}
-                  <svg className="ab-under" viewBox="0 0 300 10" aria-hidden focusable="false" data-chalk>
+                  <svg className="ab-under" viewBox="0 0 300 10" preserveAspectRatio="none" aria-hidden focusable="false" data-chalk>
                     <path className="c c1" pathLength={1} d="M4 6.7C60 2.5 140 1.7 210 3.75S290 7.5 296 3.3" fill="none" stroke="#f2f2f2" strokeLinecap="round" strokeLinejoin="round" />
                     <path className="c c2" pathLength={1} d="M24 8.75C90 5.4 170 5 250 6.7" fill="none" stroke="#f2f2f2" strokeLinecap="round" strokeLinejoin="round" opacity=".5" />
                   </svg>
@@ -509,7 +509,7 @@ export default function About() {
         </div>
       </section>
 
-      <Ticker items={["Made by nobody", "No login", "End-to-end encrypted", "Up to 20 GB", "Burns in 30 min", "For fun"]} />
+      <Ticker items={["Made by a developer", "No login", "End-to-end encrypted", "Up to 20 GB", "Burns in 30 min", "For fun"]} />
 
       {/* 01 — why */}
       <section id="why" className="sx-sec ab-why" data-chapter="01|Why">
@@ -1035,8 +1035,8 @@ export default function About() {
           <div className="sx-grid">
             <div className="ab-maker-t">
               <h2 className="sx-h2" data-reveal>
-                <span className="ln">Nobody</span>
-                <span className="ln">you know.</span>
+                <span className="ln">A developer,</span>
+                <span className="ln">just one.</span>
               </h2>
               <p className="sx-body ab-big ab-maker-p1" data-reveal>
                 One developer, name withheld, mostly working at night. Orbi Transfer started as a fix for one silly problem and kept growing: spaces, notes, tasks, {N} styles, a second look for work. There is no company behind it, no investors and nobody to pitch to.
@@ -1062,7 +1062,7 @@ export default function About() {
                 ))}
               </dl>
               <span className="ab-stamp" aria-hidden>
-                Made by nobody
+                Made by a developer
               </span>
             </div>
           </div>

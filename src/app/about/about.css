@@ -1,5 +1,5 @@
 /* ==========================================================================================================
-   /about — "Made by nobody." The blackboard: chalk-white Archivo on a #000 slate, hairline ruling, ghost words,
+   /about — "Made by a developer." The blackboard: chalk-white Archivo on a #000 slate, hairline ruling, ghost words,
    one green signal. Builds on src/app/site.css (tokens, type, grid, chrome). Every selector here is ab-* (or
    .sx… / html[data-perf] .sx…), so nothing reaches the void (/) or /work after a client navigation.
    ========================================================================================================== */
@@ -16,9 +16,9 @@
 }
 
 /* ---------- 00 hero ---------- */
-.ab-h1-fit { --fit: 6.15; --min: 48px; --max: 224px; margin-top: clamp(28px, 4vw, 56px); }
+.ab-h1-fit { --fit: 10.4; --min: 30px; --max: 160px; margin-top: clamp(28px, 4vw, 56px); }
 .ab-nb { position: relative; display: inline-block; }
-/* the page's one hand-drawn chalk stroke: a double underline under "nobody." */
+/* the page's one hand-drawn chalk stroke: a double underline under "a developer." */
 .ab-under {
   position: absolute; left: -3%; bottom: -0.1em; width: 106%; height: 0.2em;
   overflow: visible; pointer-events: none;
