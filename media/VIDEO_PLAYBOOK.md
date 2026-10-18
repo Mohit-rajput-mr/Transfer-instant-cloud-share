@@ -151,6 +151,7 @@ Use them in every film where a feature is shown.
   why your phone storage fills up · how "the cloud" is just someone's computer.
 
 ## Films so far
+- `candle-film/`: "How to read a candle" (stock chart candles, wicks, stop loss, stop hunting; ends with share-on-Orbi line)
 - `pw-film/`: science film "Your bank doesn't know your password" (hash blender, salt, stolen lists, slow hashing → Orbi 310,000 rounds)
 - `anon-film/`: Orbi Anonymous (ethical hackers → slips → leak → no login/no profile → locked chunks → vault → passcode → rejoin → thousands of locations → burn), real desktop screens in a browser window (owner liked it 2026-10-18)
 - `work-film/`: Orbi Work office story on the real /work page (notes, @assign, Doing→Review→Done, private space, office dance ending) (**latest**)
