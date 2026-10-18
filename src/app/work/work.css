@@ -816,3 +816,4 @@ html[data-ui="work"] .orb-anchor:hover .destroy { opacity: 1; }
 html[data-ui="work"] .wire-plug { transition: opacity .15s; }
 html[data-ui="work"] .w-anon-exit { height: 26px !important; padding: 0 10px !important; margin-left: 6px; font: 600 12px/1 var(--w-font) !important; background: var(--w-text) !important; color: var(--w-canvas) !important; border-radius: 7px !important; }
 html[data-ui="work"] .tb-added button { width: auto !important; flex: none !important; }
+html[data-ui="work"] .tr-up button { width: auto !important; font-family: var(--w-font) !important; } html[data-ui="work"] .tr-up .ghost { border-color: var(--w-border-2) !important; color: var(--w-text-2) !important; } html[data-ui="work"] .tr-save { font-family: var(--w-font) !important; }

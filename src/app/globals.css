@@ -3409,3 +3409,9 @@ html[data-anon] body { background: #050505; }
 .tb-num-in { width: 120px; flex: none; }
 .tb-row { grid-template-columns: auto 1fr auto auto; }
 .anon-exit { margin-left: 4px; background: #fff; color: #000; font-weight: 700; }
+.tr-save { white-space: nowrap; flex: none; display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 10px; border-radius: 8px; background: #27c463; color: #062b14; font-weight: 800; font-size: 11.5px; cursor: pointer; }
+.tr-save svg { width: 12px; height: 12px; stroke-width: 3; }
+.tr-up { display: flex; gap: 6px; flex-wrap: wrap; }
+.tr-up .tb-submit { margin: 0; height: 36px; }
+.tr-up .ghost { height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.18); color: #ddd; display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; }
+.tr-up .ghost svg { width: 13px; height: 13px; }

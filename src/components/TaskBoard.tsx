@@ -294,7 +294,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                       ))}
                     </div>
                   ) : null}
-                  {routing === t.id && <RoutePanel t={t} mine={isMyTask(t.id)} onEdit={(c) => props.onEdit(t, c)} onClose={() => setRouting(null)} />}
+                  {routing === t.id && <RoutePanel t={t} mine={isMyTask(t.id)} onEdit={(c) => props.onEdit(t, c)} onClose={() => setRouting(null)} onUpload={(what) => props.onAttach(t, what)} />}
                   {taking === t.id && (
                     <form className="tb-take" onSubmit={(e) => { e.preventDefault(); props.onTake(t, who.trim()); setTaking(null); }}>
                       <input autoFocus value={who} onChange={(e) => setWho(e.target.value.slice(0, 24))} placeholder="Name (empty = nobody)" />
@@ -435,7 +435,7 @@ const ago = (iso: string) => {
  * email…), rewrites the line, and taps a stage to move the task there; the last stage ticks it done.
  * Everyone else sees the same route as a live timeline: which stage, who moved it, when.
  */
-function RoutePanel({ t, mine, onEdit, onClose }: { t: Task; mine: boolean; onEdit: (c: { text?: string; route?: string[]; stage?: number }) => Promise<void>; onClose: () => void }) {
+function RoutePanel({ t, mine, onEdit, onClose, onUpload }: { t: Task; mine: boolean; onEdit: (c: { text?: string; route?: string[]; stage?: number }) => Promise<void>; onClose: () => void; onUpload: (what: "files" | "folder") => void }) {
   const [title, setTitle] = useState(taskLine(t));
   const [stages, setStages] = useState<string[]>(t.route);
   const [saved, setSaved] = useState(false);
@@ -504,6 +504,10 @@ function RoutePanel({ t, mine, onEdit, onClose }: { t: Task; mine: boolean; onEd
             );
           })}
         </ol>
+        <div className="tr-up">
+          <button className="tb-submit" onClick={() => onUpload("files")}><LuUpload aria-hidden /> Upload files to this task</button>
+          <button className="ghost mono" onClick={() => onUpload("folder")}><LuFolderUp aria-hidden /> Folder</button>
+        </div>
       </div>
     );
 
@@ -522,7 +526,7 @@ function RoutePanel({ t, mine, onEdit, onClose }: { t: Task; mine: boolean; onEd
         onKeyDown={(e) => e.key === "Enter" && (e.currentTarget.blur())}
         aria-label="Task line"
       />
-      {stages.length > 0 && <span className="mono dim tr-hint">Tap a step to move the task there</span>}
+      {stages.length > 0 && <span className="mono dim tr-hint">Tap a step&apos;s circle to move the task there · name it, then Save</span>}
       <ol className="tr-line edit">
         {stages.map((r, i) => {
           const l = last(i);
@@ -544,14 +548,21 @@ function RoutePanel({ t, mine, onEdit, onClose }: { t: Task; mine: boolean; onEd
               </span>
               <input
                 value={stageName(r)}
-                placeholder="Step name"
+                autoFocus={!stageName(r) && i === stages.length - 1}
+                placeholder="Name your step"
                 onFocus={() => (typing.current = true)}
                 onChange={(e) => setStages((s) => s.map((x, k) => (k === i ? withColor(e.target.value.slice(0, 32), stepKey(s, k)) : x)))}
                 onBlur={commitStages}
                 onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
                 aria-label={`Step ${i + 1}`}
               />
-              <span className="mono">{l ? ago(l.at) : ""}</span>
+              {stageName(r).trim() && stageName(r) !== stageName(t.route[i] ?? "") ? (
+                <button className="tr-save" onClick={() => { const a = document.activeElement as HTMLElement | null; if (a?.tagName === "INPUT" && box.current?.contains(a)) a.blur(); else commitStages(); }} onPointerDown={(e) => e.preventDefault()} aria-label={`Save ${stageName(r)}`}>
+                  <LuCheck aria-hidden />Save
+                </button>
+              ) : (
+                <span className="mono">{l ? ago(l.at) : ""}</span>
+              )}
               <button className="tr-x" onClick={() => setRoute(stages.filter((_, k) => k !== i))} aria-label={`Remove ${stageName(r)}`}><LuX /></button>
             </li>
           );
@@ -566,6 +577,10 @@ function RoutePanel({ t, mine, onEdit, onClose }: { t: Task; mine: boolean; onEd
           ))}
         </div>
       )}
+      <div className="tr-up">
+        <button className="tb-submit" onClick={() => onUpload("files")}><LuUpload aria-hidden /> Upload files to this task</button>
+        <button className="ghost mono" onClick={() => onUpload("folder")}><LuFolderUp aria-hidden /> Folder</button>
+      </div>
       <div className="tr-go">
         {t.stage >= 0 && <button className="mono" onClick={() => save({ stage: -1 })}>Back to not started</button>}
         {!isCancel(t.route[t.stage]) && (
