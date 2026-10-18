@@ -1,0 +1,90 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know why people are using Orbi Transfer?",
+   "dur": 2.837,
+   "at": 0.35
+  },
+  {
+   "key": "scene",
+   "text": "Imagine landing after a week away with your friends. And you've got every photo from the trip.",
+   "dur": 5.461,
+   "at": 3.74
+  },
+  {
+   "key": "want",
+   "text": "Before anyone leaves the airport, they all want them.",
+   "dur": 3.029,
+   "at": 9.5
+  },
+  {
+   "key": "old",
+   "text": "You could email them in batches, or watch a chat squeeze them into blurry little squares.",
+   "dur": 5.525,
+   "at": 12.83
+  },
+  {
+   "key": "send",
+   "text": "Instead, you drop the whole folder into Orbi Transfer, set a code, and send.",
+   "dur": 5.035,
+   "at": 18.65
+  },
+  {
+   "key": "pop",
+   "text": "Every phone at the gate gets it as one bundle. Full quality.",
+   "dur": 3.989,
+   "at": 23.99
+  },
+  {
+   "key": "how",
+   "text": "So how does a whole folder fly across an airport?",
+   "dur": 2.816,
+   "at": 28.53
+  },
+  {
+   "key": "pack",
+   "text": "Think of it like luggage. Your phone packs the photos into a suitcase, and locks it with your code. The code stays with you.",
+   "dur": 7.445,
+   "at": 31.89
+  },
+  {
+   "key": "pieces",
+   "text": "The suitcase is split into smaller bags, and several ride the belts at the same time. That's the speed.",
+   "dur": 6.336,
+   "at": 39.64
+  },
+  {
+   "key": "vault",
+   "text": "They wait in a sealed baggage hold. Without your code, nobody can open a single bag.",
+   "dur": 5.525,
+   "at": 46.52
+  },
+  {
+   "key": "ring",
+   "text": "Then Orbi pings the phones in your part of the city, like an arrivals board for people nearby. It knows the area, never your seat.",
+   "dur": 8.085,
+   "at": 52.35
+  },
+  {
+   "key": "land",
+   "text": "Your friend enters the code, the bags roll in, snap back together, and the whole folder unpacks.",
+   "dur": 5.952,
+   "at": 60.98
+  },
+  {
+   "key": "burn",
+   "text": "And after thirty minutes, anything left in the hold is shredded. No account. No trace.",
+   "dur": 5.419,
+   "at": 67.48
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. Try it before your next trip ends.",
+   "dur": 3.755,
+   "at": 73.2
+  }
+ ],
+ "duration": 78.86
+}
