@@ -1,0 +1,90 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "A hacker breaks into a website and steals every single password. And they're completely useless to him.",
+   "dur": 6.07,
+   "at": 0.35
+  },
+  {
+   "key": "why",
+   "text": "How is that even possible? Stay with me, because the answer is hiding in a kitchen blender.",
+   "dur": 6.07,
+   "at": 6.87
+  },
+  {
+   "key": "stored",
+   "text": "First, a secret. Good websites never keep your password. Not even the company can see it.",
+   "dur": 5.71,
+   "at": 13.34
+  },
+  {
+   "key": "blender",
+   "text": "Instead, they drop it into a one way blender. Sunflower seven goes in, and out comes a smoothie of random letters.",
+   "dur": 7.5,
+   "at": 19.36
+  },
+  {
+   "key": "oneway",
+   "text": "And here's the magic. You can turn fruit into a smoothie, but you can never turn a smoothie back into fruit.",
+   "dur": 7.5,
+   "at": 27.16
+  },
+  {
+   "key": "tiny",
+   "text": "Change just one letter, and the smoothie comes out completely different.",
+   "dur": 3.93,
+   "at": 35.01
+  },
+  {
+   "key": "login",
+   "text": "So when you log in, the site blends what you typed, and checks if the two smoothies match. Match? You're in.",
+   "dur": 7.5,
+   "at": 39.29
+  },
+  {
+   "key": "guess",
+   "text": "But hackers are clever. They blend millions of common passwords and look for a match. Password one two three? Cracked instantly.",
+   "dur": 7.5,
+   "at": 47.19
+  },
+  {
+   "key": "salt",
+   "text": "So sites add a pinch of salt. A random sprinkle for every person, so the same password makes a different smoothie.",
+   "dur": 7.5,
+   "at": 55.04
+  },
+  {
+   "key": "slow",
+   "text": "And they blend it slowly, thousands of times over. One guess is nothing, but billions of guesses take forever.",
+   "dur": 6.79,
+   "at": 62.84
+  },
+  {
+   "key": "reveal",
+   "text": "That's why the stolen list was useless. Just salty, slow smoothies.",
+   "dur": 3.93,
+   "at": 70.02
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer takes it further. Your code never even leaves your phone. It's blended three hundred and ten thousand times into the key that locks your file.",
+   "dur": 9.64,
+   "at": 74.45
+  },
+  {
+   "key": "orbi2",
+   "text": "The server only keeps a smoothie of a smoothie. Twelve wrong guesses, and the file locks itself. Thirty minutes later, it's gone.",
+   "dur": 7.86,
+   "at": 84.39
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. Now you know where your password really goes.",
+   "dur": 4.29,
+   "at": 92.65
+  }
+ ],
+ "duration": 98.74
+}

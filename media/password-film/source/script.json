@@ -1,0 +1,16 @@
+[
+ {"key":"hook","text":"A hacker breaks into a website and steals every single password. And they're completely useless to him.","emo":1.2,"gap":0.45},
+ {"key":"why","text":"How is that even possible? Stay with me, because the answer is hiding in a kitchen blender.","emo":1.0,"gap":0.4},
+ {"key":"stored","text":"First, a secret. Good websites never keep your password. Not even the company can see it.","emo":0.9,"gap":0.3},
+ {"key":"blender","text":"Instead, they drop it into a one way blender. Sunflower seven goes in, and out comes a smoothie of random letters.","emo":1.0,"gap":0.3},
+ {"key":"oneway","text":"And here's the magic. You can turn fruit into a smoothie, but you can never turn a smoothie back into fruit.","emo":1.1,"gap":0.35},
+ {"key":"tiny","text":"Change just one letter, and the smoothie comes out completely different.","emo":1.0,"gap":0.35},
+ {"key":"login","text":"So when you log in, the site blends what you typed, and checks if the two smoothies match. Match? You're in.","emo":0.9,"gap":0.4},
+ {"key":"guess","text":"But hackers are clever. They blend millions of common passwords and look for a match. Password one two three? Cracked instantly.","emo":1.1,"gap":0.35},
+ {"key":"salt","text":"So sites add a pinch of salt. A random sprinkle for every person, so the same password makes a different smoothie.","emo":0.9,"gap":0.3},
+ {"key":"slow","text":"And they blend it slowly, thousands of times over. One guess is nothing, but billions of guesses take forever.","emo":1.0,"gap":0.4},
+ {"key":"reveal","text":"That's why the stolen list was useless. Just salty, slow smoothies.","emo":1.1,"gap":0.5},
+ {"key":"orbi","text":"Orbi Transfer takes it further. Your code never even leaves your phone. It's blended three hundred and ten thousand times into the key that locks your file.","emo":0.9,"gap":0.3},
+ {"key":"orbi2","text":"The server only keeps a smoothie of a smoothie. Twelve wrong guesses, and the file locks itself. Thirty minutes later, it's gone.","emo":0.9,"gap":0.4},
+ {"key":"end","text":"Orbi Transfer dot com. Now you know where your password really goes.","emo":0.8,"gap":0.0}
+]
