@@ -1,4 +1,5 @@
 "use client";
+import { isAnon } from "./anon";
 import { senderKey } from "./client";
 import { toHex } from "./crypto";
 import { spaceBody } from "./space";
@@ -44,7 +45,9 @@ const write = (m: Record<string, string>) => {
   } catch {}
 };
 export const isMine = (id: string) => !!read()[id];
+/** the name this device signs with (never while anonymous: the space gives an alias) */
 export const bubbleName = () => {
+  if (isAnon()) return "";
   try {
     return localStorage.getItem(NAME) || "";
   } catch {
@@ -54,9 +57,10 @@ export const bubbleName = () => {
 
 export async function postBubble(text: string, by: string, life = 30) {
   const owner = toHex(crypto.getRandomValues(new Uint8Array(32)));
-  try {
-    localStorage.setItem(NAME, by);
-  } catch {}
+  if (!isAnon())
+    try {
+      localStorage.setItem(NAME, by);
+    } catch {}
   const from = await senderKey();
   const hue = hueFor(from || `n:${by.toLowerCase()}`);
   const r = await fetch("/api/bubbles", {

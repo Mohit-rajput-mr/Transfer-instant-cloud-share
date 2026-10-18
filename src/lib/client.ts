@@ -1,4 +1,5 @@
 "use client";
+import { anonId, isAnon } from "./anon";
 
 export interface Orb {
   id: string;
@@ -33,6 +34,8 @@ export interface Orb {
   thumb?: boolean;
   /** wired to this task (lib/tasks.ts) */
   task?: string | null;
+  /** sent anonymously (tag a=1): cloud only, opened with the space's key when open */
+  anon?: boolean;
   createdAt: string;
   expiresAt: string;
 }
@@ -50,7 +53,8 @@ const safe = <T,>(fn: () => T, fallback: T): T => {
   }
 };
 
-export function deviceId() {
+/** this browser's lasting id: the only reader and writer of orbit:device */
+export function persistentId() {
   return safe(() => {
     let id = localStorage.getItem("orbit:device");
     if (!id) {
@@ -60,6 +64,8 @@ export function deviceId() {
     return id;
   }, "anon-" + Math.random().toString(36).slice(2));
 }
+/** the id every request carries: a throwaway one while anonymous (lib/anon.ts), never linked to the lasting one */
+export const deviceId = () => (isAnon() ? anonId() : persistentId());
 
 /** This device's anonymous sender group: a hash of its random id (not reversible, says nothing about it). */
 export async function senderKey() {
@@ -69,6 +75,7 @@ export async function senderKey() {
 }
 
 export function deviceInfo() {
+  if (isAnon()) return { label: "", browser: "", os: "", form: "" };
   const ua = navigator.userAgent;
   const [browser, os] = deviceLabel().split(" · ");
   const form = /iPad|Tablet/.test(ua) ? "tablet" : /Mobi|Android|iPhone/.test(ua) ? "mobile" : "desktop";
@@ -76,6 +83,7 @@ export function deviceInfo() {
 }
 
 export function deviceLabel() {
+  if (isAnon()) return "";
   const ua = navigator.userAgent;
   const browser = /Edg\//.test(ua) ? "Edge" : /OPR\//.test(ua) ? "Opera" : /Firefox\//.test(ua) ? "Firefox"
     : /SamsungBrowser/.test(ua) ? "Samsung" : /Chrome\//.test(ua) ? "Chrome" : /Safari\//.test(ua) ? "Safari" : "Browser";

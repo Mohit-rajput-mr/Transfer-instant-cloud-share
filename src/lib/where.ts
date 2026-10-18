@@ -1,5 +1,6 @@
 "use client";
 import { areaOf, validArea } from "./area";
+import { isAnon } from "./anon";
 
 // Where this device is in the void (lib/area.ts). Shared location → the cell it is really in; otherwise the cell its
 // IP points to (rougher). Only the cell is kept on the device and used for the void; the exact fix (in memory only)
@@ -35,7 +36,7 @@ const setFix = (c: GeolocationCoordinates) => {
   return fix;
 };
 /** the last exact position, while fresh: sent with the heartbeat */
-export const fixNow = () => (fix && Date.now() - fix.at < FIX_FOR ? fix : null);
+export const fixNow = () => (isAnon() ? null : fix && Date.now() - fix.at < FIX_FOR ? fix : null);
 export const markSent = (f: Fix | null) => (sent = f);
 /** metres between two fixes */
 const dist = (a: Fix, b: Fix) => {
@@ -44,10 +45,21 @@ const dist = (a: Fix, b: Fix) => {
 };
 
 export const where = () => cur;
-export const myArea = () => cur?.area ?? "";
+export const myArea = () => (isAnon() ? "" : cur?.area ?? "");
+/** turning anonymous on: the exact fix is dropped from memory */
+export const forgetFix = () => {
+  fix = sent = null;
+};
+// anonymous: the IP's cell from the anonymous heartbeat, only to look around the public void; never written to orbit:area
+let anonCell = "";
+export const setAnonCell = (a: unknown) => {
+  anonCell = validArea(a) ? a : "";
+};
+export const anonCellNow = () => anonCell;
 
 /** the server's guess from the IP: used only until (or unless) the device shares its location */
 export function fromIp(area: unknown) {
+  if (isAnon()) return false;
   if (!validArea(area) || cur?.how === "gps" || cur?.how === "pick" || cur?.area === area) return false;
   save({ area, how: "ip" });
   return true;
@@ -86,6 +98,7 @@ export async function permission(): Promise<PermissionState | "unknown"> {
 
 /** ask for the location (the browser shows its prompt the first time) and move to the cell it is in */
 export function locate(): Promise<Where> {
+  if (isAnon()) return Promise.reject(Object.assign(new Error("Location is off while you're anonymous"), { anon: true }));
   markAsked();
   return new Promise((res, rej) => {
     if (!navigator.geolocation) return rej(new Error("This browser can't share its location"));
@@ -105,9 +118,10 @@ export function locate(): Promise<Where> {
 /** while location is allowed: follow the device. `onArea` when it walks into another cell, `onMoved` when it is
  * more than 100 m from the position Orbit last heard. Returns the stop function. */
 export function follow(onArea: (w: Where) => void, onMoved: () => void) {
-  if (!navigator.geolocation) return () => {};
+  if (!navigator.geolocation || isAnon()) return () => {};
   const id = navigator.geolocation.watchPosition(
     (p) => {
+      if (isAnon()) return;
       const f = setFix(p.coords);
       const area = areaOf(f.lat, f.lon);
       if (cur?.area !== area || cur.how !== "gps") {

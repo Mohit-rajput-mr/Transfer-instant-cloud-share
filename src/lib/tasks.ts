@@ -1,4 +1,5 @@
 "use client";
+import { isAnon } from "./anon";
 import { ownerKey, senderKey } from "./client";
 import { toHex } from "./crypto";
 import { spaceBody } from "./space";
@@ -86,7 +87,7 @@ export async function addTask(line: string, by = bubbleName(), life = 30) {
   const owner = toHex(crypto.getRandomValues(new Uint8Array(32)));
   const { text, assignee } = parseTask(line);
   const from = await senderKey();
-  const d = await post("/api/tasks", { text, assignee, by, life, pro: proCode() || undefined, owner, from, ...spaceBody() });
+  const d = await post("/api/tasks", { text, assignee, by, life, pro: isAnon() && proCode() !== "ALL" ? undefined : proCode() || undefined, owner, from, ...spaceBody() });
   const m = read();
   m[d.id] = owner;
   const ids = Object.keys(m);
@@ -114,7 +115,7 @@ export async function editTask(id: string, change: { text?: string; route?: stri
   const owner = read()[id];
   if (!owner) throw new Error("Only the person who wrote this task can change it");
   // one at a time, in the order they were made (quick taps never land out of order)
-  const run = edits.then(() => post("/api/tasks/edit", { id, owner, by, ...change }));
+  const run = edits.then(() => post("/api/tasks/edit", { id, owner, by, ...change, ...spaceBody() }));
   edits = run.catch(() => {});
   return run;
 }

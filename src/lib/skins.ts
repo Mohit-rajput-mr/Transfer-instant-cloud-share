@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 // The pick is kept in this browser; with the visitor's OK it is also remembered for this computer
 // (every browser on it) and can be carried anywhere with a short style code. No login, no personal data.
 
+import { isAnon } from "./anon";
 import { DEFAULT_PALETTE, DEFAULT_SKIN, validPalette, validSkin } from "./skin-list";
 export * from "./skin-list";
 
@@ -70,22 +71,23 @@ export function setSkin(id: string) {
   if (!validSkin(id)) return;
   put(KEY, id);
   announce();
-  if (deviceSync()) saveDevice();
+  // anonymous: the look stays in this browser only
+  if (deviceSync() && !isAnon()) saveDevice();
 }
 export function setPalette(id: string) {
   if (!validPalette(id)) return;
   put(PAL, id);
   announce();
-  if (deviceSync()) saveDevice();
+  if (deviceSync() && !isAnon()) saveDevice();
 }
 
 /** testing mode: after the first thing the visitor does here, remember this browser's look for the computer */
 export function autoRemember() {
-  if (!AUTO_DEVICE) return () => {};
+  if (!AUTO_DEVICE || isAnon()) return () => {};
   const evs = ["pointerdown", "keydown", "wheel", "scroll", "touchstart"] as const;
   const once = () => {
     off();
-    if (pickedSkin() || pickedPalette()) saveDevice();
+    if (!isAnon() && (pickedSkin() || pickedPalette())) saveDevice();
   };
   const off = () => evs.forEach((e) => window.removeEventListener(e, once));
   evs.forEach((e) => window.addEventListener(e, once, { passive: true, once: true }));
@@ -95,12 +97,13 @@ export function autoRemember() {
 /** turn "remember on this computer (every browser)" on or off */
 export async function setDeviceSync(on: boolean) {
   put(SYNC, on ? "1" : null);
+  if (isAnon()) return;
   await prefsApi({ action: on ? "save" : "forget", traits: traits(), prefs: look() });
 }
 
 /** a browser that never picked a style: the one remembered for this computer, if there is one */
 export async function findDeviceSkin(): Promise<string | null> {
-  if (pickedSkin() || pickedPalette()) return null;
+  if (isAnon() || pickedSkin() || pickedPalette()) return null;
   const r = await prefsApi<{ prefs: { skin?: string; pal?: string } | null }>({ action: "find", traits: traits() });
   const id = r?.prefs?.skin;
   if (!validSkin(id)) return null;
@@ -110,6 +113,9 @@ export async function findDeviceSkin(): Promise<string | null> {
   announce();
   return id;
 }
+
+/** turning anonymous on: Orbi forgets the look it remembered for this computer (its traits key) */
+export const forgetDeviceLook = () => prefsApi({ action: "forget", traits: traits() });
 
 /** a short code that carries the style to any browser or device */
 export async function makeStyleCode(): Promise<string | null> {
