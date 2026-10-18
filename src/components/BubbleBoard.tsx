@@ -471,6 +471,8 @@ export function BubbleSpace(props: { bubbles: Bubble[]; focus: string | null; on
 export function BubbleCompose(props: {
   defaultName: string;
   inSpace: string | null;
+  /** anonymous (lib/anon.ts): no name field, the space gives an alias */
+  anon?: boolean;
   /** changing an existing bubble of yours */
   edit?: { bubble: Bubble; mode: "append" | "edit" } | null;
   /** your newest live bubble, so a new note can go onto it instead */
@@ -488,7 +490,7 @@ export function BubbleCompose(props: {
     if (!text.trim() || busy) return;
     setBusy(true);
     try {
-      if (mode === "new") await props.onPost(text, name.trim());
+      if (mode === "new") await props.onPost(text, props.anon ? "" : name.trim());
       else if (target) await props.onChange(target.id, text, mode);
       props.onClose();
     } catch {
@@ -506,8 +508,8 @@ export function BubbleCompose(props: {
       )}
       {mode === "new" ? (
         <>
-          <p className="dim bub-note">{props.inSpace ? `Only people in ${props.inSpace} see it.` : "Anyone in the public void sees it, as is: no password, nothing to unlock."} It burns in 30 minutes.</p>
-          <input className="line-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name (optional)" maxLength={24} autoComplete="off" />
+          <p className="dim bub-note">{props.inSpace ? `Only people in ${props.inSpace} see it.` : "Anyone in the public void sees it, as is: no password, nothing to unlock."} It burns in 30 minutes.{props.anon ? " You post as your space alias. Notes aren't end-to-end encrypted." : ""}</p>
+          {!props.anon && <input className="line-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name (optional)" maxLength={24} autoComplete="off" />}
         </>
       ) : mode === "append" && target ? (
         <blockquote className="bub-quote">{target.text}</blockquote>

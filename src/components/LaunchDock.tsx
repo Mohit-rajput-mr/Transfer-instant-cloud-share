@@ -9,6 +9,7 @@ import type { Stage } from "@/lib/transfer";
 import { ShareBlock } from "./Panels";
 import { glyph } from "./Glyph";
 import { LuCheck } from "react-icons/lu";
+import { useAnon } from "@/lib/anon";
 
 /** One send in flight (or just landed). The card closes on Launch; this is all that stays on screen. */
 export interface Launch {
@@ -77,6 +78,8 @@ export default function LaunchDock(props: {
   const { launches, onDismiss } = props;
   const dl = useDownloads();
   const pending = usePendingCount();
+  // anonymous: nothing was kept to resume (lib/transfer.ts never saves a pending anonymous upload)
+  const anon = useAnon().now;
   const [histOpen, setHistOpen] = useState(false);
   // in-progress (and errors) stay visible as cards; everything already in orbit folds into one quiet chip
   const active = launches.filter((l) => !l.orb);
@@ -84,7 +87,7 @@ export default function LaunchDock(props: {
   if (!launches.length && !dl.jobs.length && !pending) return null;
   return (
     <div className="dock" aria-live="polite">
-      <ResumeUploads />
+      {!anon && <ResumeUploads />}
       <DownloadCard />
       {active.slice(-3).map((l) => (
         <DockItem key={l.key} l={l} {...props} />
