@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Ever wondered how your phone reads a QR code in a split second?",
+   "dur": 4.103,
+   "at": 0.35
+  },
+  {
+   "key": "origin",
+   "text": "It started in 1994, at a Japanese car parts maker. Barcodes couldn't hold enough, so they built a square one that holds far more, and reads fast.",
+   "dur": 9.362,
+   "at": 4.9
+  },
+  {
+   "key": "finders",
+   "text": "First, the camera hunts for these three big squares. They tell it where the code is, how big it is, and which way is up.",
+   "dur": 6.594,
+   "at": 14.61
+  },
+  {
+   "key": "grid",
+   "text": "Everything else is a grid of tiny squares. Dark means one. Light means zero.",
+   "dur": 5.46,
+   "at": 21.56
+  },
+  {
+   "key": "zigzag",
+   "text": "Your phone reads them in a zigzag, starting at the bottom right, two columns at a time, snaking up and down.",
+   "dur": 5.983,
+   "at": 27.37
+  },
+  {
+   "key": "mask",
+   "text": "But big blank patches confuse cameras. So the code is mixed with one of eight masks, a pattern that breaks them up.",
+   "dur": 6.598,
+   "at": 33.7
+  },
+  {
+   "key": "damage",
+   "text": "And the clever part? Spill coffee on it, and it still works!",
+   "dur": 3.702,
+   "at": 40.65
+  },
+  {
+   "key": "repair",
+   "text": "Extra repair data is woven in. At the highest level, about thirty percent of it can be damaged, and the math rebuilds the rest.",
+   "dur": 6.928,
+   "at": 44.8
+  },
+  {
+   "key": "big",
+   "text": "The smallest code is twenty-one squares wide. The biggest is a hundred and seventy-seven, enough for over seven thousand digits.",
+   "dur": 6.4,
+   "at": 52.08
+  },
+  {
+   "key": "end",
+   "text": "So next time you scan one, remember: it's a tiny map of ones and zeros that fixes itself.",
+   "dur": 5.372,
+   "at": 58.83
+  }
+ ],
+ "duration": 66.0
+}
