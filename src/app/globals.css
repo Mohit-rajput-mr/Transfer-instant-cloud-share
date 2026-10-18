@@ -596,7 +596,8 @@ html.card-open .made { opacity: 0; pointer-events: none; }
 .hq .maplibregl-ctrl-attrib-button { filter: invert(1); }
 .gdot.live { margin: 0; }
 .gdot.exact { width: 11px; height: 11px; margin: 0; background: #ff4fd8; border: 2px solid #fff; z-index: 3; }
-.gdot.seen { width: 9px; height: 9px; margin: 0; background: #a0498f; border: 1.5px solid rgba(255,255,255,0.7); z-index: 2; opacity: 0.85; }
+/* last GPS seen: the same pink as the live spot, full strength, with a green ring (recent people, now offline) */
+.gdot.seen { width: 11px; height: 11px; margin: 0; background: #ff4fd8; border: 2px solid #3dff8c; z-index: 2; }
 .gdot.anon { width: 20px; height: 20px; margin: 0; display: grid; place-items: center; border-radius: 50%; background: rgba(12,12,12,0.85); color: #d8d8d8; border: 1px solid rgba(255,255,255,0.45); z-index: 3; }
 .gdot.anon svg { width: 13px; height: 13px; display: block; pointer-events: none; }
 .gdot.anon.on { color: #fff; border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,0.15); }

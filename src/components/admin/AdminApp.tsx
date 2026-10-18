@@ -164,7 +164,7 @@ function Login({ onIn }: { onIn: () => void }) {
 const LAYERS: { id: Layer; label: string; dot: string }[] = [
   { id: "live", label: "Live now", dot: "#3dff8c" },
   { id: "exact", label: "Exact · live", dot: "#ff4fd8" },
-  { id: "exactSeen", label: "Last GPS seen", dot: "#a0498f" },
+  { id: "exactSeen", label: "Last GPS seen", dot: "#ff4fd8" },
   { id: "anon", label: "Anonymous (IP)", dot: "#9a9a9a" },
   { id: "visitors", label: "All visitors", dot: "#ffffff" },
   { id: "uploads", label: "Uploads", dot: "#59b8ff" },
@@ -282,7 +282,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
           <div className="hq-layers">
             {LAYERS.map((l) => (
               <button key={l.id} className={`chip${layers.has(l.id) ? " on" : ""}`} onClick={() => toggle(l.id)}>
-                <i style={{ background: l.dot }} />{l.label}
+                <i style={{ background: l.dot, ...(l.id === "exactSeen" ? { boxShadow: "0 0 0 2px #3dff8c" } : null) }} />{l.label}
               </button>
             ))}
             <button className={`chip${spin ? " on" : ""}`} onClick={() => setSpin((s) => !s)}>⟳ Auto-spin</button>
