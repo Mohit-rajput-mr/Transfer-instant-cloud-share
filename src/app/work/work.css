@@ -791,3 +791,8 @@ html[data-ui="work"] .ghost-seal .e { background: var(--w-canvas); color: color-
 html[data-ui="work"] .ghost-seal .k { border-color: color-mix(in srgb, var(--w-text) 40%, transparent); }
 html[data-ui="work"] .ghost-seal .k::after { background: color-mix(in srgb, var(--w-text) 45%, transparent); }
 html[data-ui="work"][data-theme="light"] .ghost-seal { box-shadow: inset 0 0 0 6px rgba(0,0,0,0.04), inset 0 0 70px rgba(0,0,0,0.08); }
+
+html[data-ui="work"] .ghost-layer { background-color: color-mix(in srgb, #202124 55%, transparent); }
+html[data-ui="work"][data-theme="light"] .ghost-layer { background-color: rgba(60,64,67,0.10); }
+html[data-ui="work"] .ghost-title { font-family: var(--w-font); color: color-mix(in srgb, var(--w-text) 62%, transparent); }
+html[data-ui="work"] .ghost-sub { font-family: var(--w-font); color: color-mix(in srgb, var(--w-text) 40%, transparent); }

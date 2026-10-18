@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { LuCircleHelp, LuFile, LuX, LuFolderUp, LuGlobe, LuLayers, LuListChecks, LuLock, LuMenu, LuMessageSquareText, LuMoon, LuOrbit, LuShare2, LuSparkles, LuStickyNote, LuSun, LuType, LuUpload, LuUser, LuVenetianMask, LuWifi } from "react-icons/lu";
+import { LuCircleHelp, LuFile, LuX, LuFolderUp, LuGlobe, LuLayers, LuListChecks, LuLock, LuMenu, LuMessageSquareText, LuMoon, LuOrbit, LuShare2, LuSparkles, LuStickyNote, LuSun, LuType, LuUpload, LuUser, LuWifi } from "react-icons/lu";
+import { BsIncognito } from "react-icons/bs";
 import type { Kind } from "@/lib/skin-list";
 import { useTheme } from "@/lib/theme";
 import KindFilter from "./KindFilter";
@@ -55,7 +56,7 @@ export function WorkBar(p: {
           <b className="ellip">{p.space ?? "Public workspace"}</b>
         </button>
         {p.anon ? (
-          <span className="w-tag anon"><LuVenetianMask aria-hidden />anonymous</span>
+          <span className="w-tag anon"><BsIncognito aria-hidden />anonymous</span>
         ) : (
           <span className={`w-tag${p.isPrivate ? " lock" : ""}`}>
             {p.space ? (p.isPrivate ? <><LuLock aria-hidden />private</> : "space") : p.area ? <><LuGlobe aria-hidden />{p.area}</> : "public"}

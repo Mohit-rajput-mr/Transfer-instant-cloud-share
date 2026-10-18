@@ -1,7 +1,7 @@
 "use client";
 import { homePath } from "@/lib/client";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { LuVenetianMask } from "react-icons/lu";
+import { BsIncognito } from "react-icons/bs";
 import {
   createSpace, joinSpace, savedHandle, savedSpaces, searchSpaces,
   type SpaceHit, type SpaceInfo, type SpaceSession,
@@ -137,7 +137,7 @@ export default function SpacePanel(props: {
       {tab === "here" && current?.anon && (
         <div className="sp-pane" key="here">
           <div className="sp-hero">
-            <span className="mono dim"><LuVenetianMask className="ic-inline" aria-hidden /> Anonymous space · you are <b>{current.handle}</b></span>
+            <span className="mono dim"><BsIncognito className="ic-inline" aria-hidden /> Anonymous space · you are <b>{current.handle}</b></span>
             <div className="wide sp-title">{current.title}<Lock /></div>
             <span className="mono dim">{info ? `${info.members.length} ${info.members.length === 1 ? "member" : "members"}${ends ? ` · deletes ${ends}` : ""}` : "…"}</span>
           </div>
@@ -183,7 +183,7 @@ export default function SpacePanel(props: {
               <button key={`s-${s.slug}`} className={`sp-card lg-press${off ? " off" : ""}`} aria-disabled={off} style={{ "--hue": hueOf(s.slug) } as CSSProperties} onClick={() => (off ? blocked(s.title) : props.onEnter(s))}>
                 <i className="sp-orb" />
                 <b>{s.title}</b>
-                <span className="mono dim">{off ? "turn off Anonymous to enter" : s.anon ? <><LuVenetianMask className="ic-inline" aria-hidden /> anonymous · joined</> : <>{s.priv ? <><Lock /> private · </> : null}joined</>}</span>
+                <span className="mono dim">{off ? "turn off Anonymous to enter" : s.anon ? <><BsIncognito className="ic-inline" aria-hidden /> anonymous · joined</> : <>{s.priv ? <><Lock /> private · </> : null}joined</>}</span>
                 <span className="sp-go"><Arrow /></span>
               </button>
               );
@@ -209,7 +209,7 @@ export default function SpacePanel(props: {
       {tab === "create" && (
         <div className="sp-pane" key="create-anon">
           <div className="sp-hero sp-anon">
-            <span className="mono dim"><LuVenetianMask className="ic-inline" aria-hidden /> <b>Anonymous space</b></span>
+            <span className="mono dim"><BsIncognito className="ic-inline" aria-hidden /> <b>Anonymous space</b></span>
             <p className="note">No name, a random title, private. Share it with one link; only people with the link get in and can open what&apos;s sent.</p>
             <button className="cta lg-press" onClick={props.onAnonSpace}>Create anonymous space <Arrow /></button>
           </div>

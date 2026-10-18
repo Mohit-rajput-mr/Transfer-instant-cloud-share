@@ -3360,3 +3360,12 @@ html[data-anon] body { background: #050505; }
   .ghost-seal .e.l, .ghost-seal .e.r { display: none; }
   .ghost-seal .e { font-size: 8.5px; letter-spacing: 0.22em; }
 }
+
+/* incognito feel: the void turns the flat charcoal of a private window, the hat and glasses centred with one line */
+.ghost-layer { background-color: rgba(32,33,36,0.62); }
+.ghost-mid { position: absolute; left: 50%; top: 50%; translate: -50% -50%; width: min(520px, calc(100% - 48px)); display: grid; justify-items: center; gap: 12px; text-align: center; }
+.ghost-mid .ghost-mask { position: static; translate: none; width: clamp(84px, 14vmin, 132px); height: auto; opacity: 0.2; }
+.ghost-title { font: 600 clamp(20px, 2.2vw, 28px)/1.15 var(--sans); letter-spacing: -0.01em; color: rgba(255,255,255,0.62); }
+.ghost-sub { font: 400 13.5px/1.5 var(--sans); color: rgba(255,255,255,0.38); max-width: 420px; }
+.ghost-word { display: none; }
+@media (max-width: 720px) { .ghost-sub { font-size: 12.5px; } }

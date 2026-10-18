@@ -17,7 +17,8 @@ import Viewer, { viewKind } from "./Viewer";
 import { canPeek, peekFile } from "@/lib/peek";
 import { Meter } from "@/lib/rate";
 import type { Task } from "@/lib/tasks";
-import { LuArrowRight, LuCheck, LuChevronDown, LuFlag, LuInfinity, LuVenetianMask } from "react-icons/lu";
+import { LuArrowRight, LuCheck, LuChevronDown, LuFlag, LuInfinity } from "react-icons/lu";
+import { BsIncognito } from "react-icons/bs";
 import { isAnon } from "@/lib/anon";
 import { genericTitle } from "@/lib/scrub";
 
@@ -589,7 +590,7 @@ export function SendPanel(props: {
       <div className="col">
         {props.anon && (
           <div className="field anon-send">
-            <p className="note"><LuVenetianMask className="ic-inline" aria-hidden /> Sending anonymously into {props.anon.space}</p>
+            <p className="note"><BsIncognito className="ic-inline" aria-hidden /> Sending anonymously into {props.anon.space}</p>
             <label className="anon-names">
               <input type="checkbox" checked={props.anon.hideNames} onChange={(e) => props.anon?.setHideNames(e.target.checked)} />
               <span>Hide file names</span>

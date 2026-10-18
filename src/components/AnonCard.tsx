@@ -1,6 +1,7 @@
 "use client";
 import { useState, type ReactNode } from "react";
-import { LuCloud, LuEyeOff, LuMapPinOff, LuShieldCheck, LuUserRoundX, LuVenetianMask } from "react-icons/lu";
+import { LuCloud, LuEyeOff, LuMapPinOff, LuShieldCheck, LuUserRoundX } from "react-icons/lu";
+import { BsIncognito } from "react-icons/bs";
 import { Pop } from "./Spaces";
 import type { SpaceSession } from "@/lib/space";
 
@@ -79,7 +80,7 @@ export default function AnonCard(props: {
   };
   const share = typeof navigator !== "undefined" && !!navigator.share && !!props.link;
   const doShare = () => props.link && navigator.share?.({ title: props.space?.title ?? "Anonymous space", url: props.link }).catch(() => {});
-  const ring = <i className="geo-ring anon-ring" aria-hidden><LuVenetianMask /></i>;
+  const ring = <i className="geo-ring anon-ring" aria-hidden><BsIncognito /></i>;
   const savedList = (verb: string) =>
     props.saved.length > 0 && (
       <div className="anon-saved">
@@ -104,7 +105,7 @@ export default function AnonCard(props: {
         <Still open />
         {/* stays in view at the card's bottom edge while the explainer scrolls */}
         <div className="anon-actions">
-          <button className="cta lg-press" onClick={props.onTurnOn}><LuVenetianMask aria-hidden /> Stay anonymous</button>
+          <button className="cta lg-press" onClick={props.onTurnOn}><BsIncognito aria-hidden /> Stay anonymous</button>
           <button className="geo-later mono" onClick={props.onClose}>Not now</button>
         </div>
       </>
@@ -155,7 +156,7 @@ export default function AnonCard(props: {
       <>
         <h3 className="wide">Join {props.join.title}?</h3>
         <p>You&apos;ll get a random name like Anon-7F3. Nothing about you or your location is shared with the space.</p>
-        <button className="cta lg-press" disabled={busy} onClick={run(props.join.go)}><LuVenetianMask aria-hidden /> {busy ? "Joining…" : "Join anonymously"}</button>
+        <button className="cta lg-press" disabled={busy} onClick={run(props.join.go)}><BsIncognito aria-hidden /> {busy ? "Joining…" : "Join anonymously"}</button>
         <button className="geo-later mono" onClick={props.onClose}>Not now</button>
       </>
     ));

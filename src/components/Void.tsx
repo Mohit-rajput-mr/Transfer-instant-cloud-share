@@ -30,7 +30,7 @@ import { downloading } from "@/lib/downloads";
 import { warm } from "@/lib/peek";
 import { anonLink, anonTitle, createAnonSpace, createSpace, joinAnonSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
 import { BsIncognito } from "react-icons/bs";
-import { LuFlag, LuMessageCircle, LuMapPin, LuMapPinOff, LuMenu, LuPalette, LuSearch, LuPlus, LuVenetianMask, LuX } from "react-icons/lu";
+import { LuFlag, LuMessageCircle, LuMapPin, LuMapPinOff, LuMenu, LuPalette, LuSearch, LuPlus, LuX } from "react-icons/lu";
 import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange } from "./BubbleBoard";
 import TaskBoard, { TaskWires, taskGroups } from "./TaskBoard";
@@ -2003,11 +2003,11 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   };
   // "Stay anonymous": the mask while it's off; while anonymous here, a badge in the pin's place (location can't be on)
   const anonOffButton = (cls: string) => (
-    <button className={`${cls} anon-chip`} onClick={requestAnon} aria-label="Stay anonymous: no location, no name, cloud only" title="Stay anonymous"><LuVenetianMask aria-hidden /></button>
+    <button className={`${cls} anon-chip`} onClick={requestAnon} aria-label="Stay anonymous: no location, no name, cloud only" title="Stay anonymous"><BsIncognito aria-hidden /></button>
   );
   const anonOnButton = (cls: string, withText = false) => (
     <button className={cls} onClick={() => setPanel({ kind: "anon", mode: "status" })} aria-label="Anonymous on. Tap for details" title="Anonymous on">
-      <LuVenetianMask aria-hidden />{withText && <span>Anonymous</span>}
+      <BsIncognito aria-hidden />{withText && <span>Anonymous</span>}
     </button>
   );
   // location: green pin when this device shares it, red when not (a tap asks again)
@@ -2217,8 +2217,11 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           {/* anonymous: the void goes dark and cold (vignette, grain, scan lines, a big mask), so nobody forgets */}
           {anonNow && !inArchive && (
             <div className="ghost-layer" aria-hidden>
-              <BsIncognito className="ghost-mask" />
-              <span className="ghost-word">Anonymous</span>
+              <div className="ghost-mid">
+                <BsIncognito className="ghost-mask" />
+                <b className="ghost-title">You&apos;ve gone anonymous</b>
+                <span className="ghost-sub">Other users can&apos;t see your location, your name or your device. Files go through the encrypted cloud only.</span>
+              </div>
               {/* the sealed container: one frame, every edge closed, corner bolts and a seal line on each side */}
               <div className="ghost-seal">
                 <i className="k tl" /><i className="k tr" /><i className="k bl" /><i className="k br" />
@@ -2230,7 +2233,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             </div>
           )}
           {!work && !inArchive && !space && (anonNow ? (
-            <button className="where-badge anon" onClick={() => setPanel({ kind: "anon", mode: "status" })} aria-label="You are anonymous in the public void: you can look and download. Sending opens an anonymous space"><i aria-hidden /><LuVenetianMask aria-hidden />Anonymous here: look only</button>
+            <button className="where-badge anon" onClick={() => setPanel({ kind: "anon", mode: "status" })} aria-label="You are anonymous in the public void: you can look and download. Sending opens an anonymous space"><i aria-hidden /><BsIncognito aria-hidden />Anonymous here: look only</button>
           ) : (
             <button className="where-badge" onClick={() => setPanel({ kind: "space" })} aria-label="You are in the public void. Open spaces"><i aria-hidden />You&apos;re in the public void</button>
           ))}

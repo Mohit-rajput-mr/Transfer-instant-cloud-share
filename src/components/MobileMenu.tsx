@@ -1,7 +1,8 @@
 "use client";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { LuArchive, LuArrowUp, LuBriefcase, LuChevronRight, LuCircleHelp, LuFileText, LuImage, LuInfo, LuLayers, LuLayoutGrid, LuLink, LuListChecks, LuMessageSquareText, LuMoon, LuMusic, LuOrbit, LuPalette, LuShieldCheck, LuSparkles, LuSun, LuTimer, LuUser, LuUserX, LuVenetianMask, LuVideo, LuWifi, LuX } from "react-icons/lu";
+import { LuArchive, LuArrowUp, LuBriefcase, LuChevronRight, LuCircleHelp, LuFileText, LuImage, LuInfo, LuLayers, LuLayoutGrid, LuLink, LuListChecks, LuMessageSquareText, LuMoon, LuMusic, LuOrbit, LuPalette, LuShieldCheck, LuSparkles, LuSun, LuTimer, LuUser, LuUserX, LuVideo, LuWifi, LuX } from "react-icons/lu";
+import { BsIncognito } from "react-icons/bs";
 import { KINDS, type Kind } from "@/lib/skin-list";
 import { useTheme } from "@/lib/theme";
 
@@ -73,7 +74,7 @@ export default function MobileMenu(props: {
             <div className="sd-list">
               {/* a switch, not a link: it flips here and the menu stays (the first time, the explainer takes its place) */}
               <button className="sd-row lg-press sd-anon" role="switch" aria-checked={a.on} onClick={() => a.toggle(!a.on)}>
-                <span className="sd-ic"><LuVenetianMask /></span>
+                <span className="sd-ic"><BsIncognito /></span>
                 <span className="sd-txt"><b>Stay anonymous</b><small>{a.on ? "On · no location · cloud only" : "no location · no name · cloud only"}</small></span>
                 <span className="sd-switch" aria-hidden><i /></span>
               </button>
@@ -127,7 +128,7 @@ export default function MobileMenu(props: {
             })}
           </div>
           <div className="sd-facts">
-            {a?.now && <button className="sd-fact-btn" onClick={a.card}><LuVenetianMask aria-hidden />Anonymous</button>}
+            {a?.now && <button className="sd-fact-btn" onClick={a.card}><BsIncognito aria-hidden />Anonymous</button>}
             <span><LuUserX aria-hidden />No login</span>
             <span><LuShieldCheck aria-hidden />Encrypted</span>
             <span><LuTimer aria-hidden />Burns in 5–30 min</span>
