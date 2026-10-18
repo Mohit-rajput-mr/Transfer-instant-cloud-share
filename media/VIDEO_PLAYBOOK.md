@@ -131,7 +131,19 @@ Structure that works:
 7. Make a cover (`cover.jpg`) and a README with the story beats, then add `frames/`, `score.wav` and `events.json` to `.gitignore`.
    Commit, push, and send the MP4.
 
+
+## Format 2: science films ("how everyday tech works", then why Orbi) — owner 2026-10-18
+- Pick something people use daily but don't understand (sending a photo, Wi-Fi, GPS, QR codes, phone batteries, touch
+  screens, passwords, cloud storage…). Explain it with big, simple, low-poly visuals, in layers, with true numbers only.
+- The last ~25%: connect to Orbi Transfer ("That's why Orbi Transfer …") using only the verified facts above.
+- Hook: a surprising true fact about the everyday thing (not the Orbi hook line). Voice: the expressive George voice.
+- First one: `packets-film/` ("Where your photos go": bits → packets → labels → Wi-Fi → router hops → sea cable →
+  re-sorting → then Orbi locks before it leaves, big parts several at once, rough area, burn).
+- Next ideas: how Wi-Fi works · how GPS finds you · how a QR code holds a link · how passwords are stored (hashing) ·
+  why your phone storage fills up · how "the cloud" is just someone's computer.
+
 ## Films so far
+- `packets-film/`: science film, what happens when you send a photo (packets, routers, sea cables), then why Orbi (**latest**)
 - `concert-film/`: arena encore, code "rock", the clip as a song (guitar case → notes flying at once → backstage door → stadium light wave → song plays → stage goes dark), Chatterbox voice with feeling (**latest**)
 - `airport-film/`: arrivals gate, code "tram", a whole folder as luggage (suitcase → bags on belts → baggage hold → radar → carousel → shredder), low-poly men and women (MP4 rendered 2026-10-18, 79 s)
 - `wedding-film/`: wedding, passcode "cake", the photo's full journey (locked box → pieces → vault → ring → unlock → burn)
