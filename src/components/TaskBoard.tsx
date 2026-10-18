@@ -665,13 +665,15 @@ export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring, strai
       };
       let s = CABLE_DEFS;
       let k = 0;
+      // a phone: no hanging cables across the small screen (each task lists its files, and the ball carries its T tag)
+      const phone = window.innerWidth <= 720;
       for (const o of wired) {
         const a = ballRect(o.id);
         if (!a || !a.width) continue;
         const ox = a.left + a.width / 2 - box.left, oy = a.top + a.height / 2 - box.top;
         const hue = hueFor(o.from ?? o.id);
         const op = !focusHas || focus === o.task ? 1 : 0.18;
-        const end = rowEnd(o.task!);
+        const end = phone ? null : rowEnd(o.task!);
         if (end) {
           // the cable leaves the ball from its side facing the task
           const ang = Math.atan2(end.y - oy, end.x - ox), r = a.width * 0.44;

@@ -1606,7 +1606,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const [arranged, setArranged] = useState(false);
   useEffect(() => {
     try {
-      setArranged(localStorage.getItem("orbit:arranged") === "1");
+      setArranged(localStorage.getItem("orbit:arranged") !== "0"); // on unless this browser turned it off
     } catch {}
   }, []);
   const toggleArrange = () =>
