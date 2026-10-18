@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { LuLock, LuOrbit } from "react-icons/lu";
-import type { Task } from "@/lib/tasks";
+import { taskLabel, taskLine, type Task } from "@/lib/tasks";
 
 export type ThrowTarget = { slug: string; title: string };
 export type Grab = { task: Task; x: number; y: number };
@@ -78,8 +78,8 @@ export default function TaskThrow(props: { grab: Grab; targets: ThrowTarget[]; o
   return createPortal(
     <div className={`throw-layer${fly ? " flying" : ""}`} aria-live="polite">
       <div className={`throw-chip${fly ? " fly" : ""}`} style={{ "--tx": `${at.x}px`, "--ty": `${at.y}px` } as CSSProperties}>
-        <span className="mono">Task {grab.task.num}</span>
-        <b>{grab.task.text}</b>
+        <span className="mono">{taskLabel(grab.task)}</span>
+        <b>{taskLine(grab.task)}</b>
       </div>
       <div className="throw-zones">
         {all.map((t, i) => (

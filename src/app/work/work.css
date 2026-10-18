@@ -796,3 +796,23 @@ html[data-ui="work"] .ghost-layer { background-color: color-mix(in srgb, #202124
 html[data-ui="work"][data-theme="light"] .ghost-layer { background-color: rgba(60,64,67,0.10); }
 html[data-ui="work"] .ghost-title { font-family: var(--w-font); color: color-mix(in srgb, var(--w-text) 62%, transparent); }
 html[data-ui="work"] .ghost-sub { font-family: var(--w-font); color: color-mix(in srgb, var(--w-text) 40%, transparent); }
+
+/* ---------- step colours: the same picked / place colours as the classic look ---------- */
+html[data-ui="work"] .task-dot[data-c] { background: var(--sc) !important; border-color: var(--sc) !important; }
+html[data-ui="work"] .tb-stage[style] { color: var(--sc) !important; }
+html[data-ui="work"] .tb-rbar i[style] { background: var(--sc) !important; }
+html[data-ui="work"] .tb-row.cancel .tb-text { text-decoration: line-through; text-decoration-color: #e53935; color: var(--w-text-3) !important; }
+html[data-ui="work"] .tr-palette { background: var(--w-surface); border-color: var(--w-border-2); box-shadow: var(--w-shadow); }
+html[data-ui="work"] .tb-name { background: var(--w-canvas) !important; border: 1px solid var(--w-border-2) !important; color: var(--w-text) !important; border-radius: 9px !important; font: 400 13.5px/1.3 var(--w-font) !important; }
+html[data-ui="work"] .tb-name:focus { border-color: var(--w-accent) !important; }
+html[data-ui="work"] .tb-submit, html[data-ui="work"] .tb-up { font-family: var(--w-font) !important; border-radius: 8px !important; }
+html[data-ui="work"] .tb-added { border-radius: 9px; }
+html[data-ui="work"] .tb-added > .mono { color: var(--w-text-2); font: 500 11.5px/1.2 var(--w-font); }
+html[data-ui="work"] .tb-added .ghost { border-color: var(--w-border-2) !important; color: var(--w-text-2) !important; font: 500 12px/1 var(--w-font) !important; }
+html[data-ui="work"] .tr-presets .tr-custom { font: 600 12px/1 var(--w-font) !important; }
+/* a file's tools (destroy, plug) only show while you hover it */
+html[data-ui="work"] .orb-anchor .destroy { opacity: 0; transition: opacity .15s; }
+html[data-ui="work"] .orb-anchor:hover .destroy { opacity: 1; }
+html[data-ui="work"] .wire-plug { transition: opacity .15s; }
+html[data-ui="work"] .w-anon-exit { height: 26px !important; padding: 0 10px !important; margin-left: 6px; font: 600 12px/1 var(--w-font) !important; background: var(--w-text) !important; color: var(--w-canvas) !important; border-radius: 7px !important; }
+html[data-ui="work"] .tb-added button { width: auto !important; flex: none !important; }

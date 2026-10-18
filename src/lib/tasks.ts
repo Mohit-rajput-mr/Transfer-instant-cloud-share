@@ -30,8 +30,34 @@ export interface Task {
 /** ready-made stages to build a route from */
 export const STAGES = ["In progress", "AI reviewing", "Generating zip", "Zip sent to email", "Waiting on client", "In review", "Approved", "Delivered", "Cancelled"];
 /** a step called "Cancelled" / "Cancel order"… marks the task red */
-export const isCancel = (name?: string) => !!name && /cancel/i.test(name);
+export const isCancel = (name?: string) => !!name && /cancel/i.test(stageName(name));
 export const TASK_MAX = 140;
+
+/** the colours a step can wear: its writer picks one per step (otherwise it follows its place in the route) */
+export const STEP_COLORS: [key: string, label: string, hex: string][] = [
+  ["orange", "Orange", "#f08a24"], ["blue", "Blue", "#2f86f2"], ["green", "Green", "#27c463"], ["red", "Red", "#e53935"],
+  ["yellow", "Yellow", "#f2c21b"], ["purple", "Purple", "#8b5cf6"], ["pink", "Pink", "#ec4899"], ["teal", "Teal", "#14b8a6"], ["grey", "Grey", "#8a9199"],
+];
+// a step with a picked colour is stored as "Name§colour" (route entries are plain text on the server)
+const MARK = "§";
+export const stageName = (s?: string | null) => (s ?? "").split(MARK)[0];
+const stageKey = (s?: string | null) => (s ?? "").split(MARK)[1] ?? "";
+export const withColor = (s: string, key: string) => (key ? `${stageName(s).slice(0, 32)}${MARK}${key}` : stageName(s));
+/** the colour step i wears: its own pick, else red for a cancel, else orange (first) · blue (second) · green (on) */
+export function stepHex(route: string[], i: number) {
+  const own = STEP_COLORS.find((c) => c[0] === stageKey(route[i]));
+  if (own) return own[2];
+  if (isCancel(route[i])) return "#e53935";
+  return i <= 0 ? "#f08a24" : i === 1 ? "#2f86f2" : "#27c463";
+}
+export const stepKey = (route: string[], i: number) => stageKey(route[i]);
+
+// A task can carry its own name ("Richard's task") before its line: stored as "Name¦line"
+const LABEL = "¦";
+export const taskLabel = (t: { text: string; num: number; assignee?: string | null }) =>
+  t.text.includes(LABEL) ? t.text.slice(0, t.text.indexOf(LABEL)) : `Task ${t.num}`;
+export const taskLine = (t: { text: string }) => (t.text.includes(LABEL) ? t.text.slice(t.text.indexOf(LABEL) + 1) : t.text);
+export const joinTask = (label: string, line: string) => (label.trim() ? `${label.trim().slice(0, 40)}${LABEL}${line.trim()}` : line.trim());
 
 const OWN = "orbit:tasks";
 const read = (): Record<string, string> => {

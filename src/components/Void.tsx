@@ -34,7 +34,7 @@ import { LuFlag, LuMessageCircle, LuMapPin, LuMapPinOff, LuMenu, LuPalette, LuSe
 import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange } from "./BubbleBoard";
 import TaskBoard, { TaskWires, taskGroups } from "./TaskBoard";
-import { addTask, assignTask, burnTask, carryTasks, wireObject, editTask, isMyTask, moveTask, openInvite, parseTask, sealInvite, tickTask, type Task } from "@/lib/tasks";
+import { addTask, assignTask, burnTask, carryTasks, wireObject, editTask, isMyTask, moveTask, openInvite, parseTask, sealInvite, stageName, taskLabel, taskLine, tickTask, type Task } from "@/lib/tasks";
 import { readSync, type SyncMsg } from "@/lib/sync";
 import { joinLive, liveOn, roomsFor, type Chan } from "@/lib/live";
 import { around } from "@/lib/area";
@@ -482,9 +482,9 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // what changed about someone else's task, said once
   const taskNews = (t: Task, was: string | undefined, me: string) => {
     if (isMyTask(t.id)) return;
-    if (was === undefined) return toast(t.assignee && t.assignee.toLowerCase() === me ? `Task ${t.num} is for you: ${t.text}` : `New task ${t.num}${t.by ? ` from ${t.by}` : ""}: ${t.text}`);
+    if (was === undefined) return toast(t.assignee && t.assignee.toLowerCase() === me ? `${taskLabel(t)} is for you: ${taskLine(t)}` : `New task ${taskLabel(t)}${t.by ? ` from ${t.by}` : ""}: ${taskLine(t)}`);
     const [wasDone, wasWho, wasStage] = was.split("|");
-    if (t.stage !== Number(wasStage) && t.stage >= 0) toast(`Task ${t.num} → ${t.route[t.stage] ?? "next stage"}`);
+    if (t.stage !== Number(wasStage) && t.stage >= 0) toast(`${taskLabel(t)} → ${stageName(t.route[t.stage]) || "next stage"}`);
     else if (t.doneAt && !wasDone) toast(`Task ${t.num} done${t.doneBy ? ` by ${t.doneBy}` : ""}`);
     else if (t.assignee && t.assignee.toLowerCase() === me && wasWho !== t.assignee) toast(`Task ${t.num} is for you`);
   };
@@ -1693,8 +1693,10 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       let last = 0;
       for (const t of tasks) {
         const r = document.querySelector(`[data-task-row="${t.id}"]`)?.getBoundingClientRect();
+        // the lane runs level with the task's dot (where its cables leave the board), so they stay dead straight
+        const d = document.querySelector(`[data-task-dot="${t.id}"]`)?.getBoundingClientRect();
         if (r && r.height) {
-          y.set(t.id, r.top + r.height / 2 - vr.top);
+          y.set(t.id, (d && d.height ? d.top + d.height / 2 : r.top + r.height / 2) - vr.top);
           last = Math.max(last, r.bottom - vr.top);
         }
       }
@@ -2028,9 +2030,9 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const addTaskLine = async (line: string, life: number | undefined) => {
     const by = postName;
     const t = await addTask(line, by, life);
-    toast(`Task ${t.num} added`);
-    setFitAll((n) => n + 1);
     const at = Date.now() + skew, { text, assignee } = parseTask(line);
+    toast(`${taskLabel({ text, num: t.num })} added`);
+    setFitAll((n) => n + 1);
     sync({ t: { id: t.id, num: t.num, text, by: by || room?.handle || null, from: t.from, createdAt: iso(at), expiresAt: iso(at + (life ?? 30) * 60_000), doneAt: null, doneBy: null, assignee: assignee || null, route: [], stage: -1, log: [], editedAt: null } });
     refresh();
   };
@@ -2097,7 +2099,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         const by = postName;
         const next = applyEdit(t, change, by || room?.handle || "");
         applySync({ t: next });
-        if (change.stage !== undefined) toast(change.stage < 0 ? `Task ${t.num} is back to not started` : `Task ${t.num} → ${(change.route ?? t.route)[change.stage]}`);
+        if (change.stage !== undefined) toast(change.stage < 0 ? `Task ${t.num} is back to not started` : `${taskLabel(t)} → ${stageName((change.route ?? t.route)[change.stage])}`);
         editTask(t.id, change, by)
           .then(() => sync({ t: next }))
           .catch((e) => (marks.current.delete(`t:${t.id}`), toast((e as Error).message), refresh()));
@@ -2150,6 +2152,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             onKind={setKind}
             anon={anonNow}
             anonChip={anonNow ? null : anonOffButton("w-icon")}
+            onAnonExit={anonOn ? () => toggleAnon(false) : undefined}
             pin={anonNow ? anonOnButton("w-btn anon-on", true) : pinButton("w-icon geo-chip")}
             onLogo={tapLogo}
             onSpaces={() => setPanel({ kind: "space" })}
@@ -2197,7 +2200,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           <div className="top-right">
             <KindFilter kind={kind} onKind={setKind} scope={{ value: scope, set: setScope, near: space || anonNow ? null : nearbyCount, mine: mineCount }} />
             <span className="live" aria-label={`${online} ${online > 1 ? "devices" : "device"} in orbit`}><span className="dot" /><b>{online}</b><span className="live-txt">{space ? "in this space" : online > 1 ? "devices in orbit" : "device in orbit"}</span></span>
-            {anonNow ? anonOnButton("pill lg-press anon-badge", true) : <>{anonOffButton("hd-ic lg-press")}{pinButton("hd-ic lg-press geo-chip")}</>}
+            {anonNow ? <>{anonOnButton("pill lg-press anon-badge", true)}{anonOn && <button className="pill lg-press anon-exit" onClick={() => toggleAnon(false)} title="Turn off Anonymous">Exit</button>}</> : <>{anonOffButton("hd-ic lg-press")}{pinButton("hd-ic lg-press geo-chip")}</>}
             <button className="hd-ic lg-press style-chip" onClick={() => setPanel({ kind: "style" })} aria-label={`Style: ${skinName(skin)}. Change how files look`} title="Style"><LuPalette aria-hidden /></button>
             <button className="hd-ic lg-press" onClick={() => setPanel({ kind: "space", start: ":search" })} aria-label="Search spaces" title="Search spaces"><LuSearch aria-hidden /></button>
             <button className="hd-ic lg-press" onClick={() => setPanel({ kind: "space", start: ":create" })} aria-label="Create a space" title="Create your space"><LuPlus aria-hidden /></button>
@@ -2756,7 +2759,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
               if (sw && sw.id === t.id && Math.hypot(e.clientX - sw.x, e.clientY - sw.y) > 24) dropToast(t.id);
             }}
           >
-            {t.text}
+            {taskLine(t)}
           </div>
         ))}
       </div>

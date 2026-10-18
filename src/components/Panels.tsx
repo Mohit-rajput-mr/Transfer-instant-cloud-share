@@ -16,7 +16,7 @@ import { glyph } from "./Glyph";
 import Viewer, { viewKind } from "./Viewer";
 import { canPeek, peekFile } from "@/lib/peek";
 import { Meter } from "@/lib/rate";
-import type { Task } from "@/lib/tasks";
+import { taskLabel, taskLine, type Task } from "@/lib/tasks";
 import { LuArrowRight, LuCheck, LuChevronDown, LuFlag, LuInfinity } from "react-icons/lu";
 import { BsIncognito } from "react-icons/bs";
 import { isAnon } from "@/lib/anon";
@@ -690,7 +690,7 @@ export function SendPanel(props: {
               <button role="radio" aria-checked={!wire} className={`chip lg-press${!wire ? " on" : ""}`} onClick={() => setWire(null)}>None</button>
               {openTasks.map((t) => (
                 <button key={t.id} role="radio" aria-checked={wire === t.id} className={`chip task-chip lg-press${wire === t.id ? " on" : ""}${t.doneAt ? " done" : ""}`} onClick={() => setWire(t.id)} title={t.text}>
-                  <i className="task-dot" aria-hidden /><b>Task {t.num}</b><span>{t.text}</span>
+                  <i className="task-dot" aria-hidden /><b>{taskLabel(t)}</b><span>{taskLine(t)}</span>
                 </button>
               ))}
             </div>
@@ -1092,6 +1092,15 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     if (!wantView.current && (asDir && canWriteFolders()) || (!wantView.current && !inline && !isFolder && needsSavePicker(orb))) return setVerified(un);
     run(un, Promise.resolve(null), null);
   };
+
+  // an open note or link (no passcode): its whole text shows the moment the card opens, no extra tap
+  const autoRead = useRef(false);
+  useEffect(() => {
+    if (autoRead.current || !free || !inline || got) return;
+    autoRead.current = true;
+    go();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [free, inline]);
 
   // Step 2 (folders / big files): the passcode is already verified; this tap opens the picker.
   const choose = async (mode?: { zip?: boolean }) => {

@@ -40,6 +40,8 @@ export function WorkBar(p: {
   anon: boolean;
   /** the "Stay anonymous" mask, just before the pin (null while it's on: the pin's place holds the badge) */
   anonChip: ReactNode;
+  /** the switch is on: one tap leaves anonymous mode */
+  onAnonExit?: () => void;
   onLogo: () => void;
   onSpaces: () => void;
   onShare: () => void;
@@ -56,7 +58,10 @@ export function WorkBar(p: {
           <b className="ellip">{p.space ?? "Public workspace"}</b>
         </button>
         {p.anon ? (
-          <span className="w-tag anon"><BsIncognito aria-hidden />anonymous</span>
+          <>
+            <span className="w-tag anon"><BsIncognito aria-hidden />anonymous</span>
+            {p.onAnonExit && <button className="w-btn w-anon-exit" onClick={p.onAnonExit} title="Turn off Anonymous">Exit anonymous</button>}
+          </>
         ) : (
           <span className={`w-tag${p.isPrivate ? " lock" : ""}`}>
             {p.space ? (p.isPrivate ? <><LuLock aria-hidden />private</> : "space") : p.area ? <><LuGlobe aria-hidden />{p.area}</> : "public"}

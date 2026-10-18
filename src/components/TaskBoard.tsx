@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { LuArchive, LuArrowDown, LuArrowUp, LuRows3, LuCheck, LuChevronDown, LuFolderUp, LuLock, LuPaperclip, LuPencil, LuPlus, LuRoute, LuSettings2, LuTrash2, LuUserCheck, LuX } from "react-icons/lu";
-import { PRO_FOR_ALL, STAGES, TASK_LIVES, TASK_MAX, dropPro, forMe, isCancel, isMyTask, parseTask, proCode, redeemPro, type Task } from "@/lib/tasks";
+import { LuArchive, LuArrowDown, LuArrowUp, LuRows3, LuCheck, LuChevronDown, LuFolderUp, LuLock, LuPaperclip, LuPencil, LuPlus, LuRoute, LuSettings2, LuTrash2, LuUpload, LuUserCheck, LuX } from "react-icons/lu";
+import { PRO_FOR_ALL, STAGES, STEP_COLORS, TASK_LIVES, TASK_MAX, dropPro, forMe, isCancel, isMyTask, joinTask, parseTask, proCode, redeemPro, stageName, stepHex, stepKey, taskLabel, taskLine, withColor, type Task } from "@/lib/tasks";
 import { hueFor } from "@/lib/bubbles";
 import { formatBytes, type Orb } from "@/lib/client";
 import { isLow } from "@/lib/perf";
@@ -28,6 +28,10 @@ const DEFAULT_ROUTE = ["In progress", "In review", "Done"];
 /** 0 grey (not started) · 1 orange (first step) · 2 blue (second step) · 3 green (third step on, or done) · 4 red (cancelled) */
 export const stepOf = (t: Task) =>
   t.stage >= 0 && isCancel(t.route[t.stage]) ? 4 : t.doneAt ? 3 : t.route.length && t.stage >= 0 ? (t.stage === 0 ? 1 : t.stage === 1 ? 2 : 3) : 0;
+
+/** the colour a task wears now: its current step's (picked or by place), green once done, none before it starts */
+export const taskHex = (t: Task) => (t.stage >= 0 && t.route[t.stage] ? stepHex(t.route, t.stage) : t.doneAt ? "#27c463" : "");
+const hexStyle = (hex: string) => (hex ? ({ "--sc": hex } as CSSProperties) : undefined);
 
 /** Who wired files to a task: one dot per sender, in their colour, with how many. */
 export function wiredBy(task: string, orbs: Orb[]) {
@@ -62,6 +66,9 @@ export function taskGroups(tasks: Task[]): TaskGroup[] {
  */
 export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: string; focus: string | null; onFocus: (id: string | null) => void; onClose: () => void; /** a cable is being plugged in: the tasks light up as targets */ wiring?: boolean; arranged?: boolean; onArrange?: () => void; /** arranged: each row is a lane this tall, its files on the same line */ laneH?: number; /** the Tasks button in the bar opened the new-task box */ composing?: boolean; onComposed?: () => void; /** hide every task panel with its files (this device) */ onArchive?: () => void; /** the map (lib/map.ts): each panel's centre in the world */ spots?: Map<string, { x: number; y: number }> } & TaskActs) {
   const [line, setLine] = useState("");
+  const [label, setLabel] = useState("");
+  // the task just submitted: the composer offers to upload straight into it
+  const [justAdded, setJustAdded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(true);
   const [taking, setTaking] = useState<string | null>(null);
@@ -70,6 +77,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
   // the extras (how long tasks stay, go private) stay out of the way until asked for
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [draftLabel, setDraftLabel] = useState("");
   // Pro (a code from Mission HQ on this device): tasks stay up to 8 hours
   const [pro, setPro] = useState(false);
   const [life, setLife] = useState(480);
@@ -137,7 +145,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                     <button onClick={() => props.onAttach(t, "folder")} aria-label={`Attach a folder to task ${t.num}`} title="Attach a folder"><LuFolderUp /></button>
                     {isMyTask(t.id) && !t.doneAt && <button onClick={() => (setTaking(taking === t.id ? null : t.id), setWho(t.assignee ?? props.me))} aria-label={`Assign task ${t.num}`} title={t.assignee ? "Reassign" : "Take it / assign"}><LuUserCheck /></button>}
                     <button className={routing === t.id ? "on" : ""} onClick={() => setRouting(routing === t.id ? null : t.id)} aria-label={`Route of task ${t.num}`} title={isMyTask(t.id) ? "Route: edit and update" : "Route: see progress"}><LuRoute /></button>
-                    {isMyTask(t.id) && <button onClick={() => (setEditing(t.id), setDraft(t.text))} aria-label={`Edit task ${t.num}`} title="Edit"><LuPencil /></button>}
+                    {isMyTask(t.id) && <button onClick={() => (setEditing(t.id), setDraft(taskLine(t)), setDraftLabel(taskLabel(t)))} aria-label={`Rename or edit task ${t.num}`} title="Rename / edit"><LuPencil /></button>}
                     {isMyTask(t.id) && i > 0 && <button onClick={() => props.onMove(t, -1)} aria-label={`Move task ${t.num} up`} title="Move up"><LuArrowUp /></button>}
                     {isMyTask(t.id) && i < props.tasks.length - 1 && <button onClick={() => props.onMove(t, 1)} aria-label={`Move task ${t.num} down`} title="Move down"><LuArrowDown /></button>}
                     {isMyTask(t.id) && <button className="kill" onClick={() => props.onBurn(t)} aria-label={`Remove task ${t.num}`} title="Remove"><LuTrash2 /></button>}
@@ -166,9 +174,12 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
     if (!line.trim() || busy) return;
     setBusy(true);
     try {
-      await props.onAdd(line, pro ? life : 30);
+      const p = parseTask(line);
+      const name = label.trim() || (p.assignee ? `${p.assignee}'s task` : "");
+      await props.onAdd(name ? `${joinTask(name, p.text)}${p.assignee ? ` @${p.assignee}` : ""}` : line, pro ? life : 30);
       setLine("");
-      props.onComposed?.();
+      setLabel("");
+      setJustAdded(true);
     } catch {}
     setBusy(false);
     input.current?.focus();
@@ -232,12 +243,12 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                   onPointerLeave={() => !narrow && hideSoon()}
                   className={`tb-row${stepOf(t) === 3 ? " done" : stepOf(t) === 4 ? " cancel" : ""}${props.focus === t.id ? " focus" : ""}${mine && !t.doneAt ? " forme" : ""}`}
                 >
-                  <button className="tb-tick" disabled={!isMyTask(t.id)} onClick={() => tap(t)} aria-label={t.doneAt ? `Untick task ${t.num}` : `Move task ${t.num} to its next step`} title={!isMyTask(t.id) ? `${t.stage >= 0 && t.route[t.stage] ? t.route[t.stage] : t.doneAt ? "Done" : "Not started"} · only its writer moves it` : t.doneAt ? `Done${t.doneBy ? ` by ${t.doneBy}` : ""}` : t.stage >= 0 && t.route[t.stage] ? `${t.route[t.stage]} · tap for the next step` : "Tap: first step"}>
-                    <i className="task-dot big" data-task-dot={t.id} data-step={stepOf(t)}>{(t.doneAt || t.stage >= 0) && <LuCheck aria-hidden />}</i>
+                  <button className="tb-tick" disabled={!isMyTask(t.id)} onClick={() => tap(t)} aria-label={t.doneAt ? `Untick task ${t.num}` : `Move task ${t.num} to its next step`} title={!isMyTask(t.id) ? `${t.stage >= 0 && t.route[t.stage] ? stageName(t.route[t.stage]) : t.doneAt ? "Done" : "Not started"} · only its writer moves it` : t.doneAt ? `Done${t.doneBy ? ` by ${t.doneBy}` : ""}` : t.stage >= 0 && t.route[t.stage] ? `${stageName(t.route[t.stage])} · tap for the next step` : "Tap: first step"}>
+                    <i className="task-dot big" data-task-dot={t.id} data-step={stepOf(t)} data-c={taskHex(t) ? "" : undefined} style={hexStyle(taskHex(t))}>{(t.doneAt || t.stage >= 0) && <LuCheck aria-hidden />}</i>
                   </button>
                   {editing === t.id ? (
-                    <form className="tb-edit" onSubmit={(e) => { e.preventDefault(); if (draft.trim() && draft.trim() !== t.text) props.onEdit(t, { text: draft.trim() }).catch(() => {}); setEditing(null); }}>
-                      <span className="tb-num mono">Task {t.num}</span>
+                    <form className="tb-edit" onSubmit={(e) => { e.preventDefault(); const next = joinTask(draftLabel === `Task ${t.num}` ? "" : draftLabel, draft); if (draft.trim() && next !== t.text) props.onEdit(t, { text: next }).catch(() => {}); setEditing(null); }}>
+                      <input className="tb-num-in mono" value={draftLabel} onChange={(e) => setDraftLabel(e.target.value.slice(0, 40))} onKeyDown={(e) => e.key === "Escape" && setEditing(null)} aria-label={`Name of task ${t.num}`} placeholder={`Task ${t.num}`} />
                       <input autoFocus value={draft} onChange={(e) => setDraft(e.target.value.slice(0, TASK_MAX))} onKeyDown={(e) => e.key === "Escape" && setEditing(null)} aria-label={`Edit task ${t.num}`} />
                       <button type="submit" aria-label="Save"><LuCheck /></button>
                     </form>
@@ -246,19 +257,20 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                     className={`tb-main${props.onGrab && isMyTask(t.id) ? " grabbable" : ""}`}
                     onPointerDown={(e) => startGrab(t, e)}
                     onClick={() => !grabbed.current && props.onFocus(props.focus === t.id ? null : t.id)}
-                    title={props.focus === t.id ? "Show everything" : props.onGrab && isMyTask(t.id) ? "Show only this task's files · drag it to throw it into a space" : "Show only this task's files"}
+                    onDoubleClick={() => (setHover(null), setRouting(t.id))}
+                    title={`${props.focus === t.id ? "Show everything" : "Show only this task's files"} · double-click: route and colours`}
                   >
-                    <span className="tb-num mono">Task {t.num}</span>
-                    <span className="tb-text">{t.text}</span>
+                    <span className="tb-num mono">{taskLabel(t)}</span>
+                    <span className="tb-text">{taskLine(t)}</span>
                     <span className="tb-meta mono">
-                      {t.stage >= 0 && t.route[t.stage] && <em className="tb-stage">{t.route[t.stage]} · {t.stage + 1}/{t.route.length}</em>}
+                      {t.stage >= 0 && t.route[t.stage] && <em className="tb-stage" style={hexStyle(taskHex(t))}>{stageName(t.route[t.stage])} · {t.stage + 1}/{t.route.length}</em>}
                       {stepOf(t) === 4 ? "cancelled" : t.doneAt ? `done${t.doneBy ? ` · ${t.doneBy}` : ""}` : t.assignee ? (mine ? "for you" : `@${t.assignee}`) : t.by ? `from ${t.by}` : "open"}
                       {t.editedAt && " · edited"}
                       {Date.parse(t.expiresAt) - Date.parse(t.createdAt) > 31 * 60_000 && ` · ${left(t.expiresAt)}`}
                     </span>
                     {t.route.length > 0 && (
                       <span className="tb-rbar" aria-hidden>
-                        {t.route.map((r, i) => <i key={i} className={i < t.stage ? "past" : i === t.stage ? "now" : ""} />)}
+                        {t.route.map((r, i) => <i key={i} className={i < t.stage ? "past" : i === t.stage ? "now" : ""} style={i <= t.stage ? hexStyle(stepHex(t.route, i)) : undefined} />)}
                       </span>
                     )}
                   </button>
@@ -267,6 +279,9 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                     {w.slice(0, 4).map((x, i) => <i key={i} style={{ "--wh": x.hue } as CSSProperties} />)}
                     {n > 0 && <b className="mono">{n}</b>}
                   </span>
+                  {!t.doneAt && stepOf(t) !== 4 && (
+                    <button className="tb-up" onClick={() => props.onAttach(t, "files")} aria-label={`Upload files to ${taskLabel(t)}`} title="Upload files to this task"><LuUpload aria-hidden /><span>Upload</span></button>
+                  )}
                   {narrow ? <span className="tb-acts">{acts(t, i)}</span> : null}
                   {files.get(t.id)?.length ? (
                     <div className="tb-files">
@@ -297,8 +312,9 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
         <form className={`task-board lg tb-compose${mapped ? " floating" : ""}`} onSubmit={(e) => { e.preventDefault(); add(); }}>
           <div className="tb-compose-head">
             <b>New task</b>
-            <button type="button" className="tr-close" onClick={() => (total ? props.onComposed?.() : props.onClose())} aria-label="Close"><LuX /></button>
+            <button type="button" className="tr-close" onClick={() => (setJustAdded(false), total ? props.onComposed?.() : props.onClose())} aria-label="Close"><LuX /></button>
           </div>
+          <input className="tb-name" value={label} onChange={(e) => setLabel(e.target.value.slice(0, 40))} placeholder={parsed.assignee ? `${parsed.assignee}'s task` : "Task name (optional) · e.g. Richard's task"} aria-label="Task name" />
           <div className="tb-add">
             <i className="task-dot ghost" aria-hidden />
             <input
@@ -312,13 +328,25 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
             />
             {parsed.assignee && <span className="tb-for mono">@{parsed.assignee}</span>}
           </div>
+          <button type="submit" className="tb-submit" disabled={!line.trim() || busy}>{busy ? "Submitting…" : "Submit task"}</button>
+          {(() => {
+            const t = justAdded ? [...props.tasks].filter((x) => isMyTask(x.id)).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] : null;
+            return t ? (
+              <div className="tb-added">
+                <span className="mono">{taskLabel(t)} added · upload into it</span>
+                <button type="button" className="tb-submit" onClick={() => props.onAttach(t, "files")}><LuUpload aria-hidden /> Upload files</button>
+                <button type="button" className="ghost mono" onClick={() => props.onAttach(t, "folder")}><LuFolderUp aria-hidden /> Folder</button>
+                <button type="button" className="ghost mono" onClick={() => (setJustAdded(false), props.onComposed?.())}>Done</button>
+              </div>
+            ) : null;
+          })()}
           {pro ? (
             <div className="tb-keep" role="radiogroup" aria-label="New tasks stay">
               <span className="mono">Pro · keep for</span>
               {TASK_LIVES.map(([m, l]) => (
-                <button key={m} role="radio" aria-checked={life === m} className={life === m ? "on" : ""} onClick={() => setLife(m)}>{l}</button>
+                <button type="button" key={m} role="radio" aria-checked={life === m} className={life === m ? "on" : ""} onClick={() => setLife(m)}>{l}</button>
               ))}
-              {!PRO_FOR_ALL && <button className="tb-unpro" onClick={() => (dropPro(), setPro(false))} aria-label="Remove the Pro code from this device" title="Remove Pro from this device"><LuX /></button>}
+              {!PRO_FOR_ALL && <button type="button" className="tb-unpro" onClick={() => (dropPro(), setPro(false))} aria-label="Remove the Pro code from this device" title="Remove Pro from this device"><LuX /></button>}
             </div>
           ) : redeem !== null ? (
             <form className="tb-redeem" onSubmit={async (e) => {
@@ -338,10 +366,10 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
               {proErr && <span className="mono">{proErr}</span>}
             </form>
           ) : (
-            <button className="tb-pro mono" onClick={() => setRedeem("")}>Pro: keep tasks up to 8 hours</button>
+            <button type="button" className="tb-pro mono" onClick={() => setRedeem("")}>Pro: keep tasks up to 8 hours</button>
           )}
           {props.onGoPrivate && (
-            <button className="tb-private mono" onClick={props.onGoPrivate}><LuLock aria-hidden /> Go private with the team</button>
+            <button type="button" className="tb-private mono" onClick={props.onGoPrivate}><LuLock aria-hidden /> Go private with the team</button>
           )}
         </form>
       ))}
@@ -408,13 +436,15 @@ const ago = (iso: string) => {
  * Everyone else sees the same route as a live timeline: which stage, who moved it, when.
  */
 function RoutePanel({ t, mine, onEdit, onClose }: { t: Task; mine: boolean; onEdit: (c: { text?: string; route?: string[]; stage?: number }) => Promise<void>; onClose: () => void }) {
-  const [title, setTitle] = useState(t.text);
+  const [title, setTitle] = useState(taskLine(t));
   const [stages, setStages] = useState<string[]>(t.route);
   const [saved, setSaved] = useState(false);
+  // the colour palette open on one step (hover or tap its swatch)
+  const [palette, setPalette] = useState<number | null>(null);
   // follow changes from other devices while nothing is being typed here
   const typing = useRef(false);
   useEffect(() => {
-    if (!typing.current) setStages(t.route), setTitle(t.text);
+    if (!typing.current) setStages(t.route), setTitle(taskLine(t));
   }, [t.route, t.text]);
   const last = (i: number) => [...t.log].reverse().find((l) => l.i === i);
   // a tap anywhere outside (or Escape) saves what was typed and closes the panel
@@ -447,13 +477,13 @@ function RoutePanel({ t, mine, onEdit, onClose }: { t: Task; mine: boolean; onEd
     onEdit(c).catch(() => {});
     flash();
   };
-  const cleanOf = (l: string[]) => l.map((x) => x.trim()).filter(Boolean);
+  const cleanOf = (l: string[]) => l.map((x) => x.trim()).filter((x) => stageName(x).trim());
   const setRoute = (next: string[]) => {
     setStages(next);
     const c = cleanOf(next);
     if (c.join("|") !== t.route.join("|")) save({ route: c, stage: Math.min(t.stage, c.length - 1) });
   };
-  const commitTitle = () => title.trim() && title.trim() !== t.text && save({ text: title.trim() });
+  const commitTitle = () => title.trim() && title.trim() !== taskLine(t) && save({ text: joinTask(taskLabel(t) === `Task ${t.num}` ? "" : taskLabel(t), title) });
   const commitStages = () => setRoute(stages);
   const done = (i: number) => i < t.stage || (i === t.stage && i === t.route.length - 1);
 
@@ -466,9 +496,9 @@ function RoutePanel({ t, mine, onEdit, onClose }: { t: Task; mine: boolean; onEd
           {t.route.map((r, i) => {
             const l = last(i);
             return (
-              <li key={i} className={i < t.stage ? "past" : i === t.stage ? "now" : ""} data-step={i === t.stage ? stepOf(t) : undefined}>
+              <li key={i} className={i < t.stage ? "past" : i === t.stage ? "now" : ""} data-step={i === t.stage ? stepOf(t) : undefined} style={hexStyle(stepHex(t.route, i))}>
                 <i aria-hidden>{done(i) || i === t.stage ? <LuCheck /> : null}</i>
-                <b>{r}</b>
+                <b>{stageName(r)}</b>
                 <span className="mono">{l ? `${l.by ?? "someone"} · ${ago(l.at)}` : ""}</span>
               </li>
             );
@@ -498,32 +528,42 @@ function RoutePanel({ t, mine, onEdit, onClose }: { t: Task; mine: boolean; onEd
           const l = last(i);
           const cur = i === t.stage;
           return (
-            <li key={i} className={i < t.stage ? "past" : cur ? "now" : ""} data-step={cur ? stepOf(t) : undefined}>
-              <button onClick={() => save({ route: cleanOf(stages), stage: cur ? i - 1 : i })} aria-label={cur ? `Undo ${r}` : `Move to ${r}`} title={cur ? "Tap again to step back" : `Move to ${r}`}>
+            <li key={i} className={i < t.stage ? "past" : cur ? "now" : ""} data-step={cur ? stepOf(t) : undefined} style={hexStyle(stepHex(stages, i))}>
+              <button onClick={() => save({ route: cleanOf(stages), stage: cur ? i - 1 : i })} aria-label={cur ? `Undo ${stageName(r)}` : `Move to ${stageName(r)}`} title={cur ? "Tap again to step back" : `Move to ${stageName(r)}`}>
                 <i aria-hidden>{done(i) || cur ? <LuCheck /> : null}</i>
               </button>
+              <span className={`tr-color${palette === i ? " open" : ""}`} onPointerEnter={() => setPalette(i)} onPointerLeave={() => setPalette((p) => (p === i ? null : p))}>
+                <button className="tr-swatch" onClick={() => setPalette(palette === i ? null : i)} aria-label={`Colour of ${stageName(r) || "this step"}`} title="Pick this step's colour" style={{ background: stepHex(stages, i) }} />
+                {palette === i && (
+                  <span className="tr-palette" role="radiogroup" aria-label="Step colour">
+                    {STEP_COLORS.map(([k, l, hex]) => (
+                      <button key={k} role="radio" aria-checked={stepKey(stages, i) === k} aria-label={l} title={l} className={stepKey(stages, i) === k ? "on" : ""} style={{ background: hex }} onClick={() => (setPalette(null), setRoute(stages.map((x, n) => (n === i ? withColor(x, k) : x))))} />
+                    ))}
+                  </span>
+                )}
+              </span>
               <input
-                value={r}
+                value={stageName(r)}
                 placeholder="Step name"
                 onFocus={() => (typing.current = true)}
-                onChange={(e) => setStages((s) => s.map((x, k) => (k === i ? e.target.value.slice(0, 40) : x)))}
+                onChange={(e) => setStages((s) => s.map((x, k) => (k === i ? withColor(e.target.value.slice(0, 32), stepKey(s, k)) : x)))}
                 onBlur={commitStages}
                 onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
                 aria-label={`Step ${i + 1}`}
               />
               <span className="mono">{l ? ago(l.at) : ""}</span>
-              <button className="tr-x" onClick={() => setRoute(stages.filter((_, k) => k !== i))} aria-label={`Remove ${r}`}><LuX /></button>
+              <button className="tr-x" onClick={() => setRoute(stages.filter((_, k) => k !== i))} aria-label={`Remove ${stageName(r)}`}><LuX /></button>
             </li>
           );
         })}
       </ol>
       {stages.length < 8 && (
         <div className="tr-presets">
-          <span className="mono dim">{stages.length ? "Add a step" : "Build the route: tap steps in order"}</span>
-          {STAGES.filter((x) => !stages.includes(x)).slice(0, 6).map((x) => (
+          <button className="mono tr-custom" onClick={() => (typing.current = true, setStages((s) => [...s, ""]))}><LuPlus aria-hidden />{stages.length ? "Custom step" : "Create a custom route"}</button>
+          <span className="mono dim">{stages.length ? "or add a ready step" : "or build it from ready steps, in order"}</span>
+          {STAGES.filter((x) => !stages.map(stageName).includes(x)).slice(0, 6).map((x) => (
             <button key={x} className="mono" onClick={() => setRoute([...stages, x])}><LuPlus aria-hidden />{x}</button>
           ))}
-          <button className="mono" onClick={() => (typing.current = true, setStages((s) => [...s, ""]))}><LuPlus aria-hidden />Your own</button>
         </div>
       )}
       <div className="tr-go">
@@ -595,6 +635,7 @@ export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring, strai
     // a low-end device: taut cables, fewer redraws (lib/perf.ts)
     const low = isLow();
     const taut = straight || low;
+    const work = document.documentElement.dataset.ui === "work";
     const draw = (now: number) => {
       raf = requestAnimationFrame(draw);
       if (now - last < (low ? 90 : 40) || document.hidden) return;
@@ -651,7 +692,10 @@ export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring, strai
           btn.style.opacity = "0";
           continue;
         }
-        btn.style.opacity = "";
+        // the work look: a plug shows only while its ball (or the plug) is hovered, or while plugging in
+        const quiet = work && !drag.current && !btn.matches(":hover") && !document.querySelector(`[data-orb="${id}"]:hover`);
+        btn.style.opacity = quiet ? "0" : "";
+        btn.style.pointerEvents = quiet && !btn.matches(":hover") ? "auto" : "";
         // on the sphere's right edge, level with its middle: clear of the delete / type / number badges
         btn.style.transform = `translate(${(a.right - box.left + 12).toFixed(1)}px, ${(a.top - box.top + a.height / 2).toFixed(1)}px)`;
       }
@@ -738,9 +782,9 @@ export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring, strai
                   onConnect(menu.orb, t.id);
                 }}
               >
-                <i className="task-dot step-dot" data-step={stepOf(t)} aria-hidden />
-                <b className="mono">Task {t.num}</b>
-                <span>{t.text}</span>
+                <i className="task-dot step-dot" data-step={stepOf(t)} data-c={taskHex(t) ? "" : undefined} style={hexStyle(taskHex(t))} aria-hidden />
+                <b className="mono">{taskLabel(t)}</b>
+                <span>{taskLine(t)}</span>
               </button>
             ))}
           </div>
@@ -770,7 +814,7 @@ export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring, strai
           }}
         >
           <span className="wire-hint mono" style={{ transform: `translate(${dragging.x + 18}px, ${dragging.y + 14}px)` }}>
-            {snapTask ? `Connect to Task ${snapTask.num}` : "Bring it to a task"}
+            {snapTask ? `Connect to ${taskLabel(snapTask)}` : "Bring it to a task"}
           </span>
         </div>
       )}

@@ -240,11 +240,8 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     if (!onHandle && t.closest?.(INNER)) return false;
     const it = { id: e.pointerId, key: el.dataset.mapKey!, el, sx: e.clientX, sy: e.clientY, lx: e.clientX, ly: e.clientY, k: viewRef.current.k, armed: mouse, moved: false, timer: 0 };
     item.current = it;
-    if (mouse)
-      try {
-        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-      } catch {}
-    else
+    // a mouse only captures once the panel really moves (capturing at once would steal the click from its buttons)
+    if (!mouse)
       it.timer = window.setTimeout(() => {
         if (item.current !== it) return;
         it.armed = true;
@@ -271,6 +268,9 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     if (!it.moved && Math.hypot(dx, dy) < 5) return true;
     if (!it.moved) {
       it.moved = true;
+      try {
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      } catch {}
       it.el.classList.add("lifted");
       setFollow(false);
     }
