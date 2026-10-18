@@ -3285,3 +3285,5 @@ html[data-perf="low"] .where-badge, html[data-perf="low"] .where-badge i { anima
 .sp-anon .mono svg, .sp-hero .mono svg.ic-inline { color: var(--anon); }
 .sp-or { display: block; text-align: center; margin-top: 4px; }
 .sp-card.off { opacity: 0.45; }
+/* the side menu scrolls as a whole: its lists keep their full height (they were squeezed and cut off) */
+.sd-body > * { flex-shrink: 0; }

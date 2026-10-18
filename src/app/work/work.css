@@ -761,3 +761,8 @@ html[data-ui="work"] .anon-list svg { color: var(--w-anon); }
 html[data-ui="work"] .sd-anon[aria-checked="true"] .sd-switch { background: var(--w-anon); }
 html[data-ui="work"] .sd-anon .sd-ic, html[data-ui="work"] .sd-facts .sd-fact-btn { color: var(--w-anon); background: color-mix(in srgb, var(--w-anon) 14%, transparent); }
 html[data-ui="work"] .sd-switch { background: var(--w-border-2); }
+html[data-ui="work"] .geo-ask p:not(.mono) { color: var(--w-text-2); }
+@media (max-width: 720px) {
+  /* phones: the bar keeps the mask (only the icon) in the pin's place */
+  html[data-ui="work"] .w-bar .w-btn.anon-on { display: inline-flex; }
+}
