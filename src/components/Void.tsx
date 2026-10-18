@@ -2384,7 +2384,15 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             <p className="w-hint">{space ? `${space.title} is empty` : "Drop files anywhere, or press Upload"}</p>
           )}
           {!work && loaded && shown.length === 0 && !(map && map.spots.size) && (
-            <div className="empty">
+            <div className={`empty${anonNow ? " anon" : ""}`}>
+              {/* anonymous + empty: the mask and its words sit above Upload in one column, never under it */}
+              {anonNow && (
+                <div className="ghost-head" aria-hidden>
+                  <BsIncognito className="ghost-mask" />
+                  <b className="ghost-title">You&apos;ve gone anonymous</b>
+                  <span className="ghost-sub">Other users can&apos;t see your location, your name or your device. Files go through the encrypted cloud only.</span>
+                </div>
+              )}
               <p className="mono">
                 {space?.anon ? `${space.title} is empty. What you send here is seen only by people with its link` : space ? `${space.title} is empty. Launch something: only people in this space see it` : scope === "near" ? "Nothing from your network yet" : (
                   <>
