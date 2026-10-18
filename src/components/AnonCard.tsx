@@ -2,6 +2,7 @@
 import { useState, type ReactNode } from "react";
 import { LuCloud, LuEyeOff, LuMapPinOff, LuShieldCheck, LuUserRoundX } from "react-icons/lu";
 import { BsIncognito } from "react-icons/bs";
+import { ANON_MINUTES, lastMinutes } from "@/lib/anon";
 import { Pop } from "./Spaces";
 import type { SpaceSession } from "@/lib/space";
 
@@ -9,7 +10,7 @@ import type { SpaceSession } from "@/lib/space";
 // public void, the join card of an anonymous link and the link itself. The copy says what Orbi does NOT keep or share,
 // and plainly what still happens: never more than that.
 
-export type AnonMode = "intro" | "on" | "status" | "gate" | "join" | "link";
+export type AnonMode = "intro" | "start" | "on" | "status" | "gate" | "join" | "link";
 
 /** what anonymous mode does (also on the privacy page) */
 export function AnonFacts() {
@@ -60,7 +61,8 @@ export default function AnonCard(props: {
   space: SpaceSession | null;
   /** anonymous spaces this browser is in (to send into one again) */
   saved: SpaceSession[];
-  onTurnOn: () => void;
+  /** turn it on for this many minutes (5 to 30): then everything burns */
+  onTurnOn: (min: number) => void;
   onTurnOff: () => void;
   /** make an anonymous space and carry on (the gate: with the same files) */
   onCreate: () => Promise<void>;
@@ -72,6 +74,18 @@ export default function AnonCard(props: {
   onCopy: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [min, setMin] = useState(lastMinutes);
+  // how long this anonymous identity lives: when it's up, the session and its spaces burn everywhere
+  const picker = (
+    <div className="anon-time" role="radiogroup" aria-label="How long to stay anonymous">
+      <span className="mono">Burns after</span>
+      <div>
+        {ANON_MINUTES.map((m) => (
+          <button key={m} type="button" role="radio" aria-checked={min === m} className={`pill lg-press${min === m ? " on" : ""}`} onClick={() => setMin(m)}>{m} min</button>
+        ))}
+      </div>
+    </div>
+  );
   const run = (f: () => Promise<void>) => async () => {
     if (busy) return;
     setBusy(true);
@@ -101,13 +115,25 @@ export default function AnonCard(props: {
       <>
         <h3 className="wide">Stay anonymous</h3>
         <p>{ANON_LEAD}</p>
+        {picker}
         <AnonFacts />
         <Still open />
         {/* stays in view at the card's bottom edge while the explainer scrolls */}
         <div className="anon-actions">
-          <button className="cta lg-press" onClick={props.onTurnOn}><BsIncognito aria-hidden /> Stay anonymous</button>
+          <button className="cta lg-press" onClick={() => props.onTurnOn(min)}><BsIncognito aria-hidden /> Stay anonymous · {min} min</button>
           <button className="geo-later mono" onClick={props.onClose}>Not now</button>
         </div>
+      </>
+    ));
+
+  if (mode === "start")
+    return card("Stay anonymous", (
+      <>
+        <h3 className="wide">Become a ghost</h3>
+        <p>Pick how long. When the time is up your anonymous identity burns, with every anonymous space it made and all that&apos;s in them.</p>
+        {picker}
+        <button className="cta lg-press" onClick={() => props.onTurnOn(min)}><BsIncognito aria-hidden /> Go anonymous · {min} min</button>
+        <button className="geo-later mono" onClick={props.onClose}>Not now</button>
       </>
     ));
 

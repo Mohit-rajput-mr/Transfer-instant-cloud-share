@@ -1,6 +1,6 @@
 "use client";
 import { deviceId, homePath, persistentId } from "./client";
-import { isAnon, newAnonId, setScopedAnon } from "./anon";
+import { anonSession, isAnon, newAnonId, setScopedAnon } from "./anon";
 import { myArea } from "./where";
 
 /** This device's pass into a space. Kept in IndexedDB so it is never set up twice. */
@@ -130,7 +130,7 @@ const code12 = () => Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) 
 const key22 = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 export async function createAnonSpace(): Promise<SpaceSession> {
   const anonId = newAnonId(), code = code12(), key = key22();
-  const s = await post<SpaceSession>("/api/spaces", { anon: true, pass: code, deviceId: anonId });
+  const s = await post<SpaceSession>("/api/spaces", { anon: true, pass: code, deviceId: anonId, sid: anonSession()?.id });
   return { ...s, anon: true, anonId, code, key };
 }
 export async function joinAnonSpace(slug: string, code: string, key: string): Promise<SpaceSession> {
