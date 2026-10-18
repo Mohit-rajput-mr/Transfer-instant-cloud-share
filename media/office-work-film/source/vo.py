@@ -29,7 +29,7 @@ LINES = [
 torch.set_num_threads(4)
 tts = ChatterboxTTS.from_pretrained(device="cpu")
 asr = WhisperModel("small.en", device="cpu", compute_type="int8")
-norm = lambda s: re.sub(r"[^a-z0-9 ]", "", s.lower().replace(".com", " dot com").replace("orbytransfer", "orbi transfer").replace("orbitransfer", "orbi transfer").replace("orbee", "orbi").replace("orby", "orbi").replace("thirty", "30").replace("eight", "8").replace("nine", "9").replace("five", "5").replace("twenty four", "24").replace("fifteen hundred", "1500").replace("two thousand", "2000")).split()
+norm = lambda s: re.sub(r"[^a-z0-9 ]", "", s.lower().replace(".com", " dot com").replace("orbytransfer", "orbi transfer").replace("orbeetransfer", "orbi transfer").replace("orbitransfer", "orbi transfer").replace("orbee", "orbi").replace("orby", "orbi").replace("thirty", "30").replace("eight", "8").replace("nine", "9").replace("five", "5").replace("twenty four", "24").replace("fifteen hundred", "1500").replace("two thousand", "2000")).split()
 
 
 def trim(y, sr):

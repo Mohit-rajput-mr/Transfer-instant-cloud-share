@@ -4,93 +4,93 @@
   {
    "key": "hook",
    "text": "Do you know why people are using Orbi Transfer?",
-   "dur": 3.1,
+   "dur": 2.787,
    "at": 0.35
   },
   {
    "key": "scene",
    "text": "Monday morning. A small studio, one big client, and a deadline at five.",
-   "dur": 4.48,
-   "at": 3.9
+   "dur": 4.685,
+   "at": 3.59
   },
   {
    "key": "mess",
    "text": "Usually the files are scattered across a dozen chats, and nobody knows who's doing what.",
-   "dur": 5.17,
-   "at": 8.69
+   "dur": 4.685,
+   "at": 8.57
   },
   {
    "key": "space",
    "text": "So you open a Space. One private room, with its own name and a passcode.",
-   "dur": 5.17,
-   "at": 14.21
+   "dur": 5.713,
+   "at": 13.61
   },
   {
    "key": "join",
    "text": "Everyone types the passcode once, picks a name, and they're in. No accounts. No email invites.",
-   "dur": 5.52,
-   "at": 19.68
+   "dur": 7.779,
+   "at": 19.62
   },
   {
    "key": "invisible",
    "text": "From now on, files sent here only reach your team. The rest of the office sees nothing.",
-   "dur": 5.86,
-   "at": 25.5
+   "dur": 5.005,
+   "at": 27.7
   },
   {
    "key": "task",
    "text": "Then you add a task. New logo for the client. For Maya.",
-   "dur": 4.14,
-   "at": 31.81
+   "dur": 4.109,
+   "at": 33.15
   },
   {
    "key": "route",
    "text": "You set its route: in progress, in review, approved, delivered. Every step is a light.",
-   "dur": 5.17,
-   "at": 36.25
+   "dur": 5.752,
+   "at": 37.56
   },
   {
    "key": "wire",
    "text": "Maya sends her drafts and wires them to the task, so the files hang right off the job they belong to.",
-   "dur": 7.24,
-   "at": 41.72
+   "dur": 5.795,
+   "at": 43.62
   },
   {
    "key": "move",
    "text": "As the work moves, the light moves. Orange, then blue, then green. Everyone sees it change, live.",
-   "dur": 5.86,
-   "at": 49.26
+   "dur": 6.691,
+   "at": 49.71
   },
   {
    "key": "log",
    "text": "And every move is written down. Who did it, and when.",
-   "dur": 3.79,
-   "at": 55.42
+   "dur": 3.853,
+   "at": 56.7
   },
   {
    "key": "cancel",
    "text": "Client changed their mind? One step turns it red. Cancelled. No confusion.",
-   "dur": 4.14,
-   "at": 59.57
+   "dur": 6.008,
+   "at": 60.9
   },
   {
    "key": "lock",
    "text": "And every file is still locked on the sender's phone. Only members can open it.",
-   "dur": 5.17,
-   "at": 64.11
+   "dur": 4.685,
+   "at": 67.31
   },
   {
    "key": "burn",
    "text": "Files burn after thirty minutes, tasks after up to eight hours with Pro. A clean board, every day.",
-   "dur": 6.21,
-   "at": 69.58
+   "dur": 5.965,
+   "at": 72.3
   },
   {
    "key": "end",
    "text": "Orbi Transfer dot com. Try it with your team tomorrow.",
-   "dur": 3.45,
-   "at": 76.18
+   "dur": 3.367,
+   "at": 78.66
   }
  ],
- "duration": 81.43
+ "duration": 83.83
 }
