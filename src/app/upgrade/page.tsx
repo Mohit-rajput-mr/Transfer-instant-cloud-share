@@ -1,22 +1,32 @@
 import type { Metadata } from "next";
-import Starfield from "@/components/Starfield";
-import LiquidGlass from "@/components/LiquidGlass";
-import Plans from "./Plans";
+import "../site.css";
 import "./upgrade.css";
+import SiteChrome from "@/components/SiteChrome";
+import Plans from "./Plans";
+import { FAQ } from "./faq";
 
 export const metadata: Metadata = {
   title: "Upgrade",
-  description: "Orbi plans: Free instant encrypted sharing, Pro for longer-lasting files and receipts, Business for team workspaces, admin and SSO.",
+  description:
+    "Orbi Transfer plans. Sending stays free: instant, end-to-end encrypted, no account. Pro and Business, coming soon, add time, receipts and team workspaces.",
   alternates: { canonical: "/upgrade" },
 };
 
-// the classic look: the same sky and liquid glass as the void
+// the nine questions as a FAQPage, plain text (the list itself is rendered by Plans)
+const LD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+}).replace(/</g, "\\u003c");
+
+// the blackboard: the shared chrome (starfield, two-row header, menu, footer) around the plans
 export default function UpgradePage() {
   return (
     <>
-      <Starfield />
-      <LiquidGlass />
-      <Plans />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: LD }} />
+      <SiteChrome page="upgrade">
+        <Plans />
+      </SiteChrome>
     </>
   );
 }
