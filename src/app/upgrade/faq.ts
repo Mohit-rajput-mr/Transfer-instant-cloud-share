@@ -10,7 +10,7 @@ export const FAQ: Faq[] = [
   },
   {
     q: "When can I pay?",
-    a: "Not yet. Paid plans aren't open and there is no card form anywhere on Orbi. Ask for early access and we'll email you when your plan is ready, with an early-access price.",
+    a: "Not yet. Paid plans aren't open and there is no card form anywhere on Orbi. Ask for early access and we'll email you when your plan is ready; you'll be first in line.",
   },
   {
     q: "Are these prices final?",
@@ -26,7 +26,7 @@ export const FAQ: Faq[] = [
   },
   {
     q: "Will I need an account?",
-    a: "Not for Free, ever. Paid plans will need some way to recognise you, most likely an email address; Business adds Google and Microsoft sign-in.",
+    a: "Not for Free, ever. Paid plans will need some way to recognize you, most likely an email address; Business adds Google and Microsoft sign-in.",
   },
   {
     q: "What happens to my files if I stay on Free?",

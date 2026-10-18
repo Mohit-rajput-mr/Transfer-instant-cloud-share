@@ -476,7 +476,7 @@ export default function SiteChrome({ page, children }: { page: SitePage; childre
             </div>
             <div>
               <h2 className="sx-label sx-foot-h">Status</h2>
-              <ul className="sx-foot-st sx-chipf">
+              <ul className="sx-foot-st sx-chipf" data-anim>{/* the live dot pauses off-screen */}
                 <li><i className="sx-dot" aria-hidden />Free — live today</li>
                 <li><i className="sx-ring" aria-hidden />Pro — coming soon</li>
                 <li><i className="sx-ring" aria-hidden />Business — coming soon</li>
