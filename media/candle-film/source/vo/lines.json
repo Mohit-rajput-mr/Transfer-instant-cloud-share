@@ -1,0 +1,102 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Every candle on a stock chart is telling you a story. Here's how to read it.",
+   "dur": 4.072,
+   "at": 0.35
+  },
+  {
+   "key": "time",
+   "text": "One candle is one slice of time. Five minutes, an hour, a day. Whatever you pick.",
+   "dur": 5.758,
+   "at": 4.82
+  },
+  {
+   "key": "open",
+   "text": "When the slice starts, the first price is the open. When it ends, the last price is the close.",
+   "dur": 6.011,
+   "at": 10.88
+  },
+  {
+   "key": "green",
+   "text": "Close higher than the open? The candle is green. Buyers won that round.",
+   "dur": 4.45,
+   "at": 17.19
+  },
+  {
+   "key": "red",
+   "text": "Close lower than the open? It's red. Sellers won.",
+   "dur": 3.784,
+   "at": 21.94
+  },
+  {
+   "key": "wicks",
+   "text": "And these thin lines are the wicks. The top is the highest price it touched. The bottom is the lowest.",
+   "dur": 5.311,
+   "at": 26.07
+  },
+  {
+   "key": "fight",
+   "text": "So what moves the price? A tug of war. When buyers are hungrier, they pay more and push it up. When sellers rush out, they take less and drag it down.",
+   "dur": 9.53,
+   "at": 31.69
+  },
+  {
+   "key": "reject",
+   "text": "A long wick on top means buyers pushed hard, but sellers slammed it back down.",
+   "dur": 4.89,
+   "at": 41.57
+  },
+  {
+   "key": "stop",
+   "text": "Now, the stop loss. You tell your broker: if the price drops to here, sell automatically, so a small loss never becomes a big one.",
+   "dur": 7.586,
+   "at": 46.86
+  },
+  {
+   "key": "crowd",
+   "text": "The catch? Thousands of people put their stops in the same obvious place, just under the last low.",
+   "dur": 5.565,
+   "at": 54.79
+  },
+  {
+   "key": "hunt",
+   "text": "Big players can see that pile of stops. They push the price down just enough to hit them.",
+   "dur": 5.167,
+   "at": 60.66
+  },
+  {
+   "key": "cascade",
+   "text": "Each stop becomes a sell order. Those sales push the price lower, and trigger even more stops. A chain reaction!",
+   "dur": 6.274,
+   "at": 66.12
+  },
+  {
+   "key": "snap",
+   "text": "Then the big player buys all those shares cheap, and the price snaps right back up. All that's left is a long wick at the bottom.",
+   "dur": 6.495,
+   "at": 72.7
+  },
+  {
+   "key": "legal",
+   "text": "Some tricks, like placing fake orders to scare the market, are illegal. But stop hunting near obvious levels happens every day.",
+   "dur": 7.815,
+   "at": 79.59
+  },
+  {
+   "key": "tip",
+   "text": "So read the wicks, size your trades small, and don't put your stop exactly where everyone else does.",
+   "dur": 5.088,
+   "at": 87.76
+  },
+  {
+   "key": "end",
+   "text": "Like this? Send it to a friend on Orbi Transfer. No login. Now you know!",
+   "dur": 4.409,
+   "at": 93.25
+  }
+ ],
+ "duration": 99.46
+}
