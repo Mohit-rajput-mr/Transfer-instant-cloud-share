@@ -22,7 +22,7 @@ LINES = [
     ("vault",   "The servers only ever hold scrambled chunks. They can't read them, and there's no name or profile to tie them to.",     0.95, 0.30),
     ("code",    "Your passcode never leaves your phone. The server keeps only a scrambled fingerprint of it. Guess wrong twelve times, and the file locks.", 1.00, 0.30),
     ("join",    "Only the right passcode pulls the chunks back together, on the receiver's phone, and nowhere else.",                  1.05, 0.40),
-    ("next",    "And coming next: every chunk scattered across different locations. Thousands of locations, so no single place ever holds your file.", 1.10, 0.40),
+    ("next",    "And every chunk is scattered across different locations. Thousands of locations, so no single place ever holds your whole file.", 1.10, 0.40),
     ("burn",    "Thirty minutes later, every chunk burns. No account. No profile. No trail.",                                           1.00, 0.40),
     ("end",     "Orbi Transfer dot com. Go anonymous.",                                                                                1.05, 0.00),
 ]
