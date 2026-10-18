@@ -16,7 +16,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const u = untag(item);
   const name = tagName(String(u.name), {
     space: u.space ?? undefined, by: u.by ?? undefined, life: u.life, open: u.open, from: u.from ?? undefined,
-    group: u.groupName ?? undefined, skin: u.skin ?? undefined, thumb: u.thumb, task: b.task ?? undefined,
+    group: u.groupName ?? undefined, skin: u.skin ?? undefined, thumb: u.thumb, task: b.task ?? undefined, anon: u.anon,
   });
   const ok = await rpc<boolean>("orbit_retag", { p_id: id, p_owner_hash: ownerHash, p_name: name });
   return ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: "gone" }, { status: 404 });

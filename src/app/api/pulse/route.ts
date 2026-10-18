@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { areaFor, clean, geo, netHash, netInviteKey, rpc, validId } from "@/lib/server";
+import { anonOnlineId, areaFor, clean, geo, netHash, netInviteKey, rpc, validId } from "@/lib/server";
 
 export const dynamic = "force-dynamic";
 
 // Heartbeat: one small upsert per device every ~25s. Powers "online", live viewers and the admin globe.
 export async function POST(req: NextRequest) {
   const b = await req.json().catch(() => null);
+  // turning anonymous on: this browser's heartbeat row goes (label, browser, network hash, IP place, last GPS spot)
+  if (b?.forget === true) {
+    const d = clean(b.deviceId, 40);
+    if (d) await rpc("orbit_session_forget", { p_device: d }).catch(() => {});
+    return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
+  }
+  // anonymous heartbeat: counted as online under a hashed throwaway id, nothing else kept
+  if (b?.anon === true) {
+    const id = clean(b.id, 40);
+    if (!/^[A-Za-z0-9-]{8,40}$/.test(id)) return NextResponse.json({ error: "bad request" }, { status: 400 });
+    await rpc("orbit_pulse_anon", { p_id: anonOnlineId(id) }).catch(() => {});
+    // the IP's area only for this answer (to look around the public void); nothing is written
+    return NextResponse.json(b.void === true ? { area: areaFor(req, null) } : {}, { headers: { "Cache-Control": "no-store" } });
+  }
   const deviceId = clean(b?.deviceId, 40);
   if (!deviceId) return NextResponse.json({ error: "bad request" }, { status: 400 });
   const net = netHash(req);

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { areaFor, isHex, netHash, newId, rpc, sha256 } from "@/lib/server";
-import { cleanHandle, member, validFrom } from "@/lib/spaces";
+import { ANON_AREA, anonNet, areaFor, isHex, netHash, newId, rpc, sha256 } from "@/lib/server";
+import { cleanHandle, isAnonSpace, member, validFrom } from "@/lib/spaces";
 import { FREE_TASK_LIFE, PRO_TASK_LIVES, validPro } from "@/lib/pro";
 
 export const dynamic = "force-dynamic";
@@ -18,18 +18,26 @@ export async function POST(req: NextRequest) {
   if (!isHex(b.owner, 64)) return NextResponse.json({ error: "bad request" }, { status: 400 });
   let space: string | null = null;
   let by = cleanHandle(b.by);
+  let alias = "";
   if (b.space != null) {
     const me = await member(b.space, b.deviceId, b.spaceToken);
     if (!me) return NextResponse.json({ error: "You are no longer in this space" }, { status: 403 });
     space = me.slug;
     by = by || me.handle;
+    alias = me.handle;
   }
+  // anonymous: only inside an anonymous space, signed with the space's alias, no place, a rotating rate-limit key
+  const anon = b.anon === true || (!!space && (await isAnonSpace(space)));
+  if (anon && !space) return NextResponse.json({ error: "Anonymous tasks go into an anonymous space" }, { status: 400 });
+  if (anon) by = alias;
+  const net = anon ? anonNet(req) : netHash(req);
+  const area = anon ? ANON_AREA : areaFor(req, b.area);
   const id = "t" + newId(9);
   // Pro members keep tasks up to 8 hours; everyone else gets the usual 30 minutes
   const life = validPro(b.pro) && PRO_TASK_LIVES.includes(Number(b.life)) ? Number(b.life) : FREE_TASK_LIFE;
   try {
     const num = await rpc<number>("orbit_task_add", {
-      p: { id, body: text, by, assignee: cleanHandle(b.assignee), from: validFrom(b.from) ? b.from : "", owner: sha256(b.owner), net: netHash(req), space: space ?? "", life, area: areaFor(req, b.area) },
+      p: { id, body: text, by, assignee: cleanHandle(b.assignee), from: validFrom(b.from) ? b.from : "", owner: sha256(b.owner), net, space: space ?? "", life, area },
     });
     return NextResponse.json({ id, num });
   } catch (e) {

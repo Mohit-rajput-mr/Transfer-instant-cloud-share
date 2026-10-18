@@ -38,17 +38,29 @@ export function randomHex(n: number) {
   return randomBytes(n).toString("hex");
 }
 
+const ipOf = (req: NextRequest) => req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "0";
+
 // Coarse "same network" fingerprint: salted hash of the public IP, never stored raw.
 export function netHash(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "0";
-  return sha256(`${SECRET}:net:${ip}`).slice(0, 12);
+  return sha256(`${SECRET}:net:${ipOf(req)}`).slice(0, 12);
 }
 
 /** A key only devices on the same network get (never broadcast, unlike netHash): seals invites to a private space. */
 export function netInviteKey(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "0";
-  return sha256(`${SECRET}:invite:${ip}`).slice(0, 32);
+  return sha256(`${SECRET}:invite:${ipOf(req)}`).slice(0, 32);
 }
+
+// ---- anonymous requests (lib/anon.ts): nothing here links one request to another for long, or to netHash ----
+/** anonymous requests: a rate-limit key that changes every hour and never equals netHash */
+export const anonNet = (req: NextRequest) => sha256(`${SECRET}:anon:${new Date().toISOString().slice(0, 13)}:${ipOf(req)}`).slice(0, 12);
+/** a stand-in device id for one object: dedupes views/downloads on it, links nothing across objects */
+export const anonEventId = (id: string, device: string) => "a" + sha256(`${SECRET}:ev:${id}:${device}`).slice(0, 15);
+/** reports: one per network per object per day, whatever ids it makes up */
+export const anonReportId = (id: string, req: NextRequest) => "r" + sha256(`${SECRET}:rep:${new Date().toISOString().slice(0, 10)}:${id}:${ipOf(req)}`).slice(0, 15);
+/** anonymous heartbeats are counted under this, never the id the browser sent */
+export const anonOnlineId = (id: string) => sha256(`${SECRET}:online:${id}`).slice(0, 24);
+/** where anonymous space rows are filed: never a geohash (it has a, o), so never in a public list */
+export const ANON_AREA = "anon";
 
 export interface Geo {
   country: string;
@@ -110,6 +122,8 @@ export async function reap(force = false) {
   lastReap = now;
   try {
     const gone = await rpc<string[]>("orbit_reap", {});
+    // anonymous spaces, their notes and tasks, stale anonymous heartbeats (migration 020)
+    rpc("orbit_reap_anon", {}).catch(() => {});
     await removeBlobs(gone ?? []);
     return gone?.length ?? 0;
   } catch (e) {

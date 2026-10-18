@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isHex, rpc, sha256, validId } from "@/lib/server";
+import { untag } from "@/lib/spaces";
 import { getObject, previewKey, putObject, r2On } from "@/lib/r2";
 
 export const dynamic = "force-dynamic";
@@ -13,8 +14,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const owner = req.headers.get("x-owner");
   if (!validId(id) || !isHex(owner, 64)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  const item = await rpc<{ size?: number } | null>("orbit_owner", { p_id: id, p_owner_hash: sha256(owner!) });
+  const item = await rpc<{ size?: number; name?: unknown } | null>("orbit_owner", { p_id: id, p_owner_hash: sha256(owner!) });
   if (!item) return NextResponse.json({ error: "gone" }, { status: 404 });
+  // anonymous objects never get a preview
+  if (untag(item).anon) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   const body = await req.arrayBuffer();
   const b = new Uint8Array(body);
   // a JPEG and nothing else, small

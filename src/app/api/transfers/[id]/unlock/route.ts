@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { clean, geo, isHex, rpc, sha256, validId } from "@/lib/server";
+import { anonEventId, clean, geo, isHex, rpc, sha256, validId } from "@/lib/server";
 import { burnedUp, member, untag } from "@/lib/spaces";
 import { objectKey, presign, r2On } from "@/lib/r2";
 
@@ -11,12 +11,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const info = raw ? untag(raw) : null;
   if (info && burnedUp(info)) return NextResponse.json({ ok: false, reason: "gone" }, { status: 403 });
   if (info?.space && !(await member(info.space, b.deviceId, b.spaceToken))) return NextResponse.json({ ok: false, reason: "gone" }, { status: 403 });
+  // anonymous receiver, or an anonymous object: counted, never located or linked to other objects
+  const anon = b.anon === true || !!info?.anon;
   const r = await rpc<Record<string, unknown>>("orbit_unlock", {
     p_id: id,
     p_auth_hash: sha256(b.auth),
-    p_device: clean(b.deviceId, 40),
-    p_label: clean(b.device, 60),
-    p_geo: geo(req),
+    p_device: anon ? anonEventId(id, clean(b.deviceId, 40)) : clean(b.deviceId, 40),
+    p_label: anon ? "" : clean(b.device, 60),
+    p_geo: anon ? {} : geo(req),
   });
   // a signed link to the stored copy (it may still be uploading: the receiver checks before using it)
   if (r?.ok && r2On()) r.store = await presign("GET", objectKey(id), {}, 3 * 3600).catch(() => undefined);

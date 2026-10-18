@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MAX_FILE_BYTES, MAX_LABEL } from "@/lib/limits";
-import { areaFor, areasParam, clean, geo, isB64, isHex, netHash, newId, reap, rpc, sha256 } from "@/lib/server";
+import { ANON_AREA, anonNet, areaFor, areasParam, clean, geo, isB64, isHex, netHash, newId, reap, rpc, sha256 } from "@/lib/server";
 import { validSkin } from "@/lib/skin-list";
-import { LIVES, burnedUp, cleanGroup, member, tagName, untag, validFrom, validTask } from "@/lib/spaces";
+import { LIVES, burnedUp, cleanGroup, isAnonSpace, member, tagName, untag, validFrom, validTask } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
 
@@ -42,12 +42,23 @@ export async function POST(req: NextRequest) {
 
   let name = (clean(b.name, 60) || "untitled").replace(/^⟪/, "(");
   const life = LIVES.includes(Number(b.life)) ? Number(b.life) : 30;
+  // anonymous (lib/anon.ts): no device, no place, no style, no preview, a rotating rate-limit key
+  let anon = b.anon === true;
   const tags = { life, open: b.open === true, from: validFrom(b.from) ? b.from : undefined, group: cleanGroup(b.group) || undefined, skin: validSkin(b.skin) ? b.skin : undefined, thumb: b.thumb === true, task: validTask(b.task) ? b.task : undefined } as Parameters<typeof tagName>[1];
   if (b.space != null) {
     const me = await member(b.space, b.deviceId, b.spaceToken);
     if (!me) return NextResponse.json({ error: "You are no longer in this space" }, { status: 403 });
     tags.space = me.slug;
     tags.by = me.handle;
+    // an anonymous space makes every send anonymous (old clients too)
+    if (await isAnonSpace(me.slug)) anon = true;
+  }
+  // the public void pins everything to an area, and an area is a place
+  if (anon && b.space == null) return NextResponse.json({ error: "Anonymous sends go into an anonymous space" }, { status: 400 });
+  if (anon) {
+    tags.skin = undefined;
+    tags.thumb = false;
+    tags.anon = true;
   }
   name = tagName(name, tags);
   const fileName = clean(b.fileName, 180) || "file";
@@ -63,12 +74,12 @@ export async function POST(req: NextRequest) {
       id, name, fileName, mime, size, pathname, chunkSize, iterations,
       salt: b.salt, nonce: b.nonce,
       authHash: sha256(b.auth), ownerHash: sha256(b.owner),
-      netHash: netHash(req), device: clean(b.device, 60),
+      netHash: anon ? anonNet(req) : netHash(req), device: anon ? "" : clean(b.device, 60),
       maxDownloads: maxDownloads ?? "",
       // the sender picks the colour (spread away from what's already floating); every device draws exactly this hue
       hue: Number.isInteger(b.hue) && b.hue >= 0 && b.hue < 360 ? b.hue : Math.floor(Math.random() * 360),
-      ...geo(req),
-      area: areaFor(req, b.area),
+      ...(anon ? {} : geo(req)),
+      area: anon ? ANON_AREA : areaFor(req, b.area),
     },
     });
   } catch (e) {

@@ -9,6 +9,7 @@
 import { supabase, type RealtimeChannel } from "./realtime";
 import { chunkCount, encryptChunk } from "./crypto";
 import { stayAwake } from "./wake";
+import { isAnon } from "./anon";
 
 const ICE: RTCIceServer[] = [
   { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] },
@@ -131,6 +132,8 @@ async function serveLane(h: Held, s: Session, dc: RTCDataChannel, frame: number)
 
 /** Sender: keep this file and answer anyone who asks for it until it burns (`ms` from now). */
 export function hold(id: string, file: File, key: CryptoKey, nonce: Uint8Array, chunkSize: number, ms: number) {
+  // anonymous: never device to device (the other side would see this IP)
+  if (isAnon()) return;
   release(id);
   const ch = chan(id);
   const peers = new Set<RTCPeerConnection>();
@@ -234,6 +237,7 @@ export class OfflineError extends Error {}
  * sender has sent everything (or errors if the connection drops); cancelling it hangs up.
  */
 export async function pull(id: string, signal?: AbortSignal): Promise<ReadableStream<Uint8Array>> {
+  if (isAnon()) throw new OfflineError("anonymous: cloud only");
   // sent from this very tab: no network at all
   const mine = held.get(id);
   if (mine) {

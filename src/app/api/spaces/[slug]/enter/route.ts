@@ -15,6 +15,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   return NextResponse.json(
     {
       slug, title: meta.title, priv: meta.priv, handle: me.handle, chan: chanFor(slug), owner,
+      // anonymous spaces and their member lists go 7 days after they were made (migration 020 orbit_reap_anon)
+      anon: !!meta.anon, ends: meta.anon ? meta.at + 7 * 864e5 : null,
       members: members.map((m) => ({ id: m.dh, handle: m.handle, you: m.dh === me.dh })),
     },
     { headers: { "Cache-Control": "no-store" } },
