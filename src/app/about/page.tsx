@@ -51,7 +51,7 @@ function Orbits() {
       <g>
         <circle r="5" fill="#f2f2f2" />
         <text y="24" textAnchor="middle">NOTES.TXT</text>
-        <animateMotion dur="20s" begin="-4s" repeatCount="indefinite">
+        <animateMotion dur="20s" begin="-19.4s" repeatCount="indefinite">
           <mpath href="#abO1" />
         </animateMotion>
       </g>
@@ -59,7 +59,7 @@ function Orbits() {
         <circle r="11" fill="url(#abSph)" />
         <circle r="17" fill="none" stroke="#f2f2f2" strokeOpacity=".25" />
         <text y="40" textAnchor="middle">PHOTO.JPG</text>
-        <animateMotion dur="36s" begin="-14s" repeatCount="indefinite">
+        <animateMotion dur="36s" begin="-2.8s" repeatCount="indefinite">
           <mpath href="#abO2" />
         </animateMotion>
       </g>
@@ -186,7 +186,7 @@ function Glyph({ name, className }: { name: string; className?: string }) {
 /** Fig. 4: the public void is one ~39 × 20 km cell plus its eight neighbours. Illustration. */
 const ORBS: [number, number, number, number, number][] = [
   [190, 115, 9, 55, 7],
-  [300, 105, 11, 30, 9],
+  [455, 165, 11, 30, 9], // spec had (300,105); moved so the "≈ 39 km" label never sits on it
   [450, 110, 8, 80, 6],
   [205, 175, 6, 45, 8],
   [230, 232, 7, 65, 10],
@@ -199,7 +199,7 @@ const FAR: [number, number, number][] = [
 function AreaMap() {
   const corner = (x: number, y: number, dx: number, dy: number) => `M${x} ${y}h${dx * 16}M${x} ${y}v${dy * 16}`;
   return (
-    <svg className="ab-map" viewBox="0 0 640 340" aria-hidden focusable="false" data-anim>
+    <svg className="ab-map" viewBox="20 20 600 300" aria-hidden focusable="false" data-anim>
       <g stroke="#1e1e1e">
         {[20, 140, 260, 380, 500, 620].map((x) => (
           <path key={`v${x}`} d={`M${x} 20V320`} />
@@ -230,7 +230,7 @@ function AreaMap() {
       <circle className="ab-halo" cx="320" cy="170" r="14" fill="none" stroke="#3dff8c" opacity=".35" />
       <circle cx="320" cy="170" r="5" fill="#3dff8c" />
       {[
-        [1, 380, 200],
+        [1, 260, 200],
         [2, 140, 80],
         [3, 560, 40],
       ].map(([n, x, y]) => (
@@ -332,7 +332,7 @@ function WorkMock() {
 const VS: [string, string][] = [
   ["Email it to yourself, then dig it out again.", "Drop it on one screen, tap it on the other."],
   ["Sign up, verify, pick a plan.", "Open the page. That is the whole setup."],
-  ["A link that lives in a chat forever.", "Pick 5 to 30 minutes. Then it is gone."],
+  ["A link that sits in a chat for years.", "Pick 5 to 30 minutes. Then it is gone."],
   ["Trust a server with what is inside.", "Locked in your browser before it leaves."],
   ["Hunt for a cable, or the right app.", "Any browser: phone, laptop, office PC."],
 ];
@@ -417,7 +417,7 @@ const RULES: [string, string, string][] = [
   ["R.01", "Everything burns.", "Thirty minutes at most. Sooner if the sender says so. No archive on our side."],
   ["R.02", "Locked means locked.", "With a passcode, the key is made on your device and never sent. Not even we can open it."],
   ["R.03", "Nobody signs up.", "There is nothing to sign up for. No accounts, no login, no profile."],
-  ["R.04", "Sending stays free.", "Instant, encrypted sharing stays free. Paid plans, when they come, add time and team tools on top."],
+  ["R.04", "Sending stays free.", "Instant, encrypted, no account, no card. Paid plans, when they come, add time and team tools on top."],
   ["R.05", "Abuse burns early.", "Three reports from different devices and an object is taken down."],
 ];
 
@@ -463,7 +463,11 @@ export default function About() {
           <div className="sx-meta">
             <span>(00) About</span>
             <span>Orbi Transfer</span>
-            <span>Made anonymously, for fun</span>
+            <span>
+              <span>
+                Made anonymously<span className="ab-dt-m">, for fun</span>
+              </span>
+            </span>
             <span>
               Scroll <Arrow dir="down" />
             </span>
@@ -474,9 +478,10 @@ export default function About() {
               <span className="ln">
                 <span className="sx-out ab-nb">
                   nobody.
+                  {/* the spec's 300 × 24 strokes, flattened to the box's real ~30:1 shape so the chalk scales evenly */}
                   <svg className="ab-under" viewBox="0 0 300 10" aria-hidden focusable="false" data-chalk>
-                    <path className="c" pathLength={1} d="M4 6.8C60 2.4 140 1.5 210 3.7S290 7.7 296 3.3" fill="none" stroke="#f2f2f2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path className="c" pathLength={1} d="M24 9C90 5.5 170 5 250 6.8" fill="none" stroke="#f2f2f2" strokeLinecap="round" strokeLinejoin="round" opacity=".5" />
+                    <path className="c c1" pathLength={1} d="M4 6.7C60 2.5 140 1.7 210 3.75S290 7.5 296 3.3" fill="none" stroke="#f2f2f2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path className="c c2" pathLength={1} d="M24 8.75C90 5.4 170 5 250 6.7" fill="none" stroke="#f2f2f2" strokeLinecap="round" strokeLinejoin="round" opacity=".5" />
                   </svg>
                 </span>
               </span>
@@ -664,7 +669,7 @@ export default function About() {
                 </b>
               </div>
             </div>
-            <div className="ab-ruler" aria-hidden>
+            <div className="ab-ruler" aria-hidden data-anim>
               <span className="ab-brk">
                 <span className="sx-label">Sender&apos;s choice · 5 to 30 min</span>
               </span>
@@ -684,7 +689,8 @@ export default function About() {
               <span className="ab-axis">
                 {[0, 5, 10, 15, 20, 25, 30].map((m) => (
                   <span key={m} className="sx-label" style={v({ "--x": `${(m / 30) * 100}%` })}>
-                    {m === 30 ? "30 min" : m}
+                    {m}
+                    {m === 30 && <span className="ab-dt"> min</span>}
                   </span>
                 ))}
               </span>
@@ -739,9 +745,11 @@ export default function About() {
                   </span>
                   {i < STATIONS.length - 1 && (
                     <span className={`ab-wire${i >= 2 ? " sealed" : ""}${s.fork ? " fork" : ""}`} aria-hidden>
-                      <i />
-                      <i />
-                      {s.fork && <span className="ab-wire-2" />}
+                      <span className="ab-ln">
+                        <i />
+                        <i />
+                      </span>
+                      {s.fork && <span className="ab-ln st" />}
                     </span>
                   )}
                 </li>
@@ -897,9 +905,9 @@ export default function About() {
           <p className="sx-label ab-switch">Switch any time. Both look at the same files, spaces and tasks.</p>
 
           <div className="sx-grid ab-styles">
-            <span className="sx-num ab-styles-n" aria-hidden>
-              {N}
-            </span>
+            <div className="ab-styles-nw" aria-hidden>
+              <span className="sx-num ab-styles-n">{N}</span>
+            </div>
             <div className="ab-styles-t" data-reveal>
               <h3 className="sx-h3">
                 Styles<span className="sx-sr">: {N} styles</span>

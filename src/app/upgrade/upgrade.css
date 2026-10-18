@@ -29,8 +29,13 @@
 .ug-legend { margin-top: 18px; display: grid; gap: 10px; }
 .ug-legend li { display: flex; align-items: center; gap: 12px; }
 .ug-legend i { flex: none; width: 18px; border-top: 2px solid var(--ink); }
-.ug-legend i.d { border-top: 1px dashed var(--dim); }
-@media (max-width: 1099px) {
+.ug-legend i.d { border-top: 1px dashed var(--mute); }
+/* tablet: the lead and the dial side by side (the dial would float alone in a wide column otherwise) */
+@media (min-width: 720px) and (max-width: 1099px) {
+  .ug-hero-l { grid-column: 1 / 8; }
+  .ug-clock { grid-column: 8 / 13; width: min(100%, 320px); }
+}
+@media (max-width: 719px) {
   .ug-clock { width: auto; justify-self: stretch; margin-top: 48px; }
   .ug-dial { width: min(76vw, 300px); margin-inline: auto; }
 }
@@ -58,10 +63,12 @@
 .ug-plans {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(8, auto);
   border-block: 1px solid var(--step);
+  container-type: inline-size; /* here, not on the articles: layout containment would stop them being subgrids */
 }
+@media (min-width: 720px) and (max-width: 959px) { .ug-top { max-width: 640px; } } /* the toggle ends where the cards end */
 .ug-plan {
   grid-row: span 8; display: grid; grid-template-rows: subgrid; min-width: 0;
-  padding: 28px 24px 40px; border-left: 1px solid var(--line); container-type: inline-size;
+  padding: 28px 24px 40px; border-left: 1px solid var(--line);
 }
 .ug-plan:first-child { border-left: 0; padding-left: 0; }
 .ug-plan:last-child { padding-right: 0; }
@@ -71,22 +78,22 @@
 .ug-pmeta { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .ug-name {
   margin-top: 40px; color: var(--ink); white-space: nowrap;
-  font: 900 min(14cqi, 72px)/0.82 var(--f-display); font-variation-settings: "wdth" 125; font-stretch: 125%;
+  font: 900 min(4.3cqi, 72px)/0.82 var(--f-display); /* ≈ 14% of one column; one size for all three */ font-variation-settings: "wdth" 125; font-stretch: 125%;
   text-transform: uppercase; letter-spacing: -0.025em;
 }
-.ug-pc { margin-top: 28px; position: relative; display: inline-flex; justify-self: start; align-self: start; }
-.ug-price { position: relative; display: inline-flex; align-items: flex-start; font-size: min(34cqi, 176px); }
+.ug-pc { margin-top: 34px; position: relative; display: inline-flex; justify-self: start; align-self: start; }
+.ug-price { position: relative; display: inline-flex; align-items: flex-start; font-size: min(10.6cqi, 176px); } /* ≈ 34% of a column */
 .ug-price .cur { font-size: 0.36em; line-height: 1; color: var(--dim); margin: 0.1em 0.04em 0 0; }
 .ug-amt { display: inline-block; font-weight: 900; animation: ug-roll 320ms var(--ease-out) both; }
 @keyframes ug-roll { from { opacity: 0; transform: translateY(0.18em); } }
 
 /* the page's one hand-drawn stroke: a chalk circle around Free's $0 (it draws when the price enters) */
-.ug-chalk { position: absolute; left: -18%; top: -16%; width: 148%; height: 132%; overflow: visible; pointer-events: none; }
+.ug-chalk { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .ug-note {
-  position: absolute; left: calc(130% + 22px); top: 6%; width: 9em; color: var(--ink);
+  position: absolute; left: calc(112% + 40px); top: 4%; width: 9em; color: var(--ink);
   font-size: 11px; line-height: 1.4; transform: rotate(-4deg); transform-origin: 0 50%;
 }
-.ug-arrow { position: absolute; left: calc(130% - 6px); top: 44%; width: 40px; height: 30px; overflow: visible; }
+.ug-arrow { position: absolute; left: calc(112% + 8px); top: 40%; width: 40px; height: 30px; overflow: visible; }
 .sx[data-io] .ug-plan.free:not([data-in]) .ug-note,
 .sx[data-io] .ug-plan.free:not([data-in]) .ug-arrow { opacity: 0; }
 .sx[data-io] .ug-plan.free .ug-note,
@@ -97,7 +104,7 @@
   .ug-arrow { display: none; }
 }
 
-.ug-per { margin-top: 14px; }
+.ug-per { margin-top: 18px; } /* a little more air under the price: the chalk loop dips below it */
 .ug-per s { color: var(--mute); text-decoration-thickness: 1px; }
 .ug-blurb { margin-top: 20px; max-width: 34ch; }
 .ug-pcta { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: center; align-self: start; }
@@ -119,6 +126,8 @@
   }
   .ug-plan:first-child { border-top: 0; }
   .ug-pc, .ug-pcta { align-self: flex-start; }
+  .ug-name { font-size: min(14cqi, 72px); }
+  .ug-price { font-size: min(34cqi, 176px); }
 }
 
 /* ---------- 5.2 time and size ---------- */
@@ -140,13 +149,13 @@
   text-transform: uppercase; letter-spacing: -0.01em; color: var(--ink);
 }
 .ug-lane-st { display: inline-flex; align-items: center; gap: 8px; }
-.ug-lane-st.live { color: var(--live); }
+.ug-lane-st.ug-on { color: var(--live); }
 .ug-track { position: relative; height: 12px; }
 .ug-bar { position: absolute; top: 0; bottom: 0; left: var(--from); width: calc(var(--to) - var(--from)); transform-origin: left center; }
 .ug-bar.f { background: var(--ink); }
 .ug-bar.h { background: repeating-linear-gradient(-45deg, var(--ink) 0 1px, transparent 1px 6px); box-shadow: inset 0 0 0 1px var(--ink); }
-.ug-bar.x { width: calc(var(--to) - var(--from) - 10px); }
-.ug-bar.x::after { content: ""; position: absolute; right: -10px; top: -3px; border-left: 10px solid var(--ink); border-block: 9px solid transparent; }
+.ug-bar.ug-tail { width: calc(var(--to) - var(--from) - 10px); }
+.ug-bar.ug-tail::after { content: ""; position: absolute; right: -10px; top: -3px; border-left: 10px solid var(--ink); border-block: 9px solid transparent; }
 .ug-end { color: var(--ink); white-space: nowrap; }
 .ug-end.d { position: absolute; left: calc(var(--to) + 14px); top: 50%; transform: translateY(-50%); padding: 0 6px; background: #000; }
 .ug-end.d.r { left: auto; right: 0; top: -26px; transform: none; padding: 0 0 0 6px; }
@@ -164,6 +173,13 @@
 .ug-ticks span:last-child { transform: translateX(-100%); }
 .ug-ticks span:last-child::before { left: auto; right: 0; }
 
+/* tablet and phone: ticks that sit too close drop to a second row on a longer tick, like a dimension-line stagger */
+@media (max-width: 1099px) {
+  .ug-ticks { height: 62px; }
+  .ug-ticks [data-tick="1h"], .ug-ticks [data-tick="30d"] { padding-top: 32px; }
+  .ug-ticks [data-tick="1h"]::before, .ug-ticks [data-tick="30d"]::before { height: 26px; }
+  .ug-gl { bottom: 62px; }
+}
 @media (max-width: 719px) {
   .ug-lane { grid-template-columns: 1fr; row-gap: 12px; padding: 20px 0; }
   .ug-lane-h { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -173,10 +189,12 @@
   .ug-ticks { margin-left: 0; }
   .ug-gl { display: none; }
   .ug-ticks [data-tick="1h"], .ug-ticks [data-tick="30d"] { display: none; }
+  .ug-ticks [data-tick="30m"] { padding-top: 32px; }
+  .ug-ticks [data-tick="30m"]::before { height: 26px; }
 }
 
 .ug-size-row { margin-top: clamp(64px, 8vw, 120px); align-items: end; }
-@media (min-width: 1100px) {
+@media (min-width: 720px) { /* side by side from tablet up */
   .ug-size { grid-column: 1 / 7; }
   .ug-size-r { grid-column: 8 / 13; }
 }
@@ -208,7 +226,7 @@
 }
 .sx[data-io] .ug-pool-sq:not([data-in]) i { background: transparent; }
 .sx[data-io] .ug-pool-sq i { transition: background-color 300ms var(--ease-out) calc(300ms + var(--i, 0) * 120ms); }
-@media (max-width: 1099px) { .ug-size-r { margin-top: 40px; } }
+@media (max-width: 719px) { .ug-size-r { margin-top: 40px; } }
 
 /* ---------- 5.3 proof ---------- */
 .ug-proof-l, .ug-teams-l { margin-top: 28px; }
@@ -373,7 +391,8 @@
   margin-top: clamp(48px, 6vw, 88px);
   --cols: minmax(0, 0.5fr) minmax(0, 1.6fr) minmax(0, 2.4fr) minmax(0, 0.9fr); --big: clamp(36px, 5vw, 88px);
 }
-.ug-road .n { text-align: left; }
+.ug-road .n { text-align: left; align-self: start; }
+.ug-road .cn { align-self: start; } /* the dim number and the codename share a cap line */
 .ug-road .nm { display: block; margin-top: 10px; }
 .ug-road .go { justify-self: end; }
 .ug-road-note { margin-top: 18px; }

@@ -265,14 +265,14 @@ function Period({ p, yearly }: { p: Plan; yearly: boolean }) {
   if (p.id === "pro")
     return yearly ? (
       <>
-        <s>$8</s> per month · billed yearly · $72/yr
+        <s><span className="sx-sr">instead of </span>$8</s> per month · billed yearly · $72/yr
       </>
     ) : (
       <>per month</>
     );
   return yearly ? (
     <>
-      <s>$16</s> per user / month · billed yearly · $144/yr
+      <s><span className="sx-sr">instead of </span>$16</s> per user / month · billed yearly · $144/yr
     </>
   ) : (
     <>per user / month</>
@@ -298,12 +298,16 @@ function PlanCta({ p }: { p: Plan }) {
   );
 }
 
-/** The page's one hand-drawn stroke: a chalk circle around Free's $0, with a note. */
+/** The page's one hand-drawn stroke: a chalk loop around Free's $0, two passes, drawn once when the price enters.
+ *  The viewBox is the price box in thousandths of an em (1.038em × 0.8em), so the loop scales with the price at every
+ *  width. It is fitted to the real ink of "$0" (≥ 7px clear of both glyphs) and leaves the box by only 0.08em on the
+ *  left, so on a phone it still stays inside the 16px gutter. It overshoots its start at the top, as chalk does. */
+const LOOP = "M430 -128C800 -150 1175 60 1169 353C1166 630 890 846 544 842C200 838 -78 630 -81 353C-84 80 190 -140 560 -138C700 -136 820 -112 900 -80";
 function ChalkCircle() {
   return (
-    <svg className="ug-chalk" viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden focusable="false" data-chalk>
-      <path className="c" pathLength={1} d="M70 34C150 4 322 8 372 58C404 96 352 170 214 182C100 192 22 162 20 112C18 66 92 30 196 24" fill="none" stroke="#f2f2f2" strokeWidth="3.25" strokeLinecap="round" strokeLinejoin="round" />
-      <path className="c" pathLength={1} d="M70 34C150 4 322 8 372 58C404 96 352 170 214 182C100 192 22 162 20 112C18 66 92 30 196 24" transform="translate(4 3)" fill="none" stroke="#f2f2f2" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" opacity=".35" />
+    <svg className="ug-chalk" viewBox="0 0 1038 800" preserveAspectRatio="none" aria-hidden focusable="false" data-chalk>
+      <path className="c" pathLength={1} d={LOOP} fill="none" stroke="#f2f2f2" strokeWidth="17" strokeLinecap="round" strokeLinejoin="round" />
+      <path className="c" pathLength={1} d={LOOP} transform="translate(10 16) rotate(-1.5 544 353)" fill="none" stroke="#f2f2f2" strokeWidth="8.5" strokeLinecap="round" strokeLinejoin="round" opacity=".35" />
     </svg>
   );
 }
@@ -340,7 +344,7 @@ export default function Plans() {
             <h1 id="ug-h1" className="sx-mega ug-h1">
               <span className="ln">
                 Time is <span className="brk">the</span>
-              </span>
+              </span>{" "}
               <span className="ln sx-out">upgrade.</span>
             </h1>
           </div>
@@ -390,7 +394,7 @@ export default function Plans() {
           <SecHead n="01" label="The plans" kicker="Pricing" total={TOTAL} />
           <div className="ug-top">
             <h2 id="ug-plans-h" className="sx-h2" data-reveal>
-              <span className="ln">Pick your</span>
+              <span className="ln">Pick your</span>{" "}
               <span className="ln">orbit.</span>
             </h2>
             <Billing yearly={yearly} set={setYearly} />
@@ -464,7 +468,7 @@ export default function Plans() {
         <div className="sx-in">
           <SecHead n="02" label="What the plans buy" kicker="Time" total={TOTAL} />
           <h2 id="ug-time-h" className="sx-h2" data-reveal>
-            <span className="ln">Thirty minutes</span>
+            <span className="ln">Thirty minutes</span>{" "}
             <span className="ln">is a feature.</span>
           </h2>
           <div className="sx-grid">
@@ -485,7 +489,7 @@ export default function Plans() {
                   <div className="ug-lane-h">
                     <div className="ug-lane-n">
                       <b>{l.name}</b>
-                      <span className={`sx-label ug-lane-st${l.live ? " live" : ""}`}>
+                      <span className={`sx-label ug-lane-st${l.live ? " ug-on" : ""}`}>
                         {l.live ? <i className="sx-dot" /> : <i className="sx-ring" />}
                         {l.live ? "Live" : "Soon"}
                       </span>
@@ -493,7 +497,7 @@ export default function Plans() {
                     <span className="sx-label ug-end m">{l.end}</span>
                   </div>
                   <div className="ug-track">
-                    <i className={`ug-bar ${l.fill}${l.tail ? " x" : ""}`} style={v({ "--from": "2.2%", "--to": l.to })} />
+                    <i className={`ug-bar ${l.fill}${l.tail ? " ug-tail" : ""}`} style={v({ "--from": "2.2%", "--to": l.to })} />
                     <span className={`sx-label ug-end d${l.tail ? " r" : ""}`} style={v({ "--to": l.to })}>
                       {l.end}
                     </span>
@@ -562,7 +566,7 @@ export default function Plans() {
         <div className="sx-in">
           <SecHead n="03" label="Proof" kicker="Pro, coming soon" total={TOTAL} />
           <h2 id="ug-proof-h" className="sx-h2" data-reveal>
-            <span className="ln">Who got it.</span>
+            <span className="ln">Who got it.</span>{" "}
             <span className="ln">When.</span>
           </h2>
           <div className="sx-grid">
@@ -636,7 +640,7 @@ export default function Plans() {
         <div className="sx-in">
           <SecHead n="04" label="Teams" kicker="Business, coming soon" total={TOTAL} />
           <h2 id="ug-teams-h" className="sx-h2" data-reveal>
-            <span className="ln">A home</span>
+            <span className="ln">A home</span>{" "}
             <span className="ln">for teams.</span>
           </h2>
           <div className="sx-grid">
@@ -715,7 +719,7 @@ export default function Plans() {
         <div className="sx-in">
           <SecHead n="05" label="Every line" kicker="Compare" total={TOTAL} />
           <h2 id="ug-cmp-h" className="sx-h2" data-reveal>
-            <span className="ln">Compare</span>
+            <span className="ln">Compare</span>{" "}
             <span className="ln">everything.</span>
           </h2>
           <table className="ug-cmp">
@@ -774,7 +778,7 @@ export default function Plans() {
           <SecHead n="06" label="On the way" kicker="Roadmap" total={TOTAL} />
           <div className="sx-grid ug-road-top">
             <h2 id="ug-road-h" className="sx-h2" data-reveal>
-              <span className="ln">On the</span>
+              <span className="ln">On the</span>{" "}
               <span className="ln">way.</span>
             </h2>
             <p className="sx-body ug-road-b" data-reveal>
@@ -816,7 +820,7 @@ export default function Plans() {
         <div className="sx-in">
           <SecHead n="07" label="What stays the same" kicker="Promises" total={TOTAL} />
           <h2 id="ug-prom-h" className="sx-h2" data-reveal>
-            <span className="ln">What stays</span>
+            <span className="ln">What stays</span>{" "}
             <span className="ln">the same.</span>
           </h2>
           <ul className="ug-prom">
@@ -838,7 +842,7 @@ export default function Plans() {
           <div className="sx-grid">
             <div className="ug-faq-h">
               <h2 id="ug-faq-h" className="sx-h2" data-reveal>
-                <span className="ln">Fair</span>
+                <span className="ln">Fair</span>{" "}
                 <span className="ln">questions.</span>
               </h2>
               <p className="ug-faq-mail">
@@ -884,7 +888,7 @@ export default function Plans() {
             <h2 id="ug-fin" className="sx-mega ug-fin" data-reveal>
               <span className="ln">
                 Be <span className="brk">first</span>
-              </span>
+              </span>{" "}
               <span className="ln sx-out">in line.</span>
             </h2>
           </div>
