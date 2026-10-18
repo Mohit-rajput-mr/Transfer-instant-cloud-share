@@ -60,7 +60,25 @@
    "text": "So next time you scan one, remember: it's a tiny map of ones and zeros that fixes itself.",
    "dur": 5.372,
    "at": 58.83
+  },
+  {
+   "key": "orbi",
+   "text": "And that's why Orbi Transfer puts a QR code on every file you send.",
+   "dur": 4.905,
+   "at": 64.7
+  },
+  {
+   "key": "scan",
+   "text": "Your friend points the camera and lands right on your file. Add a code, and only people who know it can open it.",
+   "dur": 5.465,
+   "at": 69.96
+  },
+  {
+   "key": "outro",
+   "text": "Orbi Transfer dot com. Now you know!",
+   "dur": 2.386,
+   "at": 75.82
   }
  ],
- "duration": 66.0
+ "duration": 80.01
 }

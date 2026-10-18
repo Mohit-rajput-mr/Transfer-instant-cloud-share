@@ -18,8 +18,10 @@
   #res { left: 50%; top: 1460px; transform: translateX(-50%); padding: 26px 44px; border-radius: 30px; background: #fff; color: #111; font: 900 58px/1 "D"; font-stretch: 110%; white-space: nowrap; box-shadow: 0 20px 60px rgba(0,0,0,0.5); opacity: 0; }
   #res i { color: #2fbf5b; font-style: normal; margin-right: 18px; }
   #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #1d1a10, #000 70%); text-align: center; z-index: 50; }
-  #endc h1 { position: absolute; left: 60px; right: 60px; top: 640px; font: 900 128px/1.02 "D"; font-stretch: 120%; text-transform: uppercase; }
-  #endc p { position: absolute; left: 0; right: 0; top: 1080px; font: 700 44px/1 "M"; letter-spacing: 0.12em; text-transform: uppercase; color: #ffd23d; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1010px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1160px; font: 700 44px/1 "M"; letter-spacing: 0.12em; text-transform: uppercase; color: #ffd23d; }
   #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
   #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
 </style>
@@ -34,10 +36,12 @@
 <div class="ov tag" id="tM">1 of <b>8 masks</b></div>
 <div class="ov tag" id="tR">Up to <b>30%</b> rebuilt</div>
 <div class="ov tag" id="tB">Over <b>7,000 digits</b></div>
+<div class="ov tag" id="tQ">Every file · <b>its own QR</b></div>
+<div class="ov tag" id="tK">Add a code · <b>only your people</b></div>
 <div class="ov big" id="bigc"></div>
 <div class="ov" id="res"><i>✓</i>NOW YOU KNOW</div>
 <div class="ov" id="sub"></div>
-<div class="ov" id="endc"><h1>How a QR code works</h1><p>Now you know</p></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
 <div class="ov" id="flash"></div>
 <div class="ov" id="fade"></div>
 <script type="module">
@@ -61,6 +65,7 @@ const at = (k) => L[k].at;
 window.DURATION = LINES.duration;
 // a real QR code ("NOW YOU KNOW", error correction H, version 2: 25×25), its reading order and a decodable stain (qrmake.cjs)
 const QRD = await (await fetch("qr.json")).json();
+const QRL = await (await fetch("qrlink.json")).json(); // the QR on an Orbi file (qrlink.cjs)
 const N = QRD.n, QZ = 4, CELLS = N + 2 * QZ;
 const isRes = (i) => QRD.res[i] === 1;
 const maskBit = (r, c) => r % 2 === 0; // mask pattern 1: every even row is flipped
@@ -146,6 +151,29 @@ function drawPhone(t, ok, scanK) {
   if (ok) { g.fillStyle = "#111"; g.font = "900 30px D"; g.textAlign = "center"; g.fillText("NOW YOU KNOW", 180, 618); }
   phoneTex.needsUpdate = true;
 }
+
+// ---------- the Orbi part: a phone shows a file's QR (the real share panel: link + Orbit code), a friend scans it ----------
+function makeDev() { const c = document.createElement("canvas"); c.width = 360; c.height = 740; const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8;
+  const g = new THREE.Group(); const body = sh(new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.035, 0.94), flat(0x1b1d22, { metalness: 0.4, roughness: 0.3 }))); const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.88), new THREE.MeshBasicMaterial({ map: tx, toneMapped: false })); scr.position.y = 0.019; scr.rotation.set(-Math.PI / 2, 0, 0); g.add(body, scr); g.visible = false; scene.add(g); return { g, c, tx, st: "" }; }
+const devA = makeDev(), devB = makeDev();
+function qrDraw(g, x, y, s) { const n = QRL.n, q = s / (n + 2); g.fillStyle = "#fff"; g.fillRect(x, y, s, s); g.fillStyle = "#000"; for (let i = 0; i < n * n; i++) if (QRL.data[i]) g.fillRect(x + (i % n + 1) * q, y + (Math.floor(i / n) + 1) * q, q + 0.4, q + 0.4); }
+function drawA() { const d = devA; if (d.st) return; d.st = "1"; const g = d.c.getContext("2d");
+  g.fillStyle = "#0b0b0f"; g.fillRect(0, 0, 360, 740); g.fillStyle = "#fff"; g.font = "800 26px D"; g.fillText("Orbi Transfer", 24, 54);
+  g.fillStyle = "#16181d"; g.beginPath(); g.roundRect(18, 86, 324, 610, 26); g.fill();
+  g.fillStyle = "#8a9099"; g.font = "600 16px M"; g.fillText("PHOTOS.ZIP · 240 MB", 40, 124); g.fillStyle = "#fff"; g.font = "800 62px M"; g.fillText("29:41", 40, 190); g.fillStyle = "#8a9099"; g.font = "600 15px M"; g.fillText("until burn-up", 40, 216);
+  qrDraw(g, 70, 250, 220);
+  g.fillStyle = "#8a9099"; g.font = "600 15px M"; g.fillText("ORBIT CODE", 40, 512); g.fillStyle = "#fff"; g.font = "800 44px D"; g.fillText("lx0001", 40, 560);
+  for (const [x, w, s] of [[40, 140, "Copy link"], [192, 120, "Share ↗"]]) { g.strokeStyle = "rgba(255,255,255,0.35)"; g.lineWidth = 2; g.beginPath(); g.roundRect(x, 600, w, 50, 25); g.stroke(); g.fillStyle = "#fff"; g.font = "700 20px D"; g.textAlign = "center"; g.fillText(s, x + w / 2, 632); g.textAlign = "left"; }
+  d.tx.needsUpdate = true; }
+function drawB(mode, k) { const d = devB, key = mode + Math.round(k * 8); if (d.st === key) return; d.st = key; const g = d.c.getContext("2d");
+  if (mode === "cam") { g.fillStyle = "#3a2516"; g.fillRect(0, 0, 360, 740); g.fillStyle = "#0b0b0f"; g.fillRect(40, 120, 280, 560); qrDraw(g, 90, 300, 180);
+    g.strokeStyle = "#ffd23d"; g.lineWidth = 6; const x0 = 78, y0 = 288, s = 204, q = 30; for (const [x, y, dx, dy] of [[x0, y0, 1, 1], [x0 + s, y0, -1, 1], [x0, y0 + s, 1, -1], [x0 + s, y0 + s, -1, -1]]) { g.beginPath(); g.moveTo(x, y + dy * q); g.lineTo(x, y); g.lineTo(x + dx * q, y); g.stroke(); }
+    if (k > 0.4) { g.fillStyle = "rgba(255,255,255,0.95)"; g.beginPath(); g.roundRect(30, 40, 300, 64, 18); g.fill(); g.fillStyle = "#111"; g.font = "700 22px D"; g.fillText("orbitransfer.com  ↗", 56, 80); } }
+  else { g.fillStyle = "#0b0b0f"; g.fillRect(0, 0, 360, 740); g.fillStyle = "#fff"; g.font = "800 26px D"; g.fillText("Orbi Transfer", 24, 54); g.fillStyle = "#8a9099"; g.font = "600 16px M"; g.fillText("PHOTOS.ZIP · 240 MB", 24, 120);
+    if (mode === "lock") { g.fillStyle = "#fff"; g.font = "800 40px D"; g.fillText("Enter the code", 24, 190); for (let i = 0; i < 5; i++) { g.strokeStyle = "#3dff8c"; g.lineWidth = 3; g.beginPath(); g.roundRect(24 + i * 64, 230, 52, 64, 12); g.stroke(); if (i < Math.round(k * 5)) { g.fillStyle = "#fff"; g.beginPath(); g.arc(50 + i * 64, 262, 9, 0, 6.28); g.fill(); } }
+      g.fillStyle = "#1c1e24"; for (let i = 0; i < 12; i++) { g.beginPath(); g.roundRect(24 + (i % 3) * 108, 340 + Math.floor(i / 3) * 90, 96, 76, 16); g.fill(); } }
+    else { g.fillStyle = "#3dff8c"; g.beginPath(); g.arc(180, 280, 70, 0, 6.28); g.fill(); g.strokeStyle = "#0b0b0f"; g.lineWidth = 14; g.beginPath(); g.moveTo(148, 282); g.lineTo(172, 306); g.lineTo(214, 256); g.stroke(); g.fillStyle = "#fff"; g.font = "800 44px D"; g.textAlign = "center"; g.fillText("Unlocked", 180, 410); g.fillStyle = "#fff"; g.beginPath(); g.roundRect(40, 560, 280, 70, 35); g.fill(); g.fillStyle = "#000"; g.font = "800 26px D"; g.fillText("Download ↓", 180, 604); g.textAlign = "left"; } }
+  d.tx.needsUpdate = true; }
 // lights: warm café
 scene.add(new THREE.HemisphereLight(0xfff0dc, 0x2a1a10, 0.8));
 const key = new THREE.DirectionalLight(0xfff1dd, 2.2); key.position.set(2.5, 6, 3); key.castShadow = true; key.shadow.mapSize.set(2048, 2048); Object.assign(key.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 1, far: 20 }); key.shadow.bias = -0.0003; scene.add(key);
@@ -159,7 +187,7 @@ const over = (h, ox = 0, oz = 0, tilt = 0.35, fov = 40) => look(ox, h, oz + h * 
 const spill = () => at("damage") + 2.2;
 
 window.render = async function (t) {
-  for (const id of ["tO", "tF", "tG", "tZ", "tM", "tR", "tB", "bigc", "res", "flash"]) S($(id), { opacity: 0 });
+  for (const id of ["tO", "tF", "tG", "tZ", "tM", "tR", "tB", "tQ", "tK", "bigc", "res", "flash"]) S($(id), { opacity: 0 });
   const st = { t };
   const D = at("damage"), SP = spill();
 
@@ -236,10 +264,23 @@ window.render = async function (t) {
     const n = t < A("big") + 2.4 ? 21 : Math.round(lerp(21, 177, out(clamp((t - A("big") - 2.4) / 1.6))));
     const el = $("bigc"); el.textContent = `${n} × ${n}`; S(el, { opacity: win(t, A("big") + 0.4, A("end") - 0.1, 0.3, 0.3) });
     tag("tB", t, A("big") + 4.4, A("end") - 0.1, 540, 260);
-  } else {
+  } else if (t < A("orbi")) {
     const k = ease(clamp((t - A("end")) / 3));
     look(lerp(1.0, 2.6, k), lerp(3.4, 3.6, k), lerp(2.6, 4.4, k), 0, 0, 0, 42);
+  } else if (t < A("scan")) {
+    const k = ease(clamp((t - A("orbi")) / (A("scan") - A("orbi"))));
+    over(lerp(2.8, 1.75, k), 0.15, 0.2, 0.14, 40);
+    tag("tQ", t, A("orbi") + 1.2, A("scan") - 0.1, 540, 260);
+  } else {
+    const k = ease(clamp((t - A("scan")) / (A("outro") - A("scan"))));
+    look(lerp(1.4, 1.1, k), lerp(2.2, 2.0, k), lerp(1.9, 1.6, k), 0.2, 0.35, 0.1, 40);
+    tag("tK", t, A("scan") + 2.8, A("outro"), 540, 260);
   }
+  // the two phones of the Orbi part
+  devA.g.visible = t > A("orbi") - 0.4; devB.g.visible = t > A("scan");
+  if (devA.g.visible) { drawA(); const k = out(clamp((t - A("orbi") + 0.4) / 0.8)); devA.g.position.set(lerp(2.2, 0.15, k), 0.03, lerp(0.6, 0.2, k)); devA.g.rotation.set(0, lerp(0.6, 0.1, k), 0); }
+  if (devB.g.visible) { const S0 = A("scan"), k = out(clamp((t - S0) / 0.7)); devB.g.position.set(lerp(1.6, 0.2, k), lerp(0.3, 0.62, k), lerp(1.2, 0.3, k)); devB.g.rotation.set(lerp(-0.5, -0.12, k), 0.1, lerp(0.3, 0.05, k));
+    const tl = S0 + 2.6, to = S0 + 4.2; if (t < tl) drawB("cam", clamp((t - S0 - 0.8) / 1.0)); else if (t < to) drawB("lock", clamp((t - tl - 0.2) / 1.0)); else drawB("open", 1); }
   if (t >= A("big") && t < A("big") + 2.4) { S($("bigc"), { opacity: win(t, A("big") + 0.4, A("big") + 2.4, 0.3, 0.1) }); }
 
   // ---- subtitles: 1–3 words, timed to the voice ----
@@ -254,10 +295,11 @@ window.render = async function (t) {
     sub = chunks.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" ");
   }
   $("sub").textContent = sub;
-  S($("sub"), { opacity: t > A("end") + 3.2 ? 0 : 1 });
+  S($("sub"), { opacity: t > A("outro") + 0.1 ? 0 : 1 });
 
   // end card (no brand): the title over the café
-  const e = clamp((t - (window.DURATION - 2.2)) / 0.5);
+  const e = clamp((t - A("outro") + 0.1) / 0.45);
+  document.querySelector("#endc .em").style.transform = `rotate(${(t - A("outro")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
   S($("endc"), { opacity: e });
   S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.4)) / 0.4)) });
   r.render(scene, cam);

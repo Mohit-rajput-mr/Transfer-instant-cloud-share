@@ -18,7 +18,10 @@ LINES = [
     ("damage",  "And the clever part? Spill coffee on it, and it still works!",                                                     1.20, 0.45),
     ("repair",  "Extra repair data is woven in. At the highest level, about thirty percent of it can be damaged, and the math rebuilds the rest.", 0.90, 0.35),
     ("big",     "The smallest code is twenty-one squares wide. The biggest is a hundred and seventy-seven, enough for over seven thousand digits.", 0.95, 0.35),
-    ("end",     "So next time you scan one, remember: it's a tiny map of ones and zeros that fixes itself.",                         1.00, 0.00),
+    ("end",     "So next time you scan one, remember: it's a tiny map of ones and zeros that fixes itself.",                         1.00, 0.50),
+    ("orbi",    "And that's why Orbi Transfer puts a QR code on every file you send.",                                              1.00, 0.35),
+    ("scan",    "Your friend points the camera and lands right on your file. Add a code, and only people who know it can open it.", 0.95, 0.40),
+    ("outro",   "Orbi Transfer dot com. Now you know!",                                                                             1.05, 0.00),
 ]
 
 torch.set_num_threads(4)
@@ -47,7 +50,7 @@ for key, text, ex, gap in LINES:
         ln = next(l for l in prev["lines"] if l["key"] == key)
         d = ln["dur"]
     else:
-        spoken = text
+        spoken = text.replace("Orbi", "Orbee")
         best = None
         for take in range(3):
             torch.manual_seed(take * 7 + len(key))
