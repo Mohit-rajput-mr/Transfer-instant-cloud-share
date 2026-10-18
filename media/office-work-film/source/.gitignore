@@ -5,3 +5,6 @@ vo_log*.txt
 part_*
 synth_log.txt
 enc_log.txt
+rec/
+rec_files/
+vo_log.txt
