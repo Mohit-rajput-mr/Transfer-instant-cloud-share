@@ -4,3 +4,4 @@ log_*.txt
 vo_log*.txt
 part_*
 synth_log.txt
+enc_log.txt
