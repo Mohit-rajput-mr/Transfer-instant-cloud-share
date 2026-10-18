@@ -1,0 +1,15 @@
+frames/
+score.wav
+log_*.txt
+vo_log*.txt
+part_*
+synth_log.txt
+enc_log.txt
+rec/
+rec_files/
+vo_log.txt
+synth_log.txt
+finish.txt
+log_*.txt
+rec/
+vo_log.txt
