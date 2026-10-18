@@ -17,3 +17,5 @@ frames/
 score.wav
 log_*.txt
 synth_log.txt
+rec_light/
+rec_log.txt

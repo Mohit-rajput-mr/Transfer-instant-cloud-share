@@ -132,7 +132,7 @@ async function main() {
   await ctx.addInitScript((R) => {
     try {
       localStorage.setItem("orbit:geo-asked", "1");
-      localStorage.setItem("orbit:work-theme", "light");
+      localStorage.setItem("orbit:work-theme", "dark");
       localStorage.setItem("orbit:bubble-name", "Alex");
       sessionStorage.setItem("orbit:pill-off", "1");
     } catch {}
