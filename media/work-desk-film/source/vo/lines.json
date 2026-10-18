@@ -1,0 +1,78 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know why people are using Orbi Transfer?",
+   "dur": 2.787,
+   "at": 0.35
+  },
+  {
+   "key": "open",
+   "text": "Let's open Orbi Work. One clean board for your whole team, right in the browser. No accounts.",
+   "dur": 5.816,
+   "at": 3.54
+  },
+  {
+   "key": "space",
+   "text": "First, make a private space. Give it a name, add a passcode, and only your team gets in.",
+   "dur": 6.2,
+   "at": 9.65
+  },
+  {
+   "key": "task",
+   "text": "Now add a task. Give it a name, like Richard's task. Write what needs doing, and tag him.",
+   "dur": 6.136,
+   "at": 16.15
+  },
+  {
+   "key": "submit",
+   "text": "Hit submit, and upload the files straight into it.",
+   "dur": 3.469,
+   "at": 22.59
+  },
+  {
+   "key": "route",
+   "text": "Double-click the task to set its route. In progress, in review, delivered. Need something else? Make a custom step.",
+   "dur": 7.889,
+   "at": 26.41
+  },
+  {
+   "key": "color",
+   "text": "And every step wears the colour you pick. Purple for review, green for done. Your call.",
+   "dur": 6.328,
+   "at": 34.6
+  },
+  {
+   "key": "move",
+   "text": "Click a step, and your whole team sees it change, live.",
+   "dur": 3.495,
+   "at": 41.23
+  },
+  {
+   "key": "arrange",
+   "text": "Too messy? Hit arrange. Every file lines up with its task. Wires dead straight.",
+   "dur": 6.008,
+   "at": 45.07
+  },
+  {
+   "key": "cancel",
+   "text": "Client changed their mind? Cancel it, and it turns red.",
+   "dur": 3.576,
+   "at": 51.43
+  },
+  {
+   "key": "lock",
+   "text": "Every file is encrypted in your browser before it leaves, and it burns on time.",
+   "dur": 4.493,
+   "at": 55.35
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com, slash work. Try it with your team.",
+   "dur": 3.853,
+   "at": 60.25
+  }
+ ],
+ "duration": 65.9
+}
