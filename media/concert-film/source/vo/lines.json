@@ -1,0 +1,90 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know why people are using Orbi Transfer?",
+   "dur": 2.787,
+   "at": 0.35
+  },
+  {
+   "key": "scene",
+   "text": "Picture this. The lights drop, the whole crowd screams, and you catch the encore. Perfectly.",
+   "dur": 5.496,
+   "at": 3.59
+  },
+  {
+   "key": "want",
+   "text": "And now your friends are all yelling the same thing: send it to me!",
+   "dur": 4.024,
+   "at": 9.38
+  },
+  {
+   "key": "old",
+   "text": "But chat apps crush it into a blurry mess, and email just says: file too big.",
+   "dur": 5.389,
+   "at": 13.76
+  },
+  {
+   "key": "send",
+   "text": "So you drop the clip into Orbi Transfer, set a code, and that's it. Sent.",
+   "dur": 4.856,
+   "at": 19.45
+  },
+  {
+   "key": "pop",
+   "text": "Every friend around you gets it in seconds. Full quality!",
+   "dur": 3.981,
+   "at": 24.65
+  },
+  {
+   "key": "how",
+   "text": "Wait. How does that actually work?",
+   "dur": 2.087,
+   "at": 29.23
+  },
+  {
+   "key": "pack",
+   "text": "Think of your clip as a song. Your phone locks it in a guitar case, and the code is the key. It never leaves your hand.",
+   "dur": 6.563,
+   "at": 31.87
+  },
+  {
+   "key": "pieces",
+   "text": "Then the song breaks into notes, and they all fly out at once, like a whole band playing together. That's why it's so fast.",
+   "dur": 8.696,
+   "at": 38.73
+  },
+  {
+   "key": "vault",
+   "text": "The notes wait backstage, behind a locked door. No code? Nobody gets in.",
+   "dur": 5.089,
+   "at": 47.78
+  },
+  {
+   "key": "ring",
+   "text": "Then Orbi sends a light wave across your part of the city, like a stadium wave. It knows the area. Never your seat.",
+   "dur": 6.755,
+   "at": 53.22
+  },
+  {
+   "key": "land",
+   "text": "Your friend types the code, the notes fly back, snap together, and the whole song plays!",
+   "dur": 6.2,
+   "at": 60.32
+  },
+  {
+   "key": "burn",
+   "text": "And thirty minutes later? The stage goes dark. Everything's gone. No account. No trace.",
+   "dur": 5.795,
+   "at": 66.92
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. Try it before the next encore.",
+   "dur": 2.94,
+   "at": 73.12
+  }
+ ],
+ "duration": 77.86
+}

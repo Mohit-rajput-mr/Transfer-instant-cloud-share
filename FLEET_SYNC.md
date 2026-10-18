@@ -8,7 +8,7 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 - DONE 2026-10-18: `media/airport-film/OrbiTransfer-airport.mp4` (79 s) rendered + encoded from his committed source (he stopped before the render).
   Render tips: 4 workers ~1.1 s/frame each, ~25 min; run synth.py AFTER the frames (CPU-starved otherwise).
 - His other films (wedding, gym, explainer-3d…) live on `claude/festive-keller-rln4jk` only; not merged into this branch.
-- Next story candidates: concert, classroom, office meeting, film set, hospital, train, park photo walk.
+- DONE: concert film (Chatterbox voice with feeling). Next story candidates: classroom, office meeting, film set, hospital, train, park photo walk.
 
 ## How to ship (every time)
 1. `npx tsc --noEmit` and `npx eslint src` (0 errors). Production build check: copy repo without `node_modules/.next/.git/media/live`

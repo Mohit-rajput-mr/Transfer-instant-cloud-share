@@ -66,7 +66,7 @@ When the owner says "new version" / "next", make the next film from the story li
 | Colours | lead "you" teal `#4fc3bd`, friend coral `#f08a5d`, crowd soft greys/pastels; brand green `#3dff8c` for signal, beams, rings |
 | Sets | warm real places (wood floor, brick, blue walls, pendant lamps), the city from above with the green area cells, a server aisle of scrambled bytes, the 30-minute burn |
 | Phone screens | **real captures** of orbitransfer.com (`explainer-film/source/capture.cjs` → `shots/`), drawn into the phone screen texture |
-| Voice | Kokoro `bm_george` (British male), speed 1.08, `lang en-gb`; "Orbi" is spoken as "Orbee" |
+| Voice | **Chatterbox** cloned from George (`concert-film/source/ref_george.wav`, made from Kokoro `bm_george`), emotion 0.75–1.2 per line (above ~1.4 it strains), every take checked by faster-whisper; "Orbi" spoken as "Orbee". Owner: Kokoro alone sounded robotic. |
 | Subtitles | Archivo 800, 70 px, white, 3 px black stroke, at y≈1190, 1–3 words per chunk, broken at punctuation |
 | Music/SFX | `synth.py` (synthesized bed + whooshes, taps, chimes, burn), music ducked under the voice |
 | End card | emblem + logo + `orbitransfer.com` + "Try it on two phones" |
@@ -82,6 +82,10 @@ When the owner says "new version" / "next", make the next film from the story li
 - Also true: works on any device with a browser, folders and many files go in one ball, team Spaces, preview before download.
 
 ## Owner feedback (latest, wins over older notes)
+- **The voice must have feeling, not robotic** (2026-10-18). Use `concert-film/source/vo.py` (Chatterbox + George reference,
+  emotion per line, auto-checked takes). Write lines to be *spoken*: reactions, short punchy sentences, real exclamations.
+  Setup: venv, `pip install --extra-index-url https://download.pytorch.org/whl/cpu chatterbox-tts faster-whisper jiwer soundfile "setuptools<81"`.
+  About 7× slower than real time on CPU (≈20 min for 80 s). Don't clone a real person's voice.
 - **Never reuse wording.** Every film gets a fresh script: new lines, new jokes, new metaphors. Only the hook line stays.
 - **Explain it like to a simple person, in layers:** follow the file's whole journey with everyday pictures, not tech words:
   1. sealed in a locked box (the passcode is the key and never leaves your phone);
@@ -128,7 +132,8 @@ Structure that works:
    Commit, push, and send the MP4.
 
 ## Films so far
-- `airport-film/`: arrivals gate, code "tram", a whole folder as luggage (suitcase → bags on belts → baggage hold → radar → carousel → shredder), low-poly men and women (**latest**, MP4 rendered 2026-10-18, 79 s)
+- `concert-film/`: arena encore, code "rock", the clip as a song (guitar case → notes flying at once → backstage door → stadium light wave → song plays → stage goes dark), Chatterbox voice with feeling (**latest**)
+- `airport-film/`: arrivals gate, code "tram", a whole folder as luggage (suitcase → bags on belts → baggage hold → radar → carousel → shredder), low-poly men and women (MP4 rendered 2026-10-18, 79 s)
 - `wedding-film/`: wedding, passcode "cake", the photo's full journey (locked box → pieces → vault → ring → unlock → burn)
 - `gym-film/`: the gym, bench-press video (house style)
 - `explainer-3d-stick/`: café story, stick people, George (house style)
