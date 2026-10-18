@@ -1,0 +1,593 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Orbi Work · the office</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(10,12,16,0.85); border: 2px solid rgba(255,255,255,0.25); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #eaf0f5; white-space: nowrap; opacity: 0; }
+  .tag b { color: #ff7a59; font-weight: 700; }
+  /* the mess: cards from every other tool */
+  .mc { width: 600px; padding: 26px 30px; border-radius: 26px; background: #fff; color: #1a1a1a; box-shadow: 0 24px 60px rgba(0,0,0,0.45); opacity: 0; font-family: "D"; font-stretch: 100%; }
+  .mc h4 { font: 800 36px/1.1 "D"; display: flex; align-items: center; gap: 16px; } .mc p { font: 600 28px/1.3 "M"; color: #666; margin-top: 10px; }
+  .mc i { width: 54px; height: 54px; border-radius: 14px; display: grid; place-items: center; color: #fff; font: 900 30px/1 "D"; font-style: normal; flex: none; }
+  .mc .n { margin-left: auto; padding: 6px 14px; border-radius: 999px; background: #e0452f; color: #fff; font: 800 26px/1 "M"; }
+  /* the new guy's wait */
+  #wait { left: 50%; top: 260px; transform: translateX(-50%); padding: 30px 44px; border-radius: 30px; background: rgba(255,255,255,0.96); color: #222; font: 800 46px/1.1 "D"; display: flex; gap: 24px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 24px 60px rgba(0,0,0,0.4); }
+  #wait .sp { width: 56px; height: 56px; border-radius: 50%; border: 8px solid #ddd; border-top-color: #2a6bff; }
+  #wait small { display: block; font: 600 28px/1.3 "M"; color: #888; }
+  /* a real phone screen, held up to the camera */
+  #ph { left: 300px; top: 130px; width: 480px; height: 1039px; border-radius: 74px; background: #0b0b0c; padding: 16px; box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 0 3px #3a3a3e inset; opacity: 0; z-index: 30; }
+  #ph .in { position: relative; width: 100%; height: 100%; border-radius: 60px; overflow: hidden; background: #1b1b1c; }
+  #ph img { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
+  #ph .tap { position: absolute; width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; border: 6px solid #fff; opacity: 0; }
+  /* the route: Doing → Review → Done */
+  #route { left: 60px; right: 60px; top: 300px; display: flex; gap: 18px; opacity: 0; z-index: 30; }
+  #route div { flex: 1; padding: 26px 0; border-radius: 22px; background: rgba(30,30,34,0.9); border: 3px solid rgba(255,255,255,0.18); text-align: center; font: 800 44px/1 "D"; color: #999; position: relative; overflow: hidden; }
+  #route div span { position: relative; z-index: 1; }
+  #route div em { position: absolute; left: 0; top: 0; bottom: 0; width: 0; }
+  #route .d1 em { background: #f08a3c; } #route .d2 em { background: #4f7cff; } #route .d3 em { background: #2fbf5b; }
+  #bar { left: 60px; right: 60px; top: 440px; height: 18px; border-radius: 9px; background: rgba(255,255,255,0.15); opacity: 0; z-index: 30; overflow: hidden; }
+  #bar em { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #f08a3c, #4f7cff, #2fbf5b); }
+  .lbl { padding: 12px 22px; border-radius: 999px; color: #fff; font: 800 34px/1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+  .shout { left: 0; right: 0; top: 330px; text-align: center; font: 900 170px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(90% 46% at 50% 44%, rgba(8,8,10,0.92), rgba(8,8,10,0.55) 70%, rgba(8,8,10,0.2)); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 470px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 790px; font: 900 132px/1 "D"; font-stretch: 100%; white-space: nowrap; text-transform: uppercase; }
+  #endc h1 b { color: #ff7a59; }
+  #endc .tl { position: absolute; left: 0; right: 0; top: 960px; font: 700 40px/1 "M"; letter-spacing: 0.1em; text-transform: uppercase; color: #ddd; }
+  #endc .url { position: absolute; left: 50%; top: 1060px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; background: #ff7a59; color: #fff; font: 700 48px/1 "M"; white-space: nowrap; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov mc" id="m0"><h4><i style="background:#25a35a">✆</i>Team chat<span class="n">248</span></h4><p>“which deck?? the v7 one?”</p></div>
+<div class="ov mc" id="m1"><h4><i style="background:#2a6bff">@</i>RE: RE: FW: deck</h4><p>deck_final_v7_REAL.pptx · 31 MB · too big to attach</p></div>
+<div class="ov mc" id="m2"><h4><i style="background:#0052cc">✓</i>OPS-142 · In review</h4><p>see comment in the other thread</p></div>
+<div class="ov mc" id="m3"><h4><i style="background:#6b6f78">🔒</i>Sign in to continue</h4><p>Request access · ask the owner</p></div>
+<div class="ov mc" id="m4"><h4><i style="background:#e0452f">!</i>Link expired</h4><p>This shared link is no longer available</p></div>
+<div class="ov" id="wait"><div class="sp" id="spin"></div><div>Waiting for invite…<small>Day 3 · account pending</small></div></div>
+<div class="ov" id="ph"><div class="in">
+  <img id="pi0" /><img id="pi1" /><div class="tap" id="ptap"></div></div></div>
+<div class="ov" id="route"><div class="d1"><em></em><span>Doing</span></div><div class="d2"><em></em><span>Review</span></div><div class="d3"><em></em><span>Done</span></div></div>
+<div class="ov" id="bar"><em></em></div>
+<div class="ov tag" id="tA">No app · no account · <b>no invite</b></div>
+<div class="ov tag" id="tB">Every screen · <b>~1 second</b></div>
+<div class="ov tag" id="tC">Same Wi-Fi → <b>Nearby</b></div>
+<div class="ov tag" id="tD">Notes · <b>gone in 30 min</b></div>
+<div class="ov tag" id="tE">Type <b>@Leo</b> → it's his</div>
+<div class="ov tag" id="tF">One live line · <b>no refresh</b></div>
+<div class="ov tag" id="tG">Go private · <b>team only</b></div>
+<div class="ov tag" id="tU">orbitransfer.com<b>/work</b></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div>
+<div class="ov shout" id="shout1">WHERE?!</div>
+<div class="ov shout" id="shout2">DONE!</div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi <b>Work</b></h1><div class="tl">Files · notes · tasks · instantly</div><div class="url">orbitransfer.com/work</div></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+
+const W = 1080, H = 1920;
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, k) => a + (b - a) * k;
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const S = (el, o) => Object.assign(el.style, o);
+let seed = 11; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+
+const LINES = (await (await fetch("vo/lines.json")).json());
+const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l]));
+const at = (k) => L[k].at, end = (k) => L[k].at + L[k].dur;
+window.DURATION = LINES.duration;
+
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true });
+r.setPixelRatio(1); r.setSize(W, H, false);
+r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.1; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(42, W / H, 0.02, 4000);
+function canvasTex(w, h, draw, rep) {
+  const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  if (rep) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...rep); }
+  t.anisotropy = 4; return t;
+}
+const img = (src) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.src = src; });
+// real screens of orbitransfer.com/work (capture.cjs)
+const IM = {};
+for (const k of ["desk-empty", "desk-deck", "desk-notes", "desk-tasks", "desk-done", "phone-deck", "phone-nearby", "phone-notewrite", "phone-notes", "phone-tasks", "phone-compose", "phone-done"]) IM[k] = await img(`shots/${k}.png`);
+const sh = (m) => { m.castShadow = m.receiveShadow = true; return m; };
+const flat = (col, o = {}) => new THREE.MeshStandardMaterial({ color: col, roughness: 0.6, flatShading: true, ...o });
+const SCREEN_W = 390, SCREEN_H = 844;
+function makePhone() {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.155, 0.009), new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.25, metalness: 0.5 })));
+  const c = document.createElement("canvas"); c.width = SCREEN_W; c.height = SCREEN_H;
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.069, 0.149), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })); scr.position.z = 0.0047; g.add(scr);
+  const glow = new THREE.PointLight(0x9fd8ff, 0.25, 0.6, 2); glow.position.z = 0.06; g.add(glow);
+  return { g, c, ctx: c.getContext("2d"), tex, scr, state: null };
+}
+const people = [];
+const UP = V(0, 1, 0), tmpQ = new THREE.Quaternion();
+const lathe = (prof) => new THREE.LatheGeometry(prof.map(([y, rr]) => new THREE.Vector2(rr, y)), 6);
+const SHAPES = {
+  m: { torso: [[0, 0.125], [0.12, 0.14], [0.3, 0.125], [0.5, 0.165], [0.7, 0.205], [0.84, 0.215], [0.93, 0.19], [1, 0.075]], depth: 0.6, uArm: [[0, 0.062], [0.35, 0.066], [0.7, 0.055], [1, 0.04]], fArm: [[0, 0.048], [0.25, 0.054], [1, 0.032]], thigh: [[0, 0.085], [0.4, 0.08], [1, 0.05]], shX: 0.215, hipX: 0.1, shJ: 0.072, hipJ: 0.085, head: [0.104, 0.126, 0.112] },
+  f: { torso: [[0, 0.15], [0.1, 0.168], [0.22, 0.15], [0.42, 0.105], [0.58, 0.125], [0.68, 0.16], [0.76, 0.162], [0.84, 0.14], [0.93, 0.13], [1, 0.06]], depth: 0.62, uArm: [[0, 0.046], [0.5, 0.042], [1, 0.033]], fArm: [[0, 0.036], [0.3, 0.037], [1, 0.025]], thigh: [[0, 0.098], [0.35, 0.085], [1, 0.048]], shX: 0.165, hipX: 0.115, shJ: 0.052, hipJ: 0.098, head: [0.09, 0.12, 0.105] },
+};
+const shin = lathe([[0, 0.05], [0.3, 0.052], [1, 0.032]]), neckG = lathe([[0, 0.05], [1, 0.045]]), ico = new THREE.IcosahedronGeometry(1, 1);
+function limb(geo, m, depth = 1) { const g = new THREE.Mesh(geo, m); g.castShadow = true; g.receiveShadow = true; g.userData.depth = depth; return g; }
+function place(mesh, a, b) { const d = b.clone().sub(a), L = d.length(); mesh.position.copy(a); mesh.quaternion.copy(tmpQ.setFromUnitVectors(UP, d.normalize())); mesh.scale.set(1, Math.max(0.01, L), mesh.userData.depth); }
+function person(x, z, ry, tint, opt = {}) {
+  const o = new THREE.Group(); o.position.set(x, 0, z); o.rotation.y = ry;
+  const sx = opt.sex || "m", SHp = SHAPES[sx];
+  const m = new THREE.MeshStandardMaterial({ color: tint, roughness: 0.55, flatShading: true });
+  const P = { torso: limb(lathe(SHp.torso), m, SHp.depth), neck: limb(neckG, m) };
+  for (const s2 of ["L", "R"]) { P["uArm" + s2] = limb(lathe(SHp.uArm), m); P["fArm" + s2] = limb(lathe(SHp.fArm), m); P["thigh" + s2] = limb(lathe(SHp.thigh), m); P["shin" + s2] = limb(shin, m); }
+  for (const k in P) o.add(P[k]);
+  const J = {}; for (const n of ["shL", "shR", "elL", "elR", "hipL", "hipR", "knL", "knR"]) { J[n] = limb(ico, m); o.add(J[n]); }
+  const head = limb(ico, m); head.scale.set(...SHp.head); o.add(head);
+  let hair = null; if (sx === "f") { hair = new THREE.Group(); const cap = limb(ico, m); cap.scale.set(0.102, 0.115, 0.112); cap.position.set(0, 0.015, -0.03); const tail = limb(new THREE.CylinderGeometry(0.035, 0.05, 0.26, 6), m); tail.position.set(0, -0.12, -0.12); tail.rotation.x = 0.25; hair.add(cap, tail); o.add(hair); }
+  const hand = new THREE.BoxGeometry(0.06, 0.1, 0.028), lh = limb(hand, m), rh = limb(hand, m); o.add(lh, rh);
+  const foot = new THREE.BoxGeometry(0.09, 0.06, 0.25), lf = limb(foot, m), rf = limb(foot, m); o.add(lf, rf);
+  (opt.parent || cafe).add(o);
+  const nodes = { Head: head, LeftHand: lh, RightHand: rh };
+  const p = { o, P, J, SH: SHp, sex: sx, head, hair, lh, rh, lf, rf, phone: makePhone(), look: opt.look ?? 0.55, off: rnd() * 3, phoneOn: opt.phone !== false, hand: opt.hand || 1.17, B: (n) => nodes[n] };
+  if (p.phoneOn) (opt.parent || cafe).add(p.phone.g);
+  p.screen = opt.screen || "many";
+  people.push(p); return p;
+}
+// what each phone shows: image keys, crossfades and the tap ripple, drawn into its screen texture
+function screen(p, draw) {
+  const c = p.phone.ctx;
+  const key = JSON.stringify(draw);
+  if (p.phone.state === key) return;
+  p.phone.state = key;
+  c.fillStyle = "#000"; c.fillRect(0, 0, SCREEN_W, SCREEN_H);
+  const put = (im, a = 1) => { c.globalAlpha = a; if (im === IM.photo) { c.fillStyle = "#000"; c.fillRect(0, 0, SCREEN_W, SCREEN_H); c.drawImage(im, 0, 0, SCREEN_W, SCREEN_H);  } else c.drawImage(im, 0, 0, SCREEN_W, SCREEN_H); c.globalAlpha = 1; };
+  for (const [k, a] of draw.layers) put(IM[k], a);
+  if (draw.tap) { const [x, y, k] = draw.tap; c.strokeStyle = `rgba(255,255,255,${1 - k})`; c.lineWidth = 8; c.beginPath(); c.arc(x, y, 20 + 50 * k, 0, 6.283); c.stroke(); c.fillStyle = `rgba(255,255,255,${0.35 * (1 - k)})`; c.beginPath(); c.arc(x, y, 26, 0, 6.283); c.fill(); }
+  if (draw.glow) { const g = c.createRadialGradient(195, 370, 10, 195, 370, 260); g.addColorStop(0, `rgba(61,255,140,${0.55 * draw.glow})`); g.addColorStop(1, "rgba(61,255,140,0)"); c.fillStyle = g; c.fillRect(0, 0, SCREEN_W, SCREEN_H); }
+  if (draw.lock) { c.fillStyle = `rgba(4,20,10,${0.75 * draw.lock})`; c.fillRect(0, 0, SCREEN_W, SCREEN_H); c.globalAlpha = draw.lock; c.fillStyle = "#3dff8c"; c.font = "700 20px M"; for (let i = 0; i < 26; i++) c.fillText(Array.from({ length: 24 }, (_, j) => "0123456789abcdef"[(i * 7 + j * 13) % 16]).join(""), 18, 120 + i * 26); c.globalAlpha = 1; }
+  p.phone.tex.needsUpdate = true;
+}
+
+// ---------- the office (the group keeps the name `cafe` so the shared people code adds to it) ----------
+const cafe = new THREE.Group(); scene.add(cafe);
+const carpet = canvasTex(256, 256, (g, w, h) => { g.fillStyle = "#5d6878"; g.fillRect(0, 0, w, h); for (let i = 0; i < 2600; i++) { g.fillStyle = `rgba(${i % 2 ? 255 : 0},${i % 2 ? 255 : 0},${i % 2 ? 255 : 0},0.05)`; g.fillRect((i * 37) % w, (i * 91) % h, 2, 2); } g.strokeStyle = "rgba(0,0,0,0.12)"; g.lineWidth = 2; for (let k = 0; k <= w; k += 64) { g.strokeRect(k, 0, 64, h); } }, [8, 7]);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(16, 14), new THREE.MeshStandardMaterial({ map: carpet, roughness: 0.95 }));
+floor.rotation.x = -Math.PI / 2; floor.position.z = 1.5; floor.receiveShadow = true; cafe.add(floor);
+const wallM = flat(0xeae6df, { roughness: 0.95 }), accent = flat(0xff7a59, { roughness: 0.8 });
+const wallB = sh(new THREE.Mesh(new THREE.BoxGeometry(16, 4, 0.25), wallM)); wallB.position.set(0, 2, -2.6); cafe.add(wallB);
+const wallL = sh(new THREE.Mesh(new THREE.BoxGeometry(0.25, 4, 14), accent)); wallL.position.set(-6, 2, 1.5); cafe.add(wallL);
+const wallR = sh(new THREE.Mesh(new THREE.BoxGeometry(0.25, 4, 14), wallM)); wallR.position.set(6, 2, 1.5); cafe.add(wallR);
+const ceil = new THREE.Mesh(new THREE.PlaneGeometry(16, 14), flat(0xf4f2ee)); ceil.rotation.x = Math.PI / 2; ceil.position.set(0, 4, 1.5); cafe.add(ceil);
+// big windows on the back wall: a sunny city
+const cityTex = canvasTex(1024, 384, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "#7fc4ff"); gr.addColorStop(1, "#d8efff"); g.fillStyle = gr; g.fillRect(0, 0, w, h); seed = 9;
+  for (let i = 0; i < 26; i++) { const bw = 40 + rnd() * 70, bh = 90 + rnd() * 230, x = i * 40 + rnd() * 20; g.fillStyle = ["#9db3c9", "#b7c6d6", "#8aa1b8", "#c9d4df"][i % 4]; g.fillRect(x, h - bh, bw, bh); g.fillStyle = "rgba(255,255,255,0.55)"; for (let y = h - bh + 10; y < h - 10; y += 18) for (let xx = x + 6; xx < x + bw - 8; xx += 14) g.fillRect(xx, y, 7, 9); }
+  g.fillStyle = "rgba(255,255,255,0.8)"; for (let i = 0; i < 4; i++) { g.beginPath(); g.ellipse(120 + i * 260, 60 + (i % 2) * 30, 70, 20, 0, 0, 6.28); g.fill(); } });
+const win1 = new THREE.Mesh(new THREE.PlaneGeometry(11, 2.4), new THREE.MeshBasicMaterial({ map: cityTex, toneMapped: false })); win1.position.set(0, 2.2, -2.46); cafe.add(win1);
+for (let i = -5; i <= 5; i += 1.83) { const mull = sh(new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.5, 0.1), flat(0x2b2d33))); mull.position.set(i, 2.2, -2.42); cafe.add(mull); }
+const sill = sh(new THREE.Mesh(new THREE.BoxGeometry(11.2, 0.1, 0.3), flat(0x2b2d33))); sill.position.set(0, 0.97, -2.38); cafe.add(sill);
+// a whiteboard with doodles on the left wall
+const wbTex = canvasTex(512, 300, (g, w, h) => { g.fillStyle = "#fbfbfb"; g.fillRect(0, 0, w, h); g.lineWidth = 6; g.strokeStyle = "#2a6bff"; g.beginPath(); g.moveTo(40, 220); g.bezierCurveTo(140, 80, 240, 260, 460, 60); g.stroke(); g.fillStyle = "#e0452f"; g.font = "700 44px D"; g.fillText("Q3 GOALS", 40, 70); g.fillStyle = "#333"; g.font = "600 28px M"; g.fillText("✓ ship deck", 300, 200); g.fillText("? where is it", 300, 240); });
+const wb = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.5), new THREE.MeshStandardMaterial({ map: wbTex, roughness: 0.3 })); wb.position.set(-5.86, 2.1, 0.8); wb.rotation.y = Math.PI / 2; cafe.add(wb);
+// plants
+function plant(x, z, s = 1) { const g = new THREE.Group(); const pot = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.17, 0.4, 10), flat(0xf3f0ea))); pot.position.y = 0.2; g.add(pot); for (let i = 0; i < 7; i++) { const l = sh(new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.8, 5), flat([0x3f9a55, 0x4fb062, 0x2f7f45][i % 3]))); const a = i / 7 * 6.28; l.position.set(Math.cos(a) * 0.12, 0.75, Math.sin(a) * 0.12); l.rotation.set(Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.5); g.add(l); } g.position.set(x, 0, z); g.scale.setScalar(s); cafe.add(g); return g; }
+plant(-5.3, -1.9, 1.3); plant(5.3, -1.9, 1.1); plant(-5.3, 4.4, 1.0);
+// ceiling lamps
+const lamps = [];
+for (const [x, z] of [[-2.2, 0.8], [0, 0.8], [2.2, 0.8], [-2.2, 3.0], [0, 3.0], [2.2, 3.0]]) { const l = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.25), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })); l.position.set(x, 3.95, z); cafe.add(l); lamps.push(l); }
+// a door on the right wall
+const door = sh(new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.3, 1.1), flat(0x8a6a4a))); door.position.set(5.9, 1.15, 4.0); cafe.add(door);
+
+// ---------- desks, each with a monitor that shows the real /work page ----------
+const MON_W = 1024, MON_H = 640;
+const deskTop = flat(0xf3efe8, { roughness: 0.5 }), deskLeg = flat(0x2b2d33, { metalness: 0.4 });
+const desks = [];
+function desk(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); cafe.add(g);
+  const top = sh(new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.06, 0.85), deskTop)); top.position.y = 0.75; g.add(top);
+  for (const sx of [-0.78, 0.78]) { const leg = sh(new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.75, 0.75), deskLeg)); leg.position.set(sx, 0.375, 0); g.add(leg); }
+  const stand = sh(new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.3, 0.06), deskLeg)); stand.position.set(0, 0.93, -0.25); g.add(stand);
+  const foot = sh(new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.02, 0.18), deskLeg)); foot.position.set(0, 0.79, -0.25); g.add(foot);
+  const bez = sh(new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.62, 0.035), flat(0x15161a, { metalness: 0.3 }))); bez.position.set(0, 1.32, -0.27); g.add(bez);
+  const c = document.createElement("canvas"); c.width = MON_W; c.height = MON_H;
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.94, 0.5875), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })); scr.position.set(0, 1.32, -0.251); g.add(scr);
+  const kb = sh(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.02, 0.16), flat(0xd9d9dd))); kb.position.set(0, 0.79, 0.12); g.add(kb);
+  const mug = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.11, 10), flat([0xff7a59, 0x4f7cff, 0xffc94d, 0x2fbf5b][desks.length % 4]))); mug.position.set(0.6, 0.835, 0.1); g.add(mug);
+  // the chair
+  const chair = new THREE.Group(); const seat = sh(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.5), flat(0x30333a))); seat.position.y = 0.46; const backr = sh(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.55, 0.07), flat(0x30333a))); backr.position.set(0, 0.8, 0.26); const post = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.42, 6), deskLeg)); post.position.y = 0.21; const base = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.03, 5), deskLeg)); base.position.y = 0.03; chair.add(seat, backr, post, base); chair.position.set(0, 0, 0.72); g.add(chair);
+  const d = { g, c, ctx: c.getContext("2d"), tex, scr, chair, state: "" }; desks.push(d); return d;
+}
+const DESK_XZ = [[-2.2, 0.6], [0, 0.6], [2.2, 0.6], [-2.2, 2.9], [0, 2.9], [2.2, 2.9]];
+DESK_XZ.forEach(([x, z]) => desk(x, z));
+// what a monitor shows: a real /work screen, an old mess of windows, or a glow
+function messScreen(g, k) {
+  g.fillStyle = "#2b5ea8"; g.fillRect(0, 0, MON_W, MON_H);
+  const wins = [["#25a35a", "Team chat (248)"], ["#2a6bff", "Inbox · RE: RE: FW: deck"], ["#0052cc", "OPS-142 · In review"], ["#6b6f78", "Sign in to continue"], ["#e0452f", "Link expired"], ["#25a35a", "Team chat (249)"]];
+  wins.forEach(([c, t], i) => { const x = 40 + ((i * 173 + k * 30) % 520), y = 40 + ((i * 97) % 330); g.fillStyle = "#fff"; g.fillRect(x, y, 440, 250); g.fillStyle = c; g.fillRect(x, y, 440, 46); g.fillStyle = "#fff"; g.font = "700 26px D"; g.fillText(t, x + 16, y + 32); g.fillStyle = "#ccc"; for (let j = 0; j < 5; j++) g.fillRect(x + 20, y + 76 + j * 32, 300 - j * 30, 14); });
+}
+function monitor(d, key, glow = 0) {
+  const s = key + "|" + glow.toFixed(2);
+  if (d.state === s) return; d.state = s;
+  const g = d.ctx;
+  if (key === "off") { g.fillStyle = "#0b0c0e"; g.fillRect(0, 0, MON_W, MON_H); }
+  else if (key.startsWith("mess")) messScreen(g, +key.slice(4) || 0);
+  else { const im = IM[key]; g.drawImage(im, 0, 0, im.width, im.height, 0, 0, MON_W, MON_H); }
+  if (glow > 0) { const gr = g.createRadialGradient(MON_W / 2, MON_H / 2, 20, MON_W / 2, MON_H / 2, 560); gr.addColorStop(0, `rgba(255,122,89,${0.55 * glow})`); gr.addColorStop(1, "rgba(255,122,89,0)"); g.fillStyle = gr; g.fillRect(0, 0, MON_W, MON_H); g.strokeStyle = `rgba(255,122,89,${glow})`; g.lineWidth = 16; g.strokeRect(8, 8, MON_W - 16, MON_H - 16); }
+  d.tex.needsUpdate = true;
+}
+
+// ---------- the big floating screen (the real desktop page, in a browser) ----------
+const BIG_W = 1600, BIG_H = 1060;
+const bigC = document.createElement("canvas"); bigC.width = BIG_W; bigC.height = BIG_H;
+const bigTex = new THREE.CanvasTexture(bigC); bigTex.colorSpace = THREE.SRGBColorSpace; bigTex.anisotropy = 8;
+const big = new THREE.Group(); { const frame = new THREE.Mesh(new THREE.BoxGeometry(3.28, 2.2, 0.05), flat(0x111214, { metalness: 0.4 })); frame.position.z = -0.03; const s2 = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 2.12), new THREE.MeshBasicMaterial({ map: bigTex, toneMapped: false, transparent: true })); big.add(frame, s2); big.userData.scr = s2; }
+big.position.set(0, 2.3, -1.2); scene.add(big);
+let bigState = "";
+function bigShow(key, k2 = null, mix = 0) {
+  const s = key + (k2 || "") + mix.toFixed(2); if (s === bigState) return; bigState = s;
+  const g = bigC.getContext("2d");
+  g.fillStyle = "#e8e8ea"; g.fillRect(0, 0, BIG_W, 60);
+  for (const [i, c] of [["#ff5f57", 0], ["#febc2e", 1], ["#28c840", 2]].map(([c], i) => [i, c])) { g.fillStyle = c; g.beginPath(); g.arc(30 + i * 30, 30, 9, 0, 6.28); g.fill(); }
+  g.fillStyle = "#fff"; g.beginPath(); g.roundRect(380, 12, 840, 36, 18); g.fill(); g.fillStyle = "#333"; g.font = "600 22px M"; g.textAlign = "center"; g.fillText("🔒 orbitransfer.com/work", 800, 38); g.textAlign = "left";
+  const draw = (im, a) => { g.globalAlpha = a; g.drawImage(im, 0, 0, im.width, im.height, 0, 60, BIG_W, BIG_H - 60); g.globalAlpha = 1; };
+  draw(IM[key], 1); if (k2) draw(IM[k2], mix);
+  bigTex.needsUpdate = true;
+}
+
+// ---------- flying things: the deck, notes, the task card ----------
+function cardMesh(w, h, draw, cw = 512) { const ch = Math.round(cw * h / w); const tx = canvasTex(cw, ch, draw); const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tx, transparent: true, toneMapped: false, side: THREE.DoubleSide, depthWrite: false, depthTest: false })); m.renderOrder = 5; return m; }
+const deckDraw = (g, w, h) => { g.fillStyle = "#16181d"; g.beginPath(); g.roundRect(0, 0, w, h, 40); g.fill(); g.strokeStyle = "#4f7cff"; g.lineWidth = 10; g.stroke(); g.fillStyle = "#4f7cff"; g.beginPath(); g.roundRect(w / 2 - 90, 70, 180, 220, 20); g.fill(); g.fillStyle = "#fff"; g.font = "900 64px D"; g.textAlign = "center"; g.fillText("PDF", w / 2, 210); g.font = "800 58px D"; g.fillText("Q3 deck", w / 2, 400); g.fillStyle = "#9aa"; g.font = "600 34px M"; g.fillText("8.4 MB", w / 2, 460); };
+const decks = DESK_XZ.map(() => { const m = cardMesh(0.34, 0.34, deckDraw); m.visible = false; scene.add(m); return m; });
+const NOTE_PEOPLE = [["Maya", "Deck is up, check slide 4", "#4f7cff"], ["Leo", "On it! Fixing the chart", "#2fbf5b"], ["Sam", "Budget’s in, take a look", "#ffc94d"], ["Priya", "Pizza at 1? 🍕", "#ff5fa2"]];
+const noteCards = NOTE_PEOPLE.map(([n, txt, col]) => { const draw = (sec) => (g, w, h) => { g.clearRect(0, 0, w, h); g.fillStyle = "rgba(28,28,31,0.97)"; g.beginPath(); g.roundRect(4, 4, w - 8, h - 8, 34); g.fill(); g.fillStyle = col; g.fillRect(4, 30, 14, h - 60); g.beginPath(); g.arc(60, 64, 28, 0, 6.28); g.fill(); g.fillStyle = "#fff"; g.font = "800 30px D"; g.textAlign = "center"; g.fillText(n[0], 60, 75); g.textAlign = "left"; g.font = "800 38px D"; g.fillText(n, 104, 78); g.font = "600 40px D"; g.fillText(txt, 40, 170); g.strokeStyle = "#2fbf5b"; g.lineWidth = 5; g.beginPath(); g.arc(w - 170, 64, 16, 0, 6.28); g.stroke(); g.fillStyle = "#ddd"; g.font = "700 32px M"; g.fillText(sec, w - 142, 76); };
+  const m = cardMesh(1.25, 0.42, draw("29:59"), 720); m.visible = false; m.userData.draw = draw; scene.add(m); return m; });
+const taskCard = cardMesh(1.3, 0.42, (g, w, h) => { g.fillStyle = "rgba(28,28,31,0.97)"; g.beginPath(); g.roundRect(4, 4, w - 8, h - 8, 30); g.fill(); g.strokeStyle = "#ff7a59"; g.lineWidth = 6; g.stroke(); g.strokeStyle = "#f08a3c"; g.lineWidth = 6; g.beginPath(); g.arc(64, h / 2, 24, 0, 6.28); g.stroke(); g.fillStyle = "#999"; g.font = "600 28px M"; g.fillText("Task 1", 110, 92); g.fillStyle = "#fff"; g.font = "700 40px D"; g.fillText("Fix the chart on slide 4", 110, 146); g.fillStyle = "#ff7a59"; g.font = "800 34px D"; g.fillText("@Leo", 110, 196); }, 760);
+taskCard.visible = false; scene.add(taskCard);
+
+// ---------- the wifi router, its rings, and the live room hub ----------
+const router = new THREE.Group(); { const b = sh(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.32), flat(0xf4f4f6))); const led = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.02, 0.01), new THREE.MeshBasicMaterial({ color: 0x3dff8c, toneMapped: false })); led.position.set(0.15, -0.04, 0.16); for (const sx of [-0.18, 0.18]) { const a = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.3, 6), flat(0xf4f4f6))); a.position.set(sx, -0.18, -0.1); router.add(a); } router.add(b, led); }
+router.position.set(0, 3.9, 1.75); cafe.add(router);
+const wifiRings = [0, 1, 2].map(() => { const m = new THREE.Mesh(new THREE.TorusGeometry(1, 0.025, 6, 64), new THREE.MeshBasicMaterial({ color: 0x3dff8c, transparent: true, opacity: 0, toneMapped: false })); m.rotation.x = Math.PI / 2; m.position.set(0, 2.4, 1.75); cafe.add(m); return m; });
+const hub = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 2), new THREE.MeshStandardMaterial({ color: 0xff7a59, emissive: 0xff5a30, emissiveIntensity: 1.2, flatShading: true })); hub.position.set(0, 5.4, 1.75); scene.add(hub);
+const hubLines = desks.map((d) => { const a = V(d.g.position.x, 1.62, d.g.position.z - 0.27); const geo = new THREE.BufferGeometry().setFromPoints([a, hub.position.clone()]); const l = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xffb199, transparent: true, opacity: 0, toneMapped: false })); scene.add(l); l.userData.a = a; return l; });
+const pulses = desks.map(() => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })); m.visible = false; scene.add(m); return m; });
+
+// ---------- the private space: glass walls rise around the team ----------
+const glassM = new THREE.MeshPhysicalMaterial({ color: 0xbfe3ff, transparent: true, opacity: 0.22, roughness: 0.05, metalness: 0, side: THREE.DoubleSide, depthWrite: false });
+const dome = new THREE.Group(); { const w = 7.4, d = 4.6, hgt = 2.6; for (const [px, pz, ry, len] of [[0, -0.5, 0, w], [0, 4.1, 0, w], [-3.7, 1.8, Math.PI / 2, d], [3.7, 1.8, Math.PI / 2, d]]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(len, hgt), glassM); p.position.set(px, hgt / 2, pz); p.rotation.y = ry; dome.add(p); const rim = new THREE.Mesh(new THREE.BoxGeometry(len, 0.04, 0.04), new THREE.MeshBasicMaterial({ color: 0xff7a59, toneMapped: false })); rim.position.set(px, hgt, pz); rim.rotation.y = ry; dome.add(rim); } }
+const lockTex = canvasTex(256, 256, (g) => { g.fillStyle = "#ff7a59"; g.beginPath(); g.arc(128, 128, 120, 0, 6.28); g.fill(); g.strokeStyle = "#fff"; g.lineWidth = 18; g.beginPath(); g.arc(128, 104, 40, Math.PI, 0); g.stroke(); g.fillStyle = "#fff"; g.fillRect(74, 104, 108, 86); });
+const lockIcon = new THREE.Sprite(new THREE.SpriteMaterial({ map: lockTex, toneMapped: false, transparent: true })); lockIcon.scale.set(0.7, 0.7, 1); lockIcon.position.set(0, 3.1, 1.8); dome.add(lockIcon);
+dome.visible = false; cafe.add(dome);
+
+// ---------- the party: disco ball, coloured lights, confetti ----------
+const disco = new THREE.Mesh(new THREE.IcosahedronGeometry(0.34, 1), new THREE.MeshStandardMaterial({ color: 0xdfe6ee, metalness: 1, roughness: 0.15, flatShading: true })); disco.position.set(0, 5, 1.7); cafe.add(disco);
+const discoLights = [0xff3dbb, 0x3dc8ff, 0xffd23d, 0x7fd38a, 0xff7a59].map((c) => { const l = new THREE.PointLight(c, 0, 10, 1.4); cafe.add(l); return l; });
+const CONF = 420, confGeo = new THREE.BufferGeometry(), confPos = new Float32Array(CONF * 3), confCol = new Float32Array(CONF * 3);
+seed = 77; const confSeed = Array.from({ length: CONF }, () => [rnd() * 9 - 4.5, rnd() * 5 - 0.5, rnd(), rnd() * 6.28]);
+const palette = [[1, 0.48, 0.35], [0.31, 0.49, 1], [1, 0.79, 0.3], [0.18, 0.75, 0.36], [1, 0.37, 0.64]];
+confSeed.forEach((_, i) => { const c = palette[i % 5]; confCol.set(c, i * 3); });
+confGeo.setAttribute("position", new THREE.BufferAttribute(confPos, 3)); confGeo.setAttribute("color", new THREE.BufferAttribute(confCol, 3));
+const confetti = new THREE.Points(confGeo, new THREE.PointsMaterial({ size: 0.07, vertexColors: true, toneMapped: false })); confetti.visible = false; cafe.add(confetti);
+
+// ---------- light: a bright morning office ----------
+const hemi = new THREE.HemisphereLight(0xffffff, 0x8a7f72, 1.0); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff1dd, 2.0); sun.position.set(-3, 8, -6); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 1, far: 30 }); sun.shadow.bias = -0.0004; scene.add(sun);
+const fill = new THREE.DirectionalLight(0xdfe8ff, 0.7); fill.position.set(4, 5, 8); scene.add(fill);
+scene.background = new THREE.Color(0xdfe8f2);
+
+// ---------- the team ----------
+const SIT = (i, tint, sex) => { const [x, z] = DESK_XZ[i]; const p = person(x, z + 0.72, Math.PI, tint, { sex, phone: false }); p.desk = desks[i]; p.ry0 = Math.PI; p.home = V(x, 0, z + 0.72); return p; };
+const MAYA = SIT(0, 0x6f8fff, "f"), LEO = SIT(1, 0x5fcf7a, "m"), SAM = SIT(2, 0xffc94d, "m"), PRIYA = SIT(3, 0xff7fb0, "f"), RAJ = SIT(4, 0xa7b0bd, "m"), ANA = SIT(5, 0xc9a3e0, "f");
+const TOM = person(4.7, 4.0, -Math.PI / 2, 0xff9a5a, { sex: "m", phone: false }); TOM.ry0 = -Math.PI / 2; TOM.home = V(4.7, 0, 4.0);
+const team = [MAYA, LEO, SAM, PRIYA, RAJ, ANA];
+const tomLap = new THREE.Group(); { const b = sh(new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.025, 0.25), flat(0x9aa3ad, { metalness: 0.6 }))); tomLap.add(b); } cafe.add(tomLap);
+// dance styles, one each (the boss does the robot, the new guy the chicken)
+const STYLE = new Map([[MAYA, "sprinkler"], [LEO, "windmill"], [SAM, "floss"], [PRIYA, "disco"], [RAJ, "robot"], [ANA, "jumpjack"], [TOM, "chicken"]]);
+
+// ---------- poses: a skeleton from a few key points (local space; the person faces +z) ----------
+function rig(p, R) {
+  const P = p.P, J = p.J, SHp = p.SH;
+  place(P.torso, R.hip.clone().add(V(0, -0.05, 0)), R.chest);
+  place(P.neck, R.chest.clone().add(V(0, -0.03, 0)), R.head.clone().add(V(0, -0.1, -0.01)));
+  p.head.position.copy(R.head); p.head.rotation.set(R.nod || 0, R.turn || 0, R.tilt || 0);
+  if (p.hair) { p.hair.position.copy(R.head); p.hair.rotation.set(R.nod || 0, R.turn || 0, R.tilt || 0); }
+  [-1, 1].forEach((sd, i) => {
+    const S2 = sd < 0 ? "R" : "L", shp = R.chest.clone().add(V(sd * SHp.shX, -0.06, 0));
+    const el = R.el[i], hd = R.hd[i];
+    place(P["uArm" + S2], shp, el); place(P["fArm" + S2], el, hd);
+    J["sh" + S2].position.copy(shp); J["sh" + S2].scale.setScalar(SHp.shJ); J["el" + S2].position.copy(el); J["el" + S2].scale.setScalar(0.044);
+    const hand = sd < 0 ? p.rh : p.lh; hand.position.copy(hd); hand.rotation.set(R.hr ? R.hr[0] : -1.1, 0, sd * 0.3);
+    const hipJ = R.hip.clone().add(V(sd * SHp.hipX, -0.02, 0)), knee = R.kn[i], ank = R.an[i];
+    place(P["thigh" + S2], hipJ, knee); place(P["shin" + S2], knee, ank);
+    J["hip" + S2].position.copy(hipJ); J["hip" + S2].scale.setScalar(SHp.hipJ); J["kn" + S2].position.copy(knee); J["kn" + S2].scale.setScalar(0.052);
+    const f = sd < 0 ? p.rf : p.lf; f.position.copy(ank).add(V(0, -0.05, 0.06));
+  });
+  p.o.updateMatrixWorld(true);
+}
+const shoulder = (p, chest, sd) => chest.clone().add(V(sd * p.SH.shX, -0.06, 0));
+// standing body with knees bent by b (0..1), hips shifted by sx, legs spread by sp
+function body(p, t, b = 0, sx = 0, sp = 0, lean = 0) {
+  const br = Math.sin((t + p.off) * 1.6) * 0.008, hy = 0.95 - 0.13 * b;
+  const hip = V(sx, hy, 0), chest = V(sx * 0.6, hy + 0.52 + br, 0.02 + lean), head = V(sx * 0.4, hy + 0.71 + br, 0.05 + lean * 1.4);
+  const kn = [-1, 1].map((sd) => V(sd * (p.SH.hipX + 0.01 + sp * 0.5) + sx * 0.5, 0.5 - 0.06 * b, 0.03 + 0.24 * b));
+  const an = [-1, 1].map((sd) => V(sd * (p.SH.hipX + 0.02 + sp), 0.08, 0));
+  return { hip, chest, head, kn, an };
+}
+function armsDown(p, B) { return { el: [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.03, -0.29, 0))), hd: [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.02, -0.55, 0.06))) }; }
+function sitPose(p, t, speed = 1) {
+  const br = Math.sin((t + p.off) * 1.6) * 0.008;
+  const hip = V(0, 0.55, 0), chest = V(0, 1.07 + br, 0.04), head = V(0, 1.26 + br, 0.08);
+  const kn = [-1, 1].map((sd) => V(sd * (p.SH.hipX + 0.02), 0.55, 0.45)), an = [-1, 1].map((sd) => V(sd * (p.SH.hipX + 0.03), 0.08, 0.5));
+  const tp = (sd) => speed * 0.015 * Math.max(0, Math.sin((t + p.off) * 14 * speed + sd * 1.7));
+  const el = [-1, 1].map((sd) => shoulder(p, chest, sd).add(V(sd * 0.04, -0.25, 0.16)));
+  const hd = [-1, 1].map((sd) => V(sd * 0.13, 0.84 + tp(sd), 0.5));
+  rig(p, { hip, chest, head, kn, an, el, hd, nod: 0.12 });
+}
+function standPose(p, t, kind = "idle") {
+  const B = body(p, t);
+  let A = armsDown(p, B), extra = {};
+  if (kind === "shrug") { const k = 0.5 + 0.5 * Math.sin(t * 5); A = { el: [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.2, -0.22, 0.1))), hd: [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.42, -0.12 + 0.04 * k, 0.28))) }; extra = { tilt: 0.25, nod: -0.15 }; B.chest.y += 0.03 * k; }
+  if (kind === "hold") { A = { el: [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.02, -0.27, 0.08))), hd: [-1, 1].map((sd) => V(sd * 0.14, 1.0, 0.3)) }; extra = { nod: 0.35 }; }
+  if (kind === "cheer") { const w = Math.sin((t + p.off) * 9) * 0.04; A = { el: [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.13, 0.25, 0))), hd: [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.08, 0.54 + w, 0.03))) }; extra = { nod: -0.3 }; }
+  rig(p, { ...B, ...A, ...extra });
+}
+function despairPose(p, t) {
+  const br = Math.sin(t * 1.6) * 0.008, rock = Math.sin(t * 3) * 0.06;
+  const hip = V(0, 0.55, 0), chest = V(rock * 0.4, 1.06 + br, 0.08), head = V(rock, 1.24 + br, 0.12);
+  const kn = [-1, 1].map((sd) => V(sd * (p.SH.hipX + 0.02), 0.55, 0.45)), an = [-1, 1].map((sd) => V(sd * (p.SH.hipX + 0.03), 0.08, 0.5));
+  const el = [-1, 1].map((sd) => shoulder(p, chest, sd).add(V(sd * 0.22, 0.12, 0.12))), hd = [-1, 1].map((sd) => head.clone().add(V(sd * 0.11, 0.06, 0.0)));
+  rig(p, { hip, chest, head, kn, an, el, hd, nod: 0.35, tilt: rock * 2, hr: [0.5] });
+}
+// eight ways to lose it, all on the same beat
+const BPS = 118 / 60;
+function dancePose(p, t, t0) {
+  const b = Math.max(0, t - t0) * BPS + (p.beatOff || 0), st = STYLE.get(p);
+  const s1 = Math.sin(Math.PI * b), s2 = Math.sin(2 * Math.PI * b), ab = Math.abs(s1);
+  let B, el, hd, ry = 0, jump = 0, extra = {};
+  if (st === "windmill") {
+    B = body(p, t, 0.4 + 0.3 * ab);
+    hd = [-1, 1].map((sd, i) => { const a = Math.PI * b + (i ? Math.PI : 0); return shoulder(p, B.chest, sd).add(V(sd * 0.16, 0.56 * Math.sin(a), 0.56 * Math.cos(a))); });
+    el = [-1, 1].map((sd, i) => shoulder(p, B.chest, sd).lerp(hd[i], 0.5).add(V(sd * 0.07, 0, 0)));
+    extra = { nod: 0.25 * s2, tilt: 0.2 * s1 };
+  } else if (st === "chicken") {
+    const f = Math.abs(s2); B = body(p, t, 0.7, 0, 0.05, 0.08);
+    el = [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * (0.12 + 0.24 * f), -0.12 + 0.14 * f, -0.08)));
+    hd = [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.06, -0.14, 0.1)));
+    B.head.z += 0.12 * Math.max(0, s2); B.head.y -= 0.03; extra = { nod: 0.4 * Math.max(0, s2) };
+  } else if (st === "robot") {
+    const step = Math.floor(b); B = body(p, t, 0.05); ry = [0, 0.6, 0, -0.6][step % 4];
+    el = [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.3, -0.02, 0)));
+    hd = [-1, 1].map((sd, i) => el[i].clone().add(V(0, (step + i) % 2 ? 0.28 : -0.28, 0.02)));
+    extra = { turn: -ry * 0.5, tilt: (step % 2 ? 0.15 : -0.15) };
+  } else if (st === "sprinkler") {
+    const sub = Math.floor(b * 2) % 8; ry = -0.7 + sub * 0.2; B = body(p, t, 0.3);
+    el = [shoulder(p, B.chest, -1).add(V(-0.28, -0.02, 0.12)), shoulder(p, B.chest, 1).add(V(0.24, 0.22, -0.05))];
+    hd = [shoulder(p, B.chest, -1).add(V(-0.56, 0.0, 0.26)), B.head.clone().add(V(0.09, 0.02, -0.11))];
+    extra = { tilt: -0.2 };
+  } else if (st === "jumpjack") {
+    const s = Math.abs(s1); jump = 0.24 * s; B = body(p, t, 0.15 * (1 - s), 0, 0.26 * s);
+    hd = [-1, 1].map((sd) => { const th = lerp(0.2, 2.9, s); return shoulder(p, B.chest, sd).add(V(sd * 0.58 * Math.sin(th), -0.58 * Math.cos(th), 0.04)); });
+    el = [-1, 1].map((sd, i) => shoulder(p, B.chest, sd).lerp(hd[i], 0.5).add(V(sd * 0.04, 0, 0)));
+  } else if (st === "disco") {
+    const up = Math.floor(b) % 2 === 0; B = body(p, t, 0.3 + 0.2 * ab, 0.08 * s1);
+    el = [shoulder(p, B.chest, -1).add(up ? V(-0.2, 0.22, 0.06) : V(0.0, -0.2, 0.18)), shoulder(p, B.chest, 1).add(V(0.26, -0.2, -0.04))];
+    hd = [shoulder(p, B.chest, -1).add(up ? V(-0.4, 0.5, 0.12) : V(0.22, -0.38, 0.34)), B.hip.clone().add(V(0.2, 0.06, 0.04))];
+    extra = { tilt: up ? 0.25 : -0.1, nod: up ? -0.3 : 0.2 };
+  } else if (st === "twist") {
+    ry = 0.55 * s1; B = body(p, t, 0.55 + 0.15 * Math.abs(s2));
+    el = [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.16, -0.22, -sd * 0.12 * s1)));
+    hd = [-1, 1].map((sd, i) => el[i].clone().add(V(-sd * 0.06, 0.04, 0.24)));
+    extra = { turn: -ry * 0.7 };
+  } else { // floss
+    const s = s1, side = Math.sign(Math.cos(Math.PI * b)) || 1; B = body(p, t, 0.2, -0.1 * s);
+    hd = [-1, 1].map((sd) => V(0.34 * s + sd * 0.05, 0.86, sd * side * 0.17));
+    el = [-1, 1].map((sd, i) => shoulder(p, B.chest, sd).lerp(hd[i], 0.5));
+  }
+  rig(p, { ...B, el, hd, ...extra });
+  return { ry, jump };
+}
+
+// ---------- cameras + helpers ----------
+function look(px, py, pz, tx, ty, tz, fov = 42) { cam.position.set(px, py, pz); cam.lookAt(tx, ty, tz); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } }
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (id, t, a, b, x = 540, y = 250) => { const k = win(t, a, b, 0.3, 0.3); S($(id), { opacity: k, left: `${x}px`, top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const shout = (id, t, a, b) => { const sk = clamp((t - a) / 0.2); if (t < a || t > b) return; S($(id), { opacity: sk * clamp((b - t) / 0.15), transform: `scale(${lerp(1.6, 1, back(sk))}) rotate(-4deg)` }); };
+const lbl = (id, obj, t, a, b, txt, col, dy = 0.45) => { if (t < a || t > b) return; const [x, y] = project(obj.getWorldPosition(V()).add(V(0, dy, 0))); const el = $(id); el.textContent = txt; S(el, { left: `${x}px`, top: `${y}px`, background: col, opacity: win(t, a, b, 0.2, 0.2) }); };
+const arc = (a, b, k, hgt) => a.clone().lerp(b, k).add(V(0, Math.sin(k * Math.PI) * hgt, 0));
+const monTop = (d) => V(d.g.position.x, 1.35, d.g.position.z - 0.2);
+let phState = "";
+function phone(t, a, b, k1, k2 = null, mix = 0, tap = null) {
+  const on = t >= a - 0.01 && t <= b + 0.01;
+  if (!on) return;
+  const s = k1 + (k2 || "") + mix.toFixed(2);
+  if (s !== phState) { phState = s; const i0 = $("pi0"), i1 = $("pi1"); if (!i0.src.endsWith(k1 + ".png")) i0.src = `shots/${k1}.png`; S(i0, { opacity: 1 }); if (k2) { if (!i1.src.endsWith(k2 + ".png")) i1.src = `shots/${k2}.png`; S(i1, { opacity: mix }); } else S(i1, { opacity: 0 }); }
+  const kin = out(clamp((t - a) / 0.45)), kout = clamp((t - (b - 0.35)) / 0.35);
+  S($("ph"), { opacity: Math.min(kin * 1.2, 1) * (1 - kout), transform: `translateY(${(1 - kin) * 400 + kout * 500}px) rotate(${(1 - kin) * -6}deg)` });
+  if (tap) { const [x, y, k] = tap; S($("ptap"), { left: `${x}px`, top: `${y}px`, opacity: 1 - k, transform: `scale(${0.5 + k})` }); } else S($("ptap"), { opacity: 0 });
+}
+const MESS = ["m0", "m1", "m2", "m3", "m4"];
+
+window.render = async function (t) {
+  for (const id of ["tA", "tB", "tC", "tD", "tE", "tF", "tG", "tU", "l0", "l1", "l2", "l3", "shout1", "shout2", "wait", "ph", "route", "bar", "flash", ...MESS]) S($(id), { opacity: 0 });
+  const A = at;
+  const DAN = A("dance"), DONE = A("done");
+  const dancing = t >= DAN;
+  const party = clamp((t - DAN + 0.2) / 0.6);
+
+  // ---- monitors ----
+  desks.forEach((d, i) => {
+    let key = `mess${i}`, glow = 0;
+    if (t > A("open") + 1.0 + i * 0.15) key = "desk-empty";
+    const arrive = A("drop") + 2.0 + i * 0.08;
+    if (t > arrive) { key = "desk-deck"; glow = Math.max(0, 1 - (t - arrive) / 0.9); }
+    if (t > A("notes") + 3.0) key = "desk-notes";
+    if (i === 1 && t > A("task") + 3.0 && t < A("route") + 0.5) glow = Math.max(glow, 1 - (t - A("task") - 3.0) / 1.2);
+    if (t > A("route")) key = "desk-tasks";
+    if (t > A("under") + 3.3 + i * 0.05 && t < A("private")) glow = Math.max(glow, 1 - (t - A("under") - 3.3 - i * 0.05) / 0.8);
+    if (t > DONE + 0.4) key = "desk-done";
+    if (dancing) glow = 0.5 + 0.5 * Math.sin((t - DAN) * BPS * Math.PI * 2 + i);
+    monitor(d, key, Math.round(glow * 20) / 20);
+  });
+
+  // ---- people ----
+  for (const p of team) { p.o.position.copy(p.home); p.o.rotation.y = p.ry0; }
+  const standAt = DONE + 0.6;
+  for (const p of team) {
+    if (dancing) {
+      if (p === LEO) p.o.position.set(0, 0.81, 0.85); else p.o.position.copy(p.home).add(V(0, 0, 0.45));
+      const { ry, jump } = dancePose(p, t, DAN); p.o.rotation.y = ry; p.o.position.y += jump; // turned round to the room
+    } else if (t > standAt) { p.o.position.copy(p.home).add(V(0, 0, 0.45 * clamp((t - standAt) / 0.4))); standPose(p, t, "cheer"); }
+    else if (p === MAYA && t > A("hook") + 0.6 && t < A("mess")) { p.o.position.copy(p.home).add(V(0, 0, 0.35)); standPose(p, t, "shrug"); }
+    else if (p === LEO && t >= A("mess") && t < A("open")) despairPose(p, t);
+    else sitPose(p, t, p === LEO && t > A("route") && t < A("under") ? 2.2 : 1);
+  }
+  if (dancing) { TOM.o.position.copy(TOM.home).add(V(-1.4, 0, -0.4)); const { ry, jump } = dancePose(TOM, t, DAN); TOM.o.rotation.y = -0.9 + ry; TOM.o.position.y = jump; tomLap.visible = false; }
+  else if (t > standAt) { TOM.o.position.copy(TOM.home).add(V(-1.0, 0, 0)); TOM.o.rotation.y = TOM.ry0; standPose(TOM, t, "cheer"); tomLap.visible = false; }
+  else { TOM.o.position.copy(TOM.home); TOM.o.rotation.y = TOM.ry0; standPose(TOM, t, "hold"); tomLap.visible = true; const m = TOM.rh.getWorldPosition(V()).add(TOM.lh.getWorldPosition(V())).multiplyScalar(0.5); tomLap.position.copy(m).add(V(0, 0.02, 0)); tomLap.rotation.y = TOM.o.rotation.y; }
+  desks.forEach((d, i) => { d.chair.rotation.y = dancing ? (t - DAN) * (2 + i * 0.7) : 0; });
+
+  // ---- the party ----
+  hemi.intensity = lerp(1.0, 0.35, party); sun.intensity = lerp(2.0, 0.5, party); fill.intensity = lerp(0.7, 0.2, party);
+  scene.background.setHex(dancing ? 0x1a1420 : 0xdfe8f2);
+  disco.visible = dancing; disco.position.y = lerp(4.2, 3.3, out(clamp((t - DAN) / 1.0))); disco.rotation.y = t * 1.2;
+  discoLights.forEach((l, i) => { const a = t * 1.6 + i * 1.26; l.position.set(Math.cos(a) * 3.2, 2.4, 1.7 + Math.sin(a) * 2.4); l.intensity = 9 * party; });
+  lamps.forEach((l, i) => l.material.color.setHSL(dancing ? ((t * 0.6 + i / 6) % 1) : 0, dancing ? 0.9 : 0, dancing ? 0.6 : 1));
+  confetti.visible = t > DONE + 0.9;
+  if (confetti.visible) { const tc = t - DONE - 0.9; confSeed.forEach(([x, y0, sp, ph], i) => { const y = 3.9 - ((tc * (0.5 + sp * 0.6) + (4 - y0) * 0.25 + i * 0.013) % 3.9); confPos[i * 3] = x + Math.sin(tc * 2 + ph) * 0.2; confPos[i * 3 + 1] = y; confPos[i * 3 + 2] = 1.8 + Math.cos(ph) * 2.6 + Math.sin(tc + ph) * 0.2; }); confGeo.attributes.position.needsUpdate = true; }
+
+  // ---- flying things ----
+  big.visible = false; decks.forEach((m) => (m.visible = false)); noteCards.forEach((m) => (m.visible = false)); taskCard.visible = false;
+  hubLines.forEach((l) => (l.material.opacity = 0)); pulses.forEach((m) => (m.visible = false)); hub.visible = false;
+  wifiRings.forEach((m) => (m.material.opacity = 0)); dome.visible = false;
+
+  // ---- shots ----
+  if (t < A("mess")) {
+    const k = ease(clamp(t / (A("mess") - 0.1)));
+    if (t < A("hook") + 1.1) look(lerp(5.2, 4.2, k * 2), lerp(3.4, 3.0, k * 2), lerp(7.2, 6.4, k * 2), 0, 1.2, 1.4, 46);
+    else { const k2 = ease(clamp((t - A("hook") - 1.1) / (A("mess") - A("hook") - 1.1))); look(lerp(-3.7, -3.4, k2), lerp(2.0, 1.9, k2), lerp(-1.0, -0.6, k2), -2.2, 1.5, 1.67, 40); }
+    shout("shout1", t, A("hook") + 1.5, A("mess") - 0.05);
+  } else if (t < A("intern")) {
+    const k = ease(clamp((t - A("mess")) / (A("intern") - A("mess"))));
+    const a = lerp(-0.95, -0.35, k); look(Math.sin(a) * 1.9, lerp(2.15, 2.05, k), 1.32 - Math.cos(a) * 1.9, 0, 1.15, 1.32, 42);
+    MESS.forEach((id, i) => { const t0 = A("mess") + 0.3 + i * (A("intern") - A("mess") - 1.0) / 5; const sk = clamp((t - t0) / 0.25); if (t < t0) return; const x = [60, 420, 120, 380, 200][i], y = [180, 360, 560, 760, 950][i], rot = [-6, 5, -3, 7, -4][i] + Math.sin(t * 3 + i) * 1.5; S($(id), { left: `${x}px`, top: `${y}px`, opacity: clamp((A("intern") - t) / 0.3), transform: `scale(${lerp(0.4, 1, back(sk))}) rotate(${rot}deg)` }); });
+  } else if (t < A("open")) {
+    const k = ease(clamp((t - A("intern")) / (A("open") - A("intern"))));
+    look(lerp(2.5, 3.2, k), lerp(1.75, 1.65, k), lerp(6.2, 5.6, k), 4.7, 1.3, 4.0, 40);
+    S($("wait"), { opacity: win(t, A("intern") + 0.5, A("open"), 0.3, 0.2) }); S($("spin"), { transform: `rotate(${t * 400}deg)` });
+  } else if (t < A("drop")) {
+    big.visible = true; bigShow("desk-empty");
+    const sk = back(clamp((t - A("open") - 0.2) / 0.6)); big.scale.setScalar(Math.max(0.001, sk * 0.75));
+    const k = ease(clamp((t - A("open")) / (A("drop") - A("open"))));
+    look(0, lerp(2.0, 2.1, k), lerp(5.0, 4.6, k), 0, 2.15, -1.2, 44);
+    tag("tU", t, A("open") + 0.6, A("open") + 2.6, 540, 250); tag("tA", t, A("open") + 2.8, A("drop"), 540, 250);
+  } else if (t < A("wifi")) {
+    const k = ease(clamp((t - A("drop")) / (A("wifi") - A("drop"))));
+    look(lerp(-0.4, 0.4, k), lerp(6.6, 7.0, k), lerp(9.4, 9.8, k), 0, 1.0, 1.2, 50);
+    const src = monTop(desks[0]).add(V(0, 0.35, 0)), rise = out(clamp((t - A("drop") - 0.5) / 0.5));
+    decks.forEach((m, i) => { const k2 = ease(clamp((t - A("drop") - 1.2 - i * 0.08) / 0.8)); m.visible = t > A("drop") + 0.5 && t < A("drop") + 2.3 + i * 0.08; m.position.copy(arc(monTop(desks[0]).lerp(src, rise), monTop(desks[i]), k2, 0.9)); m.quaternion.copy(cam.quaternion); m.scale.setScalar(lerp(3.2, 1.6, k2)); });
+    tag("tB", t, A("drop") + 2.2, A("wifi"), 540, 250);
+  } else if (t < A("notes")) {
+    const k = ease(clamp((t - A("wifi")) / (A("notes") - A("wifi"))));
+    look(lerp(-3.4, -2.6, k), lerp(1.8, 2.2, k), lerp(5.6, 5.2, k), 0, 2.6, 1.6, 46);
+    wifiRings.forEach((m, i) => { const ph = ((t - A("wifi")) * 0.6 + i / 3) % 1; m.scale.setScalar(0.3 + ph * 6); m.material.opacity = 0.7 * (1 - ph); });
+    phone(t, A("wifi") + 1.0, A("notes") + 0.05, "phone-nearby");
+    tag("tC", t, A("wifi") + 0.5, A("notes"), 540, 140);
+  } else if (t < A("task")) {
+    const k = ease(clamp((t - A("notes")) / (A("task") - A("notes"))));
+    look(lerp(-0.6, 0.6, k), lerp(3.2, 3.0, k), lerp(7.6, 7.1, k), 0, 2.3, 1.5, 46);
+    phone(t, A("notes"), A("notes") + 3.2, "phone-notewrite", "phone-notes", clamp((t - A("notes") - 1.6) / 0.3), t > A("notes") + 1.3 && t < A("notes") + 1.75 ? [240, 785, (t - A("notes") - 1.3) / 0.45] : null);
+    [MAYA, LEO, SAM, PRIYA].forEach((p, i) => { const t0 = A("notes") + 3.2 + i * 0.25; const m = noteCards[i]; if (t < t0) return; m.visible = true; const sk = back(clamp((t - t0) / 0.4)); m.scale.setScalar(Math.max(0.001, sk)); { const hp = p.head.getWorldPosition(V()); m.position.set(hp.x * 0.25, 3.3 - i * 0.5 + Math.sin(t * 2 + i) * 0.03, 1.6); } m.quaternion.copy(cam.quaternion); const left = 1799 - Math.floor(t - t0); const sec = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`; if (m.userData.sec !== sec) { m.userData.sec = sec; const g = m.material.map.image.getContext("2d"); m.userData.draw(sec)(g, m.material.map.image.width, m.material.map.image.height); m.material.map.needsUpdate = true; } });
+    tag("tD", t, A("notes") + 3.6, A("task"), 540, 250);
+  } else if (t < A("route")) {
+    const k = ease(clamp((t - A("task")) / (A("route") - A("task"))));
+    look(lerp(-1.0, -0.8, k), lerp(2.3, 2.4, k), lerp(4.4, 4.0, k), -0.3, 1.6, 1.2, 46);
+    phone(t, A("task"), A("task") + 2.1, "phone-tasks", "phone-compose", clamp((t - A("task") - 0.5) / 0.5), t > A("task") + 1.5 && t < A("task") + 1.95 ? [350, 230, (t - A("task") - 1.5) / 0.45] : null);
+    const k2 = ease(clamp((t - A("task") - 2.0) / 1.0)); taskCard.visible = t > A("task") + 1.9; taskCard.position.copy(arc(MAYA.head.getWorldPosition(V()).add(V(0, 0.4, 0)), LEO.head.getWorldPosition(V()).add(V(0, 0.5, 0)), k2, 0.7)); taskCard.quaternion.copy(cam.quaternion); taskCard.scale.setScalar(lerp(0.7, 0.9, k2));
+    lbl("l0", LEO.head, t, A("task") + 3.0, A("route"), "for you ✓", "#ff7a59", 0.95);
+    tag("tE", t, A("task") + 0.4, A("route"), 540, 140);
+  } else if (t < A("under")) {
+    const k = ease(clamp((t - A("route")) / (A("under") - A("route"))));
+    look(lerp(0.75, 0.55, k), lerp(1.75, 1.65, k), lerp(2.5, 2.25, k), 0, 1.3, 0.3, 40);
+    const R0 = A("route"), fills = [[R0 + 0.5, R0 + 1.3], [R0 + 1.6, R0 + 2.4], [R0 + 2.7, R0 + 3.4]];
+    S($("route"), { opacity: win(t, R0 + 0.2, A("under"), 0.3, 0.3) }); S($("bar"), { opacity: win(t, R0 + 0.2, A("under"), 0.3, 0.3) });
+    document.querySelectorAll("#route em").forEach((e, i) => { e.style.width = `${100 * clamp((t - fills[i][0]) / (fills[i][1] - fills[i][0]))}%`; });
+    document.querySelectorAll("#route span").forEach((e, i) => { e.style.color = t > fills[i][1] ? "#fff" : "#999"; });
+    $("bar").firstChild.style.width = `${100 * clamp((t - fills[0][0]) / (fills[2][1] - fills[0][0]))}%`;
+  } else if (t < A("private")) {
+    const k = ease(clamp((t - A("under")) / (A("private") - A("under"))));
+    look(lerp(3.5, 4.5, k), lerp(8.0, 9.2, k), lerp(9.5, 9.0, k), 0, 3.0, 1.6, 46);
+    hub.visible = true; hub.rotation.y = t; hub.scale.setScalar(1 + 0.25 * Math.max(0, 1 - Math.abs(t - A("under") - 3.1) / 0.3));
+    hubLines.forEach((l) => (l.material.opacity = 0.55 * clamp((t - A("under") - 0.6) / 0.8)));
+    const U = A("under");
+    pulses.forEach((m, i) => { let p = null; if (i === 0 && t > U + 2.2 && t < U + 3.1) p = hubLines[0].userData.a.clone().lerp(hub.position, (t - U - 2.2) / 0.9); else if (t > U + 3.1 && t < U + 3.3 + i * 0.05) p = hub.position.clone().lerp(hubLines[i].userData.a, clamp((t - U - 3.1) / (0.2 + i * 0.05))); m.visible = !!p; if (p) m.position.copy(p); });
+    tag("tF", t, U + 1.0, A("private"), 540, 250);
+  } else if (t < DONE) {
+    const k = ease(clamp((t - A("private")) / (DONE - A("private"))));
+    look(lerp(5.4, 4.8, k), lerp(3.6, 3.2, k), lerp(8.2, 7.6, k), 0, 1.1, 1.8, 44);
+    dome.visible = true; const rise = out(clamp((t - A("private") - 0.3) / 1.0)); dome.scale.set(1, Math.max(0.001, rise), 1); lockIcon.material.opacity = clamp((t - A("private") - 1.2) / 0.3); lockIcon.scale.setScalar(0.7 * (1 + 0.3 * Math.max(0, 1 - Math.abs(t - A("private") - 1.4) / 0.3)));
+    tag("tG", t, A("private") + 1.0, DONE, 540, 250);
+  } else if (t < DAN) {
+    big.visible = true; big.scale.setScalar(0.75); bigShow("desk-tasks", "desk-done", clamp((t - DONE - 0.3) / 0.4));
+    const k = ease(clamp((t - DONE) / (DAN - DONE)));
+    look(0, lerp(2.1, 2.0, k), lerp(5.0, 4.6, k), 0, 2.1, -1.2, 44);
+    shout("shout2", t, DONE + 0.75, DAN + 0.6);
+    if (t > DONE + 0.75 && t < DONE + 0.87) S($("flash"), { opacity: 0.4 * (1 - (t - DONE - 0.75) / 0.12) });
+  } else {
+    // the dance: a few cuts round the room, then the end card over it
+    const d = t - DAN, beatCut = 4 / BPS; // a cut every four beats
+    shout("shout2", t, DONE + 0.75, DAN + 0.6);
+    const cut = Math.floor(d / beatCut), k = (d % beatCut) / beatCut;
+    if (t >= A("end") || cut >= 4) { const a = 0.6 + d * 0.25; look(Math.sin(a) * 6.4, 3.4, 1.8 + Math.cos(a) * 6.4, 0, 1.2, 1.8, 46); }
+    else if (cut === 0) { const a = -0.4 + k * 0.8; look(Math.sin(a) * 6.6, 2.6, 1.8 + Math.cos(a) * 6.6, 0, 1.3, 1.8, 56); }
+    else if (cut === 1) look(lerp(1.2, 0.8, k), 1.2, lerp(3.8, 3.5, k), 0, 2.1, 0.85, 50);
+    else if (cut === 2) look(lerp(-1.6, -1.0, k), 1.6, lerp(5.2, 4.9, k), -1.1, 1.2, 2.6, 44);
+    else look(lerp(1.6, 1.9, k), 1.4, lerp(5.6, 5.2, k), TOM.o.position.x, 1.0, TOM.o.position.z, 40);
+  }
+
+  // ---- subtitles: 1–3 words, timed to the voice ----
+  let sub = "";
+  for (const ln of LINES.lines) {
+    if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue;
+    const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0);
+    let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; });
+    let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i;
+    const chunks = []; let c = [];
+    words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { chunks.push(c); c = []; } }); if (c.length) chunks.push(c);
+    sub = chunks.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" ");
+  }
+  $("sub").textContent = sub;
+  S($("sub"), { opacity: t > A("end") + 0.1 ? 0 : 1 });
+
+  // end card, the party still going behind it
+  const e = clamp((t - A("end") + 0.1) / 0.45);
+  S($("endc"), { opacity: e });
+  document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  hubLines.forEach((l) => (l.visible = l.material.opacity > 0.01)); wifiRings.forEach((m) => (m.visible = m.material.opacity > 0.01));
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
