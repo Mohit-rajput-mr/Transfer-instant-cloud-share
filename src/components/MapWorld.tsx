@@ -193,7 +193,25 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
       } else panBy(-e.deltaX, -e.deltaY, false);
     };
     el.addEventListener("wheel", wheel, { passive: false });
-    return () => el.removeEventListener("wheel", wheel);
+    // a trackpad pinch (ctrl + wheel) anywhere else on the page (the bar, the dock…) would zoom the whole
+    // browser page and push the controls off screen: it zooms the map instead
+    const page = (e: WheelEvent) => {
+      if (!e.ctrlKey || el.contains(e.target as Node)) return;
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      zoomAt(Math.exp(-e.deltaY * 0.01), r.width / 2, r.height / 2, false);
+    };
+    // Safari's own pinch gestures
+    const gesture = (e: Event) => e.preventDefault();
+    window.addEventListener("wheel", page, { passive: false });
+    window.addEventListener("gesturestart", gesture);
+    window.addEventListener("gesturechange", gesture);
+    return () => {
+      el.removeEventListener("wheel", wheel);
+      window.removeEventListener("wheel", page);
+      window.removeEventListener("gesturestart", gesture);
+      window.removeEventListener("gesturechange", gesture);
+    };
   }, [zoomAt, panBy]);
 
   // keys, like a map: arrows move, + / - zoom, 0 goes back to the opening view (not while typing or with a card open)
@@ -254,7 +272,9 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
   const moveItem = (e: React.PointerEvent) => {
     const it = item.current;
     if (!it || it.id !== e.pointerId) return false;
-    const dx = e.clientX - it.sx, dy = e.clientY - it.sy;
+    // the same invisible wall at the screen's edges for a dragged panel
+    const px = Math.min(window.innerWidth - 40, Math.max(40, e.clientX)), py = Math.min(window.innerHeight - 60, Math.max(64, e.clientY));
+    const dx = px - it.sx, dy = py - it.sy;
     if (!it.armed) {
       // a finger that moves before the hold is a pan of the map
       if (Math.hypot(dx, dy) > 8) {
@@ -263,8 +283,8 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
       }
       return false;
     }
-    it.lx = e.clientX;
-    it.ly = e.clientY;
+    it.lx = px;
+    it.ly = py;
     if (!it.moved && Math.hypot(dx, dy) < 5) return true;
     if (!it.moved) {
       it.moved = true;

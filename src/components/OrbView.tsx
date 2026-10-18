@@ -364,8 +364,15 @@ export default function OrbView(props: {
   // keep the orb inside the void (clear of the header)
   const clamp = (d: Drag, x: number, y: number) => {
     const m = 40;
-    const cx = Math.min(d.bw - m - d.bx, Math.max(m - d.bx, x));
-    const cy = Math.min(d.bh - m - d.by, Math.max((mapView.on ? m : 90) - d.by, y));
+    let x0 = m - d.bx, x1 = d.bw - m - d.bx, y0 = (mapView.on ? m : 90) - d.by, y1 = d.bh - m - d.by;
+    // an invisible wall at the screen's edges: a ball can't be dragged (or flung) out of view
+    if (typeof window !== "undefined") {
+      const ex = 56, top = 76, bottom = 96;
+      x0 = Math.max(x0, d.ox + (ex - d.sx) / d.k); x1 = Math.min(x1, d.ox + (window.innerWidth - ex - d.sx) / d.k);
+      y0 = Math.max(y0, d.oy + (top - d.sy) / d.k); y1 = Math.min(y1, d.oy + (window.innerHeight - bottom - d.sy) / d.k);
+    }
+    const cx = Math.min(x1, Math.max(x0, x));
+    const cy = Math.min(y1, Math.max(y0, y));
     return { x: cx, y: cy, hitX: cx !== x, hitY: cy !== y };
   };
 
