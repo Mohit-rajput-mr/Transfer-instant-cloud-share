@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { LuArchive, LuArrowUp, LuBriefcase, LuChevronRight, LuCircleHelp, LuFileText, LuImage, LuInfo, LuLayers, LuLayoutGrid, LuListChecks, LuMessageSquareText, LuMoon, LuMusic, LuOrbit, LuPalette, LuShieldCheck, LuSparkles, LuSun, LuTimer, LuUser, LuUserX, LuVideo, LuWifi, LuX } from "react-icons/lu";
+import { LuArchive, LuArrowUp, LuBriefcase, LuChevronRight, LuCircleHelp, LuFileText, LuImage, LuInfo, LuLayers, LuLayoutGrid, LuLink, LuListChecks, LuMessageSquareText, LuMoon, LuMusic, LuOrbit, LuPalette, LuShieldCheck, LuSparkles, LuSun, LuTimer, LuUser, LuUserX, LuVenetianMask, LuVideo, LuWifi, LuX } from "react-icons/lu";
 import { KINDS, type Kind } from "@/lib/skin-list";
 import { useTheme } from "@/lib/theme";
 
@@ -25,6 +25,8 @@ export default function MobileMenu(props: {
   onBoard?: () => void;
   /** /work: theme switch instead of styles, and the way back to the classic look */
   work?: { onBoard: () => void };
+  /** "Stay anonymous" (lib/anon.ts): on = the switch, now = anonymous here (the switch or an anonymous space) */
+  anon?: { on: boolean; now: boolean; inSpace: boolean; toggle: (v: boolean) => void; card: () => void; newSpace: () => void; copyLink?: () => void };
 }) {
   const [theme, setTheme] = useTheme();
   const [out, setOut] = useState(false);
@@ -55,16 +57,31 @@ export default function MobileMenu(props: {
   );
   const board = props.work?.onBoard ?? props.onBoard;
   const s = props.scope;
+  const a = props.anon;
   return (
     <>
       <div className={`scrim sd-scrim${out ? " out" : ""}`} onClick={close} />
       <aside className={`side-menu${out ? " out" : ""}`} role="dialog" aria-modal="true" aria-label="Menu">
         <div className="sd-head">
-          <span className="sd-where"><i aria-hidden />{props.space ? `In ${props.space}` : props.work ? "Public workspace" : "You're in the public void"}</span>
+          <span className="sd-where"><i aria-hidden />{props.space ? `In ${props.space}` : a?.now ? "Anonymous · public void" : props.work ? "Public workspace" : "You're in the public void"}</span>
           <button className="sd-x" onClick={close} aria-label="Close menu"><LuX /></button>
         </div>
         <div className="sd-body">
           <button className="sd-send lg-press" onClick={go(props.onSend)}><LuArrowUp aria-hidden /><span><b>Send</b><small>files · folders · links</small></span></button>
+
+          {a && (
+            <div className="sd-list">
+              {/* a switch, not a link: it flips here and the menu stays (the first time, the explainer takes its place) */}
+              <button className="sd-row lg-press sd-anon" role="switch" aria-checked={a.on} onClick={() => a.toggle(!a.on)}>
+                <span className="sd-ic"><LuVenetianMask /></span>
+                <span className="sd-txt"><b>Stay anonymous</b><small>{a.on ? "On · location off · no name · cloud only" : "no location · no name · cloud only"}</small></span>
+                <span className="sd-switch" aria-hidden><i /></span>
+              </button>
+              {a.now && (a.inSpace
+                ? a.copyLink && row(<LuLink />, "Copy anonymous link", "the link holds the code and the key", a.copyLink)
+                : row(<LuLink />, "Anonymous space", "make one · share by link", go(a.newSpace)))}
+            </div>
+          )}
 
           <div className="sd-list">
             {row(<LuOrbit />, props.space ?? "Spaces", props.space ? "your space · switch or leave" : "private rooms · search · create", go(props.onSpaces))}
@@ -110,6 +127,7 @@ export default function MobileMenu(props: {
             })}
           </div>
           <div className="sd-facts">
+            {a?.now && <button className="sd-fact-btn" onClick={a.card}><LuVenetianMask aria-hidden />Anonymous</button>}
             <span><LuUserX aria-hidden />No login</span>
             <span><LuShieldCheck aria-hidden />Encrypted</span>
             <span><LuTimer aria-hidden />Burns in 5–30 min</span>

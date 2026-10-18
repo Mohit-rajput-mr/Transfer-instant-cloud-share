@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { LuCircleHelp, LuFile, LuX, LuFolderUp, LuGlobe, LuLayers, LuListChecks, LuLock, LuMenu, LuMessageSquareText, LuMoon, LuOrbit, LuShare2, LuSparkles, LuStickyNote, LuSun, LuType, LuUpload, LuUser, LuWifi } from "react-icons/lu";
+import { LuCircleHelp, LuFile, LuX, LuFolderUp, LuGlobe, LuLayers, LuListChecks, LuLock, LuMenu, LuMessageSquareText, LuMoon, LuOrbit, LuShare2, LuSparkles, LuStickyNote, LuSun, LuType, LuUpload, LuUser, LuVenetianMask, LuWifi } from "react-icons/lu";
 import type { Kind } from "@/lib/skin-list";
 import { useTheme } from "@/lib/theme";
 import KindFilter from "./KindFilter";
@@ -35,6 +35,10 @@ export function WorkBar(p: {
   kind: Kind;
   onKind: (k: Kind) => void;
   pin: ReactNode;
+  /** anonymous here (lib/anon.ts): the tag says so and Nearby goes (it is the network you're on) */
+  anon: boolean;
+  /** the "Stay anonymous" mask, just before the pin (null while it's on: the pin's place holds the badge) */
+  anonChip: ReactNode;
   onLogo: () => void;
   onSpaces: () => void;
   onShare: () => void;
@@ -50,14 +54,18 @@ export function WorkBar(p: {
           <span className="w-sep">/</span>
           <b className="ellip">{p.space ?? "Public workspace"}</b>
         </button>
-        <span className={`w-tag${p.isPrivate ? " lock" : ""}`}>
-          {p.space ? (p.isPrivate ? <><LuLock aria-hidden />private</> : "space") : p.area ? <><LuGlobe aria-hidden />{p.area}</> : "public"}
-        </span>
+        {p.anon ? (
+          <span className="w-tag anon"><LuVenetianMask aria-hidden />anonymous</span>
+        ) : (
+          <span className={`w-tag${p.isPrivate ? " lock" : ""}`}>
+            {p.space ? (p.isPrivate ? <><LuLock aria-hidden />private</> : "space") : p.area ? <><LuGlobe aria-hidden />{p.area}</> : "public"}
+          </span>
+        )}
       </div>
 
       <div className="w-tabs" role="tablist" aria-label="Show">
         <button role="tab" aria-selected={p.scope === "all"} className={p.scope === "all" ? "on" : ""} onClick={() => p.onScope("all")}><LuLayers aria-hidden /><span>All</span></button>
-        {!p.space && (
+        {!p.space && !p.anon && (
           <button role="tab" aria-selected={p.scope === "near"} className={p.scope === "near" ? "on" : ""} onClick={() => p.onScope("near")}>
             <LuWifi aria-hidden /><span>Nearby</span>{p.nearbyCount ? <em>{p.nearbyCount}</em> : null}
           </button>
@@ -72,6 +80,7 @@ export function WorkBar(p: {
         <span className="w-live" title={`${p.online} ${p.online > 1 ? "devices" : "device"} online${p.space ? " in this space" : " around you"}`}>
           <i />{p.online}<span> online</span>
         </span>
+        {p.anonChip}
         {p.pin}
         <ThemeToggle className="w-hide-s" />
         <button className="w-btn" onClick={p.onShare}><LuShare2 aria-hidden /><span>Share</span></button>

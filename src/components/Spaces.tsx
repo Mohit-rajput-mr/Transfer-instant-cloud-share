@@ -1,6 +1,7 @@
 "use client";
 import { homePath } from "@/lib/client";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { LuVenetianMask } from "react-icons/lu";
 import {
   createSpace, joinSpace, savedHandle, savedSpaces, searchSpaces,
   type SpaceHit, type SpaceInfo, type SpaceSession,
@@ -71,8 +72,17 @@ export default function SpacePanel(props: {
   onQuit: () => void;
   onClose: () => void;
   toast: (t: string) => void;
+  /** the "Stay anonymous" switch (lib/anon.ts): named spaces show your name, so they are closed while it is on */
+  anon?: boolean;
+  /** make an anonymous space (random title, code and key; one link) and step in */
+  onAnonSpace?: () => void;
+  copyAnonLink?: () => void;
 }) {
   const { current, info } = props;
+  const anon = !!props.anon;
+  const named = (s: { slug: string; anon?: boolean }) => !s.anon && !s.slug.startsWith("anon-");
+  const blocked = (title: string) => props.toast(`Turn off Anonymous to enter ${title}: it shows your name to its members`);
+  const ends = info?.ends ? new Date(info.ends).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : null;
   const [quitArm, setQuitArm] = useState(false);
   // start: a space to look up, or the header's "+" (":create") / search (":search") buttons
   const [tab, setTab] = useState<Tab>(props.start === ":create" ? "create" : props.start ? "browse" : current ? "here" : "browse");
@@ -98,6 +108,7 @@ export default function SpacePanel(props: {
   }, [q, tab]);
 
   const pick = (h: SpaceHit) => {
+    if (anon) return blocked(h.title);
     const mine = saved.find((s) => s.slug === h.slug);
     if (mine) return props.onEnter(mine); // already in it: straight back in
     setJoining(h);
@@ -123,7 +134,25 @@ export default function SpacePanel(props: {
         <button role="tab" aria-selected={tab === "create"} className={tab === "create" ? "on" : ""} onClick={() => setTab("create")}>Create</button>
       </div>
 
-      {tab === "here" && current && (
+      {tab === "here" && current?.anon && (
+        <div className="sp-pane" key="here">
+          <div className="sp-hero">
+            <span className="mono dim"><LuVenetianMask className="ic-inline" aria-hidden /> Anonymous space · you are <b>{current.handle}</b></span>
+            <div className="wide sp-title">{current.title}<Lock /></div>
+            <span className="mono dim">{info ? `${info.members.length} ${info.members.length === 1 ? "member" : "members"}${ends ? ` · deletes ${ends}` : ""}` : "…"}</span>
+          </div>
+          <p className="note">Only people with the link are in here. Notes and tasks aren&apos;t end-to-end encrypted; files are.</p>
+          <div className="sp-acts">
+            <button className="ghost-btn lg-press" onClick={props.copyAnonLink}>Copy anonymous link</button>
+            <button className="cta lg-press" onClick={props.onLeave}>Exit to the public void</button>
+            <button className={`ghost-btn lg-press sp-quit${quitArm ? " arm" : ""}`} onClick={() => (quitArm ? props.onQuit() : setQuitArm(true))}>
+              {quitArm ? "Tap again: leave for good" : "Leave this space for good"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {tab === "here" && current && !current.anon && (
         <div className="sp-pane" key="here">
           <div className="sp-hero">
             <span className="mono dim">{current.priv ? "Private space" : "Open space"} · you are <b>{current.handle}</b></span>
@@ -148,19 +177,22 @@ export default function SpacePanel(props: {
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search spaces" autoComplete="off" maxLength={32} enterKeyHint="search" />
           </label>
           <div className="sp-grid">
-            {savedHere.map((s) => (
-              <button key={`s-${s.slug}`} className="sp-card lg-press" style={{ "--hue": hueOf(s.slug) } as CSSProperties} onClick={() => props.onEnter(s)}>
+            {savedHere.map((s) => {
+              const off = anon && named(s);
+              return (
+              <button key={`s-${s.slug}`} className={`sp-card lg-press${off ? " off" : ""}`} aria-disabled={off} style={{ "--hue": hueOf(s.slug) } as CSSProperties} onClick={() => (off ? blocked(s.title) : props.onEnter(s))}>
                 <i className="sp-orb" />
                 <b>{s.title}</b>
-                <span className="mono dim">{s.priv ? <><Lock /> private · </> : null}joined</span>
+                <span className="mono dim">{off ? "turn off Anonymous to enter" : s.anon ? <><LuVenetianMask className="ic-inline" aria-hidden /> anonymous · joined</> : <>{s.priv ? <><Lock /> private · </> : null}joined</>}</span>
                 <span className="sp-go"><Arrow /></span>
               </button>
-            ))}
+              );
+            })}
             {others.map((h) => (
-              <button key={`h-${h.slug}`} className="sp-card lg-press" style={{ "--hue": hueOf(h.slug) } as CSSProperties} onClick={() => pick(h)}>
+              <button key={`h-${h.slug}`} className={`sp-card lg-press${anon ? " off" : ""}`} aria-disabled={anon} style={{ "--hue": hueOf(h.slug) } as CSSProperties} onClick={() => pick(h)}>
                 <i className="sp-orb" />
                 <b>{h.title}</b>
-                <span className="mono dim">{h.priv ? <><Lock /> private</> : "open"}</span>
+                <span className="mono dim">{anon ? "turn off Anonymous to enter" : h.priv ? <><Lock /> private</> : "open"}</span>
                 <span className="sp-go"><Arrow /></span>
               </button>
             ))}
@@ -175,6 +207,20 @@ export default function SpacePanel(props: {
       )}
 
       {tab === "create" && (
+        <div className="sp-pane" key="create-anon">
+          <div className="sp-hero sp-anon">
+            <span className="mono dim"><LuVenetianMask className="ic-inline" aria-hidden /> <b>Anonymous space</b></span>
+            <p className="note">No name, a random title, private. Share it with one link; only people with the link get in and can open what&apos;s sent.</p>
+            <button className="cta lg-press" onClick={props.onAnonSpace}>Create anonymous space <Arrow /></button>
+          </div>
+          {anon ? (
+            <p className="note">Named spaces show your name to their members. Turn off Anonymous to make one.</p>
+          ) : (
+            <span className="mono dim sp-or">Or a named space</span>
+          )}
+        </div>
+      )}
+      {tab === "create" && !anon && (
         <CreateForm
           title0={q}
           handle0={handle}
@@ -309,7 +355,7 @@ export function SpaceRoom(props: { space: SpaceSession; info: SpaceInfo | null; 
       <div className="room-glass glass" aria-hidden />
       <div className="room-top">
         <div className="room-name">
-          <span className="mono dim">{space.priv ? "private space" : "space"} · {live} live</span>
+          <span className="mono dim">{space.anon ? "anonymous space" : space.priv ? "private space" : "space"} · {live} live</span>
           <b className="wide">{space.title}</b>
         </div>
         <button className="room-exit glass lg-press" onClick={props.onExit} aria-label="Exit this space, back to the public void">

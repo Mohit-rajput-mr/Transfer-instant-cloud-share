@@ -4,7 +4,7 @@ import { LuMapPin } from "react-icons/lu";
 import { Pop } from "./Spaces";
 
 /** First visit on a device: why Orbit asks for the location, before the browser does. */
-export default function LocationAsk(props: { onAllow: () => Promise<void>; onLater: () => void }) {
+export default function LocationAsk(props: { onAllow: () => Promise<void>; onLater: () => void; /** "Stay anonymous" instead (lib/anon.ts) */ onAnon?: () => void }) {
   const [busy, setBusy] = useState(false);
   return (
     <Pop label="Location" onClose={props.onLater} className="geo-pop" small>
@@ -25,6 +25,7 @@ export default function LocationAsk(props: { onAllow: () => Promise<void>; onLat
           <LuMapPin aria-hidden /> {busy ? "Waiting for your browser…" : "Share location"}
         </button>
         <button className="geo-later mono" onClick={props.onLater}>Not now</button>
+        {props.onAnon && <button className="geo-later mono" onClick={props.onAnon}>Stay anonymous instead</button>}
       </div>
     </Pop>
   );
