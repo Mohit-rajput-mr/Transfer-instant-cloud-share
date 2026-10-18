@@ -214,7 +214,7 @@ frame("Now you know where your password goes", async (t) => {
     tag("tF", t, fr("slow", 0.2), at("reveal"));
   } else if (t < at("orbi")) {
     world("room"); const k = prog(t, at("reveal"), at("orbi"));
-    look(lerp(1.4, 2.4, k), lerp(1.5, 2.2, k), lerp(2.6, 3.4, k), 0.4, 0.9, 0.6, 40);
+    look(lerp(2.6, 3.6, k), lerp(1.6, 2.1, k), lerp(0.9, 0.5, k), 0.4, 0.9, 0.6, 42);
     big(t, fr("reveal", 0.4), at("orbi"), "USELESS.", 260);
   } else if (t < at("orbi2")) {
     world("phone"); const k = prog(t, O, O2);
