@@ -3,6 +3,14 @@
 Read `CLAUDE.md` first (owner wants SHORT answers, deploy steps, IDs). This file is the live task board.
 Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 
+## ⚠ Branches (2026-10-18)
+- Production was deployed from `claude/work`; on 2026-10-18 `claude/festive-keller-rln4jk` merged `claude/work` and deployed
+  the task update below. **Before deploying from `claude/work` again, merge `origin/claude/festive-keller-rln4jk`**, or these go away:
+  task names ("Name¦line"), Submit task + upload into it, orange Upload per task, double-click → route, per-step colours
+  ("Name§colour", 9 colours, `STEP_COLORS` in lib/tasks.ts), highlighted Custom step, /work step colours = classic (red cancel),
+  Arrange fixed on /work (MapWorld captures the mouse only once a panel moves), lanes level with the task dot, open notes/links
+  show their text at once, file tools hover-only on /work, Exit button while anonymous.
+
 ## Marketing videos (taken over from the marketing agent on claude/festive-keller-rln4jk)
 - Rules, facts, house style, pipeline: `media/VIDEO_PLAYBOOK.md` (copied here from his branch). "New version"/"next" = next story, don't ask.
 - DONE 2026-10-18: `media/airport-film/OrbiTransfer-airport.mp4` (79 s) rendered + encoded from his committed source (he stopped before the render).
