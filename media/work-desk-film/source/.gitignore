@@ -13,3 +13,7 @@ finish.txt
 log_*.txt
 rec/
 vo_log.txt
+frames/
+score.wav
+log_*.txt
+synth_log.txt

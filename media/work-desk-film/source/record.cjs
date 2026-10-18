@@ -402,6 +402,8 @@ async function main() {
   await page.mouse.move(W * 0.3, H * 0.55);
   cur = { x: W * 0.3, y: H * 0.55 };
   await wait(3000);
+  await page.waitForFunction(() => ![...document.querySelectorAll(".toast > div")].some((d) => /New file online/.test(d.textContent) && d.offsetParent), null, { timeout: 20000 }).catch(() => {});
+  await wait(600);
   await shot("pre-arrange");
 
   // ===== 6. arrange: every wired file lines up in its task's lane, dead-straight wires

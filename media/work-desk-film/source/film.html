@@ -26,7 +26,7 @@
   #chip b { color: #fff; font-weight: 800; }
   #title { left: 60px; right: 60px; top: 350px; text-align: center; font: 900 92px/1.02 "D"; font-stretch: 112%; letter-spacing: -.01em; opacity: 0; }
   #title em { font-style: normal; color: #f08a24; }
-  #sub { left: 50px; right: 50px; top: 1480px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,.65); z-index: 40; }
+  #sub { left: 50px; right: 50px; top: 1500px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,.65); z-index: 40; }
   #hook { inset: 0; display: grid; place-items: center; text-align: center; opacity: 0; }
   #hook .em { width: 220px; margin: 0 auto 40px; }
   #hook .lg { width: 760px; }
@@ -45,6 +45,8 @@
 <div id="stage">
   <div id="laptop"><div id="lid"><div id="screen"><img id="shot" /></div></div><div id="base"></div></div>
 </div>
+<div class="ov" id="topfade" style="left:0;right:0;top:0;height:640px;background:linear-gradient(#0b0d12 62%,rgba(11,13,18,0));z-index:15"></div>
+<div class="ov" id="botfade" style="left:0;right:0;bottom:0;height:560px;background:linear-gradient(rgba(11,13,18,0),#0b0d12 45%);z-index:15"></div>
 <div class="ov" id="hook"><div><img class="em" src="emblem.svg" /><img class="lg" src="logo.svg" /><div class="w">FOR WORK</div></div></div>
 <div class="ov" id="chip"><span><b id="chipn">01</b><i id="chipt">Private space</i></span></div>
 <div class="ov" id="title"></div>
