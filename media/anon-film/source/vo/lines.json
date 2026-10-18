@@ -1,0 +1,102 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know why people are using Orbi Transfer? Let's start with the people who never want to be found.",
+   "dur": 6.056,
+   "at": 0.35
+  },
+  {
+   "key": "pros",
+   "text": "Ethical hackers and privacy experts test security for a living. And they're careful to leave no trace of who they are.",
+   "dur": 7.25,
+   "at": 6.81
+  },
+  {
+   "key": "tools",
+   "text": "A fresh identity for every job. No real name. Location switched off. Nothing that links back to them.",
+   "dur": 5.73,
+   "at": 14.36
+  },
+  {
+   "key": "slip",
+   "text": "But even the pros get caught. Not by clever code. By one tiny slip.",
+   "dur": 5.241,
+   "at": 20.44
+  },
+  {
+   "key": "slips",
+   "text": "Logging into their real account. A photo that still holds the exact spot it was taken. Or sending straight to someone's device, which hands over their IP address.",
+   "dur": 8.013,
+   "at": 25.98
+  },
+  {
+   "key": "leak",
+   "text": "Now think about you. A contract, a medical report, a secret plan. One slip, and it leaks.",
+   "dur": 5.936,
+   "at": 34.39
+  },
+  {
+   "key": "why",
+   "text": "That's why so many anonymous users pick Orbi Transfer. No login. No profile to create.",
+   "dur": 6.28,
+   "at": 40.73
+  },
+  {
+   "key": "none",
+   "text": "And in Anonymous mode, Orbi keeps no profile of you at all. No name, no device, no GPS. Just a throwaway ID that's gone when you leave.",
+   "dur": 9.075,
+   "at": 47.31
+  },
+  {
+   "key": "direct",
+   "text": "It never connects you straight to the other person, so they never see your IP address. Everything goes through the encrypted cloud.",
+   "dur": 6.258,
+   "at": 56.73
+  },
+  {
+   "key": "pieces",
+   "text": "Your file is locked on your own phone, then split into chunks that fly off separately. And every chunk is still locked.",
+   "dur": 6.88,
+   "at": 63.29
+  },
+  {
+   "key": "vault",
+   "text": "The servers only ever hold scrambled chunks. They can't read them, and there's no name or profile to tie them to.",
+   "dur": 5.712,
+   "at": 70.47
+  },
+  {
+   "key": "code",
+   "text": "Your passcode never leaves your phone. The server keeps only a scrambled fingerprint of it. Guess wrong twelve times, and the file locks.",
+   "dur": 8.797,
+   "at": 76.48
+  },
+  {
+   "key": "join",
+   "text": "Only the right passcode pulls the chunks back together, on the receiver's phone, and nowhere else.",
+   "dur": 4.97,
+   "at": 85.58
+  },
+  {
+   "key": "next",
+   "text": "And every chunk is scattered across different locations. Thousands of locations, so no single place ever holds your whole file.",
+   "dur": 7.301,
+   "at": 90.95
+  },
+  {
+   "key": "burn",
+   "text": "Thirty minutes later, every chunk burns. No account. No profile. No trail.",
+   "dur": 5.407,
+   "at": 98.65
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. Go anonymous.",
+   "dur": 2.9,
+   "at": 104.46
+  }
+ ],
+ "duration": 109.16
+}
