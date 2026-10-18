@@ -4,99 +4,99 @@
   {
    "key": "hook",
    "text": "Every photo you send gets torn into thousands of pieces. You just never see it.",
-   "dur": 5.17,
+   "dur": 6.285,
    "at": 0.35
   },
   {
    "key": "q",
    "text": "So what happens when you send one to your mum, on the other side of the world?",
-   "dur": 5.86,
-   "at": 5.97
+   "dur": 3.448,
+   "at": 7.08
   },
   {
    "key": "bits",
    "text": "First, your phone turns the photo into ones and zeros. A three megabyte photo? Twenty four million of them.",
-   "dur": 6.55,
-   "at": 12.23
+   "dur": 8.332,
+   "at": 10.93
   },
   {
    "key": "packets",
    "text": "Then it chops them into tiny envelopes, called packets. That one photo becomes about two thousand envelopes!",
-   "dur": 5.86,
-   "at": 19.09
+   "dur": 6.243,
+   "at": 19.57
   },
   {
    "key": "label",
    "text": "Each one gets a label. From, to, and its number in the line.",
-   "dur": 4.48,
-   "at": 25.25
+   "dur": 4.344,
+   "at": 26.11
   },
   {
    "key": "wifi",
    "text": "Your phone throws them through the air as radio waves, and your router pushes them down a cable.",
-   "dur": 6.21,
-   "at": 30.03
+   "dur": 5.048,
+   "at": 30.75
   },
   {
    "key": "hops",
    "text": "Now the wild part. Each envelope hops from router to router, often a dozen or more, and every router just picks the next best step.",
-   "dur": 8.62,
-   "at": 36.54
+   "dur": 6.179,
+   "at": 36.1
   },
   {
    "key": "routes",
    "text": "So pieces of the same photo take different roads. Some cross the ocean floor, in a cable about as thick as a garden hose.",
-   "dur": 8.28,
-   "at": 45.46
+   "dur": 7.245,
+   "at": 42.58
   },
   {
    "key": "speed",
    "text": "Inside, they fly through glass at two thirds the speed of light.",
-   "dur": 4.14,
-   "at": 54.03
+   "dur": 4.749,
+   "at": 50.12
   },
   {
    "key": "arrive",
    "text": "They land all jumbled up. Your mum's phone sorts them by number, and asks again for any that got lost.",
-   "dur": 6.9,
-   "at": 58.52
+   "dur": 6.115,
+   "at": 55.22
   },
   {
    "key": "whole",
    "text": "Then it glues all two thousand back together. In the blink of an eye.",
-   "dur": 4.83,
-   "at": 65.72
+   "dur": 4.92,
+   "at": 61.64
   },
   {
    "key": "problem",
    "text": "But on the way, your envelopes pass through a lot of machines you don't own.",
-   "dur": 5.17,
-   "at": 71.05
+   "dur": 4.685,
+   "at": 67.06
   },
   {
    "key": "lock",
    "text": "That's why Orbi Transfer locks your file on your own phone, before a single piece leaves. Only your code opens it.",
-   "dur": 7.24,
-   "at": 76.62
+   "dur": 7.203,
+   "at": 72.14
   },
   {
    "key": "parts",
    "text": "Big files go in big parts, several at once. Signal drops? Only the missing parts go again.",
-   "dur": 5.86,
-   "at": 84.16
+   "dur": 6.285,
+   "at": 79.65
   },
   {
    "key": "near",
    "text": "No account, no phone number. It finds people near you by rough area, and thirty minutes later, it's gone.",
-   "dur": 6.55,
-   "at": 90.32
+   "dur": 6.968,
+   "at": 86.23
   },
   {
    "key": "end",
    "text": "Orbi Transfer dot com. Now you know where your photos go.",
-   "dur": 3.79,
-   "at": 97.27
+   "dur": 3.917,
+   "at": 93.6
   }
  ],
- "duration": 102.87
+ "duration": 99.32
 }
