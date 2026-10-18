@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatBytes } from "@/lib/client";
 import type { Layer, RouteLine } from "./Earth";
 import History, { loadHistory, routeLines } from "./History";
-import type { AdminSpace, AdminTransfer, Overview } from "./types";
+import type { AdminSpace, AdminTransfer, AnonSessionRec, Overview } from "./types";
 import { country, flag, n } from "./fmt";
 
 // three.js only loads for the admin, never for regular visitors
@@ -164,7 +164,7 @@ function Login({ onIn }: { onIn: () => void }) {
 const LAYERS: { id: Layer; label: string; dot: string }[] = [
   { id: "live", label: "Live now", dot: "#3dff8c" },
   { id: "exact", label: "Exact · live", dot: "#ff4fd8" },
-  { id: "exactSeen", label: "Last GPS seen", dot: "#a0498f" },
+  { id: "exactSeen", label: "Last GPS seen", dot: "#ff4fd8" },
   { id: "anon", label: "Anonymous (IP)", dot: "#9a9a9a" },
   { id: "visitors", label: "All visitors", dot: "#ffffff" },
   { id: "uploads", label: "Uploads", dot: "#59b8ff" },
@@ -172,7 +172,7 @@ const LAYERS: { id: Layer; label: string; dot: string }[] = [
   { id: "routes", label: "Transfer routes", dot: "linear-gradient(90deg,#59b8ff,#ffa045)" },
 ];
 
-type Expand = "history" | "activity" | "countries" | "objects" | "containers" | "cities" | "spaces" | null;
+type Expand = "history" | "anon" | "activity" | "countries" | "objects" | "containers" | "cities" | "spaces" | null;
 
 function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview | null; events: Ev[]; now: number; onRefresh: () => void; onLogout: () => void }) {
   const [layers, setLayers] = useState<Set<Layer>>(new Set(["live", "exact", "exactSeen", "anon", "visitors", "uploads", "downloads", "routes"]));
@@ -252,6 +252,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
           <button className={expand === "containers" ? "on" : ""} onClick={() => setExpand("containers")}>Containers <b>{containers(data?.transfers ?? []).length}</b></button>
           <button className={expand === "spaces" ? "on" : ""} onClick={() => setExpand("spaces")}>Spaces <b>{spaces?.length ?? 0}</b></button>
           <button className={expand === "cities" ? "on" : ""} onClick={() => setExpand("cities")}>Places</button>
+          <button className={expand === "anon" ? "on" : ""} onClick={() => setExpand("anon")}>Anonymous <b>{data?.anonSessions?.length ?? 0}</b></button>
         </nav>
         <span className="live"><span className="dot" /><b>{n(data?.online)}</b> online now</span>
         <span className="mono dim hq-clock">{new Date(now).toLocaleTimeString()}</span>
@@ -281,7 +282,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
           <div className="hq-layers">
             {LAYERS.map((l) => (
               <button key={l.id} className={`chip${layers.has(l.id) ? " on" : ""}`} onClick={() => toggle(l.id)}>
-                <i style={{ background: l.dot }} />{l.label}
+                <i style={{ background: l.dot, ...(l.id === "exactSeen" ? { boxShadow: "0 0 0 2px #3dff8c" } : null) }} />{l.label}
               </button>
             ))}
             <button className={`chip${spin ? " on" : ""}`} onClick={() => setSpin((s) => !s)}>⟳ Auto-spin</button>
@@ -394,7 +395,16 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
           }} />
         </div>
       )}
-      {expand && expand !== "history" && data && <Expanded kind={expand} data={data} events={events} focusCc={focusCc} onCountry={openCountry} spaces={spaces ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} />}
+      {expand === "anon" && (
+        <div className="hq-expand" role="dialog" aria-label="Anonymous sessions">
+          <div className="hq-expand-head">
+            <b className="wide">Anonymous sessions</b>
+            <button className="pill" onClick={() => setExpand(null)}>Close ✕</button>
+          </div>
+          <AnonSessions list={data?.anonSessions ?? []} />
+        </div>
+      )}
+      {expand && expand !== "history" && expand !== "anon" && data && <Expanded kind={expand} data={data} events={events} focusCc={focusCc} onCountry={openCountry} spaces={spaces ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} />}
     </div>
   );
 }
@@ -505,7 +515,7 @@ function Expanded({ kind, data, events, focusCc, onCountry, spaces, now, onClose
   return (
     <div className="hq-expand" role="dialog" aria-label="Details">
       <div className="hq-expand-head">
-        <b className="wide">{({ history: "History", activity: "Activity", countries: "Countries", objects: "Objects in orbit", containers: "Containers", cities: "Places", spaces: "Spaces" } as const)[kind]}</b>
+        <b className="wide">{({ history: "History", activity: "Activity", countries: "Countries", objects: "Objects in orbit", containers: "Containers", cities: "Places", spaces: "Spaces", anon: "Anonymous" } as const)[kind]}</b>
         <button className="pill" onClick={onClose}>Close ✕</button>
       </div>
       {kind === "objects" && (
@@ -796,6 +806,46 @@ function Hourly({ data }: { data: Overview | null }) {
         ))}
       </div>
       <div className="hq-legend"><span><i className="v" /> visits</span><span><i className="u" /> uploads</span><span><i className="d" /> downloads</span></div>
+    </div>
+  );
+}
+
+/** every anonymous session (migration 021): who (alias), when (UTC and the device's own zone), where from, how it ended */
+function AnonSessions({ list }: { list: AnonSessionRec[] }) {
+  const t = (iso: string | null, tz?: string | null) => {
+    if (!iso) return "now";
+    try {
+      return new Date(iso).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short", timeZone: tz || "UTC" });
+    } catch {
+      return iso.slice(0, 16).replace("T", " ");
+    }
+  };
+  if (!list.length) return <p className="mono dim">No anonymous sessions yet.</p>;
+  return (
+    <div className="hq-anon">
+      <table>
+        <thead>
+          <tr><th>Alias</th><th>Length</th><th>Start (UTC)</th><th>End (UTC)</th><th>Local zone</th><th>Ended</th><th>Where</th><th>IP</th><th>Spaces</th></tr>
+        </thead>
+        <tbody>
+          {list.map((x) => {
+            const end = x.ended ?? (Date.parse(x.ends) < Date.now() ? x.ends : null);
+            return (
+              <tr key={x.alias + x.start}>
+                <td><b>{x.alias}</b></td>
+                <td>{x.min} min</td>
+                <td>{t(x.start)}</td>
+                <td>{end ? t(end) : "live"}</td>
+                <td>{x.tz ? `${t(x.start, x.tz)} → ${end ? t(end, x.tz) : "now"} · ${x.tz}` : "—"}</td>
+                <td>{!end ? "live" : x.reason === "exit" ? "exited" : "burnt (timer)"}</td>
+                <td>{[x.city, x.cc].filter(Boolean).join(", ") || "—"}</td>
+                <td className="mono">{x.ip || "—"}</td>
+                <td>{x.spaces}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

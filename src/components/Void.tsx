@@ -13,7 +13,7 @@ import { launch, type Stage } from "@/lib/transfer";
 import { folderFromInput, fromDrop, textToFile, type Item } from "@/lib/bundle";
 import { useRouter } from "next/navigation";
 import { deviceId, deviceInfo, dropOwnerKey, hasGot, ownerKey, homePath, persistentId, type Orb } from "@/lib/client";
-import { anonId, anonSeen, anonSwitch, isAnon, markAnonSeen, setAnon, useAnon } from "@/lib/anon";
+import { aliasOf, anonId, anonSeen, anonSession, anonSwitch, isAnon, markAnonSeen, setAnon, useAnon } from "@/lib/anon";
 import { genericFileName, scrubItems } from "@/lib/scrub";
 import AnonCard, { type AnonMode } from "./AnonCard";
 import { supabase, type RealtimeChannel } from "@/lib/realtime";
@@ -30,6 +30,7 @@ import { downloading } from "@/lib/downloads";
 import { warm } from "@/lib/peek";
 import { anonLink, anonTitle, createAnonSpace, createSpace, joinAnonSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
 import { BsIncognito } from "react-icons/bs";
+import AnonSeal from "./AnonSeal";
 import { LuFlag, LuMessageCircle, LuMapPin, LuMapPinOff, LuMenu, LuPalette, LuSearch, LuPlus, LuX } from "react-icons/lu";
 import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange } from "./BubbleBoard";
@@ -140,7 +141,7 @@ type Panel =
   | { kind: "bubble"; edit?: BubbleChange }
   | { kind: "private" }
   // "Stay anonymous" (lib/anon.ts, components/AnonCard.tsx)
-  | { kind: "anon"; mode: "intro" | "on" | "status" }
+  | { kind: "anon"; mode: "intro" | "start" | "on" | "status" }
   | { kind: "anon-gate"; items?: Item[]; note?: boolean; task?: { line: string; life: number } }
   | { kind: "anon-join"; slug: string; code: string; key: string }
   | { kind: "anon-link" }
@@ -869,13 +870,22 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const loadAnonSaved = useCallback(() => savedSpaces().then((l) => setAnonSaved(l.filter((x) => x.anon))).catch(() => {}), []);
   // set while this tab flips the switch itself, so the cross-tab follower below leaves it alone
   const localToggle = useRef<boolean | null>(null);
-  const toggleAnon = useCallback((v: boolean, fromIntro = false) => {
+  const toggleAnon = useCallback((v: boolean, fromIntro = false, min = 30, reason: "exit" | "timer" = "exit") => {
     localToggle.current = v;
     if (v) {
       const lasting = persistentId();
       // first: no normal heartbeat leaves after this point
-      setAnon(true);
+      setAnon(true, min);
       markAnonSeen();
+      // the session's record (admin only): alias, length, start, the device's time zone (migration 021)
+      const ss = anonSession();
+      if (ss) {
+        let tz = "";
+        try {
+          tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        } catch {}
+        fetch("/api/anon", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "start", sid: ss.id, min: ss.min, tz, offset: -new Date().getTimezoneOffset() }), keepalive: true }).catch(() => {});
+      }
       // Orbi forgets this browser's heartbeat row (label, browser, network, IP place, last GPS spot)...
       fetch("/api/pulse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ forget: true, deviceId: lasting }), keepalive: true }).catch(() => {});
       // ...and the style it remembered for this computer
@@ -902,9 +912,15 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       if (fromIntro) setPanel({ kind: "anon", mode: "on" });
       void sendPulse();
     } else {
+      // the session burns: its record is closed on the server, its anonymous spaces (and all in them) burn there,
+      // and this browser forgets every anonymous space it was in
+      const ss = anonSession();
+      if (ss) fetch("/api/anon", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "end", sid: ss.id, reason }), keepalive: true }).catch(() => {});
+      if (spaceRef.current?.anon) switchSpace(null);
+      savedSpaces().then((l) => Promise.all(l.filter((x) => x.anon).map((x) => forget(x.slug)))).then(() => setAnonSaved([])).catch(() => {});
       setAnon(false);
       setAnonCell("");
-      toast("Anonymous off. Location stays off until you tap the pin");
+      toast(reason === "timer" ? `Time's up: ${ss ? aliasOf(ss.id) : "your anonymous identity"} burnt, with its spaces` : `${ss ? aliasOf(ss.id) : "Anonymous"} burnt. Location stays off until you tap the pin`);
       setHome(where()?.area ?? homeRef.current);
       setPanel((p) => (p?.kind === "anon" ? null : p));
       void sendPulse();
@@ -949,9 +965,17 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   }, [anonOn, switchSpace, toast, sendPulse]);
   /** every way of turning it on: the first time, the explainer (its button turns it on) */
   const requestAnon = useCallback(() => {
-    if (!anonSeen()) setPanel({ kind: "anon", mode: "intro" });
-    else toggleAnon(true);
-  }, [toggleAnon]);
+    setPanel({ kind: "anon", mode: anonSeen() ? "start" : "intro" });
+  }, []);
+  // the session's clock: when its time is up (also right after a reload past it) it burns
+  const { sess: anonSess } = useAnon();
+  useEffect(() => {
+    if (!anonOn || !anonSess) return;
+    const check = () => Date.now() >= anonSess.ends && toggleAnon(false, false, 30, "timer");
+    check();
+    const t = setInterval(check, 1000);
+    return () => clearInterval(t);
+  }, [anonOn, anonSess, toggleAnon]);
   const copyAnonLink = useCallback(async () => {
     const sp = spaceRef.current;
     if (!sp?.anon) return;
@@ -2225,14 +2249,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
                 <b className="ghost-title">You&apos;ve gone anonymous</b>
                 <span className="ghost-sub">Other users can&apos;t see your location, your name or your device. Files go through the encrypted cloud only.</span>
               </div>
-              {/* the sealed container: one frame, every edge closed, corner bolts and a seal line on each side */}
-              <div className="ghost-seal">
-                <i className="k tl" /><i className="k tr" /><i className="k bl" /><i className="k br" />
-                <span className="e t">Sealed · no location · no identity</span>
-                <span className="e r">Anonymous · cloud only</span>
-                <span className="e btm">Sealed · no location · no identity</span>
-                <span className="e l">Anonymous · cloud only</span>
-              </div>
+              {/* the sealed container: its edge is a ring of dots that runs down with the session's time */}
+              <AnonSeal sess={anonSess} />
             </div>
           )}
           {!work && !inArchive && !space && (anonNow ? (
@@ -2669,7 +2687,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           space={space?.anon ? space : null}
           saved={anonSaved}
           onClose={() => setPanel(null)}
-          onTurnOn={() => toggleAnon(true, true)}
+          onTurnOn={(m) => toggleAnon(true, true, m)}
           onTurnOff={() => toggleAnon(false)}
           onCreate={() => goAnonSpace()}
           onPick={(s) => (intoAnon(s), setPanel(null))}

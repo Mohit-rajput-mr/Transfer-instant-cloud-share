@@ -21,6 +21,8 @@ export interface Overview {
   exactSeen?: Exact[];
   /** where "Stay anonymous" was used: the IP's rough area, with the IPs (migration 020, admin only) */
   anon?: AnonPlace[];
+  /** every anonymous session, newest first (migration 021) */
+  anonSessions?: AnonSessionRec[];
   visitors: Pt[];
   points: (Pt & { k: "upload" | "download" })[];
   arcs: { a: number; b: number; c: number; d: number }[];
@@ -106,4 +108,23 @@ export interface AnonPlace {
   last: string;
   first: string;
   ips: string[] | null;
+}
+
+export interface AnonSessionRec {
+  alias: string;
+  min: number;
+  start: string;
+  ends: string;
+  ended: string | null;
+  /** exit: turned off; timer: ran out (or the tab was closed) */
+  reason: "exit" | "timer" | null;
+  tz: string | null;
+  /** minutes east of UTC */
+  offset: number | null;
+  ip: string | null;
+  cc: string | null;
+  city: string | null;
+  lat: number | null;
+  lon: number | null;
+  spaces: number;
 }

@@ -2,7 +2,7 @@
 import { useEffect, useRef } from "react";
 import maplibregl, { type GeoJSONSource, type Map as MLMap } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { Overview, Pt } from "./types";
+import type { AnonSessionRec, Overview, Pt } from "./types";
 
 export type Layer = "live" | "exact" | "exactSeen" | "anon" | "visitors" | "uploads" | "downloads" | "routes";
 
@@ -103,6 +103,21 @@ export type RouteLine = { a: number; b: number; c: number; d: number; n?: number
 
 // lucide "venetian-mask", for the anonymous pins
 const MASK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11c-1.5 0-2.5.5-3 2"/><path d="M4 6a2 2 0 0 0-2 2v4a5 5 0 0 0 5 5 8 8 0 0 1 5 2 8 8 0 0 1 5-2 5 5 0 0 0 5-5V8a2 2 0 0 0-2-2h-3a8 8 0 0 0-5 2 8 8 0 0 0-5-2z"/><path d="M6 11c1.5 0 2.5.5 3 2"/></svg>';
+/** one anonymous session: alias, start → end in UTC and in the device's own time zone, how it ended */
+const hm = (iso: string, tz?: string | null) => {
+  try {
+    return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: tz || "UTC" });
+  } catch {
+    return new Date(iso).toISOString().slice(11, 16);
+  }
+};
+function sessionRow(x: AnonSessionRec) {
+  const end = x.ended ?? (Date.parse(x.ends) < Date.now() ? x.ends : null);
+  const how = !end ? "live" : x.reason === "exit" ? "exited" : "burnt (timer)";
+  const day = new Date(x.start).toISOString().slice(0, 10);
+  return `<div class="gp-sess"><b>${esc(x.alias)}</b> ${x.min} min · ${how}<br/><span>${day} · ${hm(x.start)}–${end ? hm(end) : "now"} UTC` +
+    (x.tz ? ` · ${hm(x.start, x.tz)}–${end ? hm(end, x.tz) : "now"} ${esc(x.tz)}` : "") + `${x.ip ? ` · IP ${esc(x.ip)}` : ""}</span></div>`;
+}
 const esc = (v: unknown) => String(v ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const same = (r: RouteLine) => Math.abs(r.a - r.c) < 0.05 && Math.abs(r.b - r.d) < 0.05;
 
@@ -135,6 +150,7 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
     const inN = lines.filter((r) => !same(r) && near({ lat: r.c, lon: r.d })).reduce((t, r) => t + (r.n ?? 1), 0);
     const gps = (d?.exactSeen ?? []).filter(near);
     const ghosts = (d?.anon ?? []).filter(near);
+    const sessions = (d?.anonSessions ?? []).filter((x) => x.lat != null && x.lon != null && near({ lat: x.lat, lon: x.lon })).slice(0, 6);
     const any = [...(d?.visitors ?? []), ...pts, ...(d?.live ?? []), ...gps, ...ghosts].find((p) => near(p) && (p.city || p.cc));
     const where = any ? [any.city, any.cc].filter(Boolean).join(", ") : "";
     const row = (n: number, one: string, many = one + "s") => (n ? `<div><b>${n}</b> ${n === 1 ? one : many}</div>` : "");
@@ -148,7 +164,8 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
       row(sum(d?.visitors), "device") +
       row(gps.length, "device with GPS", "devices with GPS") +
       row(ghosts.reduce((t, p) => t + p.n, 0), "anonymous device", "anonymous devices") +
-      (ghosts.some((p) => p.ips?.length) ? `<div><span>IP ${ghosts.flatMap((p) => p.ips ?? []).slice(0, 8).map(esc).join(", ")}</span></div>` : "");
+      (ghosts.some((p) => p.ips?.length) ? `<div><span>IP ${ghosts.flatMap((p) => p.ips ?? []).slice(0, 8).map(esc).join(", ")}</span></div>` : "") +
+      sessions.map(sessionRow).join("");
     return [
       head ? `<div>${esc(head)}</div>` : "",
       `<span>${esc(where) || "here"} · ${lat.toFixed(2)}, ${lon.toFixed(2)}</span>`,

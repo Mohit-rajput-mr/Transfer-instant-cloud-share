@@ -139,3 +139,10 @@ G. Earth button: owner rejected zoom-out→Earth; button kept. If owner says rem
 - Shared (both looks): Filter dropdown (`KindFilter`: scope + file type), archive = room (`ArchiveRoom`, `ArchiveRestore`, `inArchive` in Void), wired files placed beside their task (`near` in lib/map.ts), room band fit, single-click preview on cards, wheel scrolls page when the map is empty.
 - Classic header: one row; Public void is a blinking badge on the void; search + plus open Spaces (`start: ":search" | ":create"`); Chakra Petch is the classic sans.
 - /upgrade: plans page (Free / Pro / Business, "coming soon", early access by email). /work: glass layer, one Upload button with a fan, Orbit emblem logo.
+
+## Pending deploy (2026-10-18)
+- `claude/work` @ `a85ed53` merged into festive-keller and deployed (connector permission restored).
+  Deploy it to production first thing (project `orbit`, team `team_8pncmJWWU3ghEdA5XXAqbAIj`).
+- It carries: anonymous sessions 5-30 min (migration 021, applied), dot-ring countdown on the sealed edge, admin
+  "Anonymous" table + globe popups, incognito buttons / no overlap, last-GPS-seen pins pink with a green ring.
+- Still open in Supabase: `orbit_session_forget` and `orbit_reap_anon` from migration 020 (the SQL tool timed out on them).

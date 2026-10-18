@@ -826,3 +826,12 @@ html[data-ui="work"][data-theme="light"] .tb-route .tr-presets button:not(.tr-cu
 html[data-ui="work"][data-theme="light"] .tb-route :is(.tr-head .mono, .tr-hint, .tr-presets > .mono.dim){color:var(--w-text-3)}
 html[data-ui="work"][data-theme="light"] .tb-route .tr-go button{color:var(--w-text-2)}
 html[data-ui="work"][data-theme="light"] .tb-route .tr-go .tr-cancel{color:#e53935}
+/* anonymous in /work: the hint never sits on the incognito message; Upload in incognito charcoal */
+html[data-ui="work"][data-anon] .w-hint { display: none; }
+html[data-ui="work"][data-anon] .w-dock .w-primary, html[data-ui="work"][data-anon] .w-dock .w-up {
+  background: rgba(32,33,36,0.85) !important; background-image: none !important; color: #e8eaed !important;
+  border: 1px dashed rgba(232,234,237,0.38) !important; box-shadow: 0 10px 28px -12px rgba(0,0,0,0.7) !important; }
+html[data-ui="work"][data-anon][data-theme="light"] .w-dock .w-primary, html[data-ui="work"][data-anon][data-theme="light"] .w-dock .w-up {
+  background: rgba(60,64,67,0.9) !important; }
+html[data-ui="work"] .ghost-seal .e .seal-clock { color: var(--dot) !important; }
+html[data-ui="work"] .anon-time .pill.on { background: var(--w-text); color: var(--w-canvas); }

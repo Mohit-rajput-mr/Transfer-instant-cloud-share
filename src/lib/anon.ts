@@ -8,6 +8,18 @@ const KEY = "orbit:anon"; // "1" while the switch is on (localStorage)
 const SEEN = "orbit:anon-seen"; // the explainer was shown once (localStorage)
 const TAB = "orbit:anon-tab"; // this tab's throwaway id (sessionStorage)
 const EVT = "orbit:anon";
+const SESS = "orbit:anon-sess"; // the running session: { id, start, ends, min } (localStorage, gone when it burns)
+
+/** one anonymous session: picked for 5 to 30 minutes, then it burns (lib/anon.ts endAnon in Void) */
+export interface AnonSession {
+  /** random, secret: the server files the session's record and its spaces under it */
+  id: string;
+  start: number;
+  ends: number;
+  min: number;
+}
+export const ANON_MINUTES = [5, 10, 15, 20, 30] as const;
+export const aliasOf = (id: string) => `Anon-${id.replace(/-/g, "").slice(0, 4).toUpperCase()}`;
 
 const lsGet = (k: string) => {
   try {
@@ -24,21 +36,44 @@ const lsSet = (k: string, v: string | null) => {
 };
 
 let on: boolean = typeof window !== "undefined" && lsGet(KEY) === "1";
+const readSess = (): AnonSession | null => {
+  try {
+    const v = JSON.parse(lsGet(SESS) || "null") as AnonSession | null;
+    return v && typeof v.id === "string" && v.ends > 0 ? v : null;
+  } catch {
+    return null;
+  }
+};
+let sess: AnonSession | null = on ? readSess() : null;
 let scoped: string | null = null; // anonId of the active anonymous space (lib/space.ts setActiveSpace)
 let mem: string | null = null; // fallback when sessionStorage is blocked
 
 const emit = () => {
-  snap = { on, now: on || !!scoped };
+  snap = { on, now: on || !!scoped, sess };
   if (typeof window !== "undefined") window.dispatchEvent(new Event(EVT));
 };
-let snap = { on, now: on || !!scoped };
+let snap: AnonSnap = { on, now: on || !!scoped, sess };
+type AnonSnap = { on: boolean; now: boolean; sess: AnonSession | null };
 
 export const anonSwitch = () => on;
 export const isAnon = () => on || !!scoped;
 
-export function setAnon(v: boolean) {
+export const anonSession = () => sess;
+
+/** on: starts a session of `min` minutes (clamped to 5..30); off: the session is over */
+export function setAnon(v: boolean, min = 30) {
   on = v;
   lsSet(KEY, v ? "1" : null);
+  if (v) {
+    const m = Math.max(5, Math.min(30, Math.round(min)));
+    const start = Date.now();
+    sess = { id: newAnonId(), start, ends: start + m * 60_000, min: m };
+    lsSet(SESS, JSON.stringify(sess));
+    lsSet(LAST, String(m));
+  } else {
+    sess = null;
+    lsSet(SESS, null);
+  }
   if (!v) {
     try {
       sessionStorage.removeItem(TAB);
@@ -71,15 +106,22 @@ export function anonId(): string {
   }
 }
 
+const LAST = "orbit:anon-min"; // the length picked last time (the picker starts there)
+export const lastMinutes = () => {
+  const n = Number(lsGet(LAST));
+  return (ANON_MINUTES as readonly number[]).includes(n) ? n : 30;
+};
+
 export const anonSeen = () => lsGet(SEEN) === "1";
 export const markAnonSeen = () => lsSet(SEEN, "1");
 
 const subscribe = (f: () => void) => {
   // other tabs follow at once
   const st = (e: StorageEvent) => {
-    if (e.key !== KEY) return;
-    on = e.newValue === "1";
-    snap = { on, now: on || !!scoped };
+    if (e.key !== KEY && e.key !== SESS) return;
+    on = lsGet(KEY) === "1";
+    sess = on ? readSess() : null;
+    snap = { on, now: on || !!scoped, sess };
     f();
   };
   window.addEventListener(EVT, f);
@@ -89,9 +131,9 @@ const subscribe = (f: () => void) => {
     window.removeEventListener("storage", st);
   };
 };
-const SERVER = { on: false, now: false };
+const SERVER: AnonSnap = { on: false, now: false, sess: null };
 
-/** on: the switch; now: effective anon (switch or an anonymous space) */
-export function useAnon(): { on: boolean; now: boolean } {
+/** on: the switch; now: effective anon (switch or an anonymous space); sess: the running session (switch only) */
+export function useAnon(): AnonSnap {
   return useSyncExternalStore(subscribe, () => snap, () => SERVER);
 }

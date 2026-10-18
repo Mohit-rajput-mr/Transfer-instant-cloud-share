@@ -155,6 +155,7 @@ Use them in every film where a feature is shown.
 ## Films so far
 - `password-film/`: suspense science film — a hacker steals every password, they're useless: hashing = one-way blender, salt, slow blending → Orbi (code never leaves phone, 310,000×, hash of the proof, 12 tries, 30 min). First film on the kit (**latest**)
 - `work-desk-film/`: Orbi Work desktop demo — real /work recordings on a laptop mockup, camera zooms per feature (`shots.js`), 9:16 (use this format for workspace films)
+- `ghost-film/`: educational "How hackers stay invisible" (IP trail, fingerprint, VPN, Tor onion, mistakes) ending on Orbi privacy (**latest**)
 - `work-film/`: Orbi Work office story on the real /work page (notes, @assign, Doing→Review→Done, private space, office dance ending)
 - `qr-film/`: educational "How a QR code works" with a real decodable code, ends on Orbi's per-file QR
 - `party-film/`: AirDrop vs Orbi at a house party, code "disco"; deeper layers (same-Wi-Fi fingerprint → Nearby, live room note, 3 parts up + resend + 4 streams down, 310,000× key, 12 tries, 30-min burn)

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { anonNet, clean, newId } from "@/lib/server";
+import { anonNet, anonSessKey, clean, newId, rpc, validSid } from "@/lib/server";
 import { addMember, anonAlias, chanFor, cleanHandle, createSpace, devHash, search, slugify, tokenFor, validSlug } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 const anonMade = new Map<string, number>();
 
 /** an anonymous space: random slug and title, private, its creator joins under an alias (no handle asked) */
-async function createAnon(req: NextRequest, b: { deviceId?: unknown; pass?: unknown }) {
+async function createAnon(req: NextRequest, b: { deviceId?: unknown; pass?: unknown; sid?: unknown }) {
   const deviceId = clean(b.deviceId, 40);
   const pass = typeof b.pass === "string" ? b.pass : "";
   if (!deviceId || !/^[a-z0-9]{12,32}$/.test(pass)) return NextResponse.json({ error: "bad request" }, { status: 400 });
@@ -34,6 +34,8 @@ async function createAnon(req: NextRequest, b: { deviceId?: unknown; pass?: unkn
   const dh = devHash(deviceId);
   const handle = anonAlias(dh, []);
   await addMember(meta.slug, dh, handle);
+  // the space belongs to the anonymous session that made it: it burns with it (migration 021)
+  if (validSid(b.sid)) await rpc("orbit_anon_session_space", { p_key: anonSessKey(b.sid), p_slug: meta.slug }).catch(() => {});
   return NextResponse.json({ slug: meta.slug, title: meta.title, priv: true, anon: true, handle, token: tokenFor(meta.slug, dh), chan: chanFor(meta.slug), owner });
 }
 

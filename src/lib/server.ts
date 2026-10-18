@@ -59,6 +59,9 @@ export const anonEventId = (id: string, device: string) => "a" + sha256(`${SECRE
 export const anonReportId = (id: string, req: NextRequest) => "r" + sha256(`${SECRET}:rep:${new Date().toISOString().slice(0, 10)}:${id}:${ipOf(req)}`).slice(0, 15);
 /** anonymous heartbeats are counted under this, never the id the browser sent */
 export const anonOnlineId = (id: string) => sha256(`${SECRET}:online:${id}`).slice(0, 24);
+/** where an anonymous session's record is filed: the client only ever holds the raw (secret) session id */
+export const anonSessKey = (sid: string) => sha256(`${SECRET}:anon-sess:${sid}`).slice(0, 32);
+export const validSid = (v: unknown): v is string => typeof v === "string" && /^[0-9a-f-]{36}$/.test(v);
 /** where anonymous space rows are filed: never a geohash (it has a, o), so never in a public list */
 export const ANON_AREA = "anon";
 
@@ -125,6 +128,8 @@ export async function reap(force = false) {
     const gone = await rpc<string[]>("orbit_reap", {});
     // anonymous spaces, their notes and tasks, stale anonymous heartbeats (migration 020)
     rpc("orbit_reap_anon", {}).catch(() => {});
+    // anonymous sessions whose time ran out with nobody there (tab closed): they burn now (migration 021)
+    rpc("orbit_anon_sessions_sweep", {}).catch(() => {});
     await removeBlobs(gone ?? []);
     return gone?.length ?? 0;
   } catch (e) {
