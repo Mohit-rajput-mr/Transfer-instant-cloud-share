@@ -1,0 +1,114 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Right now, your phone knows where you are, almost to the metre. And it has never said a single word to the satellites that told it.",
+   "dur": 8.909,
+   "at": 0.35
+  },
+  {
+   "key": "why",
+   "text": "So how does it find you? It's a race against time. And at the very end, Albert Einstein shows up.",
+   "dur": 5.368,
+   "at": 9.71
+  },
+  {
+   "key": "sats",
+   "text": "About thirty GPS satellites circle the Earth, twenty thousand kilometres up. Every one of them carries atomic clocks.",
+   "dur": 7.139,
+   "at": 15.48
+  },
+  {
+   "key": "shout",
+   "text": "And all day long, they shout just two things. What time it is, and exactly where they are.",
+   "dur": 6.183,
+   "at": 22.92
+  },
+  {
+   "key": "listen",
+   "text": "Your phone just listens. The signal flies at the speed of light, but it still arrives a tiny bit late.",
+   "dur": 6.328,
+   "at": 29.45
+  },
+  {
+   "key": "dist",
+   "text": "And that delay is a distance. Late by this much? Then that satellite is exactly this far away.",
+   "dur": 7.48,
+   "at": 36.08
+  },
+  {
+   "key": "bubble",
+   "text": "So you're somewhere on a giant bubble around it. A second satellite, and the bubbles cross in a ring. A third, and the ring shrinks to just two points.",
+   "dur": 8.483,
+   "at": 43.91
+  },
+  {
+   "key": "space",
+   "text": "One of them is floating out in space. So, it's the other one. That's you.",
+   "dur": 5.031,
+   "at": 52.69
+  },
+  {
+   "key": "catch",
+   "text": "But there's a catch. Your phone's clock is cheap. Off by one millionth of a second, and you're three hundred metres off.",
+   "dur": 6.285,
+   "at": 58.12
+  },
+  {
+   "key": "fourth",
+   "text": "So it listens to a fourth satellite, just to fix its own clock.",
+   "dur": 3.661,
+   "at": 64.71
+  },
+  {
+   "key": "crazy",
+   "text": "And now the crazy part. Up there, time itself runs faster.",
+   "dur": 3.9,
+   "at": 68.82
+  },
+  {
+   "key": "gain",
+   "text": "Gravity is weaker, so their clocks tick faster. Their speed slows them a little. Add it up, and they gain thirty eight millionths of a second every day.",
+   "dur": 8.461,
+   "at": 73.07
+  },
+  {
+   "key": "drift",
+   "text": "Sounds like nothing? Leave it alone, and your map would drift about ten kilometres every single day.",
+   "dur": 5.347,
+   "at": 81.83
+  },
+  {
+   "key": "fix",
+   "text": "So engineers tune those clocks to tick slightly slow before launch. Einstein's relativity, fixing your map, every time you open it.",
+   "dur": 8.824,
+   "at": 87.52
+  },
+  {
+   "key": "reveal",
+   "text": "Your phone never asked the sky where you are. It just listened to clocks.",
+   "dur": 4.429,
+   "at": 96.8
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer uses your location the gentle way. Your phone turns it into a rough area, tens of kilometres wide.",
+   "dur": 7.587,
+   "at": 101.73
+  },
+  {
+   "key": "orbi2",
+   "text": "Other people only ever see that rough area, so files pop up on screens near you. In anonymous mode, no location is shown at all. And thirty minutes later, the files are gone.",
+   "dur": 11.277,
+   "at": 109.61
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. Now you know how your phone finds you.",
+   "dur": 3.491,
+   "at": 121.29
+  }
+ ],
+ "duration": 126.58
+}
