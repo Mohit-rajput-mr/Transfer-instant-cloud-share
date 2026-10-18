@@ -135,7 +135,8 @@ Structure that works:
    Commit, push, and send the MP4.
 
 ## Films so far
-- `work-film/`: Orbi Work office story on the real /work page (notes, @assign, Doing→Review→Done, private space, office dance ending) (**latest**)
+- `ghost-film/`: educational "How hackers stay invisible" (IP trail, fingerprint, VPN, Tor onion, mistakes) ending on Orbi privacy (**latest**)
+- `work-film/`: Orbi Work office story on the real /work page (notes, @assign, Doing→Review→Done, private space, office dance ending)
 - `qr-film/`: educational "How a QR code works" with a real decodable code, ends on Orbi's per-file QR
 - `party-film/`: AirDrop vs Orbi at a house party, code "disco"; deeper layers (same-Wi-Fi fingerprint → Nearby, live room note, 3 parts up + resend + 4 streams down, 310,000× key, 12 tries, 30-min burn)
 - `concert-film/`: arena encore, code "rock", the clip as a song (guitar case → notes flying at once → backstage door → stadium light wave → song plays → stage goes dark), Chatterbox voice with feeling
