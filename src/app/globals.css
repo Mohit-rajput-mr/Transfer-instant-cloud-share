@@ -596,8 +596,10 @@ html.card-open .made { opacity: 0; pointer-events: none; }
 .hq .maplibregl-ctrl-attrib-button { filter: invert(1); }
 .gdot.live { margin: 0; }
 .gdot.exact { width: 11px; height: 11px; margin: 0; background: #ff4fd8; border: 2px solid #fff; z-index: 3; }
-/* last GPS seen: the same pink as the live spot, full strength, with a green ring (recent people, now offline) */
-.gdot.seen { width: 11px; height: 11px; margin: 0; background: #ff4fd8; border: 2px solid #3dff8c; z-index: 2; }
+/* last GPS seen: dark reddish pink with a dark green ring, black edge and a pulsing glow so it shows on any map colour */
+.gdot.seen { width: 16px; height: 16px; margin: 0; background: #c2124f; border: 3px solid #0d7a34; z-index: 4;
+  box-shadow: 0 0 0 1.5px #000, 0 0 10px 3px rgba(194,18,79,0.75); animation: seenPulse 1.6s ease-in-out infinite; }
+@keyframes seenPulse { 50% { box-shadow: 0 0 0 1.5px #000, 0 0 16px 7px rgba(194,18,79,0.45); } }
 .gdot.anon { width: 20px; height: 20px; margin: 0; display: grid; place-items: center; border-radius: 50%; background: rgba(12,12,12,0.85); color: #d8d8d8; border: 1px solid rgba(255,255,255,0.45); z-index: 3; }
 .gdot.anon svg { width: 13px; height: 13px; display: block; pointer-events: none; }
 .gdot.anon.on { color: #fff; border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,0.15); }
