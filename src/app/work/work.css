@@ -785,3 +785,9 @@ html[data-ui="work"][data-theme="light"] .ghost-layer { background: radial-gradi
 html[data-ui="work"][data-theme="light"] .ghost-layer::before { mix-blend-mode: multiply; opacity: 0.08; }
 html[data-ui="work"][data-anon] body { background: var(--w-canvas); }
 html[data-ui="work"] .sd-anon[aria-checked="true"] .sd-switch i { background: var(--w-canvas); }
+
+html[data-ui="work"] .ghost-seal { inset: 14px 14px calc(76px + var(--safe-b)) 14px; border-color: color-mix(in srgb, var(--w-text) 16%, transparent); }
+html[data-ui="work"] .ghost-seal .e { background: var(--w-canvas); color: color-mix(in srgb, var(--w-text) 38%, transparent); font-family: var(--w-mono); }
+html[data-ui="work"] .ghost-seal .k { border-color: color-mix(in srgb, var(--w-text) 40%, transparent); }
+html[data-ui="work"] .ghost-seal .k::after { background: color-mix(in srgb, var(--w-text) 45%, transparent); }
+html[data-ui="work"][data-theme="light"] .ghost-seal { box-shadow: inset 0 0 0 6px rgba(0,0,0,0.04), inset 0 0 70px rgba(0,0,0,0.08); }

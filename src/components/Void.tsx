@@ -29,6 +29,7 @@ const release = (id: string) => {
 import { downloading } from "@/lib/downloads";
 import { warm } from "@/lib/peek";
 import { anonLink, anonTitle, createAnonSpace, createSpace, joinAnonSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
+import { BsIncognito } from "react-icons/bs";
 import { LuFlag, LuMessageCircle, LuMapPin, LuMapPinOff, LuMenu, LuPalette, LuSearch, LuPlus, LuVenetianMask, LuX } from "react-icons/lu";
 import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange } from "./BubbleBoard";
@@ -2216,8 +2217,16 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           {/* anonymous: the void goes dark and cold (vignette, grain, scan lines, a big mask), so nobody forgets */}
           {anonNow && !inArchive && (
             <div className="ghost-layer" aria-hidden>
-              <LuVenetianMask className="ghost-mask" />
+              <BsIncognito className="ghost-mask" />
               <span className="ghost-word">Anonymous</span>
+              {/* the sealed container: one frame, every edge closed, corner bolts and a seal line on each side */}
+              <div className="ghost-seal">
+                <i className="k tl" /><i className="k tr" /><i className="k bl" /><i className="k br" />
+                <span className="e t">Sealed · no location · no identity</span>
+                <span className="e r">Anonymous · cloud only</span>
+                <span className="e btm">Sealed · no location · no identity</span>
+                <span className="e l">Anonymous · cloud only</span>
+              </div>
             </div>
           )}
           {!work && !inArchive && !space && (anonNow ? (
