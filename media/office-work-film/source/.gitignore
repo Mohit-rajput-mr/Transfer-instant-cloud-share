@@ -8,3 +8,6 @@ enc_log.txt
 rec/
 rec_files/
 vo_log.txt
+synth_log.txt
+finish.txt
+log_*.txt

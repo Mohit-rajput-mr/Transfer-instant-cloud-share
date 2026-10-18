@@ -132,6 +132,11 @@ Structure that works:
    Commit, push, and send the MP4.
 
 
+## Site simulations (owner 2026-10-18)
+Show the real app being used: `office-work-film/source/record.cjs` drives the real UI (Next build + Playwright, stateful API mocks,
+a tap circle, letter-by-letter typing) into frame sequences, played as full-screen phone inserts (`sim()` in film.html).
+Use them in every film where a feature is shown.
+
 ## Format 2: science films ("how everyday tech works", then why Orbi) — owner 2026-10-18
 - Pick something people use daily but don't understand (sending a photo, Wi-Fi, GPS, QR codes, phone batteries, touch
   screens, passwords, cloud storage…). Explain it with big, simple, low-poly visuals, in layers, with true numbers only.
@@ -143,8 +148,9 @@ Structure that works:
   why your phone storage fills up · how "the cloud" is just someone's computer.
 
 ## Films so far
-- `packets-film/`: science film, what happens when you send a photo (packets, routers, sea cables), then why Orbi (**latest**)
-- `concert-film/`: arena encore, code "rock", the clip as a song (guitar case → notes flying at once → backstage door → stadium light wave → song plays → stage goes dark), Chatterbox voice with feeling (**latest**)
+- `office-work-film/`: work mode (Spaces, tasks with routes, wired files, log, cancel) with **real site recordings** as phone inserts (`record.cjs`) (**latest**)
+- `packets-film/`: science film, what happens when you send a photo (packets, routers, sea cables), then why Orbi 
+- `concert-film/`: arena encore, code "rock", the clip as a song (guitar case → notes flying at once → backstage door → stadium light wave → song plays → stage goes dark), Chatterbox voice with feeling
 - `airport-film/`: arrivals gate, code "tram", a whole folder as luggage (suitcase → bags on belts → baggage hold → radar → carousel → shredder), low-poly men and women (MP4 rendered 2026-10-18, 79 s)
 - `wedding-film/`: wedding, passcode "cake", the photo's full journey (locked box → pieces → vault → ring → unlock → burn)
 - `gym-film/`: the gym, bench-press video (house style)
