@@ -3415,3 +3415,11 @@ html[data-anon] body { background: #050505; }
 .tr-up .tb-submit { margin: 0; height: 36px; }
 .tr-up .ghost { height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.18); color: #ddd; display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; }
 .tr-up .ghost svg { width: 13px; height: 13px; }
+/* the shrunk island (scrolled): only what fits — links, anonymous, location, Send. Filter, live count, style, search and
+   "+" come back when you scroll up (they overlapped the links before) */
+@media (min-width: 721px) {
+  .top.lg.compact .top-right > .kf, .top.lg.compact .top-right > .live, .top.lg.compact .top-right > .style-chip,
+  .top.lg.compact .top-right > .hd-ic[aria-label="Search spaces"], .top.lg.compact .top-right > .hd-ic[aria-label="Create a space"] { display: none; }
+  .top.lg.compact .top-row > * { min-width: 0; }
+  .top.lg.compact nav { overflow: hidden; white-space: nowrap; }
+}
