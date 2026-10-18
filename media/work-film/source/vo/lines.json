@@ -1,0 +1,90 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Monday, 9 a.m. Where's the deck?",
+   "dur": 2.618,
+   "at": 0.35
+  },
+  {
+   "key": "mess",
+   "text": "It's in a chat. No, an email. The ticket's in Jira, the comments are in WhatsApp, and the file wants a login.",
+   "dur": 6.415,
+   "at": 3.37
+  },
+  {
+   "key": "intern",
+   "text": "And the new guy? Still waiting for his invite.",
+   "dur": 2.999,
+   "at": 10.08
+  },
+  {
+   "key": "open",
+   "text": "So try this. Everyone opens Orbi Transfer /work. No app, no account, no invite.",
+   "dur": 5.594,
+   "at": 13.53
+  },
+  {
+   "key": "drop",
+   "text": "Drop the deck in, and it lands on every screen in the office, in about a second.",
+   "dur": 4.545,
+   "at": 19.43
+  },
+  {
+   "key": "wifi",
+   "text": "Same office Wi-Fi? Then it's under Nearby, so your team's stuff is right there.",
+   "dur": 4.404,
+   "at": 24.27
+  },
+  {
+   "key": "notes",
+   "text": "Need a quick word? Post a note. Everyone gets their own colour, and it's gone in 30 minutes. No group chat to scroll.",
+   "dur": 6.541,
+   "at": 28.98
+  },
+  {
+   "key": "task",
+   "text": "Now the work. Type a task, add @Leo, and it's his.",
+   "dur": 4.509,
+   "at": 35.82
+  },
+  {
+   "key": "route",
+   "text": "It moves step by step. Doing, Review, Done. And everyone sees the bar fill up.",
+   "dur": 5.372,
+   "at": 40.62
+  },
+  {
+   "key": "under",
+   "text": "Under the hood, every open screen keeps one live line to the room. A change rings through to everyone at once. Nothing to refresh.",
+   "dur": 8.691,
+   "at": 46.3
+  },
+  {
+   "key": "private",
+   "text": "Want it just for your team? Go private, and only your people get in.",
+   "dur": 4.224,
+   "at": 55.29
+  },
+  {
+   "key": "done",
+   "text": "And when the last task is done?",
+   "dur": 1.906,
+   "at": 59.91
+  },
+  {
+   "key": "dance",
+   "text": "The whole office loses it!",
+   "dur": 2.007,
+   "at": 62.07
+  },
+  {
+   "key": "end",
+   "text": "Orbi Work. Files, notes and tasks, instantly. orbitransfer.com/work.",
+   "dur": 5.366,
+   "at": 70.58
+  }
+ ],
+ "duration": 77.74
+}

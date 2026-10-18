@@ -1,0 +1,90 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know why people are using Orbi Transfer?",
+   "dur": 2.638,
+   "at": 0.35
+  },
+  {
+   "key": "scene",
+   "text": "It's a house party. Twenty people, and you just filmed the best moment of the night.",
+   "dur": 4.874,
+   "at": 3.44
+  },
+  {
+   "key": "want",
+   "text": "Everyone wants it. Right now!",
+   "dur": 2.694,
+   "at": 8.61
+  },
+  {
+   "key": "airdrop",
+   "text": "So you try AirDrop. And honestly? AirDrop is great, if everyone has an Apple device.",
+   "dur": 5.178,
+   "at": 11.66
+  },
+  {
+   "key": "fail",
+   "text": "But most Android phones don't show up. You switch to \u201cEveryone for 10 minutes\u201d, and tap people one by one. And the Windows laptop playing the music? Never appears.",
+   "dur": 9.196,
+   "at": 17.13
+  },
+  {
+   "key": "send",
+   "text": "With Orbi, you open the website, drop the video, set a code. One send.",
+   "dur": 4.647,
+   "at": 26.68
+  },
+  {
+   "key": "pop",
+   "text": "And every screen at the party gets it at once. iPhone, Android, laptop. No app, no login!",
+   "dur": 6.436,
+   "at": 31.63
+  },
+  {
+   "key": "how",
+   "text": "So how does it know who's at the party?",
+   "dur": 2.093,
+   "at": 38.66
+  },
+  {
+   "key": "wifi",
+   "text": "Everyone here is on the same Wi-Fi. Orbi sees a scrambled fingerprint of that network, never your address, and marks your file Nearby for exactly those phones.",
+   "dur": 7.955,
+   "at": 41.26
+  },
+  {
+   "key": "room",
+   "text": "Every open Orbi page keeps a tiny live line to a room. You send, and a little note, not the file, rings through it. Every screen around you lights up in about a second.",
+   "dur": 9.593,
+   "at": 49.56
+  },
+  {
+   "key": "speed",
+   "text": "Then the speed. Your video is cut into parts, and three fly at once. If the Wi-Fi drops, only the missing parts go again. And your friends pull four streams at once.",
+   "dur": 9.935,
+   "at": 59.5
+  },
+  {
+   "key": "lock",
+   "text": "And your code? Your phone stirs it over three hundred thousand times into a key. Guessing is painfully slow, and 12 wrong tries lock the file.",
+   "dur": 10.057,
+   "at": 69.79
+  },
+  {
+   "key": "burn",
+   "text": "Thirty minutes later, it's gone. No account. No trace.",
+   "dur": 3.483,
+   "at": 80.2
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. Try it at your next party.",
+   "dur": 3.449,
+   "at": 84.08
+  }
+ ],
+ "duration": 89.33
+}
