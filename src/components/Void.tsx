@@ -359,6 +359,11 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // "Stay anonymous": on = the switch, now = anonymous here (the switch, or an anonymous space). Drawing only:
   // everything that sends something checks isAnon() at that moment
   const { on: anonOn, now: anonNow } = useAnon();
+  // the whole page knows (html[data-anon]): the ghost look in globals.css / work.css
+  useEffect(() => {
+    if (anonNow) document.documentElement.dataset.anon = "1";
+    else delete document.documentElement.dataset.anon;
+  }, [anonNow]);
   // something of mine just went up: the map shows everything again so it is in sight (and if this device was
   // looking at another area, it goes back to its own, where the thing landed)
   const [fitAll, setFitAllN] = useState(0);
@@ -729,12 +734,12 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     // an anonymous link carries its code and key after the # (never sent to a server): read, then wiped from the
     // address bar at once
     const inv = new URLSearchParams(window.location.search).get("space");
-    const anonInv = inv && /^anon-[a-z0-9]{8}$/.test(inv) ? inv : null;
-    let frag: URLSearchParams | null = null;
-    if (anonInv) {
-      frag = new URLSearchParams(window.location.hash.slice(1));
-      window.history.replaceState(null, "", window.location.pathname);
-    }
+    // an anonymous link is told apart by what it carries after the # (a named space may have an anon- slug from
+    // before the prefix was reserved); a saved anonymous space is also known by its link without it
+    const frag = new URLSearchParams(window.location.hash.slice(1));
+    const anonLike = !!inv && /^anon-[a-z0-9]{8}$/.test(inv);
+    let anonInv = anonLike && (frag.has("j") || frag.has("k")) ? inv : null;
+    if (anonInv) window.history.replaceState(null, "", window.location.pathname);
     (async () => {
       const slug = await lastSpace().catch(() => null);
       const list = await savedSpaces().catch(() => [] as SpaceSession[]);
@@ -742,6 +747,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       // the switch is on: a named space (it knows your name) is not walked back into
       if (s && anonSwitch() && !s.anon) s = null;
       // an anonymous link to a space this browser is already in: straight in
+      if (!anonInv && anonLike && list.some((x) => x.slug === inv && x.anon)) anonInv = inv;
       const have = anonInv ? list.find((x) => x.slug === anonInv) ?? null : null;
       if (have) {
         s = have;
@@ -755,7 +761,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       setSpaceReady(true);
       if (anonInv) {
         if (have) return;
-        const code = frag?.get("j") ?? "", key = frag?.get("k") ?? "";
+        const code = frag.get("j") ?? "", key = frag.get("k") ?? "";
         if (/^[a-z0-9]{12}$/.test(code) && /^[A-Za-z0-9_-]{22}$/.test(key)) setPanel({ kind: "anon-join", slug: anonInv, code, key });
         else toast("This anonymous link is incomplete. Ask for the whole link");
         return;
@@ -787,6 +793,9 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     toast(`You are in ${s.title}`);
   }, [switchSpace, toast]);
   removedRef.current = (sp) => {
+    // anonymous (maybe switched on in another tab): a named space refuses the throwaway id. Only step out of it here;
+    // it stays saved for when the switch is off again
+    if (isAnon() && !sp.anon) return switchSpace(null);
     forget(sp.slug);
     switchSpace(null);
     toast(`You were removed from ${sp.title}`);
@@ -857,7 +866,10 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // anonymous spaces this browser is in (the cards offer to send into one again)
   const [anonSaved, setAnonSaved] = useState<SpaceSession[]>([]);
   const loadAnonSaved = useCallback(() => savedSpaces().then((l) => setAnonSaved(l.filter((x) => x.anon))).catch(() => {}), []);
+  // set while this tab flips the switch itself, so the cross-tab follower below leaves it alone
+  const localToggle = useRef<boolean | null>(null);
   const toggleAnon = useCallback((v: boolean, fromIntro = false) => {
+    localToggle.current = v;
     if (v) {
       const lasting = persistentId();
       // first: no normal heartbeat leaves after this point
@@ -897,6 +909,43 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       void sendPulse();
     }
   }, [switchSpace, toast, sendPulse]);
+  // the switch flipped in another tab of this browser: apply the local part here too (the other tab already sent
+  // the forget pulse). Named spaces are stepped out of, never forgotten; GPS, net and the GPS area are dropped at once
+  const prevAnonOn = useRef(anonOn);
+  useEffect(() => {
+    if (prevAnonOn.current === anonOn) return;
+    prevAnonOn.current = anonOn;
+    if (localToggle.current === anonOn) {
+      localToggle.current = null;
+      return;
+    }
+    localToggle.current = null;
+    if (anonOn) {
+      const sp = spaceRef.current;
+      if (sp && !sp.anon) {
+        switchSpace(null);
+        toast(`Anonymous on. You left ${sp.title}: it shows your name`);
+      }
+      forgetFix();
+      setGps(false);
+      setGeoAsk(false);
+      setGeoFail(null);
+      setEarth(false);
+      setPicking(false);
+      setNet(null);
+      inviteKeyRef.current = "";
+      setInvite(null);
+      setScope((sc) => (sc === "near" ? "all" : sc));
+      homeRef.current = areaRef.current = "";
+      setHome("");
+      setArea("");
+    } else {
+      setAnonCell("");
+      setHome(where()?.area ?? homeRef.current);
+      setPanel((p) => (p?.kind === "anon" ? null : p));
+    }
+    void sendPulse();
+  }, [anonOn, switchSpace, toast, sendPulse]);
   /** every way of turning it on: the first time, the explainer (its button turns it on) */
   const requestAnon = useCallback(() => {
     if (!anonSeen()) setPanel({ kind: "anon", mode: "intro" });
@@ -2164,6 +2213,13 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           style={(flow ? { "--n": rows } : { "--k-auto": grid ? grid.k : map ? 1 : crowdScale(visible.length), ...(grid ? { "--cell": `${grid.cell}px` } : null) }) as unknown as React.CSSProperties}
         >
           {inArchive && <ArchiveRoom onExit={() => setInArchive(false)} />}
+          {/* anonymous: the void goes dark and cold (vignette, grain, scan lines, a big mask), so nobody forgets */}
+          {anonNow && !inArchive && (
+            <div className="ghost-layer" aria-hidden>
+              <LuVenetianMask className="ghost-mask" />
+              <span className="ghost-word">Anonymous</span>
+            </div>
+          )}
           {!work && !inArchive && !space && (anonNow ? (
             <button className="where-badge anon" onClick={() => setPanel({ kind: "anon", mode: "status" })} aria-label="You are anonymous in the public void: you can look and download. Sending opens an anonymous space"><i aria-hidden /><LuVenetianMask aria-hidden />Anonymous here: look only</button>
           ) : (

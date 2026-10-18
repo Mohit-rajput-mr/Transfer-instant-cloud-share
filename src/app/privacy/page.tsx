@@ -25,7 +25,7 @@ export default function Privacy() {
       <h2>What we keep, briefly</h2>
       <ul>
         <li>The name you give an object, its file name, size and type. These are visible to anyone on the site while it floats.</li>
-        <li>A one-way hash of your network address, used for the Nearby tag and upload limits. Your IP address itself is not stored.</li>
+        <li>A one-way hash of your network address, used for the Nearby tag and upload limits. Your IP address itself is not stored, except in anonymous mode (below).</li>
         <li>A random device ID and a browser/OS label (e.g. &quot;Chrome · Android&quot;) in your browser, so senders can see opens and downloads.</li>
         <li>Object data is deleted together with the object.</li>
         <li><b>Spaces</b>: a space&apos;s name, whether it is private, a keyed hash of its passcode, the names members chose and a keyed hash of each member&apos;s device ID, kept encrypted until the space is removed. Your saved spaces live in your own browser (IndexedDB).</li>
@@ -33,7 +33,7 @@ export default function Privacy() {
       <h2>Usage statistics</h2>
       <p>To keep the service running we keep anonymous usage stats: your approximate location (country, city, coordinates rounded to about 1 km, derived by our host from your connection; if you share your location in the browser, your exact position instead, kept as your most recent location and shown only on Orbit&apos;s own internal live map, never to other people), browser, OS, device type, and when you visit, upload or download. Detailed events are kept for 30 days; daily totals per country, city, device type and route (city to city) are kept longer. This is never linked to your name, never sold and never shared.</p>
       <h2>Anonymous mode</h2>
-      <p>Turn on <b>Stay anonymous</b> (the mask at the top) to send without anyone knowing who you are or where you are. Orbi has no account, no name, no phone and no email, ever. Anonymous sends go into an anonymous space: a private space with a random title, shared with one link. Its code and its key ride after the # in that link, which browsers never send to a server.</p>
+      <p>Turn on <b>Stay anonymous</b> (the mask at the top) to become a ghost: no location and no identity shown to other users. Orbi has no account, no name, no phone and no email, ever. While anonymous, Orbi keeps your IP address and its rough area (city), for abuse and legal requests; other users never see it. Anonymous sends go into an anonymous space: a private space with a random title, shared with one link. Its code and its key ride after the # in that link, which browsers never send to a server.</p>
       <AnonFacts />
       <p><b>What still happens</b></p>
       <AnonStillList />

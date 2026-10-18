@@ -38,7 +38,7 @@ export function randomHex(n: number) {
   return randomBytes(n).toString("hex");
 }
 
-const ipOf = (req: NextRequest) => req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "0";
+export const ipOf = (req: NextRequest) => req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "0";
 
 // Coarse "same network" fingerprint: salted hash of the public IP, never stored raw.
 export function netHash(req: NextRequest) {
@@ -101,7 +101,8 @@ export const areasParam = (v: string | null) => {
 
 export async function removeBlobs(urls: (string | null | undefined)[]) {
   // p2p:<id> objects may have an encrypted copy in R2 (deletes there are free; a missing one is fine)
-  const ids = urls.filter((u): u is string => !!u && u.startsWith("p2p:")).map((u) => u.slice(4));
+  // also "p2p/<id>": a row removed before finalize (an anonymous send uploads its cloud copy first) only has its pathname
+  const ids = urls.flatMap((u) => (u && (u.startsWith("p2p:") || u.startsWith("p2p/")) && validId(u.slice(4)) ? [u.slice(4)] : []));
   await removeObjects(ids.flatMap((id) => [objectKey(id), previewKey(id)])).catch(() => {});
   // and the parts of a big upload that never finished
   await Promise.all(ids.map((id) => abortAllUploads(objectKey(id)).catch(() => {})));

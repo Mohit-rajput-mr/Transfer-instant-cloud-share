@@ -74,7 +74,7 @@ export default function MobileMenu(props: {
               {/* a switch, not a link: it flips here and the menu stays (the first time, the explainer takes its place) */}
               <button className="sd-row lg-press sd-anon" role="switch" aria-checked={a.on} onClick={() => a.toggle(!a.on)}>
                 <span className="sd-ic"><LuVenetianMask /></span>
-                <span className="sd-txt"><b>Stay anonymous</b><small>{a.on ? "On · location off · no name · cloud only" : "no location · no name · cloud only"}</small></span>
+                <span className="sd-txt"><b>Stay anonymous</b><small>{a.on ? "On · no location · cloud only" : "no location · no name · cloud only"}</small></span>
                 <span className="sd-switch" aria-hidden><i /></span>
               </button>
               {a.now && (a.inSpace

@@ -595,6 +595,9 @@ html.card-open .made { opacity: 0; pointer-events: none; }
 .gdot.live { margin: 0; }
 .gdot.exact { width: 11px; height: 11px; margin: 0; background: #ff4fd8; border: 2px solid #fff; z-index: 3; }
 .gdot.seen { width: 9px; height: 9px; margin: 0; background: #a0498f; border: 1.5px solid rgba(255,255,255,0.7); z-index: 2; opacity: 0.85; }
+.gdot.anon { width: 20px; height: 20px; margin: 0; display: grid; place-items: center; border-radius: 50%; background: rgba(12,12,12,0.85); color: #d8d8d8; border: 1px solid rgba(255,255,255,0.45); z-index: 3; }
+.gdot.anon svg { width: 13px; height: 13px; display: block; pointer-events: none; }
+.gdot.anon.on { color: #fff; border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,0.15); }
 .gdot.exact::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 1.5px solid #ff4fd8; animation: gpulse 1.6s ease-out infinite; }
 
 /* ---------- send choices ---------- */
@@ -3247,38 +3250,65 @@ html[data-perf="low"] .where-badge, html[data-perf="low"] .where-badge i { anima
 @media (max-width: 720px) { .toast { bottom: calc(80px + var(--safe-b)); } }
 
 /* =====================================================================
-   "Stay anonymous" (lib/anon.ts, components/AnonCard.tsx): one violet mask, wherever it shows
+   "Stay anonymous" (lib/anon.ts, components/AnonCard.tsx): one white mask, wherever it shows (black / white / grey only)
    ===================================================================== */
-:root { --anon: #b9a6ff; }
+:root { --anon: #ececec; }
 .hd-ic.anon-chip:hover { color: var(--anon); }
-.anon-badge { height: 32px; display: inline-flex; align-items: center; gap: 7px; padding: 0 12px 0 10px; border-radius: 999px; border: 1px solid rgba(185,166,255,0.55); background: rgba(120,90,255,0.16); color: var(--anon); font-size: 12px; font-weight: 600; }
+.anon-badge { height: 32px; display: inline-flex; align-items: center; gap: 7px; padding: 0 12px 0 10px; border-radius: 999px; border: 0; background: rgba(255,255,255,0.16); color: var(--anon); font-size: 12px; font-weight: 600; }
 .anon-badge svg { width: 16px; height: 16px; display: block; }
-.top.compact .anon-badge { width: 32px; padding: 0; justify-content: center; }
+.top.compact .top-right .anon-badge { width: 32px; padding: 0; justify-content: center; }
 .top.compact .anon-badge span { display: none; }
-.m-ic.anon-chip.on { color: var(--anon); background: rgba(120,90,255,0.16); box-shadow: inset 0 0 0 1px rgba(185,166,255,0.6); }
-.where-badge.anon { border-color: rgba(185,166,255,0.5); color: var(--anon); }
+.m-ic.anon-chip.on { color: var(--anon); background: rgba(255,255,255,0.16); box-shadow: none !important; }
+.where-badge.anon { border-color: rgba(255,255,255,0.5); color: var(--anon); }
 .where-badge.anon i { display: none; }
 .where-badge.anon svg { width: 13px; height: 13px; }
 .anon-ring { color: var(--anon); } /* with .geo-ring */
-.geo-ring.anon-ring { background: radial-gradient(circle, rgba(150,120,255,0.22), rgba(150,120,255,0.05) 70%); box-shadow: 0 0 0 1px rgba(185,166,255,0.4), 0 0 0 10px rgba(150,120,255,0.07); }
+.geo-ring.anon-ring { background: radial-gradient(circle, rgba(255,255,255,0.22), rgba(255,255,255,0.05) 70%); box-shadow: none; border: 0; }
 .anon-list { list-style: none; display: grid; gap: 8px; text-align: left; max-width: 360px; font-size: 13px; line-height: 1.45; color: #ddd; }
 .anon-list li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; }
 .anon-list svg { width: 15px; height: 15px; margin-top: 2px; color: var(--anon); }
 .anon-still { max-width: 360px; text-align: left; font-size: 11px; color: #9a9a9a; }
 .anon-still summary { cursor: pointer; font-size: 11px; color: #cfcfcf; }
-.anon-still p { margin-top: 6px; line-height: 1.45; }
+/* the honest caveats read as body text, as plainly as the promises above them */
+.geo-ask .anon-still p { margin-top: 6px; font-family: inherit; text-transform: none; letter-spacing: 0; font-size: 12px; line-height: 1.45; color: #bdbdbd; max-width: none; }
+/* the explainer's buttons stay at the card's bottom edge while its text scrolls */
+.anon-ask .anon-actions { position: sticky; bottom: -18px; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; width: calc(100% + 36px); margin: 0 -18px; padding: 14px 18px 12px; background: linear-gradient(rgba(8,9,13,0), rgba(8,9,13,0.97) 30%); }
+.anon-ask .anon-actions .cta { width: 100%; max-width: 360px; }
+/* the mask makes the header one item wider: icon-only badge and tighter gaps before it can collide with the nav */
+@media (min-width: 721px) and (max-width: 1360px) {
+  .top-right .anon-badge { width: 32px; padding: 0; justify-content: center; }
+  .top-right .anon-badge span { display: none; }
+}
+@media (min-width: 961px) and (max-width: 1240px) {
+  .nav { gap: 14px; }
+  .top-right { gap: 10px; }
+}
+/* the right cluster must stay out of the centred nav: the device count and the filter fold to icons first */
+@media (min-width: 721px) and (max-width: 1320px) {
+  .top-right .live-txt { display: none; }
+  .top-right .kf-btn > span { display: none; }
+  .top-right .kf-btn { padding: 0 10px; }
+}
+@media (min-width: 721px) and (max-width: 1120px) {
+  .nav { gap: 10px; }
+  .top-right { gap: 7px; }
+  .top-right .hd-ic, .top-right .anon-badge { width: 28px; height: 28px; padding: 0; }
+  /* the how-it-works section is right below the void anyway */
+  .nav a[href="#how"] { display: none; }
+}
 .anon-names { display: flex; align-items: center; gap: 8px; font-size: 12.5px; flex-wrap: wrap; }
 .anon-send { display: grid; gap: 6px; }
 .anon-send .note svg { color: var(--anon); }
 .anon-saved { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 360px; }
 .anon-link { width: 100%; max-width: 360px; font-size: 12px; text-overflow: ellipsis; }
 .anon-ask .ghost-btn { min-width: 200px; }
-.sd-anon .sd-ic { background: rgba(120,90,255,0.18); color: var(--anon); }
+.sd-anon .sd-ic { background: rgba(255,255,255,0.18); color: var(--anon); }
 .sd-switch { margin-left: auto; width: 40px; height: 24px; border-radius: 999px; background: rgba(255,255,255,0.16); position: relative; flex: none; }
 .sd-switch i { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform 0.15s; }
-.sd-anon[aria-checked="true"] .sd-switch { background: rgba(120,90,255,0.75); }
+.sd-anon[aria-checked="true"] .sd-switch { background: rgba(255,255,255,0.75); }
+.sd-anon[aria-checked="true"] .sd-switch i { background: #111; }
 .sd-anon[aria-checked="true"] .sd-switch i { transform: translateX(16px); }
-.sd-facts .sd-fact-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(120,90,255,0.16); font: 500 9.5px/1 var(--font-chip), var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--anon); }
+.sd-facts .sd-fact-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.16); font: 500 9.5px/1 var(--font-chip), var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--anon); }
 .sd-facts .sd-fact-btn svg { color: var(--anon); }
 /* Spaces: the anonymous space on top of Create; named spaces closed while anonymous */
 .sp-anon { gap: 10px; }
@@ -3287,3 +3317,22 @@ html[data-perf="low"] .where-badge, html[data-perf="low"] .where-badge i { anima
 .sp-card.off { opacity: 0.45; }
 /* the side menu scrolls as a whole: its lists keep their full height (they were squeezed and cut off) */
 .sd-body > * { flex-shrink: 0; }
+.field.anon-send .anon-names { justify-content: flex-start; text-transform: none; letter-spacing: 0; }
+.field.anon-send .anon-names input { accent-color: var(--anon); width: 15px; height: 15px; }
+.field.anon-send .anon-names .mono { margin-left: 2px; }
+
+/* ---------- the ghost look: while anonymous the void goes dark, cold and grainy, with a huge faint mask ---------- */
+.ghost-layer { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 45%, transparent 35%, rgba(0,0,0,0.78) 100%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.028) 0 1px, transparent 1px 3px);
+  animation: ghost-in 900ms ease-out both; }
+.ghost-layer::before { content: ""; position: absolute; inset: -50%; opacity: 0.07; mix-blend-mode: screen;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: ghost-grain 1.2s steps(6) infinite; }
+.ghost-mask { position: absolute; left: 50%; top: 50%; width: min(62vmin, 560px); height: auto; translate: -50% -54%; color: #fff; opacity: 0.045; stroke-width: 1.1; }
+.ghost-word { position: absolute; left: 50%; top: 50%; translate: -50% calc(min(31vmin, 280px) - 10px); font: 600 clamp(11px, 1.3vw, 14px)/1 var(--mono); letter-spacing: 0.6em; text-transform: uppercase; color: rgba(255,255,255,0.16); white-space: nowrap; }
+@keyframes ghost-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ghost-grain { 0% { transform: translate(0,0); } 20% { transform: translate(-3%,2%); } 40% { transform: translate(2%,-3%); } 60% { transform: translate(-2%,-1%); } 80% { transform: translate(3%,3%); } 100% { transform: translate(0,0); } }
+@media (prefers-reduced-motion: reduce) { .ghost-layer, .ghost-layer::before { animation: none; } }
+html[data-anon] body { background: #050505; }

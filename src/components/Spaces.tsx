@@ -80,7 +80,7 @@ export default function SpacePanel(props: {
 }) {
   const { current, info } = props;
   const anon = !!props.anon;
-  const named = (s: { slug: string; anon?: boolean }) => !s.anon && !s.slug.startsWith("anon-");
+  const named = (s: { anon?: boolean }) => !s.anon;
   const blocked = (title: string) => props.toast(`Turn off Anonymous to enter ${title}: it shows your name to its members`);
   const ends = info?.ends ? new Date(info.ends).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : null;
   const [quitArm, setQuitArm] = useState(false);

@@ -4,13 +4,13 @@ import maplibregl, { type GeoJSONSource, type Map as MLMap } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Overview, Pt } from "./types";
 
-export type Layer = "live" | "exact" | "exactSeen" | "visitors" | "uploads" | "downloads" | "routes";
+export type Layer = "live" | "exact" | "exactSeen" | "anon" | "visitors" | "uploads" | "downloads" | "routes";
 
 // Vector map on a true 3D globe: roads, borders and labels are drawn by the GPU at every zoom,
 // so text stays razor-sharp instead of being a stretched picture. Data: OpenFreeMap (OSM).
 const STYLE = "https://tiles.openfreemap.org/styles/dark";
 
-const DOT: Record<Exclude<Layer, "routes" | "live" | "exact" | "exactSeen">, string> = {
+const DOT: Record<Exclude<Layer, "routes" | "live" | "exact" | "exactSeen" | "anon">, string> = {
   visitors: "#ffffff",
   uploads: "#59b8ff",
   downloads: "#ffa045",
@@ -101,6 +101,8 @@ const COLOR_PROPS = ["background-color", "fill-color", "fill-outline-color", "li
 
 export type RouteLine = { a: number; b: number; c: number; d: number; n?: number; label?: string };
 
+// lucide "venetian-mask", for the anonymous pins
+const MASK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11c-1.5 0-2.5.5-3 2"/><path d="M4 6a2 2 0 0 0-2 2v4a5 5 0 0 0 5 5 8 8 0 0 1 5 2 8 8 0 0 1 5-2 5 5 0 0 0 5-5V8a2 2 0 0 0-2-2h-3a8 8 0 0 0-5 2 8 8 0 0 0-5-2z"/><path d="M6 11c1.5 0 2.5.5 3 2"/></svg>';
 const esc = (v: unknown) => String(v ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const same = (r: RouteLine) => Math.abs(r.a - r.c) < 0.05 && Math.abs(r.b - r.d) < 0.05;
 
@@ -111,6 +113,7 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
   const liveMarkers = useRef<maplibregl.Marker[]>([]);
   const exactMarkers = useRef<maplibregl.Marker[]>([]);
   const seenMarkers = useRef<maplibregl.Marker[]>([]);
+  const anonMarkers = useRef<maplibregl.Marker[]>([]);
   const centred = useRef(false);
   const spinRef = useRef(spin);
   spinRef.current = spin;
@@ -131,7 +134,8 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
     const outN = lines.filter((r) => !same(r) && near({ lat: r.a, lon: r.b })).reduce((t, r) => t + (r.n ?? 1), 0);
     const inN = lines.filter((r) => !same(r) && near({ lat: r.c, lon: r.d })).reduce((t, r) => t + (r.n ?? 1), 0);
     const gps = (d?.exactSeen ?? []).filter(near);
-    const any = [...(d?.visitors ?? []), ...pts, ...(d?.live ?? []), ...gps].find((p) => near(p) && (p.city || p.cc));
+    const ghosts = (d?.anon ?? []).filter(near);
+    const any = [...(d?.visitors ?? []), ...pts, ...(d?.live ?? []), ...gps, ...ghosts].find((p) => near(p) && (p.city || p.cc));
     const where = any ? [any.city, any.cc].filter(Boolean).join(", ") : "";
     const row = (n: number, one: string, many = one + "s") => (n ? `<div><b>${n}</b> ${n === 1 ? one : many}</div>` : "");
     const body =
@@ -142,7 +146,9 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
       row(inN, "received from elsewhere", "received from elsewhere") +
       row(sum(d?.live), "online now", "online now") +
       row(sum(d?.visitors), "device") +
-      row(gps.length, "device with GPS", "devices with GPS");
+      row(gps.length, "device with GPS", "devices with GPS") +
+      row(ghosts.reduce((t, p) => t + p.n, 0), "anonymous device", "anonymous devices") +
+      (ghosts.some((p) => p.ips?.length) ? `<div><span>IP ${ghosts.flatMap((p) => p.ips ?? []).slice(0, 8).map(esc).join(", ")}</span></div>` : "");
     return [
       head ? `<div>${esc(head)}</div>` : "",
       `<span>${esc(where) || "here"} · ${lat.toFixed(2)}, ${lon.toFixed(2)}</span>`,
@@ -323,6 +329,7 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
       liveMarkers.current.forEach((mk) => mk.remove());
       exactMarkers.current.forEach((mk) => mk.remove());
       seenMarkers.current.forEach((mk) => mk.remove());
+      anonMarkers.current.forEach((mk) => mk.remove());
       m.remove();
       map.current = null;
       ready.current = false;
@@ -371,6 +378,16 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
       ? (d?.exactSeen ?? []).filter((p) => !p.online).map((p) => {
           const ago = Math.max(0, Math.round((Date.now() - Date.parse(p.at)) / 60000));
           return marker(m, "seen", p, [p.label || "device", `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`, p.acc != null ? `±${Math.round(p.acc)} m` : "", `last seen ${ago < 60 ? ago + "m" : Math.round(ago / 60) + "h"} ago`].filter(Boolean).join(" · "));
+        })
+      : [];
+
+    // "Stay anonymous" use: a mask pin at the IP's rough area (hidden from users, kept for abuse and legal requests)
+    anonMarkers.current.forEach((mk) => mk.remove());
+    anonMarkers.current = on.has("anon")
+      ? (d?.anon ?? []).map((p) => {
+          const mk = marker(m, `anon${p.online ? " on" : ""}`, p, `${p.n} anonymous · last ${new Date(p.last).toLocaleString()}`);
+          mk.getElement().innerHTML = MASK;
+          return mk;
         })
       : [];
 

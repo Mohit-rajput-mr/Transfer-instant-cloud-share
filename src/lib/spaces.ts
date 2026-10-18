@@ -158,11 +158,18 @@ async function index() {
 }
 export async function search(q: string) {
   const s = slugify(q);
-  const hits = (await index())
-    .filter((x) => !x.slug.startsWith("anon-") && (!s || x.slug.includes(s)))
-    .sort((a, b) => Number(b.slug.startsWith(s)) - Number(a.slug.startsWith(s)) || a.slug.length - b.slug.length)
-    .slice(0, 8);
-  return hits.map((h) => unseal(h.meta)).filter((m): m is SpaceMeta => !!m && !m.anon).map((m) => ({ slug: m.slug, title: m.title, priv: m.priv }));
+  // anonymity is read from the sealed meta only (a named space made before the anon- prefix was reserved can use it)
+  const out: { slug: string; title: string; priv: boolean }[] = [];
+  const rows = (await index())
+    .filter((x) => !s || x.slug.includes(s))
+    .sort((a, b) => Number(b.slug.startsWith(s)) - Number(a.slug.startsWith(s)) || a.slug.length - b.slug.length);
+  for (const h of rows) {
+    const m = unseal(h.meta);
+    if (!m || m.anon) continue;
+    out.push({ slug: m.slug, title: m.title, priv: m.priv });
+    if (out.length >= 8) break;
+  }
+  return out;
 }
 
 // ---- tags on transfer names ----

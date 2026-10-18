@@ -1,4 +1,5 @@
--- 020: "Stay anonymous". Anonymous devices and anonymous spaces leave no device, network or place behind.
+-- 020: "Stay anonymous". Other users learn nothing about anonymous devices (no device, network or place). The admin
+-- keeps their IP address and its rough area for abuse and legal requests (private.anon_online, 90 days).
 -- Normal traffic is unchanged. Apply before deploying the app that uses it.
 
 -- 1. objects sent anonymously carry the name tag a=1 (lib/spaces.ts tagName): the flag is read from the stored name
@@ -45,15 +46,52 @@ begin
   end if;
 end $$;
 
--- 4. anonymous heartbeats: counted as online, never located, gone after 10 minutes
+-- 4. anonymous heartbeats: counted as online and shown to nobody else. For abuse and legal requests the admin keeps
+--    each anonymous device's IP address and the IP's rough area (city), 90 days (see the privacy page).
 create table if not exists private.anon_online (id text primary key, last_seen timestamptz not null default now());
+alter table private.anon_online
+  add column if not exists first_seen timestamptz not null default now(),
+  add column if not exists ip text,
+  add column if not exists country text,
+  add column if not exists city text,
+  add column if not exists lat double precision,
+  add column if not exists lon double precision;
 
-create or replace function public.orbit_pulse_anon(p_secret text, p_id text) returns void
+create or replace function public.orbit_pulse_anon(p_secret text, p_id text, p_ip text default null, p_geo jsonb default '{}'::jsonb) returns void
 language plpgsql security definer set search_path = '' as $$
 begin
   perform private.check(p_secret);
-  insert into private.anon_online (id) values (left(p_id, 40))
-  on conflict (id) do update set last_seen = now();
+  insert into private.anon_online (id, ip, country, city, lat, lon)
+  values (left(p_id, 40), nullif(left(p_ip, 64), ''), nullif(left(p_geo->>'country', 2), ''), nullif(left(p_geo->>'city', 60), ''),
+    nullif(p_geo->>'lat', '')::double precision, nullif(p_geo->>'lon', '')::double precision)
+  on conflict (id) do update set last_seen = now(),
+    ip = coalesce(excluded.ip, private.anon_online.ip),
+    country = coalesce(excluded.country, private.anon_online.country),
+    city = coalesce(excluded.city, private.anon_online.city),
+    lat = coalesce(excluded.lat, private.anon_online.lat),
+    lon = coalesce(excluded.lon, private.anon_online.lon);
+end $$;
+drop function if exists public.orbit_pulse_anon(text, text);
+
+-- admin globe: anonymous use per place (rounded to ~10 km), with the IPs seen there
+create or replace function public.orbit_admin_anon(p_secret text) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+begin
+  perform private.check(p_secret);
+  return coalesce((
+    with r as (
+      select round(lat::numeric, 1) as rl, round(lon::numeric, 1) as ro, * from private.anon_online
+      where lat is not null and lon is not null and last_seen > now() - interval '90 days'
+    ), g as (
+      select rl, ro, max(city) as city, max(country) as cc, count(*) as n,
+        count(*) filter (where last_seen > now() - interval '120 seconds') as online,
+        max(last_seen) as last, min(first_seen) as first,
+        (array_agg(distinct ip) filter (where ip is not null))[1:12] as ips
+      from r group by rl, ro order by max(last_seen) desc limit 2000
+    )
+    select jsonb_agg(jsonb_build_object('lat', rl, 'lon', ro, 'city', city, 'cc', cc, 'n', n, 'online', online,
+      'last', last, 'first', first, 'ips', to_jsonb(ips)) order by last desc) from g
+  ), '[]'::jsonb);
 end $$;
 
 -- 5. turning anonymous on: Orbi forgets this browser's heartbeat row (label, browser, network hash, IP place, last GPS spot)
@@ -86,7 +124,7 @@ create or replace function public.orbit_reap_anon(p_secret text) returns void
 language plpgsql security definer set search_path = '' as $$
 begin
   perform private.check(p_secret);
-  delete from private.anon_online where last_seen < now() - interval '10 minutes';
+  delete from private.anon_online where last_seen < now() - interval '90 days';
   delete from public.bubbles b using public.spaces s where s.anon and b.space = s.slug and b.expires_at < now() - interval '10 minutes';
   delete from public.tasks t using public.spaces s where s.anon and t.space = s.slug and t.expires_at < now() - interval '10 minutes';
   delete from public.bubbles where space in (select slug from public.spaces where anon and created_at < now() - interval '7 days');
@@ -97,6 +135,6 @@ begin
 end $$;
 
 revoke all on function public.orbit_space_create_anon(text, text, text), public.orbit_space_leave(text, text, text, boolean),
-  public.orbit_pulse_anon(text, text), public.orbit_session_forget(text, text), public.orbit_reap_anon(text) from public, authenticated;
+  public.orbit_pulse_anon(text, text, text, jsonb), public.orbit_session_forget(text, text), public.orbit_reap_anon(text), public.orbit_admin_anon(text) from public, authenticated;
 grant execute on function public.orbit_space_create_anon(text, text, text), public.orbit_space_leave(text, text, text, boolean),
-  public.orbit_pulse_anon(text, text), public.orbit_session_forget(text, text), public.orbit_reap_anon(text) to anon;
+  public.orbit_pulse_anon(text, text, text, jsonb), public.orbit_session_forget(text, text), public.orbit_reap_anon(text), public.orbit_admin_anon(text) to anon;

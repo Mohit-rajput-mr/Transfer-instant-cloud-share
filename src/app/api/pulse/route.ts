@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { anonOnlineId, areaFor, clean, geo, netHash, netInviteKey, rpc, validId } from "@/lib/server";
+import { anonOnlineId, areaFor, clean, geo, ipOf, netHash, netInviteKey, rpc, validId } from "@/lib/server";
 
 export const dynamic = "force-dynamic";
 
@@ -12,12 +12,15 @@ export async function POST(req: NextRequest) {
     if (d) await rpc("orbit_session_forget", { p_device: d }).catch(() => {});
     return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
   }
-  // anonymous heartbeat: counted as online under a hashed throwaway id, nothing else kept
+  // anonymous heartbeat: counted as online under a hashed throwaway id; other users get nothing. The IP and its rough
+  // area are kept for the admin only (abuse and legal requests, 90 days: migration 020, privacy page)
   if (b?.anon === true) {
     const id = clean(b.id, 40);
     if (!/^[A-Za-z0-9-]{8,40}$/.test(id)) return NextResponse.json({ error: "bad request" }, { status: 400 });
-    await rpc("orbit_pulse_anon", { p_id: anonOnlineId(id) }).catch(() => {});
-    // the IP's area only for this answer (to look around the public void); nothing is written
+    const g = geo(req);
+    const ip = ipOf(req);
+    await rpc("orbit_pulse_anon", { p_id: anonOnlineId(id), p_ip: ip === "0" ? "" : ip, p_geo: { country: g.country, city: g.city, lat: g.lat, lon: g.lon } }).catch(() => {});
+    // the IP's area for this answer too (to look around the public void)
     return NextResponse.json(b.void === true ? { area: areaFor(req, null) } : {}, { headers: { "Cache-Control": "no-store" } });
   }
   const deviceId = clean(b?.deviceId, 40);

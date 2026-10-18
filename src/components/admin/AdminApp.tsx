@@ -165,6 +165,7 @@ const LAYERS: { id: Layer; label: string; dot: string }[] = [
   { id: "live", label: "Live now", dot: "#3dff8c" },
   { id: "exact", label: "Exact · live", dot: "#ff4fd8" },
   { id: "exactSeen", label: "Last GPS seen", dot: "#a0498f" },
+  { id: "anon", label: "Anonymous (IP)", dot: "#9a9a9a" },
   { id: "visitors", label: "All visitors", dot: "#ffffff" },
   { id: "uploads", label: "Uploads", dot: "#59b8ff" },
   { id: "downloads", label: "Downloads", dot: "#ffa045" },
@@ -174,7 +175,7 @@ const LAYERS: { id: Layer; label: string; dot: string }[] = [
 type Expand = "history" | "activity" | "countries" | "objects" | "containers" | "cities" | "spaces" | null;
 
 function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview | null; events: Ev[]; now: number; onRefresh: () => void; onLogout: () => void }) {
-  const [layers, setLayers] = useState<Set<Layer>>(new Set(["live", "exact", "exactSeen", "visitors", "uploads", "downloads", "routes"]));
+  const [layers, setLayers] = useState<Set<Layer>>(new Set(["live", "exact", "exactSeen", "anon", "visitors", "uploads", "downloads", "routes"]));
   const [expand, setExpand] = useState<Expand>(null);
   // a click on a country anywhere opens Activity filtered to it
   const [focusCc, setFocusCc] = useState("");

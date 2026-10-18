@@ -14,7 +14,7 @@ export type AnonMode = "intro" | "on" | "status" | "gate" | "join" | "link";
 export function AnonFacts() {
   return (
     <ul className="anon-list">
-      <li><LuMapPinOff aria-hidden /><span>Your location is off. Orbi never asks for it and doesn&apos;t record where you are.</span></li>
+      <li><LuMapPinOff aria-hidden /><span>Your location is hidden from other users. GPS is off and never asked for.</span></li>
       <li><LuUserRoundX aria-hidden /><span>No name and no device. Others see you as Anon-7F3, not &quot;Chrome · iPhone&quot;.</span></li>
       <li><LuCloud aria-hidden /><span>Cloud only. Files travel as an encrypted copy through Orbi&apos;s cloud, never device to device, so the other person never sees your IP address.</span></li>
       <li><LuShieldCheck aria-hidden /><span>Encrypted in your browser before it leaves. In an anonymous space only people with its link can open what you send. Orbi can&apos;t.</span></li>
@@ -23,9 +23,12 @@ export function AnonFacts() {
   );
 }
 
+/** the explainer's lead line (also on the privacy page): about the people you send to, not Orbi's servers */
+export const ANON_LEAD = "Become a ghost. No location, no identity shown to other users. Send anonymously.";
+
 /** what still happens while anonymous */
 const ANON_STILL = [
-  "Like any website, our servers and our cloud storage see your connection (IP address) while you're here. Orbi doesn't record it with anything you do; it only keeps a scrambled key that changes every hour, to stop spam. For more, use a VPN or Tor.",
+  "Orbi's servers see your IP address, like any website, and keep it with its rough area (city) for abuse and legal requests. Other users never see it. For more, use a VPN or Tor.",
   "People in the space see the file names (unless you hide them), sizes and when you send.",
   "Notes and tasks aren't end-to-end encrypted: Orbi can read them. Put private things in a file.",
   "Photos can carry where they were taken. Orbi removes this from JPEG and PNG photos; other files (HEIC, videos, documents) are sent as they are.",
@@ -42,7 +45,7 @@ function Still({ open }: { open: boolean }) {
   return (
     <details className="anon-still" open={open}>
       <summary>What still happens</summary>
-      {ANON_STILL.map((t) => <p key={t} className="mono dim">{t}</p>)}
+      {ANON_STILL.map((t) => <p key={t}>{t}</p>)}
     </details>
   );
 }
@@ -96,11 +99,14 @@ export default function AnonCard(props: {
     return card("Stay anonymous", (
       <>
         <h3 className="wide">Stay anonymous</h3>
-        <p>Send without anyone knowing who you are or where you are. Orbi has no account, no name, no phone and no email, ever.</p>
+        <p>{ANON_LEAD}</p>
         <AnonFacts />
         <Still open />
-        <button className="cta lg-press" onClick={props.onTurnOn}><LuVenetianMask aria-hidden /> Stay anonymous</button>
-        <button className="geo-later mono" onClick={props.onClose}>Not now</button>
+        {/* stays in view at the card's bottom edge while the explainer scrolls */}
+        <div className="anon-actions">
+          <button className="cta lg-press" onClick={props.onTurnOn}><LuVenetianMask aria-hidden /> Stay anonymous</button>
+          <button className="geo-later mono" onClick={props.onClose}>Not now</button>
+        </div>
       </>
     ));
 
