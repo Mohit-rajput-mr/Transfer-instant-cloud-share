@@ -1,0 +1,78 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "How do hackers stay invisible online? It's not magic. It's layers.",
+   "dur": 4.574,
+   "at": 0.35
+  },
+  {
+   "key": "trail",
+   "text": "Every time you go online, you leave a trail. Your IP address is like a return address on every message you send.",
+   "dur": 7.572,
+   "at": 5.37
+  },
+  {
+   "key": "print",
+   "text": "Your browser has a fingerprint too: your screen, your fonts, your settings. And a photo can carry the exact spot where it was taken.",
+   "dur": 7.381,
+   "at": 13.25
+  },
+  {
+   "key": "vpn",
+   "text": "A VPN hides your address from the website. But the VPN company can see it, so you're really just moving your trust.",
+   "dur": 6.298,
+   "at": 20.98
+  },
+  {
+   "key": "tor",
+   "text": "Tor goes further. Your message is wrapped in three layers of encryption, like an onion, and bounced through three computers.",
+   "dur": 7.247,
+   "at": 27.62
+  },
+  {
+   "key": "peel",
+   "text": "Each one peels off one layer. The first knows who you are, but not where you're going. The last knows where you're going, but not who you are.",
+   "dur": 9.257,
+   "at": 35.17
+  },
+  {
+   "key": "caught",
+   "text": "So how do people still get caught? Almost never by the math. By one small mistake: a reused username, a logged-in account, a photo with location on.",
+   "dur": 8.987,
+   "at": 44.83
+  },
+  {
+   "key": "orbi",
+   "text": "That's the idea behind Orbi Transfer. No account, no email, no name. Just a nickname, if you want one.",
+   "dur": 5.768,
+   "at": 54.27
+  },
+  {
+   "key": "lock",
+   "text": "Your file is locked in your browser with your code. The code never leaves your phone, so even our server can't open it.",
+   "dur": 6.775,
+   "at": 60.33
+  },
+  {
+   "key": "trace",
+   "text": "We keep a scrambled fingerprint of your network, never the address itself. Want a room just for your crew? Make a private space.",
+   "dur": 6.98,
+   "at": 67.41
+  },
+  {
+   "key": "burn",
+   "text": "And 30 minutes later, the file burns.",
+   "dur": 2.992,
+   "at": 74.69
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Private by design.",
+   "dur": 3.378,
+   "at": 78.08
+  }
+ ],
+ "duration": 83.26
+}
