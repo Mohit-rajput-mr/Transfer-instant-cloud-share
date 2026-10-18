@@ -1,0 +1,90 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Your bank doesn't know your password. And that's exactly why you're safe.",
+   "dur": 4.184,
+   "at": 0.35
+  },
+  {
+   "key": "think",
+   "text": "You'd think they keep it in a file somewhere, and check it when you log in. They don't.",
+   "dur": 4.264,
+   "at": 4.98
+  },
+  {
+   "key": "blend",
+   "text": "Instead, your password goes into a math blender called a hash. Out comes a long scramble of letters and numbers.",
+   "dur": 6.357,
+   "at": 9.55
+  },
+  {
+   "key": "same",
+   "text": "Same password in, same scramble out. Every single time. Change one letter, and the whole thing changes.",
+   "dur": 6.7,
+   "at": 16.2
+  },
+  {
+   "key": "oneway",
+   "text": "And here's the trick: it only works one way. You can't un-blend a smoothie back into fruit.",
+   "dur": 5.011,
+   "at": 23.25
+  },
+  {
+   "key": "login",
+   "text": "So when you log in, they blend what you typed, and compare the scrambles. Match? You're in. They never needed the real thing.",
+   "dur": 6.604,
+   "at": 28.67
+  },
+  {
+   "key": "salt",
+   "text": "Smart sites also add salt: a random pinch mixed into every password, so two people with the same password still get different scrambles.",
+   "dur": 8.77,
+   "at": 35.62
+  },
+  {
+   "key": "leak",
+   "text": "So how do passwords still leak? When a list of scrambles gets stolen, thieves can't reverse them. They guess.",
+   "dur": 5.817,
+   "at": 44.74
+  },
+  {
+   "key": "guess",
+   "text": "They blend millions of common passwords, like one two three four five six, and look for a match.",
+   "dur": 6.34,
+   "at": 50.86
+  },
+  {
+   "key": "slow",
+   "text": "That's why good sites use a slow blender on purpose. One login takes a blink. A million guesses take forever.",
+   "dur": 6.497,
+   "at": 57.5
+  },
+  {
+   "key": "orbi",
+   "text": "And that's how Orbi Transfer protects your files. Your passcode never even leaves your phone.",
+   "dur": 6.416,
+   "at": 64.39
+  },
+  {
+   "key": "rounds",
+   "text": "Your phone blends it three hundred and ten thousand times. The server keeps only a scramble of a proof, so it can't open your file.",
+   "dur": 7.158,
+   "at": 71.11
+  },
+  {
+   "key": "tries",
+   "text": "Guess wrong twelve times, and the file locks for good.",
+   "dur": 3.708,
+   "at": 78.57
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 82.68
+  }
+ ],
+ "duration": 87.23
+}
