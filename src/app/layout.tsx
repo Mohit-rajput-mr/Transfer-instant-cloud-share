@@ -7,8 +7,8 @@ import { languageAlternates } from "@/lib/seo-meta";
 const display = Archivo({ subsets: ["latin"], axes: ["wdth"], variable: "--font-display", display: "swap" });
 const sans = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
-// only for the small header chips (No login · End-to-end encrypted · All / Nearby)
-const chip = Chakra_Petch({ subsets: ["latin"], weight: "500", variable: "--font-chip", display: "swap" });
+// the squared, spaced type voice of the classic look (header, cards, body text)
+const chip = Chakra_Petch({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-chip", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
@@ -40,7 +40,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable} ${chip.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${display.variable} ${sans.variable} ${mono.variable} ${chip.variable}`}>
       <body>{children}</body>
     </html>
   );

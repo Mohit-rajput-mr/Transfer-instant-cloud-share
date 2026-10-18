@@ -4,11 +4,12 @@ import ResumeUploads, { usePendingCount } from "./ResumeUploads";
 import { useDownloads } from "@/lib/downloads";
 import { useCloud } from "@/lib/cloud";
 import { useState, type CSSProperties } from "react";
-import { formatBytes, type Orb } from "@/lib/client";
+import { formatBytes, homePath, type Orb } from "@/lib/client";
 import type { Stage } from "@/lib/transfer";
 import { ShareBlock } from "./Panels";
 import { glyph } from "./Glyph";
 import { LuCheck } from "react-icons/lu";
+import { useAnon } from "@/lib/anon";
 
 /** One send in flight (or just landed). The card closes on Launch; this is all that stays on screen. */
 export interface Launch {
@@ -74,17 +75,41 @@ export default function LaunchDock(props: {
   onDismiss: (key: string) => void;
   onOpenOwner: (id: string) => void;
 }) {
-  const { launches } = props;
+  const { launches, onDismiss } = props;
   const dl = useDownloads();
   const pending = usePendingCount();
+  // anonymous: nothing was kept to resume (lib/transfer.ts never saves a pending anonymous upload)
+  const anon = useAnon().now;
+  const [histOpen, setHistOpen] = useState(false);
+  // in-progress (and errors) stay visible as cards; everything already in orbit folds into one quiet chip
+  const active = launches.filter((l) => !l.orb);
+  const done = launches.filter((l) => l.orb);
   if (!launches.length && !dl.jobs.length && !pending) return null;
   return (
     <div className="dock" aria-live="polite">
-      <ResumeUploads />
+      {!anon && <ResumeUploads />}
       <DownloadCard />
-      {launches.slice(-3).map((l) => (
+      {active.slice(-3).map((l) => (
         <DockItem key={l.key} l={l} {...props} />
       ))}
+      {done.length > 0 && (
+        <div className={`dock-hist${histOpen ? " open" : ""}`}>
+          {histOpen && (
+            <div className="dock-hist-list">
+              {done.map((l) => (
+                <DockItem key={l.key} l={l} {...props} />
+              ))}
+              <button className="dock-hist-clear mono" onClick={() => done.forEach((l) => onDismiss(l.key))}>Clear all</button>
+            </div>
+          )}
+          <button className="dock-hist-chip lg lg-press" onClick={() => setHistOpen((o) => !o)} aria-expanded={histOpen}>
+            <i className="dock-hist-dot" aria-hidden />
+            <b>{done.length}</b>
+            <span className="mono">in orbit</span>
+            <svg viewBox="0 0 12 12" aria-hidden><path d={histOpen ? "M2.5 7.5L6 4l3.5 3.5" : "M2.5 4.5L6 8l3.5-3.5"} /></svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -100,7 +125,7 @@ function DockItem({ l, badges, onToggle, onDismiss, onOpenOwner }: { l: Launch }
   const copy = async () => {
     if (!l.orb) return;
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/?o=${l.orb.id}`);
+      await navigator.clipboard.writeText(`${window.location.origin}${homePath()}?o=${l.orb.id}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 1400);
     } catch {}

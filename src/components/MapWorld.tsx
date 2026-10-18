@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { LuEarth, LuMaximize, LuMinus, LuPlus } from "react-icons/lu";
 import { mapView } from "@/lib/map";
+import { dragAt, overTrash, toTrash } from "@/lib/trash";
+import { TrashButton } from "./Trash";
 
 type View = { x: number; y: number; k: number };
 /** what covers the edges of the screen (header, send button…): the world is fitted inside the rest */
@@ -27,7 +29,8 @@ const OWN_TOUCH = "input, textarea, select, .tb-acts, .tb-route, .map-tools, [da
  */
 // what picks a whole panel up: its header, or its own background (never a button, field or row inside it)
 const HANDLE = ".tb-head, .bub-stack.on-map > header";
-const INNER = "button, a, input, textarea, select, label, form, .tb-row, .bub";
+const INNER = "button, a, input, textarea, select, label, form, .tb-row";
+const TEXTY = "input, textarea, select, [contenteditable], .tb-edit, .tb-take, .tb-redeem, .tb-route";
 
 export default function MapWorld({ W, H, band, children, fit, empty, onRect, onEarth, onMoveItem }: {
   W: number;
@@ -120,14 +123,22 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
   sizeRef.current = size;
   const onRectRef = useRef(onRect);
   onRectRef.current = onRect;
+  const pushRect = useCallback(() => {
+    const v = viewRef.current, sz = sizeRef.current;
+    // keep a whole screen of margin on every side (in world px, so zooming in never shrinks it): nothing within
+    // a screen of the edge is ever unmounted, so dragging and pinching never make things blink out and back
+    const m = Math.max(sz.w, sz.h, 360) / v.k;
+    if (sz.w) onRectRef.current?.({ x0: -v.x / v.k - m, y0: -v.y / v.k - m, x1: (sz.w - v.x) / v.k + m, y1: (sz.h - v.y) / v.k + m, k: v.k });
+  }, []);
   useEffect(() => {
     if (rectT.current) return;
+    // while the map is actively moving, leave the visible set alone; recompute once it settles (see moving())
+    if (box.current?.classList.contains("moving")) return;
     rectT.current = window.setTimeout(() => {
       rectT.current = 0;
-      const v = viewRef.current, sz = sizeRef.current, m = 260 / v.k;
-      if (sz.w) onRectRef.current?.({ x0: -v.x / v.k - m, y0: -v.y / v.k - m, x1: (sz.w - v.x) / v.k + m, y1: (sz.h - v.y) / v.k + m, k: v.k });
+      pushRect();
     }, 120);
-  }, [view, size]);
+  }, [view, size, pushRect]);
   useEffect(() => () => clearTimeout(rectT.current), []);
 
   // while the map moves nothing else animates or reacts to hover: every frame goes to the move
@@ -135,8 +146,11 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
   const moving = useCallback(() => {
     box.current?.classList.add("moving");
     clearTimeout(stillT.current);
-    stillT.current = window.setTimeout(() => box.current?.classList.remove("moving"), 180);
-  }, []);
+    stillT.current = window.setTimeout(() => {
+      box.current?.classList.remove("moving");
+      pushRect(); // movement settled: update the visible set once, in one go
+    }, 180);
+  }, [pushRect]);
 
   const zoomAt = useCallback(
     (factor: number, cx: number, cy: number, animate: boolean) => {
@@ -160,12 +174,16 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     [keepIn, go, moving],
   );
 
+  const emptyRef = useRef(empty);
+  emptyRef.current = empty;
   // wheel: a pinch (ctrl) or a mouse wheel zooms at the pointer; a trackpad's two-finger scroll moves the map
   useEffect(() => {
     const el = box.current;
     if (!el) return;
     const wheel = (e: WheelEvent) => {
       if ((e.target as Element).closest?.("textarea, .tb-acts, .tb-route, .map-tools, [data-no-pan]")) return;
+      // nothing on the map: the wheel scrolls the page as usual (down to How it works)
+      if (emptyRef.current && !e.ctrlKey) return;
       e.preventDefault();
       const r = el.getBoundingClientRect();
       const mouse = e.deltaMode === 1 || (e.deltaX === 0 && Math.abs(e.deltaY) >= 40 && Number.isInteger(e.deltaY));
@@ -211,15 +229,16 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     return { ps, x: ps.reduce((a, p) => a + p.x, 0) / ps.length, y: ps.reduce((a, p) => a + p.y, 0) / ps.length };
   };
   // ---- a whole panel dragged around the map: a mouse grabs it at once, a finger holds it a moment first ----
-  const item = useRef<{ id: number; key: string; el: HTMLElement; sx: number; sy: number; k: number; armed: boolean; moved: boolean; timer: number } | null>(null);
+  const item = useRef<{ id: number; key: string; el: HTMLElement; sx: number; sy: number; lx: number; ly: number; k: number; armed: boolean; moved: boolean; timer: number } | null>(null);
   const grabItem = (e: React.PointerEvent) => {
     const t = e.target as Element;
     const el = t.closest?.<HTMLElement>("[data-map-key]");
     if (!el || !onMoveItem || pts.current.size) return false;
-    const onHandle = !!t.closest?.(HANDLE);
-    if (!onHandle && t.closest?.(INNER)) return false;
     const mouse = e.pointerType === "mouse";
-    const it = { id: e.pointerId, key: el.dataset.mapKey!, el, sx: e.clientX, sy: e.clientY, k: viewRef.current.k, armed: mouse, moved: false, timer: 0 };
+    // a mouse grabs a task panel anywhere but its text fields (a click that doesn't move still clicks)
+    const onHandle = !!t.closest?.(HANDLE) || (mouse && !!t.closest?.(".task-board") && !t.closest?.(TEXTY));
+    if (!onHandle && t.closest?.(INNER)) return false;
+    const it = { id: e.pointerId, key: el.dataset.mapKey!, el, sx: e.clientX, sy: e.clientY, lx: e.clientX, ly: e.clientY, k: viewRef.current.k, armed: mouse, moved: false, timer: 0 };
     item.current = it;
     if (mouse)
       try {
@@ -247,6 +266,8 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
       }
       return false;
     }
+    it.lx = e.clientX;
+    it.ly = e.clientY;
     if (!it.moved && Math.hypot(dx, dy) < 5) return true;
     if (!it.moved) {
       it.moved = true;
@@ -254,6 +275,7 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
       setFollow(false);
     }
     it.el.style.translate = `calc(-50% + ${dx / it.k}px) calc(-50% + ${dy / it.k}px)`;
+    dragAt(e.clientX, e.clientY);
     return true;
   };
   const dropItem = (e: React.PointerEvent) => {
@@ -264,9 +286,17 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     delete document.body.dataset.grab;
     it.el.classList.remove("lifted");
     if (!it.moved) return false;
-    // the drop lands where it was let go (no glide back from the old spot)
+    dragAt(null);
+    // let go over the trash: hidden on this browser (lib/trash.ts)
+    if (overTrash(it.lx, it.ly)) {
+      const label = it.el.getAttribute("aria-label") || it.el.querySelector("header b")?.textContent || "";
+      toTrash(it.key, it.key.startsWith("b:") ? `${label.replace(/ \(you\)$/, "")}'s bubbles` : label);
+      it.el.style.translate = "";
+      return true;
+    }
+    // the drop lands where it was last seen under the pointer (a lifted finger or a cancel can report 0,0)
     it.el.classList.add("dropped");
-    onMoveItem?.(it.key, (e.clientX - it.sx) / it.k, (e.clientY - it.sy) / it.k);
+    onMoveItem?.(it.key, (it.lx - it.sx) / it.k, (it.ly - it.sy) / it.k);
     requestAnimationFrame(() => {
       it.el.style.translate = "";
       requestAnimationFrame(() => it.el.classList.remove("dropped"));
@@ -354,6 +384,7 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
         {children}
       </div>
       <div className="map-tools lg" data-no-pan>
+        <TrashButton />
         {!empty && (
           <>
             <button onClick={() => zoomAt(1.35, center().x, center().y, true)} aria-label="Zoom in (+)" title="Zoom in (+)"><LuPlus /></button>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isHex, rpc, sha256 } from "@/lib/server";
-import { cleanHandle } from "@/lib/spaces";
+import { cleanHandle, member } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
 
@@ -16,8 +16,11 @@ export async function POST(req: NextRequest) {
     route = b.route.map((x: unknown) => line(x, 40)).filter(Boolean);
   }
   const stage = b.stage == null ? null : Number.isInteger(b.stage) && b.stage >= -1 && b.stage < 8 ? b.stage : null;
+  // anonymous: the space's alias, or no name at all
+  let by = cleanHandle(b.by);
+  if (b.anon === true) by = (b.space != null && (await member(b.space, b.deviceId, b.spaceToken))?.handle) || "";
   const ok = await rpc<boolean>("orbit_task_edit", {
-    p_id: b.id, p_owner_hash: sha256(b.owner), p_body: line(b.text, 140) || null, p_route: route, p_stage: stage, p_by: cleanHandle(b.by),
+    p_id: b.id, p_owner_hash: sha256(b.owner), p_body: line(b.text, 140) || null, p_route: route, p_stage: stage, p_by: by,
   }).catch(() => false);
   return ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: "Only the person who wrote this task can change it" }, { status: 403 });
 }

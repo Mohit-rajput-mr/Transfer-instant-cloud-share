@@ -65,8 +65,10 @@ export default function LiquidGlass() {
     const fine = mq("(hover: hover) and (pointer: fine)");
     const calm = !mq("(prefers-reduced-motion: reduce)") && !mq("(prefers-reduced-transparency: reduce)");
     const cores = navigator.hardwareConcurrency ?? 4;
+    // /work: plain surfaces, no lens and no jelly (haptics stay)
+    const work = root.dataset.ui === "work";
     // (the bending filter is the costliest thing on the page: never on a low-end device, lib/perf.ts)
-    if (chromium && fine && calm && cores >= 6 && !isLow()) root.classList.add("lg-refract");
+    if (!work && chromium && fine && calm && cores >= 6 && !isLow()) root.classList.add("lg-refract");
 
     let raf = 0;
     let last: PointerEvent | null = null;
@@ -116,7 +118,7 @@ export default function LiquidGlass() {
     // never wobbles it (pointerdown would). Played with the Web Animations API, not a class: a class
     // swap replaced the element's own CSS animations (the Send button replayed its entrance and blinked
     // out), and React rewriting className mid-wobble cut it short.
-    const jelly = !mq("(prefers-reduced-motion: reduce)");
+    const jelly = !work && !mq("(prefers-reduced-motion: reduce)");
     const release = (e: MouseEvent) => {
       const t = e.target as Element | null;
       const el = t?.closest?.(".lg-press") as HTMLElement | null;

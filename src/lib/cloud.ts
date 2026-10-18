@@ -14,7 +14,10 @@ const states = new Map<string, CloudState>();
 const aborts = new Map<string, AbortController>();
 const subs = new Set<() => void>();
 let snap = new Map(states);
+/** progress listeners of one upload (storeCopy opts.onFrac) */
+const fracs = new Map<string, (f: number) => void>();
 const set = (id: string, s: CloudState | null) => {
+  if (s) fracs.get(id)?.(s.frac);
   if (s) states.set(id, s);
   else states.delete(id);
   snap = new Map(states);
@@ -128,29 +131,34 @@ class Gone extends Error {}
 const resumables = new Set<string>();
 export const isResumable = (id: string) => resumables.has(id);
 
-/** Uploads the encrypted copy. Never throws: on any failure the direct path still serves the file. */
-export async function storeCopy(id: string, owner: string, file: File, key: CryptoKey, nonce: Uint8Array, label = file.name, canResume = true) {
+/** Uploads the encrypted copy. Never throws: on any failure the direct path still serves the file.
+ *  Resolves true only when the copy is saved (anonymous sends wait for that: they have no direct path). */
+export async function storeCopy(
+  id: string, owner: string, file: File, key: CryptoKey, nonce: Uint8Array, label = file.name, canResume = true,
+  opts?: { onFrac?(f: number): void },
+): Promise<boolean> {
   const ac = new AbortController();
   aborts.set(id, ac);
+  if (opts?.onFrac) fracs.set(id, opts.onFrac);
   try {
     set(id, { state: "saving", frac: 0 });
     // can this page reach the bucket at all (its CORS rule)? If not, don't send a byte: the direct path serves it
     const pr = await call(id, { owner, action: "start", probe: true });
     if (!pr.ok) {
       set(id, pr.status === 501 ? null : { state: "failed", frac: 0 });
-      return;
+      return false;
     }
     const { probe } = (await pr.json()) as { probe: string };
     const reach = await fetch(probe, { headers: { Range: "bytes=0-0" }, cache: "no-store", signal: ac.signal }).catch(() => null);
     if (!reach) {
       set(id, null);
-      return;
+      return false;
     }
     const r = await call(id, { owner, action: "start" });
     if (!r.ok) {
       // 501: no storage; 507: this month's free storage is used up. Either way it still sends directly
       set(id, r.status === 501 || r.status === 507 ? null : { state: "failed", frac: 0 });
-      return;
+      return false;
     }
     const s = (await r.json()) as { put?: string; uploadId?: string; urls?: string[] };
     if (s.put) await single(id, owner, file, key, nonce, s.put, ac.signal);
@@ -163,12 +171,15 @@ export async function storeCopy(id: string, owner: string, file: File, key: Cryp
     } else throw new Error("start");
     set(id, { state: "saved", frac: 1 });
     forgetUpload(id);
+    return true;
   } catch (e) {
     forgetUpload(id);
     set(id, ac.signal.aborted || e instanceof Gone ? null : { state: "failed", frac: 0 });
+    return false;
   } finally {
     aborts.delete(id);
     resumables.delete(id);
+    fracs.delete(id);
   }
 }
 

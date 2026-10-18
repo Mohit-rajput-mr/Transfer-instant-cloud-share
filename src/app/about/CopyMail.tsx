@@ -2,11 +2,13 @@
 import { useState } from "react";
 import { LuCheck, LuCopy } from "react-icons/lu";
 
-export default function CopyMail({ mail }: { mail: string }) {
+/** Copies the address; the label flips to "Copied" for 1.6 s and a polite live region says so. */
+export default function CopyMail({ mail, className = "sx-pill sm" }: { mail: string; className?: string }) {
   const [done, setDone] = useState(false);
   return (
     <button
-      className="ab-copy mono"
+      type="button"
+      className={className}
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(mail);
@@ -15,7 +17,11 @@ export default function CopyMail({ mail }: { mail: string }) {
         } catch {}
       }}
     >
-      {done ? <LuCheck aria-hidden /> : <LuCopy aria-hidden />} {done ? "Copied" : "Copy address"}
+      {done ? <LuCheck aria-hidden size={14} /> : <LuCopy aria-hidden size={14} />}
+      {done ? "Copied" : "Copy address"}
+      <span className="sx-sr" aria-live="polite">
+        {done ? "Address copied" : ""}
+      </span>
     </button>
   );
 }

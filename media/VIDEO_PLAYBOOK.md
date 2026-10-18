@@ -82,6 +82,9 @@ When the owner says "new version" / "next", make the next film from the story li
 - Also true: works on any device with a browser, folders and many files go in one ball, team Spaces, preview before download.
 
 ## Owner feedback (latest, wins over older notes)
+- **Educational films always tie back to Orbi** (2026-10-18): teach the topic, then end with a true Orbi feature that connects (QR film → every Orbi file has its own QR + code), and the Orbi end card.
+- **Workspace films use the real /work page** (light theme reads best on screens) and end on something funny (owner liked a dance).
+- **No "within the city" wording** (2026-10-18): show one place (a house, an office) and the true same-Wi-Fi "Nearby". Go under the layers, not the same 2–3 claims. AirDrop comparison is fine when asked; keep its facts current and fair.
 - **The voice must have feeling, not robotic** (2026-10-18). Use `concert-film/source/vo.py` (Chatterbox + George reference,
   emotion per line, auto-checked takes). Write lines to be *spoken*: reactions, short punchy sentences, real exclamations.
   Setup: venv, `pip install --extra-index-url https://download.pytorch.org/whl/cpu chatterbox-tts faster-whisper jiwer soundfile "setuptools<81"`.
@@ -148,7 +151,10 @@ Use them in every film where a feature is shown.
   why your phone storage fills up · how "the cloud" is just someone's computer.
 
 ## Films so far
-- `office-work-film/`: work mode (Spaces, tasks with routes, wired files, log, cancel) with **real site recordings** as phone inserts (`record.cjs`) (**latest**)
+- `work-film/`: Orbi Work office story on the real /work page (notes, @assign, Doing→Review→Done, private space, office dance ending) (**latest**)
+- `qr-film/`: educational "How a QR code works" with a real decodable code, ends on Orbi's per-file QR
+- `party-film/`: AirDrop vs Orbi at a house party, code "disco"; deeper layers (same-Wi-Fi fingerprint → Nearby, live room note, 3 parts up + resend + 4 streams down, 310,000× key, 12 tries, 30-min burn)
+- `office-work-film/`: work mode (Spaces, tasks with routes, wired files, log, cancel) with real site recordings as phone inserts (`record.cjs`)
 - `packets-film/`: science film, what happens when you send a photo (packets, routers, sea cables), then why Orbi 
 - `concert-film/`: arena encore, code "rock", the clip as a song (guitar case → notes flying at once → backstage door → stadium light wave → song plays → stage goes dark), Chatterbox voice with feeling
 - `airport-film/`: arrivals gate, code "tram", a whole folder as luggage (suitcase → bags on belts → baggage hold → radar → carousel → shredder), low-poly men and women (MP4 rendered 2026-10-18, 79 s)

@@ -23,6 +23,8 @@ export interface SpaceMeta {
   pass: string | null;
   owner: string;
   at: number;
+  /** an anonymous space (lib/anon.ts): random title, members go by aliases, never in search */
+  anon?: boolean;
 }
 
 export const slugify = (s: string) =>
@@ -73,20 +75,35 @@ export async function getMeta(slug: string): Promise<SpaceMeta | null> {
   return meta;
 }
 
-export async function createSpace(title: string, priv: boolean, pass: string | null): Promise<{ meta: SpaceMeta; owner: string } | null> {
-  const slug = slugify(title);
+export async function createSpace(
+  title: string, priv: boolean, pass: string | null, opts?: { slug?: string; anon?: boolean },
+): Promise<{ meta: SpaceMeta; owner: string } | null> {
+  const slug = opts?.slug ?? slugify(title);
   if (!validSlug(slug)) return null;
+  // the anon- prefix is kept for anonymous spaces
+  if (!opts?.anon && slug.startsWith("anon-")) return null;
   metaCache.delete(slug);
   if (await getMeta(slug)) return null;
   const owner = randomBytes(24).toString("base64url");
-  const meta: SpaceMeta = { slug, title, priv, pass: priv && pass ? passHash(slug, pass) : null, owner: sha(owner), at: Date.now() };
+  const meta: SpaceMeta = { slug, title, priv, pass: priv && pass ? passHash(slug, pass) : null, owner: sha(owner), at: Date.now(), anon: !!opts?.anon };
   // two people racing for the same name: only one wins
-  const won = await rpc<boolean>("orbit_space_create", { p_slug: slug, p_meta: seal(meta).toString("base64") }).catch(() => false);
+  const won = await rpc<boolean>(opts?.anon ? "orbit_space_create_anon" : "orbit_space_create", { p_slug: slug, p_meta: seal(meta).toString("base64") }).catch(() => false);
   if (!won) return null;
   metaCache.set(slug, { at: Date.now(), meta });
   slugCache = null;
   return { meta, owner };
 }
+
+/** a member's name in an anonymous space: Anon- and the start of their device hash, longer only when taken */
+export function anonAlias(dh: string, taken: string[]) {
+  const t = new Set(taken.map((x) => x.toLowerCase()));
+  for (let n = 3; n <= 8; n++) {
+    const a = "Anon-" + dh.slice(0, n).toUpperCase();
+    if (!t.has(a.toLowerCase())) return a;
+  }
+  return "Anon-" + dh.slice(0, 8).toUpperCase();
+}
+export const isAnonSpace = async (slug: string) => (await getMeta(slug))?.anon === true;
 
 export const checkPass = (meta: SpaceMeta, pass: unknown) => !meta.priv || (typeof pass === "string" && !!meta.pass && same(passHash(meta.slug, pass), meta.pass));
 export const isOwner = (meta: SpaceMeta, owner: unknown) => typeof owner === "string" && owner.length > 10 && same(sha(owner), meta.owner);
@@ -141,24 +158,32 @@ async function index() {
 }
 export async function search(q: string) {
   const s = slugify(q);
-  const hits = (await index())
+  // anonymity is read from the sealed meta only (a named space made before the anon- prefix was reserved can use it)
+  const out: { slug: string; title: string; priv: boolean }[] = [];
+  const rows = (await index())
     .filter((x) => !s || x.slug.includes(s))
-    .sort((a, b) => Number(b.slug.startsWith(s)) - Number(a.slug.startsWith(s)) || a.slug.length - b.slug.length)
-    .slice(0, 8);
-  return hits.map((h) => unseal(h.meta)).filter((m): m is SpaceMeta => !!m).map((m) => ({ slug: m.slug, title: m.title, priv: m.priv }));
+    .sort((a, b) => Number(b.slug.startsWith(s)) - Number(a.slug.startsWith(s)) || a.slug.length - b.slug.length);
+  for (const h of rows) {
+    const m = unseal(h.meta);
+    if (!m || m.anon) continue;
+    out.push({ slug: m.slug, title: m.title, priv: m.priv });
+    if (out.length >= 8) break;
+  }
+  return out;
 }
 
 // ---- tags on transfer names ----
 // Extra facts about an object ride in its stored name: ⟪s=slug;b=handle;t=10;o=1;g=ab12cd34ef⟫name
 //   s: space, b: launched by (name in the space), t: lifetime in minutes (< 30), o: open (no passcode),
 //   g: sender group (an anonymous per-device hash: one device's objects gather into one bubble), n: its name,
-//   k: the sender's style (how the object looks to everyone; see lib/skin-list.ts), p: has a preview picture
+//   k: the sender's style (how the object looks to everyone; see lib/skin-list.ts), p: has a preview picture,
+//   a: sent anonymously (cloud only; open ones are encrypted with the anonymous space's key)
 // The old space-only form ⟪slug|handle⟫ is still read.
-export interface Tags { space?: string; by?: string; life?: number; open?: boolean; from?: string; group?: string; skin?: string; thumb?: boolean; task?: string }
+export interface Tags { space?: string; by?: string; life?: number; open?: boolean; from?: string; group?: string; skin?: string; thumb?: boolean; task?: string; anon?: boolean }
 /** a task id (lib/tasks.ts): files wired to it carry it */
 export const validTask = (x: unknown): x is string => typeof x === "string" && /^t[a-z0-9]{9}$/.test(x);
 const OLD = /^⟪([a-z0-9-]{1,32})\|([^⟫]{0,24})⟫/;
-const NEW = /^⟪((?:[sbtognkpw]=[^;⟫]*;?)*)⟫/;
+const NEW = /^⟪((?:[sbtognkpwa]=[^;⟫]*;?)*)⟫/;
 /** a bubble's name, safe inside a tag */
 export const cleanGroup = (x: unknown) => (typeof x === "string" ? x.replace(/[\u0000-\u001f\u007f⟪⟫;=|]/g, "").replace(/\s+/g, " ").trim().slice(0, 40) : "");
 export const validFrom = (x: unknown): x is string => typeof x === "string" && /^[a-f0-9]{10}$/.test(x);
@@ -176,19 +201,20 @@ export function tagName(name: string, t: Tags) {
   if (t.skin && validSkin(t.skin) && t.skin !== "orbit") parts.push(`k=${t.skin}`);
   if (t.thumb && t.open) parts.push("p=1");
   if (t.task && validTask(t.task)) parts.push(`w=${t.task}`);
+  if (t.anon) parts.push("a=1");
   return parts.length ? `⟪${parts.join(";")}⟫${name}` : name;
 }
 
-export type Untagged<T> = T & { space: string | null; by: string | null; life: number; open: boolean; from: string | null; groupName: string | null; skin: string | null; thumb: boolean; task: string | null };
+export type Untagged<T> = T & { space: string | null; by: string | null; life: number; open: boolean; from: string | null; groupName: string | null; skin: string | null; thumb: boolean; task: string | null; anon: boolean };
 export function untag<T extends { name?: unknown; expiresAt?: unknown }>(o: T): Untagged<T> {
   const name = typeof o.name === "string" ? o.name : "";
   const old = OLD.exec(name);
-  if (old) return { ...o, name: name.slice(old[0].length), space: old[1], by: old[2] || null, life: LIFE_MIN, open: false, from: null, groupName: null, skin: null, thumb: false, task: null };
+  if (old) return { ...o, name: name.slice(old[0].length), space: old[1], by: old[2] || null, life: LIFE_MIN, open: false, from: null, groupName: null, skin: null, thumb: false, task: null, anon: false };
   const m = NEW.exec(name);
-  if (!m) return { ...o, space: null, by: null, life: LIFE_MIN, open: false, from: null, groupName: null, skin: null, thumb: false, task: null };
+  if (!m) return { ...o, space: null, by: null, life: LIFE_MIN, open: false, from: null, groupName: null, skin: null, thumb: false, task: null, anon: false };
   const kv = Object.fromEntries(m[1].split(";").filter(Boolean).map((x) => [x[0], x.slice(2)]));
   const life = LIVES.includes(Number(kv.t)) ? Number(kv.t) : LIFE_MIN;
-  const out = { ...o, name: name.slice(m[0].length), space: kv.s || null, by: kv.b || null, life, open: kv.o === "1", from: validFrom(kv.g) ? kv.g : null, groupName: cleanGroup(kv.n) || null, skin: validSkin(kv.k) ? kv.k : null, thumb: kv.p === "1" && kv.o === "1", task: validTask(kv.w) ? kv.w : null };
+  const out = { ...o, name: name.slice(m[0].length), space: kv.s || null, by: kv.b || null, life, open: kv.o === "1", from: validFrom(kv.g) ? kv.g : null, groupName: cleanGroup(kv.n) || null, skin: validSkin(kv.k) ? kv.k : null, thumb: kv.p === "1" && kv.o === "1", task: validTask(kv.w) ? kv.w : null, anon: kv.a === "1" };
   // a shorter life burns earlier than the database's 30 minutes: the server hides it and refuses it from then on
   if (life < LIFE_MIN && typeof o.expiresAt === "string") {
     const t = Date.parse(o.expiresAt);
@@ -205,7 +231,7 @@ export async function allSpaces(limit = 200) {
     .slice(0, limit)
     .map((r) => {
       const meta = unseal(r.meta);
-      return meta ? { slug: r.slug, title: meta.title, priv: meta.priv, at: meta.at, members: r.members, kicked: r.kicked } : null;
+      return meta ? { slug: r.slug, title: meta.title, priv: meta.priv, anon: !!meta.anon, at: meta.at, members: r.members, kicked: r.kicked } : null;
     })
     .filter((x): x is NonNullable<typeof x> => !!x);
 }

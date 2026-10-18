@@ -12,7 +12,10 @@ import LaunchDock, { isPending, pendingId, pendingOrb, type Launch } from "./Lau
 import { launch, type Stage } from "@/lib/transfer";
 import { folderFromInput, fromDrop, textToFile, type Item } from "@/lib/bundle";
 import { useRouter } from "next/navigation";
-import { deviceId, deviceInfo, dropOwnerKey, hasGot, ownerKey, type Orb } from "@/lib/client";
+import { deviceId, deviceInfo, dropOwnerKey, hasGot, ownerKey, homePath, persistentId, type Orb } from "@/lib/client";
+import { anonId, anonSeen, anonSwitch, isAnon, markAnonSeen, setAnon, useAnon } from "@/lib/anon";
+import { genericFileName, scrubItems } from "@/lib/scrub";
+import AnonCard, { type AnonMode } from "./AnonCard";
 import { supabase, type RealtimeChannel } from "@/lib/realtime";
 import SpacePanel, { SpaceRoom } from "./Spaces";
 import BubbleZoom from "./BubbleZoom";
@@ -25,9 +28,9 @@ const release = (id: string) => {
 };
 import { downloading } from "@/lib/downloads";
 import { warm } from "@/lib/peek";
-import { createSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
-import { LuArchive, LuFileText, LuFlag, LuMessageCircle, LuImage, LuLayers, LuLayoutGrid, LuMapPin, LuMapPinOff, LuMenu, LuMusic, LuOrbit, LuPalette, LuUser, LuVideo, LuWifi } from "react-icons/lu";
-const KIND_ICON = { all: LuLayoutGrid, photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
+import { anonLink, anonTitle, createAnonSpace, createSpace, joinAnonSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
+import { BsIncognito } from "react-icons/bs";
+import { LuFlag, LuMessageCircle, LuMapPin, LuMapPinOff, LuMenu, LuPalette, LuSearch, LuPlus, LuX } from "react-icons/lu";
 import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange } from "./BubbleBoard";
 import TaskBoard, { TaskWires, taskGroups } from "./TaskBoard";
@@ -35,8 +38,10 @@ import { addTask, assignTask, burnTask, carryTasks, wireObject, editTask, isMyTa
 import { readSync, type SyncMsg } from "@/lib/sync";
 import { joinLive, liveOn, roomsFor, type Chan } from "@/lib/live";
 import { around } from "@/lib/area";
-import { asked, dropGps, fromIp, locate, markAsked, permission, where } from "@/lib/where";
-import LocationAsk from "./LocationAsk";
+import { anonCellNow, asked, dropGps, fixNow, follow, forgetFix, fromIp, locate, markAsked, markSent, permission, pickArea, setAnonCell, where } from "@/lib/where";
+import LocationAsk, { LocationBlocked } from "./LocationAsk";
+import { ArchiveRestore, ArchiveRoom, TrashZone } from "./Trash";
+import { trashLabel, useTrash } from "@/lib/trash";
 import TaskThrow, { type Grab } from "./TaskThrow";
 import dynamic from "next/dynamic";
 import { perf } from "@/lib/perf";
@@ -46,8 +51,12 @@ const EarthView = dynamic(() => import("./EarthView"), { ssr: false, loading: ()
 import { GoPrivate, InviteCard } from "./TeamMove";
 import { bubbleName, burnBubble, editBubble, hueFor, isMine as isMyBubble, postBubble, senderOf, type Bubble } from "@/lib/bubbles";
 import StylePicker from "./StylePicker";
-import { autoRemember, findDeviceSkin, skinName, toneOf, useLook } from "@/lib/skins";
-import { KINDS, fileKind, type Kind } from "@/lib/skin-list";
+import { autoRemember, findDeviceSkin, forgetDeviceLook, pickedPalette, pickedSkin, skinName, toneOf, useLook } from "@/lib/skins";
+import { fileKind, type Kind } from "@/lib/skin-list";
+import { WorkBar, WorkDock, WorkRail } from "./WorkChrome";
+import KindFilter from "./KindFilter";
+import { readTheme } from "@/lib/theme";
+import { speakWork } from "@/lib/words";
 
 /** a task with a change applied the way the server will (so the screen updates before it answers) */
 function applyEdit(t: Task, c: { text?: string; route?: string[]; stage?: number }, by: string): Task {
@@ -130,6 +139,11 @@ type Panel =
   | { kind: "menu" }
   | { kind: "bubble"; edit?: BubbleChange }
   | { kind: "private" }
+  // "Stay anonymous" (lib/anon.ts, components/AnonCard.tsx)
+  | { kind: "anon"; mode: "intro" | "on" | "status" }
+  | { kind: "anon-gate"; items?: Item[]; note?: boolean; task?: { line: string; life: number } }
+  | { kind: "anon-join"; slug: string; code: string; key: string }
+  | { kind: "anon-link" }
   | null;
 
 // on the map the header, the send button and the zoom tools cover the screen's edges
@@ -138,6 +152,13 @@ const MAP_BAND: Record<VoidMode, Band> = {
   tall: { top: 124, bottom: 118, left: 20, right: 72 },
   phone: { top: 70, bottom: 96, left: 10, right: 10 },
   short: { top: 56, bottom: 60, left: 60, right: 60 },
+};
+// inside a space or the archive (classic look): everything sits within the glass pane, clear of its title
+const ROOM_BAND: Record<VoidMode, Band> = {
+  desk: { top: 236, bottom: 70, left: 72, right: 112 },
+  tall: { top: 236, bottom: 70, left: 56, right: 96 },
+  phone: { top: 356, bottom: 34, left: 22, right: 22 },
+  short: { top: 172, bottom: 28, left: 40, right: 40 },
 };
 // the map holds far more than a fixed sky
 const MAP_CAP = 160;
@@ -186,7 +207,22 @@ function groupOrbs(list: Orb[]) {
   return { list: out, groups };
 }
 
-export default function Void() {
+/** ui "work": the /work page (same void, calm editor-style look; app/work/work.css) */
+export default function Void({ ui }: { ui?: "work" } = {}) {
+  const work = ui === "work";
+  // leaving /work inside the app (About, the classic view): the page underneath is the normal one again
+  useEffect(() => {
+    if (!work) return;
+    const d = document.documentElement;
+    d.dataset.ui = "work";
+    d.dataset.theme = readTheme();
+    const quiet = speakWork();
+    return () => {
+      quiet();
+      delete d.dataset.ui;
+      delete d.dataset.theme;
+    };
+  }, [work]);
   const [orbs, setOrbs] = useState<Orb[]>([]);
   const orbsRef = useRef(orbs);
   orbsRef.current = orbs;
@@ -210,6 +246,23 @@ export default function Void() {
   const [gps, setGps] = useState(false);
   const [areaReady, setAreaReady] = useState(false);
   const [geoAsk, setGeoAsk] = useState(false);
+  // location refused or failed: how to fix it, or pick the area on the map (null: not shown)
+  const [geoFail, setGeoFail] = useState<"denied" | "failed" | null>(null);
+  // the "share location / create your space" strip, closed for this visit
+  const [pillOff, setPillOffS] = useState(false);
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("orbit:pill-off") === "1") setPillOffS(true);
+    } catch {}
+  }, []);
+  const setPillOff = (v: boolean) => {
+    setPillOffS(v);
+    try {
+      sessionStorage.setItem("orbit:pill-off", v ? "1" : "0");
+    } catch {}
+  };
+  // the Earth was opened to pick this device's area by hand
+  const [picking, setPicking] = useState(false);
   const [skew, setSkew] = useState(0);
   const skewRef = useRef(skew);
   skewRef.current = skew;
@@ -223,12 +276,49 @@ export default function Void() {
   const roomRef = useRef(room);
   roomRef.current = room;
   // bubble text in this void (or space)
-  const [notes, setNotes] = useState<Bubble[]>([]);
+  // what this browser put in the trash (lib/trash.ts) stays out of sight here, for everyone else it is still there
+  const trash = useTrash();
+  // the archive space (this device only): everything archived, on its usual map, each with a restore button
+  const [inArchive, setInArchive] = useState(false);
+  useEffect(() => {
+    const on = () => (setInArchive(true), setPanel(null));
+    window.addEventListener("orbit:archive", on);
+    return () => window.removeEventListener("orbit:archive", on);
+  }, []);
+  // nothing left in it: back out
+  useEffect(() => {
+    if (inArchive && !trash.size) setInArchive(false);
+  }, [inArchive, trash]);
+  // walking into (or out of) the archive or a space: the view fits everything in again
+  useEffect(() => setFitAllN((n) => n + 1), [inArchive, space?.slug]);
+  // inside it nothing is archived again (the drop zone is gone) and Esc walks out
+  useEffect(() => {
+    if (!inArchive) return;
+    document.body.dataset.archive = "1";
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && !document.querySelector(".drawer, .pop, .viewer") && setInArchive(false);
+    window.addEventListener("keydown", esc);
+    return () => (delete document.body.dataset.archive, window.removeEventListener("keydown", esc));
+  }, [inArchive]);
+  const [allNotes, setNotes] = useState<Bubble[]>([]);
+  const notes = useMemo(() => (inArchive ? allNotes.filter((b) => trash.has(`b:${senderOf(b)}`)) : trash.size ? allNotes.filter((b) => !trash.has(`b:${senderOf(b)}`)) : allNotes), [allNotes, trash, inArchive]);
   const knownBubbles = useRef<Map<string, string> | null>(null);
   // tasks in this void/space, which one is in focus (only its files show), and the task a new send is wired to
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [allTasks, setTasks] = useState<Task[]>([]);
+  const tasks = useMemo(() => {
+    const key = (t: Task) => `t:${isMyTask(t.id) ? "me" : t.from || t.by || "someone"}`;
+    return inArchive ? allTasks.filter((t) => trash.has(key(t))) : trash.size ? allTasks.filter((t) => !trash.has(key(t))) : allTasks;
+  }, [allTasks, trash, inArchive]);
   const knownTasks = useRef<Map<string, string> | null>(null);
   const [taskFocus, setTaskFocus] = useState<string | null>(null);
+  // a focused task dims everything else: a tap anywhere else (or Esc) brings it all back
+  useEffect(() => {
+    if (!taskFocus) return;
+    const down = (e: PointerEvent) => !(e.target as Element)?.closest?.(".task-board, .tb-acts, .wire-plug, .wire-menu") && setTaskFocus(null);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setTaskFocus(null);
+    window.addEventListener("pointerdown", down, true);
+    window.addEventListener("keydown", esc);
+    return () => (window.removeEventListener("pointerdown", down, true), window.removeEventListener("keydown", esc));
+  }, [taskFocus]);
   const [wireTo, setWireTo] = useState<string | null>(null);
   // the board shows once someone opens it, even before the first task
   const [taskOpen, setTaskOpen] = useState(false);
@@ -256,12 +346,25 @@ export default function Void() {
   const [board, setBoard] = useState<string | null | false>(false);
   const [live, setLive] = useState<Set<string>>(new Set());
   const myId = room?.members.find((m) => m.you)?.id ?? null;
+  // the member ids we already have a name for: a presence id we don't know means someone just joined, so pull the
+  // member list at once instead of waiting for the 45 s refresh (that was the "reload to see them" lag)
+  const memberIdsRef = useRef<Set<string>>(new Set());
+  memberIdsRef.current = new Set(room?.members.map((m) => m.id) ?? []);
+  const presenceSeenT = useRef(0);
   // incoming launch the user tapped: it opens by itself the moment it lands
   const waitFor = useRef<string | null>(null);
   const landedKeys = useRef(new Set<string>());
   const toasted = useRef(new Set<string>());
   const [now, setNow] = useState(() => Date.now());
   const [panel, setPanel] = useState<Panel>(null);
+  // "Stay anonymous": on = the switch, now = anonymous here (the switch, or an anonymous space). Drawing only:
+  // everything that sends something checks isAnon() at that moment
+  const { on: anonOn, now: anonNow } = useAnon();
+  // the whole page knows (html[data-anon]): the ghost look in globals.css / work.css
+  useEffect(() => {
+    if (anonNow) document.documentElement.dataset.anon = "1";
+    else delete document.documentElement.dataset.anon;
+  }, [anonNow]);
   // something of mine just went up: the map shows everything again so it is in sight (and if this device was
   // looking at another area, it goes back to its own, where the thing landed)
   const [fitAll, setFitAllN] = useState(0);
@@ -356,12 +459,17 @@ export default function Void() {
 
   // how dropped objects look (Style picker); a browser that never picked one asks for this computer's
   const { skin, pal } = useLook();
+  const dropToast = (id: number) => setToasts((t) => t.filter((x) => x.id !== id));
+  const toastSwipe = useRef<{ id: number; x: number; y: number } | null>(null);
   const toast = useCallback((text: string) => {
     const id = Math.random();
-    setToasts((t) => [...t.slice(-2), { id, text }]);
+    // the same notice twice in a row shows once
+    setToasts((t) => [...t.filter((x) => x.text !== text).slice(-1), { id, text }]);
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4000);
   }, []);
   useEffect(() => {
+    // anonymous: the look stays in this browser, nothing is asked of (or told to) the server
+    if (isAnon()) return;
     findDeviceSkin().then((id) => id && toast(`Your style from this computer: ${skinName(id)}`)).catch(() => {});
     return autoRemember();
   }, [toast]);
@@ -463,10 +571,13 @@ export default function Void() {
     }, 150 + Math.random() * 900);
   }, [refresh]);
 
+  // an anonymous device says nothing in the public void's region rooms (only inside its anonymous space)
   const broadcast = useCallback(() => {
+    if (isAnon() && !spaceRef.current) return;
     channel.current?.send({ type: "broadcast", event: "pulse", payload: { at: Date.now() } });
   }, []);
   const beam = useCallback((event: "launch" | "landed" | "gone", payload: Record<string, unknown>) => {
+    if (isAnon() && !spaceRef.current) return;
     channel.current?.send({ type: "broadcast", event, payload });
   }, []);
 
@@ -506,7 +617,7 @@ export default function Void() {
   const sync = useCallback((m: SyncMsg) => {
     applySync(m);
     // (the change itself is enough: no extra "re-fetch" nudge, half the messages on the free plan)
-    channel.current?.send({ type: "broadcast", event: "sync", payload: m });
+    if (!(isAnon() && !spaceRef.current)) channel.current?.send({ type: "broadcast", event: "sync", payload: m });
   }, [applySync]);
 
   // ---- launches: the card closes on Launch, the ball is in the void at once, a small dock tracks it ----
@@ -547,7 +658,7 @@ export default function Void() {
     let beamed = 0;
     const announce = () => {
       beamed = Date.now();
-      beam("launch", { ...info, net: netRef.current, f: frac, by: spaceRef.current?.handle ?? null });
+      beam("launch", { ...info, net: isAnon() ? null : netRef.current, f: frac, by: spaceRef.current?.handle ?? null });
     };
     announce();
     // (every 6 s, progress at most every 1.5 s: few live messages, well inside the 20 s a quiet launch is kept)
@@ -557,8 +668,15 @@ export default function Void() {
       frac = st === "uploading" ? f : st === "finalizing" || st === "done" ? 1 : 0;
       if (Date.now() - beamed > 1500) announce();
     };
-    launch({ file: job.file, name: job.name, passcode: job.passcode, maxDownloads: job.maxDownloads, life: job.life, open: job.open, group: job.group, task: job.task, hue: l.hue, signal: l.abort.signal, onProgress })
+    // anonymous "hide file names": the name it goes by says only what kind of thing it is
+    const fileName = job.hideNames ? genericFileName(job.file) : undefined;
+    launch({ file: job.file, name: job.name, passcode: job.passcode, maxDownloads: job.maxDownloads, life: job.life, open: job.open, group: job.group, task: job.task, hue: l.hue, fileName, signal: l.abort.signal, onProgress })
       .then((orb) => {
+        // the first send into a new anonymous space whose link couldn't be copied: the link, to pass on
+        if (linkAfter.current && linkAfter.current === spaceRef.current?.slug) {
+          linkAfter.current = null;
+          setPanel((p) => p ?? { kind: "anon-link" });
+        }
         if (job.task && job.done) tickTask(job.task, true).then(() => refresh()).catch(() => {});
         clearInterval(keepAlive);
         beam("landed", { k: key, id: orb.id });
@@ -583,6 +701,8 @@ export default function Void() {
     // refresh/broadcast/report are stable; skew only nudges the stand-in's clock
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [skew]);
+  // the anonymous space made by the gate whose link isn't copied yet: shown after its first send lands
+  const linkAfter = useRef<string | null>(null);
   const dockLaunches = useMemo(() => launches.map((l) => (prog[l.key] && !l.orb ? { ...l, ...prog[l.key] } : l)), [launches, prog]);
 
 
@@ -612,21 +732,49 @@ export default function Void() {
 
   // back into the space this device was last in (no setup twice), and ?space= invite links
   useEffect(() => {
+    // an anonymous link carries its code and key after the # (never sent to a server): read, then wiped from the
+    // address bar at once
+    const inv = new URLSearchParams(window.location.search).get("space");
+    // an anonymous link is told apart by what it carries after the # (a named space may have an anon- slug from
+    // before the prefix was reserved); a saved anonymous space is also known by its link without it
+    const frag = new URLSearchParams(window.location.hash.slice(1));
+    const anonLike = !!inv && /^anon-[a-z0-9]{8}$/.test(inv);
+    let anonInv = anonLike && (frag.has("j") || frag.has("k")) ? inv : null;
+    if (anonInv) window.history.replaceState(null, "", window.location.pathname);
     (async () => {
       const slug = await lastSpace().catch(() => null);
-      const s = slug ? (await savedSpaces().catch(() => [])).find((x) => x.slug === slug) ?? null : null;
+      const list = await savedSpaces().catch(() => [] as SpaceSession[]);
+      let s = slug ? list.find((x) => x.slug === slug) ?? null : null;
+      // the switch is on: a named space (it knows your name) is not walked back into
+      if (s && anonSwitch() && !s.anon) s = null;
+      // an anonymous link to a space this browser is already in: straight in
+      if (!anonInv && anonLike && list.some((x) => x.slug === inv && x.anon)) anonInv = inv;
+      const have = anonInv ? list.find((x) => x.slug === anonInv) ?? null : null;
+      if (have) {
+        s = have;
+        setCurrent(have.slug);
+      }
       if (s) {
         setActiveSpace(s);
         spaceRef.current = s;
         setSpace(s);
       }
       setSpaceReady(true);
-      const inv = new URLSearchParams(window.location.search).get("space");
+      if (anonInv) {
+        if (have) return;
+        const code = frag.get("j") ?? "", key = frag.get("k") ?? "";
+        if (/^[a-z0-9]{12}$/.test(code) && /^[A-Za-z0-9_-]{22}$/.test(key)) setPanel({ kind: "anon-join", slug: anonInv, code, key });
+        else toast("This anonymous link is incomplete. Ask for the whole link");
+        return;
+      }
       if (inv && /^[a-z0-9-]{1,32}$/.test(inv) && inv !== s?.slug) setPanel({ kind: "space", start: inv });
     })();
+    // toast is stable
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const switchSpace = useCallback((s: SpaceSession | null) => {
+    setInArchive(false);
     setActiveSpace(s);
     spaceRef.current = s;
     setSpace(s);
@@ -646,6 +794,9 @@ export default function Void() {
     toast(`You are in ${s.title}`);
   }, [switchSpace, toast]);
   removedRef.current = (sp) => {
+    // anonymous (maybe switched on in another tab): a named space refuses the throwaway id. Only step out of it here;
+    // it stays saved for when the switch is off again
+    if (isAnon() && !sp.anon) return switchSpace(null);
     forget(sp.slug);
     switchSpace(null);
     toast(`You were removed from ${sp.title}`);
@@ -655,12 +806,38 @@ export default function Void() {
   const viewing = panel?.kind === "unlock" ? panel.id : null;
   const viewingRef = useRef<string | null>(null);
   viewingRef.current = viewing;
+  const lastPulse = useRef(0);
   const sendPulse = useCallback(() => {
     if (document.visibilityState !== "visible") return Promise.resolve();
+    lastPulse.current = Date.now();
+    // anonymous: counted as online and nothing else. No label, device, place or what it's looking at; the reply is
+    // only the IP's rough area, kept in memory to look around the public void
+    if (isAnon()) {
+      const inVoid = !spaceRef.current;
+      return fetch("/api/pulse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ anon: true, id: anonId(), void: inVoid }),
+        keepalive: true,
+      })
+        .then((r) => r.json())
+        .then((d: { area?: string }) => {
+          if (inVoid && !spaceRef.current && isAnon()) {
+            setAnonCell(d.area);
+            if (anonCellNow()) setHome(anonCellNow());
+          }
+          setAreaReady(true);
+        })
+        .catch(() => setAreaReady(true));
+    }
+    // location shared: the exact spot goes to Orbit (its live map); others only ever see the rough area
+    const f = fixNow();
+    markSent(f);
+    const exact = f ? { lat: f.lat, lon: f.lon, acc: f.acc, precise: true } : {};
     return fetch("/api/pulse", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ deviceId: deviceId(), viewing: viewingRef.current, ...deviceInfo() }),
+      body: JSON.stringify({ deviceId: deviceId(), viewing: viewingRef.current, ...deviceInfo(), ...exact }),
       keepalive: true,
     })
       .then((r) => r.json())
@@ -685,6 +862,137 @@ export default function Void() {
       document.removeEventListener("visibilitychange", onVis);
     };
   }, [sendPulse]);
+
+  // ---- "Stay anonymous" (lib/anon.ts): the switch, and the anonymous spaces anonymous sends go into ----
+  // anonymous spaces this browser is in (the cards offer to send into one again)
+  const [anonSaved, setAnonSaved] = useState<SpaceSession[]>([]);
+  const loadAnonSaved = useCallback(() => savedSpaces().then((l) => setAnonSaved(l.filter((x) => x.anon))).catch(() => {}), []);
+  // set while this tab flips the switch itself, so the cross-tab follower below leaves it alone
+  const localToggle = useRef<boolean | null>(null);
+  const toggleAnon = useCallback((v: boolean, fromIntro = false) => {
+    localToggle.current = v;
+    if (v) {
+      const lasting = persistentId();
+      // first: no normal heartbeat leaves after this point
+      setAnon(true);
+      markAnonSeen();
+      // Orbi forgets this browser's heartbeat row (label, browser, network, IP place, last GPS spot)...
+      fetch("/api/pulse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ forget: true, deviceId: lasting }), keepalive: true }).catch(() => {});
+      // ...and the style it remembered for this computer
+      if (pickedSkin() || pickedPalette()) forgetDeviceLook().catch(() => {});
+      forgetFix();
+      setGps(false);
+      setGeoAsk(false);
+      setGeoFail(null);
+      setEarth(false);
+      setPicking(false);
+      setNet(null);
+      inviteKeyRef.current = "";
+      setInvite(null);
+      setScope((sc) => (sc === "near" ? "all" : sc));
+      // the area being looked at is the IP's from now on (the next heartbeat brings it); never the GPS one
+      homeRef.current = areaRef.current = "";
+      setHome("");
+      setArea("");
+      const sp = spaceRef.current;
+      if (sp && !sp.anon) {
+        switchSpace(null);
+        toast(`Anonymous on. You left ${sp.title}: it shows your name`);
+      } else if (!fromIntro) toast("Anonymous on: location off, no name, cloud only");
+      if (fromIntro) setPanel({ kind: "anon", mode: "on" });
+      void sendPulse();
+    } else {
+      setAnon(false);
+      setAnonCell("");
+      toast("Anonymous off. Location stays off until you tap the pin");
+      setHome(where()?.area ?? homeRef.current);
+      setPanel((p) => (p?.kind === "anon" ? null : p));
+      void sendPulse();
+    }
+  }, [switchSpace, toast, sendPulse]);
+  // the switch flipped in another tab of this browser: apply the local part here too (the other tab already sent
+  // the forget pulse). Named spaces are stepped out of, never forgotten; GPS, net and the GPS area are dropped at once
+  const prevAnonOn = useRef(anonOn);
+  useEffect(() => {
+    if (prevAnonOn.current === anonOn) return;
+    prevAnonOn.current = anonOn;
+    if (localToggle.current === anonOn) {
+      localToggle.current = null;
+      return;
+    }
+    localToggle.current = null;
+    if (anonOn) {
+      const sp = spaceRef.current;
+      if (sp && !sp.anon) {
+        switchSpace(null);
+        toast(`Anonymous on. You left ${sp.title}: it shows your name`);
+      }
+      forgetFix();
+      setGps(false);
+      setGeoAsk(false);
+      setGeoFail(null);
+      setEarth(false);
+      setPicking(false);
+      setNet(null);
+      inviteKeyRef.current = "";
+      setInvite(null);
+      setScope((sc) => (sc === "near" ? "all" : sc));
+      homeRef.current = areaRef.current = "";
+      setHome("");
+      setArea("");
+    } else {
+      setAnonCell("");
+      setHome(where()?.area ?? homeRef.current);
+      setPanel((p) => (p?.kind === "anon" ? null : p));
+    }
+    void sendPulse();
+  }, [anonOn, switchSpace, toast, sendPulse]);
+  /** every way of turning it on: the first time, the explainer (its button turns it on) */
+  const requestAnon = useCallback(() => {
+    if (!anonSeen()) setPanel({ kind: "anon", mode: "intro" });
+    else toggleAnon(true);
+  }, [toggleAnon]);
+  const copyAnonLink = useCallback(async () => {
+    const sp = spaceRef.current;
+    if (!sp?.anon) return;
+    try {
+      await navigator.clipboard.writeText(anonLink(sp));
+      toast("Anonymous link copied");
+    } catch {
+      setPanel({ kind: "anon-link" });
+    }
+  }, [toast]);
+  /** what the gate was holding back, carried on inside the anonymous space */
+  type Then = { items?: Item[]; note?: boolean; task?: { line: string; life: number } };
+  const carryOn = useRef<(then?: Then) => void>(() => {});
+  /** into an anonymous space this browser is in, and on with what was being sent */
+  const intoAnon = useCallback((s: SpaceSession, then?: Then) => {
+    remember(s);
+    switchSpace(s);
+    toast(`You're anonymous in ${s.title}`);
+    carryOn.current(then);
+  }, [switchSpace, toast]);
+  /** a new anonymous space (random title, code and key), stepped into; its one link is copied if it can be */
+  const goAnonSpace = useCallback(async (then?: Then) => {
+    let s: SpaceSession;
+    try {
+      s = await createAnonSpace();
+    } catch (e) {
+      toast((e as { status?: number }).status === 500 ? "Anonymous spaces aren't available yet" : (e as Error).message);
+      throw e;
+    }
+    await remember(s);
+    switchSpace(s);
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(anonLink(s));
+      copied = true;
+    } catch {}
+    if (!copied) linkAfter.current = s.slug;
+    toast(copied ? `${s.title} is ready · link copied` : `${s.title} is ready`);
+    if (then) carryOn.current(then);
+    else setPanel(copied ? null : { kind: "anon-link" });
+  }, [switchSpace, toast]);
 
   const dropIncoming = useCallback((k: string) => {
     setIncoming((m) => {
@@ -830,6 +1138,19 @@ export default function Void() {
       if ((e as { status?: number }).status === 403 && spaceRef.current === sp) removedRef.current(sp);
     }
   }, []);
+  // presence (who is live) arrives instantly; a live id we have no name for means someone just joined, so fetch the
+  // member list right away (debounced) rather than waiting for the 45 s tick or a reload
+  const onPresence = useCallback((ids: string[]) => {
+    setLive(new Set(ids));
+    if (!spaceRef.current) return;
+    const unknown = ids.some((id) => id !== myIdRef.current && !memberIdsRef.current.has(id));
+    if (unknown && Date.now() - presenceSeenT.current > 1500) {
+      presenceSeenT.current = Date.now();
+      loadRoom();
+    }
+  }, [loadRoom]);
+  const onPresenceRef = useRef(onPresence);
+  onPresenceRef.current = onPresence;
   useEffect(() => {
     setRoom(null);
     setLive(new Set());
@@ -890,6 +1211,8 @@ export default function Void() {
       if (event === "sync") return beams.current.sync(payload);
       // "go private with the team": only devices on the sender's network can open the passcode
       if (event === "invite") {
+        // anonymous: nobody on this network gets to know this device is here
+        if (isAnon()) return;
         const p = payload as { slug?: string; title?: string; by?: string; net?: string; seal?: { iv: string; c: string } };
         if (!p?.slug || !p.seal || spaceRef.current || p.net !== netRef.current || !inviteKeyRef.current || !/^[a-z0-9-]{1,32}$/.test(p.slug)) return;
         const pass = await openInvite(inviteKeyRef.current, p.seal);
@@ -905,8 +1228,10 @@ export default function Void() {
           if (!up) return;
           channel.current = l.chan;
           if (spaceRef.current && myIdRef.current) l.chan.track({ id: myIdRef.current });
+          // the socket is live: pull anything created during the handshake, so the first send is never missed
+          refresh();
         },
-        presence: (ids) => setLive(new Set(ids)),
+        presence: (ids) => onPresenceRef.current(ids),
       });
       return () => {
         channel.current = null;
@@ -920,7 +1245,7 @@ export default function Void() {
         ch.on("presence", { event: "sync" }, () => {
           const ids = new Set<string>();
           for (const list of Object.values(ch.presenceState())) for (const p of list as { id?: string }[]) if (p.id) ids.add(p.id);
-          setLive(ids);
+          onPresenceRef.current([...ids]);
         });
       }
       // the first is this device's own (space or area): everything it says goes there
@@ -951,14 +1276,16 @@ export default function Void() {
   // where this device is: its last area at once; a location already allowed is refreshed quietly; a first visit is
   // asked (after a moment) whether to share it
   useEffect(() => {
+    // nothing known yet: the heartbeat brings the IP's area; never wait on it for long
+    const t = setTimeout(() => setAreaReady(true), 2500);
+    // anonymous: no location at all (not even the last one this browser kept); the heartbeat's IP area only
+    if (isAnon()) return () => clearTimeout(t);
     const w = where();
     if (w) {
       setHome(w.area);
       setGps(w.how === "gps");
       setAreaReady(true);
     }
-    // nothing known yet: the heartbeat brings the IP's area; never wait on it for long
-    const t = setTimeout(() => setAreaReady(true), 2500);
     permission().then((p) => {
       if (p === "granted")
         locate()
@@ -972,8 +1299,31 @@ export default function Void() {
     });
     return () => clearTimeout(t);
   }, []);
+  // while location is allowed: follow the device; a walk into another cell moves its void, a move of 100 m+ tells
+  // Orbit early (at most every 15 s)
+  const movedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!gps || anonNow) return;
+    const stop = follow(
+      (w) => setHome(w.area),
+      () => {
+        if (movedTimer.current) return;
+        movedTimer.current = setTimeout(() => {
+          movedTimer.current = null;
+          sendPulse();
+        }, Math.max(0, lastPulse.current + 15_000 - Date.now()));
+      },
+    );
+    return () => {
+      stop();
+      if (movedTimer.current) clearTimeout(movedTimer.current);
+      movedTimer.current = null;
+    };
+  }, [gps, anonNow, sendPulse]);
   const shareLocation = useCallback(async () => {
     setGeoAsk(false);
+    // anonymous: location can't be on; the card says why
+    if (isAnon()) return setPanel({ kind: "anon", mode: "status" });
     try {
       const w = await locate();
       setGps(true);
@@ -982,8 +1332,15 @@ export default function Void() {
     } catch (e) {
       markAsked();
       setGps(false);
-      toast((e as { denied?: boolean }).denied ? "Location is blocked: allow it for this site in your browser settings, then tap the pin again" : (e as Error).message);
+      setGeoFail((e as { denied?: boolean }).denied ? "denied" : "failed");
     }
+  }, [toast]);
+  // location blocked: this device's area is the one picked on the map (lib/where.ts), not its connection's guess
+  const pickHere = useCallback((cell: string) => {
+    pickArea(cell);
+    setHome(cell);
+    setArea(cell);
+    toast("Your area is set: what you send goes here, and you see what's around it");
   }, [toast]);
   // a new area: its void (the first load waits for areaReady and asks with the area by then)
   useEffect(() => {
@@ -1004,6 +1361,8 @@ export default function Void() {
       firstView.current = false;
       return;
     }
+    // anonymous: what this device opens is never reported (it adds nothing to watcher counts)
+    if (isAnon()) return;
     sendPulse().then(() => {
       refresh();
       broadcast();
@@ -1093,7 +1452,7 @@ export default function Void() {
       fromDrop(e.dataTransfer)
         .then((items) => {
           // dropped onto an open send panel: added to it
-          if (items.length) setPanel((p) => (p?.kind === "send" ? { kind: "send", items: [...p.items, ...items] } : { kind: "send", items }));
+          if (items.length) setPanel((p) => (p?.kind === "send" ? { kind: "send", items: [...p.items, ...items] } : p?.kind === "anon-gate" && p.items ? { ...p, items: [...p.items, ...items] } : { kind: "send", items }));
         })
         .catch(() => {});
     };
@@ -1178,18 +1537,20 @@ export default function Void() {
         .map(incomingOrb),
     [incoming, orbs],
   );
-  const grouped = useMemo(
-    () =>
-      groupOrbs(
-        alive.filter(
-          (o) =>
-            !(archived && o.task) &&
-            (scope === "all" || (scope === "near" ? o.netHash === net || !!ownerKey(o.id) : !!ownerKey(o.id))) &&
-            (kind === "all" || fileKind(o.fileName, o.mime) === kind),
-        ),
-      ),
-    [alive, scope, net, kind, archived],
-  );
+  const grouped = useMemo(() => {
+    const base = alive.filter(
+      (o) =>
+        !(archived && o.task) &&
+        (scope === "all" || (scope === "near" ? o.netHash === net || !!ownerKey(o.id) : !!ownerKey(o.id))) &&
+        (kind === "all" || fileKind(o.fileName, o.mime) === kind),
+    );
+    if (!inArchive) return groupOrbs(base.filter((o) => !trash.has(`o:${o.id}`)));
+    // the archive: files archived one by one, and whole containers archived at once
+    const one = groupOrbs(base.filter((o) => trash.has(`o:${o.id}`)));
+    const all = groupOrbs(base.filter((o) => !trash.has(`o:${o.id}`)));
+    const whole = all.list.filter((o) => isGroup(o.id) && trash.has(`o:${o.id}`));
+    return { list: [...one.list, ...whole], groups: new Map([...one.groups, ...whole.map((o) => [o.id, all.groups.get(o.id) ?? []] as const)]) };
+  }, [alive, scope, net, kind, archived, trash, inArchive]);
   const groups = grouped.groups;
   const bubbleActs = {
     now: serverNow,
@@ -1214,7 +1575,7 @@ export default function Void() {
       firstZoom.current = false;
       return;
     }
-    if (viewing) return; // an open card already reports itself
+    if (viewing || isAnon()) return; // an open card already reports itself; anonymous ones never do
     sendPulse().then(() => {
       refresh();
       broadcast();
@@ -1222,11 +1583,11 @@ export default function Void() {
   }, [zoomFirst, viewing, sendPulse, refresh, broadcast]);
   const shown = useMemo(
     () => [
-      ...grouped.list,
-      ...pending,
-      ...(scope === "mine" ? [] : arrivingOrbs.filter((o) => scope === "all" || (!!net && o.netHash === net))),
+      ...(inArchive ? grouped.list : grouped.list.filter((o) => !trash.has(`o:${o.id}`))),
+      ...(inArchive ? [] : pending),
+      ...(inArchive || scope === "mine" ? [] : arrivingOrbs.filter((o) => scope === "all" || (!!net && o.netHash === net))),
     ],
-    [grouped, scope, net, pending, arrivingOrbs],
+    [grouped, scope, net, pending, arrivingOrbs, trash, inArchive],
   );
   // Your balls are numbered 1..N in launch order, on the ball and on its dock row, so you can count yours at a glance.
   const badges = useMemo(() => {
@@ -1309,7 +1670,9 @@ export default function Void() {
   // (so its cable runs dead straight), unwired files get one lane below. The rows grow to share the height,
   // and the balls shrink when a lane is crowded, so nothing overlaps.
   const laneTasks = !archived && arranged && mode === "desk" && tasks.length > 0 && visible.length > 0;
-  const loose = laneTasks ? visible.filter((o) => !o.task || !tasks.some((t) => t.id === o.task)) : [];
+  // the task a ball (or a container, through any of its files) is wired to
+  const taskOf = (o: Orb) => (isGroup(o.id) ? groups.get(o.id)?.find((m) => m.task)?.task : o.task) ?? null;
+  const loose = laneTasks ? visible.filter((o) => !taskOf(o) || !tasks.some((t) => t.id === taskOf(o))) : [];
   const laneCount = tasks.length + (loose.length ? 1 : 0);
   // every lane fits on screen (the board never scrolls in Arranged): its height is the board's room split by the lanes
   const laneH = Math.round(Math.max(44, Math.min(150, (vw.h - 118 - 150 - 60) / Math.max(1, laneCount))));
@@ -1374,7 +1737,7 @@ export default function Void() {
     const bySender = (a: Orb, b: Orb) => (a.from ?? a.id).localeCompare(b.from ?? b.id) || a.createdAt.localeCompare(b.createdAt);
     const rows: { y: number; list: Orb[] }[] = tasks
       .filter((t) => lanes.y.has(t.id))
-      .map((t) => ({ y: lanes.y.get(t.id)!, list: visible.filter((o) => o.task === t.id).sort(bySender) }));
+      .map((t) => ({ y: lanes.y.get(t.id)!, list: visible.filter((o) => taskOf(o) === t.id).sort(bySender) }));
     if (loose.length) rows.push({ y: lanes.last + laneH / 2 + 8, list: [...loose].sort(bySender) });
     const span = Math.max(160, lanes.x1 - lanes.x0);
     const most = Math.max(1, ...rows.map((r) => r.list.length));
@@ -1416,6 +1779,7 @@ export default function Void() {
     if (!mapOn) return null;
     void pinTick;
     const things: Thing[] = [];
+    const taskKey = new Map(tGroups.flatMap((g) => g.tasks.map((t) => [t.id, `t:${g.key}`] as const)));
     const sz = (k: string, w: number, h: number) => sizes.get(k) ?? { w, h };
     if (showTasks)
       for (const g of tGroups) {
@@ -1432,7 +1796,10 @@ export default function Void() {
       if (swapIn.has(o.id)) continue;
       const n = isGroup(o.id) ? groups.get(o.id)?.length ?? 0 : 0;
       const L = n ? bubbleLayout(n) : null;
-      things.push({ key: `o:${alias.current.get(o.id) ?? o.id}`, w: L ? L.W + 60 : 210, h: L ? L.H + 120 : 250, born: Date.parse(o.createdAt) });
+      // wired to a task (a group: any of its files): it sits beside that task's panel
+      const wired = showTasks ? (n ? groups.get(o.id)?.find((m) => m.task)?.task : o.task) : null;
+      const near = wired ? taskKey.get(wired) : undefined;
+      things.push({ key: `o:${alias.current.get(o.id) ?? o.id}`, w: L ? L.W + 60 : 210, h: L ? L.H + 120 : 250, born: Date.parse(o.createdAt), near });
     }
     const { W, H } = worldSize(things, vw.w, Math.max(620, vw.h));
     return { W, H, spots: place(things, W, H), size: new Map(things.map((t) => [t.key, t])) };
@@ -1622,8 +1989,29 @@ export default function Void() {
   const replaced = new Set(visible.map((o) => alias.current.get(o.id)).filter((x): x is string => !!x));
 
   const mapSpots = shownSpots;
+  // /work "Share": a link to this workspace (a space's link asks newcomers for its code, as on the main page)
+  const shareWork = async () => {
+    // an anonymous space: its one link (code and key after the #)
+    const url = space?.anon ? anonLink(space) : `${window.location.origin}/work${space ? `?space=${space.slug}` : ""}`;
+    try {
+      if (navigator.share && matchMedia("(pointer: coarse)").matches) await navigator.share({ title: space?.title ?? "Orbi Work", url });
+      else {
+        await navigator.clipboard.writeText(url);
+        toast(space?.anon ? "Anonymous link copied" : space ? `Link to ${space.title} copied` : "Workspace link copied");
+      }
+    } catch {}
+  };
+  // "Stay anonymous": the mask while it's off; while anonymous here, a badge in the pin's place (location can't be on)
+  const anonOffButton = (cls: string) => (
+    <button className={`${cls} anon-chip`} onClick={requestAnon} aria-label="Stay anonymous: no location, no name, cloud only" title="Stay anonymous"><BsIncognito aria-hidden /></button>
+  );
+  const anonOnButton = (cls: string, withText = false) => (
+    <button className={cls} onClick={() => setPanel({ kind: "anon", mode: "status" })} aria-label="Anonymous on. Tap for details" title="Anonymous on">
+      <BsIncognito aria-hidden />{withText && <span>Anonymous</span>}
+    </button>
+  );
   // location: green pin when this device shares it, red when not (a tap asks again)
-  const pinButton = (cls: string) => (
+  const pinButton = (cls: string) => anonNow ? anonOnButton(`${cls} anon-chip on`) : (
     <button
       className={`${cls} geo-pin${gps ? " on" : " off"}`}
       onClick={() => (gps ? toast("Location on: you see what's within your area (about 20 to 40 km) and the areas around it") : shareLocation())}
@@ -1633,11 +2021,30 @@ export default function Void() {
       {gps ? <LuMapPin aria-hidden /> : <LuMapPinOff aria-hidden />}
     </button>
   );
+  // the name sent with what this device posts (never while anonymous: the space gives an alias), and the one it
+  // knows itself by on this screen ("for you" toasts, the board's "me")
+  const postName = anonNow ? "" : bubbleName() || room?.handle || "";
+  const meName = room?.handle || bubbleName() || "";
+  const addTaskLine = async (line: string, life: number | undefined) => {
+    const by = postName;
+    const t = await addTask(line, by, life);
+    toast(`Task ${t.num} added`);
+    setFitAll((n) => n + 1);
+    const at = Date.now() + skew, { text, assignee } = parseTask(line);
+    sync({ t: { id: t.id, num: t.num, text, by: by || room?.handle || null, from: t.from, createdAt: iso(at), expiresAt: iso(at + (life ?? 30) * 60_000), doneAt: null, doneBy: null, assignee: assignee || null, route: [], stage: -1, log: [], editedAt: null } });
+    refresh();
+  };
+  carryOn.current = (then) => {
+    if (then?.items) return setPanel({ kind: "send", items: then.items });
+    if (then?.note) return setPanel({ kind: "bubble" });
+    setPanel(null);
+    if (then?.task) addTaskLine(then.task.line, then.task.life).catch((e) => toast((e as Error).message));
+  };
   const taskBoard = showTasks && (
     <TaskBoard
       tasks={tasks}
       orbs={alive}
-      me={bubbleName() || room?.handle || ""}
+      me={meName}
       focus={taskFocus}
       onFocus={setTaskFocus}
       onOpenFile={open}
@@ -1647,23 +2054,22 @@ export default function Void() {
       laneH={laneTasks ? laneH : undefined}
       onArrange={mode === "desk" ? toggleArrange : undefined}
       onAdd={async (line, life) => {
+        // anonymous in the public void: a task would carry an area; it goes into an anonymous space instead
+        if (isAnon() && !spaceRef.current?.anon) {
+          setPanel({ kind: "anon-gate", task: { line, life } });
+          throw new Error("anonymous");
+        }
         try {
-          const by = bubbleName() || room?.handle || "";
-          const t = await addTask(line, by, life);
-          toast(`Task ${t.num} added`);
-          setFitAll((n) => n + 1);
-          const at = Date.now() + skew, { text, assignee } = parseTask(line);
-          sync({ t: { id: t.id, num: t.num, text, by: by || null, from: t.from, createdAt: iso(at), expiresAt: iso(at + (life ?? 30) * 60_000), doneAt: null, doneBy: null, assignee: assignee || null, route: [], stage: -1, log: [], editedAt: null } });
-          refresh();
+          await addTaskLine(line, life);
         } catch (e) {
           toast((e as Error).message);
           throw e;
         }
       }}
       onTick={(t, done) => {
-        const next = { ...t, doneAt: done ? iso(Date.now() + skew) : null, doneBy: done ? bubbleName() || room?.handle || null : null };
+        const next = { ...t, doneAt: done ? iso(Date.now() + skew) : null, doneBy: done ? postName || room?.handle || null : null };
         applySync({ t: next });
-        tickTask(t.id, done, bubbleName() || room?.handle || "").then(() => sync({ t: next })).catch((e) => (marks.current.delete(`t:${t.id}`), toast(e.message), refresh()));
+        tickTask(t.id, done, postName).then(() => sync({ t: next })).catch((e) => (marks.current.delete(`t:${t.id}`), toast(e.message), refresh()));
       }}
       onTake={(t, who) => {
         const next = { ...t, assignee: who || null };
@@ -1679,7 +2085,7 @@ export default function Void() {
       spots={mapSpots}
       onArchive={() => (setArchived(true), setComposing(false), setArranged(false), toast("Tasks archived with their files · Tasks in the bar brings them back"))}
       onComposed={() => setComposing(false)}
-      onGoPrivate={space ? undefined : () => setPanel({ kind: "private" })}
+      onGoPrivate={space || anonNow ? undefined : () => setPanel({ kind: "private" })}
       onGrab={(t, x, y) => {
         // the spaces it can go to: every one this device is in, except the one it is already in
         setGrab({ task: t, x, y, spaces: [] });
@@ -1688,8 +2094,8 @@ export default function Void() {
       onMove={(t, dir) => moveTask(t.id, dir).then(() => (refresh(), broadcast())).catch((e) => toast(e.message))}
       onEdit={async (t, change) => {
         // shown at once; the server (and everyone else's screen) catches up in the background
-        const by = bubbleName() || room?.handle || "";
-        const next = applyEdit(t, change, by);
+        const by = postName;
+        const next = applyEdit(t, change, by || room?.handle || "");
         applySync({ t: next });
         if (change.stage !== undefined) toast(change.stage < 0 ? `Task ${t.num} is back to not started` : `Task ${t.num} → ${(change.route ?? t.route)[change.stage]}`);
         editTask(t.id, change, by)
@@ -1698,11 +2104,70 @@ export default function Void() {
       }}
     />
   );
+  // anonymous in the public void: every send or post stops at the gate, which makes (or picks) an anonymous space and
+  // carries on with the same files (Send, drop, paste, Bubble, a new task)
+  const gate: Then | null =
+    panel?.kind === "anon-gate" ? { items: panel.items, note: panel.note, task: panel.task }
+      : anonNow && !space?.anon ? (panel?.kind === "send" ? { items: panel.items } : panel?.kind === "bubble" && !panel.edit ? { note: true } : null)
+      : null;
+  const anonCard: AnonMode | null =
+    panel?.kind === "anon" ? panel.mode : panel?.kind === "anon-join" ? "join" : panel?.kind === "anon-link" && space?.anon ? "link" : null;
+  const anonPanel = !!gate || !!anonCard;
+  useEffect(() => {
+    if (anonPanel) loadAnonSaved();
+  }, [anonPanel, loadAnonSaved]);
+  // anonymous sends: photos lose where and when they were taken before the sheet can launch them (lib/scrub.ts)
+  const [hideNames, setHideNames] = useState(true);
+  const [scrubbed, setScrubbed] = useState<{ src: Item[]; items: Item[]; asIs: string[] } | null>(null);
+  const sendSrc = panel?.kind === "send" ? panel.items : null;
+  useEffect(() => {
+    if (!sendSrc || !anonNow) return;
+    let live = true;
+    scrubItems(sendSrc)
+      .then((r) => live && setScrubbed({ src: sendSrc, ...r }))
+      .catch(() => live && setScrubbed({ src: sendSrc, items: sendSrc, asIs: sendSrc.map((x) => x.name) }));
+    return () => {
+      live = false;
+    };
+  }, [sendSrc, anonNow]);
+  const sendItems = sendSrc ? (anonNow ? (scrubbed?.src === sendSrc ? scrubbed.items : sendSrc) : sendSrc) : [];
   return (
     <>
-      <Starfield />
+      {!work && <Starfield />}
       <LiquidGlass />
 
+      {work ? (
+        <>
+          <WorkBar
+            space={inArchive ? "Archive" : space?.title ?? null}
+            isPrivate={inArchive || !!space?.priv}
+            online={online}
+            scope={scope}
+            onScope={setScope}
+            nearbyCount={anonNow ? 0 : nearbyCount}
+            mineCount={mineCount}
+            kind={kind}
+            onKind={setKind}
+            anon={anonNow}
+            anonChip={anonNow ? null : anonOffButton("w-icon")}
+            pin={anonNow ? anonOnButton("w-btn anon-on", true) : pinButton("w-icon geo-chip")}
+            onLogo={tapLogo}
+            onSpaces={() => setPanel({ kind: "space" })}
+            onShare={shareWork}
+            onMenu={() => setPanel({ kind: "menu" })}
+            area={area ? area.toUpperCase() : ""}
+          />
+          <WorkRail
+            inSpace={!!space}
+            onHome={() => (space ? (switchSpace(null), toast("Back in the public workspace")) : setArea(home))}
+            onSpaces={() => setPanel({ kind: "space" })}
+            onTasks={openTasks}
+            taskCount={tasks.filter((t) => !t.doneAt).length}
+            onBoard={() => setBoard(null)}
+            noteCount={notes.length}
+          />
+        </>
+      ) : (
       <header className={`top lg${compact ? " compact" : ""}`}>
         {/* phones: one slim bar of icons; the rest lives in the menu card */}
         <div className="m-bar">
@@ -1711,13 +2176,8 @@ export default function Void() {
             <img src="/brand/emblem.svg" alt="" width={30} height={30} draggable={false} />
           </button>
           <span className="m-live" aria-label={`${online} ${online > 1 ? "devices" : "device"} ${space ? "in this space" : "in orbit"}`}><i />{online}</span>
-          <div className="m-scope" role="tablist" aria-label="Show">
-            <button role="tab" aria-selected={scope === "all"} className={scope === "all" ? "on" : ""} onClick={() => setScope("all")} aria-label="Everything"><LuLayers /></button>
-            {!space && <button role="tab" aria-selected={scope === "near"} className={scope === "near" ? "on" : ""} onClick={() => setScope("near")} aria-label={`Nearby, ${nearbyCount}`}><LuWifi />{nearbyCount ? <b>{nearbyCount}</b> : null}</button>}
-            {mineCount > 0 && <button role="tab" aria-selected={scope === "mine"} className={scope === "mine" ? "on" : ""} onClick={() => setScope(scope === "mine" ? "all" : "mine")} aria-label={`Mine, ${mineCount}`}><LuUser /><b>{mineCount}</b></button>}
-          </div>
+          <span className="m-sp" />
           {pinButton("m-ic lg-press")}
-          <button className={`m-ic lg-press${space ? " in" : ""}`} onClick={() => setPanel({ kind: "space" })} aria-label={space ? `Space: ${space.title}` : "Spaces"}><LuOrbit /></button>
           <button className="m-ic lg-press" onClick={() => setPanel({ kind: "menu" })} aria-label={kind === "all" ? "Menu" : "Menu, filter on"}><LuMenu />{kind !== "all" && <i className="m-dot" />}</button>
         </div>
         <div className="top-row">
@@ -1727,59 +2187,62 @@ export default function Void() {
             <span className="brand-by">Instant transfer</span>
           </div>
           <nav className="nav">
-            <a href="#void">Void</a>
             <a href="#how">How it works</a>
             <button onClick={openTasks}>Tasks{tasks.length ? ` ${tasks.filter((t) => !t.doneAt).length}` : ""}</button>
             <Link href="/about">About</Link>
-            <button onClick={openMenu}>Launch</button>
+            {/* a full load: the work look starts clean */}
+            <button onClick={() => window.location.assign("/work")}>Switch to Work</button>
+            <Link href="/upgrade" className="nav-up">Upgrade</Link>
           </nav>
           <div className="top-right">
+            <KindFilter kind={kind} onKind={setKind} scope={{ value: scope, set: setScope, near: space || anonNow ? null : nearbyCount, mine: mineCount }} />
             <span className="live" aria-label={`${online} ${online > 1 ? "devices" : "device"} in orbit`}><span className="dot" /><b>{online}</b><span className="live-txt">{space ? "in this space" : online > 1 ? "devices in orbit" : "device in orbit"}</span></span>
-            {pinButton("pill lg-press geo-chip")}
-            <button className="pill lg-press style-chip" onClick={() => setPanel({ kind: "style" })} aria-label={`Style: ${skinName(skin)}. Change how files look`} title="Style"><LuPalette aria-hidden /></button>
-            <button className={`pill lg-press space-chip${space ? " in" : ""}`} onClick={() => setPanel({ kind: "space" })} aria-label={space ? `Space: ${space.title}. Change space` : "Public void. Open spaces"}>
-              <i className="space-dot" />{space ? space.title : "Public void"}
-            </button>
+            {anonNow ? anonOnButton("pill lg-press anon-badge", true) : <>{anonOffButton("hd-ic lg-press")}{pinButton("hd-ic lg-press geo-chip")}</>}
+            <button className="hd-ic lg-press style-chip" onClick={() => setPanel({ kind: "style" })} aria-label={`Style: ${skinName(skin)}. Change how files look`} title="Style"><LuPalette aria-hidden /></button>
+            <button className="hd-ic lg-press" onClick={() => setPanel({ kind: "space", start: ":search" })} aria-label="Search spaces" title="Search spaces"><LuSearch aria-hidden /></button>
+            <button className="hd-ic lg-press" onClick={() => setPanel({ kind: "space", start: ":create" })} aria-label="Create a space" title="Create your space"><LuPlus aria-hidden /></button>
             <button className="pill solid lg-press send-pill" onClick={openMenu}>Send</button>
           </div>
         </div>
-        <div className="top-row">
-          <div className="sub-left">
-            <span className="hl"><i />No login required</span><span>End-to-end encrypted</span><span>Any size</span><span>Burns in 5–30 min</span>
-          </div>
-          <span />
-          <div className="kinds-wrap">
-          <div className="kinds" role="radiogroup" aria-label="Show only">
-            {KINDS.map((k) => {
-              const I = KIND_ICON[k.id];
-              return <button key={k.id} role="radio" aria-checked={kind === k.id} className={kind === k.id ? "on" : ""} onClick={() => setKind(k.id)} title={k.name} aria-label={k.name}><I /></button>;
-            })}
-          </div>
-          <div className="toggle" role="tablist" aria-label="Scope">
-            <button className={scope === "all" ? "on" : ""} onClick={() => setScope("all")}>All</button>
-            {!space && <button className={scope === "near" ? "on" : ""} onClick={() => setScope("near")}>Nearby{nearbyCount ? ` ${nearbyCount}` : ""}</button>}
-            {mineCount > 0 && (
-              <button className={`mine-tab${scope === "mine" ? " on" : ""}`} onClick={() => setScope(scope === "mine" ? "all" : "mine")} aria-label={`Show only your ${mineCount} ${mineCount > 1 ? "objects" : "object"}`}>
-                Mine <b>{mineCount}</b>
-              </button>
-            )}
-          </div>
-          </div>
-        </div>
       </header>
+      )}
 
       <main className={menu && !menuOut ? "menu-open" : undefined} data-pal={pal}>
         <section
-          className={`void${map ? " map" : ""}${notes.length && !map ? " has-bubbles" : ""}${!map && (new Set(notes.map(senderOf)).size > 1 || (tasks.length && !archived)) ? " bub-two" : ""}${tasks.length && !archived && !map ? " has-tasks" : ""}${taskFocus ? " task-focus" : ""}${grid ? ` arranged${grid.tight ? " tight" : ""}` : ""}${space ? " in-space" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
+          className={`void${map ? " map" : ""}${notes.length && !map ? " has-bubbles" : ""}${!map && (new Set(notes.map(senderOf)).size > 1 || (tasks.length && !archived)) ? " bub-two" : ""}${tasks.length && !archived && !map ? " has-tasks" : ""}${taskFocus ? " task-focus" : ""}${grid ? ` arranged${grid.tight ? " tight" : ""}` : ""}${space || inArchive ? " in-space" : ""}${inArchive ? " in-archive" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
           id="void"
           style={(flow ? { "--n": rows } : { "--k-auto": grid ? grid.k : map ? 1 : crowdScale(visible.length), ...(grid ? { "--cell": `${grid.cell}px` } : null) }) as unknown as React.CSSProperties}
         >
-          {space && <SpaceRoom space={space} info={room} online={live} onKick={kick} onExit={() => {
+          {inArchive && <ArchiveRoom onExit={() => setInArchive(false)} />}
+          {/* anonymous: the void goes dark and cold (vignette, grain, scan lines, a big mask), so nobody forgets */}
+          {anonNow && !inArchive && (
+            <div className="ghost-layer" aria-hidden>
+              <div className="ghost-mid">
+                <BsIncognito className="ghost-mask" />
+                <b className="ghost-title">You&apos;ve gone anonymous</b>
+                <span className="ghost-sub">Other users can&apos;t see your location, your name or your device. Files go through the encrypted cloud only.</span>
+              </div>
+              {/* the sealed container: one frame, every edge closed, corner bolts and a seal line on each side */}
+              <div className="ghost-seal">
+                <i className="k tl" /><i className="k tr" /><i className="k bl" /><i className="k br" />
+                <span className="e t">Sealed · no location · no identity</span>
+                <span className="e r">Anonymous · cloud only</span>
+                <span className="e btm">Sealed · no location · no identity</span>
+                <span className="e l">Anonymous · cloud only</span>
+              </div>
+            </div>
+          )}
+          {!work && !inArchive && !space && (anonNow ? (
+            <button className="where-badge anon" onClick={() => setPanel({ kind: "anon", mode: "status" })} aria-label="You are anonymous in the public void: you can look and download. Sending opens an anonymous space"><i aria-hidden /><BsIncognito aria-hidden />Anonymous here: look only</button>
+          ) : (
+            <button className="where-badge" onClick={() => setPanel({ kind: "space" })} aria-label="You are in the public void. Open spaces"><i aria-hidden />You&apos;re in the public void</button>
+          ))}
+          {space && !inArchive && <SpaceRoom space={space} info={room} online={live} onKick={kick} onExit={() => {
             switchSpace(null);
             toast("Back in the public void");
           }} />}
           {map ? (
-            <MapWorld W={map.W} H={map.H} band={MAP_BAND[mode]} fit={fitAll} empty={!map.spots.size} onRect={setRect} onEarth={space ? undefined : () => setEarth(true)}
+            <MapWorld W={map.W} H={map.H} band={(space || inArchive) && !work ? ROOM_BAND[mode] : MAP_BAND[mode]} fit={fitAll} empty={!map.spots.size} onRect={setRect}
               onMoveItem={(key, dx, dy) => {
                 const p = map.spots.get(key);
                 if (!p) return;
@@ -1791,6 +2254,10 @@ export default function Void() {
           {notes.length > 0 && (
             <BubbleBoard bubbles={notes} {...bubbleActs} oneSide={tasks.length > 0 && !archived} onOpenBoard={(f) => setBoard(f)} spots={mapSpots} />
           )}
+          {inArchive && [...map.spots].filter(([k]) => trash.has(k)).map(([k, p]) => {
+            const t = map.size.get(k);
+            return <ArchiveRestore key={`r-${k}`} k={k} x={p.x + (t ? t.w / 2 : 90) - 8} y={p.y - (t ? t.h / 2 : 90) - 8} label={trashLabel(k)} />;
+          })}
           {visible.filter((o) => !replaced.has(o.id) && onScreen(`o:${alias.current.get(o.id) ?? o.id}`)).map((o, i) => (
             <OrbView
               key={alias.current.get(o.id) ?? o.id}
@@ -1806,7 +2273,7 @@ export default function Void() {
               onMemberHint={(id) => (lastOpen.current = { id, at: Date.now() })}
               phase={arriving.has(o.id) ? "arriving" : undefined}
               hue={colors.get(o.id)}
-              skin={o.skin ?? skin}
+              skin={work ? "work" : o.skin ?? skin}
               launching={upFrac.get(o.id)}
               incoming={isIncoming(o.id)}
               badge={badges.get(o.id)}
@@ -1828,7 +2295,7 @@ export default function Void() {
               onOpen={noop}
               phase="burning"
               hue={g.hue}
-              skin={g.orb.skin ?? skin}
+              skin={work ? "work" : g.orb.skin ?? skin}
             />
           ))}
             </MapWorld>
@@ -1872,27 +2339,34 @@ export default function Void() {
             <p className="mono">Longest life of any object.<br />The sender picks 5 to 30.</p>
           </div>
 
-          {earth && !space && (
+          {earth && !space && !anonNow && (
             <EarthView
               home={home}
               from={area}
               gps={gps}
+              picking={picking}
               onEnter={(cell) => {
-                setArea(cell);
                 setEarth(false);
-                if (cell !== home) toast("You're looking at another area · what you post still goes to yours");
+                if (picking) {
+                  setPicking(false);
+                  return pickHere(cell);
+                }
+                setArea(cell);
+                if (cell !== home) toast(gps ? "You're looking at another area · what you post still goes to yours" : "You're looking at another area · tap \"I'm here\" to make it yours");
               }}
               onLocate={shareLocation}
               onSpace={() => (setEarth(false), setPanel({ kind: "space" }))}
-              onClose={() => setEarth(false)}
+              onClose={() => (setEarth(false), setPicking(false))}
             />
           )}
-          {!earth && !space && (area !== home || !gps) && !geoAsk && (
+          {!earth && !space && !inArchive && !anonNow && (area !== home || !gps) && !geoAsk && !pillOff && (
             <div className="area-pill lg" data-no-pan>
+              <button className="area-x" onClick={() => setPillOff(true)} aria-label="Hide this" title="Hide"><LuX aria-hidden /></button>
               {area !== home ? (
                 <>
                   <span>Another area</span>
-                  <button className="pill solid lg-press" onClick={() => setArea(home)}>Back to my area</button>
+                  {!gps && <button className="pill solid lg-press" onClick={() => pickHere(area)}><LuMapPin aria-hidden /> I&apos;m here</button>}
+                  <button className={`pill${gps ? " solid" : ""} lg-press`} onClick={() => setArea(home)}>Back to my area</button>
                 </>
               ) : (
                 <>
@@ -1903,13 +2377,16 @@ export default function Void() {
               )}
             </div>
           )}
-          {loaded && shown.length === 0 && !(map && map.spots.size) && (
+          {work && loaded && shown.length === 0 && !(map && map.spots.size) && (
+            <p className="w-hint">{space ? `${space.title} is empty` : "Drop files anywhere, or press Upload"}</p>
+          )}
+          {!work && loaded && shown.length === 0 && !(map && map.spots.size) && (
             <div className="empty">
               <p className="mono">
-                {space ? `${space.title} is empty. Launch something: only people in this space see it` : scope === "near" ? "Nothing from your network yet" : (
+                {space?.anon ? `${space.title} is empty. What you send here is seen only by people with its link` : space ? `${space.title} is empty. Launch something: only people in this space see it` : scope === "near" ? "Nothing from your network yet" : (
                   <>
                     <span className="on-fine">The void is empty. Drop files, folders or text anywhere</span>
-                    <span className="on-touch">The void is empty. Tap upload to launch photos, videos, files or text</span>
+                    <span className="on-touch">The void is empty. Tap Send to launch photos, videos, files or text</span>
                   </>
                 )}
                 <span className="cursor" />
@@ -1934,7 +2411,7 @@ export default function Void() {
               onMemberHint={(id) => (lastOpen.current = { id, at: Date.now() })}
               phase={arriving.has(o.id) ? "arriving" : undefined}
               hue={colors.get(o.id)}
-              skin={o.skin ?? skin}
+              skin={work ? "work" : o.skin ?? skin}
               launching={upFrac.get(o.id)}
               incoming={isIncoming(o.id)}
               badge={badges.get(o.id)}
@@ -1956,13 +2433,13 @@ export default function Void() {
               onOpen={noop}
               phase="burning"
               hue={g.hue}
-              skin={g.orb.skin ?? skin}
+              skin={work ? "work" : g.orb.skin ?? skin}
             />
           ))}
           </>)}
         </section>
 
-        <section className="how" id="how">
+        {!work && <section className="how" id="how">
           <div className="how-top"><span>Protocol</span><span>Objects in orbit right now</span></div>
           <div className="how-hero">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1999,7 +2476,7 @@ export default function Void() {
             <span>Files are end-to-end encrypted. Max 20 GB each. 300 uploads per network per hour.</span>
             <span><Link href="/about">About</Link> · <Link href="/about#contact">Contact</Link> · <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · Abuse? Open the object and tap <span className="glyph"><LuFlag aria-hidden />Report</span></span>
           </div>
-        </section>
+        </section>}
       </main>
 
       <input
@@ -2061,6 +2538,9 @@ export default function Void() {
           }}
           onClose={() => setPanel(null)}
           toast={toast}
+          anon={anonOn}
+          onAnonSpace={() => void goAnonSpace().catch(() => {})}
+          copyAnonLink={copyAnonLink}
         />
       )}
       {zoom && bubbles.some((b) => b.id === zoom.id) && (
@@ -2089,9 +2569,10 @@ export default function Void() {
           onCancel={() => setGrab(null)}
           onThrow={async (t, to) => {
             setGrab(null);
-            if (!to) return setPanel({ kind: "private" });
+            if (!to) return anonNow ? undefined : setPanel({ kind: "private" });
             const sp = grab.spaces.find((x) => x.slug === to.slug);
             if (!sp) return;
+            if (sp.anon) return toast("Tasks made outside can't move into an anonymous space: they carry your name");
             const n = await carryTasks([t.id], { slug: sp.slug, token: sp.token, deviceId: deviceId() }).catch(() => 0);
             if (!n) return toast(`Couldn't move Task ${t.num} into ${sp.title}`);
             // it leaves this void (here and on every screen around) and lives in the space now
@@ -2100,9 +2581,23 @@ export default function Void() {
           }}
         />
       )}
-      {geoAsk && !panel && (
+      <TrashZone />
+      {geoFail && !panel && !anonNow && (
+        <LocationBlocked
+          reason={geoFail}
+          onPick={() => (setGeoFail(null), setPicking(true), setEarth(true))}
+          onRetry={() => (setGeoFail(null), void shareLocation())}
+          onClose={() => setGeoFail(null)}
+        />
+      )}
+      {geoAsk && !panel && !anonNow && (
         <LocationAsk
           onAllow={shareLocation}
+          onAnon={() => {
+            markAsked();
+            setGeoAsk(false);
+            requestAnon();
+          }}
           onLater={() => {
             markAsked();
             setGeoAsk(false);
@@ -2123,6 +2618,18 @@ export default function Void() {
           onTasks={openTasks}
           taskCount={tasks.filter((t) => !t.doneAt).length}
           onClose={() => setPanel((p) => (p?.kind === "menu" ? null : p))}
+          work={work ? { onBoard: () => setBoard(null) } : undefined}
+          onBoard={() => setBoard(null)}
+          scope={{ value: scope, set: setScope, near: space || anonNow ? null : nearbyCount, mine: mineCount }}
+          anon={{
+            on: anonOn,
+            now: anonNow,
+            inSpace: !!space?.anon,
+            toggle: (v) => (v ? requestAnon() : toggleAnon(false)),
+            card: () => setPanel({ kind: "anon", mode: "status" }),
+            newSpace: () => void goAnonSpace().catch(() => {}),
+            copyLink: space?.anon ? copyAnonLink : undefined,
+          }}
         />
       )}
       {panel?.kind === "group" && groups.get(panel.id) && (
@@ -2138,9 +2645,56 @@ export default function Void() {
           }}
         />
       )}
-      {panel?.kind === "send" && (
+      {gate && (
+        <AnonCard
+          mode="gate"
+          switchOn={anonOn}
+          space={null}
+          saved={anonSaved}
+          onClose={() => setPanel(null)}
+          onTurnOn={noop}
+          onTurnOff={() => toggleAnon(false)}
+          onCreate={() => goAnonSpace(gate)}
+          onPick={(s) => intoAnon(s, gate)}
+          onCopy={noop}
+        />
+      )}
+      {anonCard && (
+        <AnonCard
+          mode={anonCard}
+          switchOn={anonOn}
+          space={space?.anon ? space : null}
+          saved={anonSaved}
+          onClose={() => setPanel(null)}
+          onTurnOn={() => toggleAnon(true, true)}
+          onTurnOff={() => toggleAnon(false)}
+          onCreate={() => goAnonSpace()}
+          onPick={(s) => (intoAnon(s), setPanel(null))}
+          join={panel?.kind === "anon-join" ? {
+            title: anonTitle(panel.slug),
+            go: async () => {
+              const { slug, code, key } = panel;
+              try {
+                const s = await joinAnonSpace(slug, code, key);
+                await remember(s);
+                switchSpace(s);
+                setPanel(null);
+                toast(`You're in ${s.title} as ${s.handle}`);
+              } catch (e) {
+                toast((e as Error).message);
+                throw e;
+              }
+            },
+          } : undefined}
+          link={space?.anon ? anonLink(space) : undefined}
+          onCopy={copyAnonLink}
+        />
+      )}
+      {panel?.kind === "send" && !gate && (
         <SendPanel
-          items={panel.items}
+          key={anonNow ? `anon-${space?.slug}` : "send"}
+          items={sendItems}
+          anon={anonNow && space?.anon ? { space: space.title, hideNames, setHideNames, asIs: scrubbed?.src === panel.items ? scrubbed.asIs : [], cleaning: scrubbed?.src !== panel.items } : undefined}
           onAddFolder={() => {
             adding.current = true;
             folderInput.current?.click();
@@ -2189,10 +2743,28 @@ export default function Void() {
       )}
 
       <div className="toast" aria-live="polite">
-        {toasts.map((t) => <div key={t.id}>{t.text}</div>)}
+        {toasts.map((t) => (
+          // a tap or a swipe (any direction) sends it away
+          <div
+            key={t.id}
+            role="status"
+            onClick={() => dropToast(t.id)}
+            onPointerDown={(e) => (toastSwipe.current = { id: t.id, x: e.clientX, y: e.clientY })}
+            onPointerUp={(e) => {
+              const sw = toastSwipe.current;
+              toastSwipe.current = null;
+              if (sw && sw.id === t.id && Math.hypot(e.clientX - sw.x, e.clientY - sw.y) > 24) dropToast(t.id);
+            }}
+          >
+            {t.text}
+          </div>
+        ))}
       </div>
 
-      {!panel && board === false && !(menu && !menuOut) && (
+      {work && !panel && board === false && !inArchive && (
+        <WorkDock onFiles={() => pickFiles()} onFolder={() => pickFolder()} onText={compose} onNote={() => setPanel({ kind: "bubble" })} onTasks={openTasks} onSpaces={() => setPanel({ kind: "space" })} />
+      )}
+      {!work && !inArchive && !panel && board === false && !(menu && !menuOut) && (
         <button className={`bub-fab lg lg-press${compact ? " mini" : ""}`} onClick={() => setPanel({ kind: "bubble" })} aria-label="Bubble text: post a note everyone sees">
           <LuMessageCircle aria-hidden />
           <span>Bubble</span>
@@ -2201,7 +2773,7 @@ export default function Void() {
       {board !== false && (
         <BubbleSpace bubbles={notes} focus={board} {...bubbleActs} onClose={() => setBoard(false)} onCompose={() => setPanel({ kind: "bubble" })} />
       )}
-      {panel?.kind === "private" && (
+      {panel?.kind === "private" && !anonNow && (
         <GoPrivate
           me={bubbleName() || ""}
           tasks={tasks.filter((t) => isMyTask(t.id)).length}
@@ -2216,7 +2788,7 @@ export default function Void() {
               const moved = mine.length ? await carryTasks(mine, { slug: s.slug, token: s.token, deviceId: deviceId() }) : 0;
               enterSpace(s);
               try {
-                await navigator.clipboard.writeText(`${window.location.origin}/?space=${s.slug} · code ${pass}`);
+                await navigator.clipboard.writeText(`${window.location.origin}${homePath()}?space=${s.slug} · code ${pass}`);
               } catch {}
               toast(`Private: ${s.title} · code ${pass}${moved ? ` · ${moved} ${moved > 1 ? "tasks" : "task"} moved` : ""} · invite copied`);
             } catch (e) {
@@ -2226,7 +2798,7 @@ export default function Void() {
           }}
         />
       )}
-      {invite && !space && (
+      {invite && !space && !anonNow && (
         <InviteCard
           by={invite.by}
           title={invite.title}
@@ -2243,10 +2815,11 @@ export default function Void() {
           }}
         />
       )}
-      {panel?.kind === "bubble" && (
+      {panel?.kind === "bubble" && !gate && (
         <BubbleCompose
           key={panel.edit ? `${panel.edit.id}-${panel.edit.mode}` : "new"}
-          defaultName={room?.handle ?? ""}
+          defaultName={anonNow ? "" : room?.handle ?? ""}
+          anon={anonNow}
           inSpace={space?.title ?? null}
           edit={panel.edit ? (() => {
             const b = notes.find((x) => x.id === panel.edit!.id);
@@ -2281,7 +2854,7 @@ export default function Void() {
           }}
         />
       )}
-      {!panel && board === false && (
+      {!work && !inArchive && !panel && board === false && (
         <button
           className={`send-fab lg lg-press${menu && !menuOut ? " open" : ""}${compact && !menu ? " mini" : ""}`}
           onClick={(e) => {

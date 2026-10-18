@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { clean } from "@/lib/server";
-import { addMember, chanFor, cleanHandle, createSpace, devHash, search, slugify, tokenFor, validSlug } from "@/lib/spaces";
+import { anonNet, clean, newId } from "@/lib/server";
+import { addMember, anonAlias, chanFor, cleanHandle, createSpace, devHash, search, slugify, tokenFor, validSlug } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
 
@@ -11,9 +11,36 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ items }, { headers: { "Cache-Control": "no-store" } });
 }
 
+// anonymous spaces made per network, per hour (in memory, per instance)
+const anonMade = new Map<string, number>();
+
+/** an anonymous space: random slug and title, private, its creator joins under an alias (no handle asked) */
+async function createAnon(req: NextRequest, b: { deviceId?: unknown; pass?: unknown }) {
+  const deviceId = clean(b.deviceId, 40);
+  const pass = typeof b.pass === "string" ? b.pass : "";
+  if (!deviceId || !/^[a-z0-9]{12,32}$/.test(pass)) return NextResponse.json({ error: "bad request" }, { status: 400 });
+  const net = anonNet(req);
+  if (anonMade.size > 5000) anonMade.clear();
+  const n = anonMade.get(net) ?? 0;
+  if (n >= 20) return NextResponse.json({ error: "Too many anonymous spaces from your network. Try again in an hour." }, { status: 429 });
+  anonMade.set(net, n + 1);
+  let made: Awaited<ReturnType<typeof createSpace>> = null;
+  for (let i = 0; i < 3 && !made; i++) {
+    const slug = "anon-" + newId(8);
+    made = await createSpace("Anonymous · " + slug.slice(5, 9).toUpperCase(), true, pass, { slug, anon: true });
+  }
+  if (!made) return NextResponse.json({ error: "Anonymous spaces aren't available yet" }, { status: 500 });
+  const { meta, owner } = made;
+  const dh = devHash(deviceId);
+  const handle = anonAlias(dh, []);
+  await addMember(meta.slug, dh, handle);
+  return NextResponse.json({ slug: meta.slug, title: meta.title, priv: true, anon: true, handle, token: tokenFor(meta.slug, dh), chan: chanFor(meta.slug), owner });
+}
+
 // create, and join it as its owner, in one step
 export async function POST(req: NextRequest) {
   const b = await req.json().catch(() => null);
+  if (b?.anon === true) return createAnon(req, b);
   const title = clean(b?.title, 32);
   const handle = cleanHandle(b?.handle);
   const deviceId = clean(b?.deviceId, 40);

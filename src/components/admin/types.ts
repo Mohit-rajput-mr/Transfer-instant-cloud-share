@@ -15,6 +15,12 @@ export interface Overview {
   os: Record<string, number>;
   forms: Record<string, number>;
   live: Pt[];
+  /** online devices that shared their location: their exact spot (migration 017) */
+  exact?: Exact[];
+  /** every device that ever shared GPS, at its most recent exact spot, online or not (migration 018) */
+  exactSeen?: Exact[];
+  /** where "Stay anonymous" was used: the IP's rough area, with the IPs (migration 020, admin only) */
+  anon?: AnonPlace[];
   visitors: Pt[];
   points: (Pt & { k: "upload" | "download" })[];
   arcs: { a: number; b: number; c: number; d: number }[];
@@ -32,6 +38,19 @@ export interface Day {
   bytes_down: number;
   views: number;
   reports: number;
+}
+
+export interface Exact {
+  lat: number;
+  lon: number;
+  /** metres, as the device reported it */
+  acc: number | null;
+  label: string | null;
+  city: string | null;
+  cc: string | null;
+  at: string;
+  /** exactSeen only: whether the device is online right now */
+  online?: boolean;
 }
 
 export interface Pt {
@@ -74,4 +93,17 @@ export interface AdminSpace {
   at: number;
   members: string[];
   kicked: number;
+}
+
+export interface AnonPlace {
+  lat: number;
+  lon: number;
+  city: string | null;
+  cc: string | null;
+  /** anonymous devices (throwaway ids) seen here in 90 days */
+  n: number;
+  online: number;
+  last: string;
+  first: string;
+  ips: string[] | null;
 }

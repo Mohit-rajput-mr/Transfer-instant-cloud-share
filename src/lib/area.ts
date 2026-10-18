@@ -1,6 +1,6 @@
 // Areas: the public void is local. Everything belongs to the rough area of whoever posted it — a geohash cell of
 // 4 characters, about 39 x 20 km — and people see their own cell and the eight around it (so a border never splits a
-// town). Only this cell ever leaves the device, never the exact spot. Works on the server and in the browser.
+// town). Only this cell is used for (and seen by) other people; the exact spot goes only to Orbit's admin map (lib/where.ts). Works on the server and in the browser.
 
 const B32 = "0123456789bcdefghjkmnpqrstuvwxyz";
 export const AREA_LEN = 4;

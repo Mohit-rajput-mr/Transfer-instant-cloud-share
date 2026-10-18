@@ -2,7 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import QRCode from "qrcode";
 import {
-  deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, hasGot, markGot, ownerKey, timeAgo, type Orb, type OwnerView,
+  deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, hasGot, markGot, ownerKey, timeAgo, type Orb, type OwnerView, homePath,
 } from "@/lib/client";
 import { MAX_FILE_BYTES, MAX_LABEL } from "@/lib/limits";
 import { previewUrl } from "@/lib/preview";
@@ -18,6 +18,9 @@ import { canPeek, peekFile } from "@/lib/peek";
 import { Meter } from "@/lib/rate";
 import type { Task } from "@/lib/tasks";
 import { LuArrowRight, LuCheck, LuChevronDown, LuFlag, LuInfinity } from "react-icons/lu";
+import { BsIncognito } from "react-icons/bs";
+import { isAnon } from "@/lib/anon";
+import { genericTitle } from "@/lib/scrub";
 
 // Screen point the card zooms out of (the tapped sphere / button). Set right before opening.
 let origin: { x: number; y: number } | null = null;
@@ -457,7 +460,7 @@ function useQR(text: string | null) {
 }
 
 export function ShareBlock({ id }: { id: string }) {
-  const link = typeof window !== "undefined" ? `${window.location.origin}/?o=${id}` : "";
+  const link = typeof window !== "undefined" ? `${window.location.origin}${homePath()}?o=${id}` : "";
   const qr = useQR(link);
   const [copied, setCopied] = useState(false);
   const [canShare] = useState(() => typeof navigator !== "undefined" && typeof navigator.share === "function");
@@ -490,7 +493,7 @@ export function ShareBlock({ id }: { id: string }) {
 
 /* ------------------------------ SEND ------------------------------ */
 
-export type LaunchJob = { file: File; name: string; files: number; passcode: string; maxDownloads: number | null; life: number; open: boolean; group?: string; /** wired to this task */ task?: string; /** and tick that task done */ done?: boolean };
+export type LaunchJob = { file: File; name: string; files: number; passcode: string; maxDownloads: number | null; life: number; open: boolean; group?: string; /** wired to this task */ task?: string; /** and tick that task done */ done?: boolean; /** anonymous "hide file names": the file goes as photo.jpg, file.pdf… */ hideNames?: boolean };
 
 const LIVES = [5, 10, 15, 20, 25, 30];
 // the last choices stick (this device only): the next send is one tap
@@ -520,6 +523,8 @@ export function SendPanel(props: {
   tasks?: Task[];
   /** preselected (Attach on a task) */
   task?: string | null;
+  /** sending anonymously (lib/anon.ts): into which space, names hidden or not, what couldn't be cleaned */
+  anon?: { space: string; hideNames: boolean; setHideNames: (v: boolean) => void; asIs: string[]; cleaning?: boolean };
 }) {
   const { onClose } = props;
   const openTasks = props.tasks ?? [];
@@ -542,7 +547,8 @@ export function SendPanel(props: {
   const count = folder ? folder.entries.length : files.length;
   const total = props.items.reduce((a, x) => a + itemSize(x), 0);
   const isLink = single && first?.type === LINK_MIME;
-  const autoName = (!multi && folder ? folder.name : single ? first.name.replace(/\.[^.]+$/, "") : many ? `${count} files` : `${props.items.length} items`).slice(0, 60);
+  const hide = !!props.anon?.hideNames;
+  const autoName = (hide ? genericTitle(single ? first : null, !!folder, count) : !multi && folder ? folder.name : single ? first.name.replace(/\.[^.]+$/, "") : many ? `${count} files` : `${props.items.length} items`).slice(0, 60);
   const [typed, setTyped] = useState<string | null>(null);
   const name = typed ?? autoName;
   const setName = setTyped;
@@ -556,22 +562,22 @@ export function SendPanel(props: {
   const [focusNow] = useState(finePointer);
 
   const tooBig = split ? props.items.some((x) => itemSize(x) > MAX_FILE_BYTES) : total > MAX_FILE_BYTES;
-  const ready = !tooBig && (!locked || code.length >= 4);
+  const ready = !tooBig && (!locked || code.length >= 4) && !props.anon?.cleaning;
   const go = () => {
     if (!ready) return;
     tick("success");
     setPref("life", life);
     if (multi) setPref("split", split);
-    const common = { passcode: locked ? code : "", maxDownloads: max, life, open: !locked, task: wire ?? undefined, done: !!wire && markDone };
+    const common = { passcode: locked ? code : "", maxDownloads: max, life, open: !locked, task: wire ?? undefined, done: !!wire && markDone, hideNames: hide };
     if (split) {
       // one ball per pick, each under its own name, all with the same settings
       for (const it of props.items) {
-        const label = itemName(it).slice(0, 60) || "untitled";
+        const label = (hide ? genericTitle(isFolder(it) ? null : it, isFolder(it), 1) : itemName(it)).slice(0, 60) || "untitled";
         props.onLaunch({ ...common, file: isFolder(it) ? packFolder(it) : it, name: label, files: isFolder(it) ? it.entries.length : 1, group: bubble.trim() || undefined });
       }
       return;
     }
-    const label = (name.trim() || (folder && !multi ? folder.name : single ? first.name : `${count} files`)).slice(0, 60);
+    const label = (name.trim() || (hide ? autoName : folder && !multi ? folder.name : single ? first.name : `${count} files`)).slice(0, 60);
     // several files travel as ONE ball (no zipping: streamed as-is behind a small manifest)
     const file = folder ? packFolder(multi ? { ...folder, name: label } : folder) : many ? packFolder(filesBundle(label, files), true) : first;
     props.onLaunch({ ...common, file, name: label, files: count });
@@ -582,6 +588,20 @@ export function SendPanel(props: {
   return (
     <Drawer label="Send" onClose={onClose}>
       <div className="col">
+        {props.anon && (
+          <div className="field anon-send">
+            <p className="note"><BsIncognito className="ic-inline" aria-hidden /> Sending anonymously into {props.anon.space}</p>
+            <label className="anon-names">
+              <input type="checkbox" checked={props.anon.hideNames} onChange={(e) => props.anon?.setHideNames(e.target.checked)} />
+              <span>Hide file names</span>
+              <span className="mono dim">sent as photo.jpg, file.pdf…</span>
+            </label>
+            {props.anon.asIs.length > 0 && (
+              <p className="note">Photos and videos can carry where they were taken. Orbi can&apos;t clean {props.anon.asIs[0]}{props.anon.asIs.length > 1 ? ` and ${props.anon.asIs.length - 1} more` : ""}: they&apos;re sent as they are.</p>
+            )}
+            <p className="mono dim">Goes through Orbi&apos;s encrypted cloud copy only, never device to device. Keep this page open until it says sent.</p>
+          </div>
+        )}
         {multi && (
           <div className="field">
             <label><span className="mono">Send as</span><span className="mono dim">{n} picked</span></label>
@@ -660,7 +680,7 @@ export function SendPanel(props: {
           </div>
         )}
         <div className="grow" />
-        {!multi && <p className="mono dim">Encrypted · keep this page open until it says saved</p>}
+        {!multi && !props.anon && <p className="mono dim">Encrypted · keep this page open until it says saved</p>}
       </div>
       <div className="col">
         {openTasks.length > 0 && (
@@ -715,7 +735,7 @@ export function SendPanel(props: {
         )}
         {tooBig && <p className="err">{split ? "One of them is" : multi ? "Together they are" : folder ? `The ${folder.name} folder is` : `${first.name} is`} over the {MAX_LABEL} limit</p>}
         <div className="grow" />
-        <button className="cta lg-press" disabled={!ready} onClick={go}>{glyph(locked && code.length > 0 && code.length < 4 ? "Password: 4+ characters" : split ? `Send ${n} ↗` : "Send ↗")}</button>
+        <button className="cta lg-press" disabled={!ready} onClick={go}>{glyph(props.anon?.cleaning ? "Cleaning photos…" : locked && code.length > 0 && code.length < 4 ? "Password: 4+ characters" : split ? `Send ${n} ↗` : "Send ↗")}</button>
       </div>
     </Drawer>
   );
@@ -1017,7 +1037,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     fetch(`/api/transfers/${orb.id}/report`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ deviceId: deviceId(), device: deviceLabel() }),
+      body: JSON.stringify({ deviceId: deviceId(), device: deviceLabel(), anon: isAnon() }),
     }).then(() => props.onDownloaded()).catch(() => {});
   };
 
@@ -1026,7 +1046,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     fetch(`/api/transfers/${orb.id}/view`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ deviceId: deviceId(), device: deviceLabel() }),
+      body: JSON.stringify({ deviceId: deviceId(), device: deviceLabel(), anon: isAnon() }),
     }).then(onViewed).catch(() => {});
   }, [orb.id, onViewed]);
 
@@ -1037,6 +1057,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
         e.reason === "wrong" ? `Wrong passcode · ${e.left ?? 0} tries left`
           : e.reason === "locked" ? "Locked: too many wrong attempts"
           : e.reason === "sealed" ? "Sealed: download limit reached"
+          : e.reason === "nokey" ? "This anonymous space is missing its key on this device. Open it from its link again"
           : "This object already burned up",
       );
       if (e.reason !== "wrong") props.onDownloaded();
@@ -1226,7 +1247,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
         <div className="col" key="info">
           {orb.thumb && orb.open && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="card-thumb" src={previewUrl(orb.id)} alt={`Preview of ${orb.name}`} title={canView ? "Double-click to preview" : undefined} onDoubleClick={startPreview} onError={(e) => (e.currentTarget.style.display = "none")} />
+            <img className="card-thumb" src={previewUrl(orb.id)} alt={`Preview of ${orb.name}`} title={canView ? "Click to preview" : undefined} onClick={canView ? startPreview : undefined} style={canView ? { cursor: "zoom-in" } : undefined} onError={(e) => (e.currentTarget.style.display = "none")} />
           )}
           <div>
             <span className="mono dim ellip">{orb.fileName}</span>

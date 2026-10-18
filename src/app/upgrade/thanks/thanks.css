@@ -1,0 +1,9 @@
+/* /upgrade/thanks: after Stripe Checkout (blackboard look, site.css tokens) */
+.ug-thx { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: clamp(60px, 12vh, 140px) 0 clamp(60px, 10vh, 120px); }
+.ug-thx-h { margin-top: 22px; font-family: var(--font-display), "Arial Black", sans-serif; font-weight: 900; font-variation-settings: "wdth" 125; font-stretch: 125%; text-transform: uppercase; letter-spacing: -0.025em; line-height: 0.86; font-size: clamp(44px, 9vw, 150px); color: var(--ink); }
+.ug-thx-body { margin-top: 34px; max-width: 640px; }
+.ug-thx-steps { list-style: none; margin: 30px 0 0; padding: 0; border-top: 1px solid var(--step); }
+.ug-thx-steps li { display: grid; grid-template-columns: 64px 1fr; gap: 16px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid var(--step); color: var(--body); font-size: 15px; line-height: 1.5; }
+.ug-thx-steps b { font-family: var(--font-display), sans-serif; font-weight: 900; font-variation-settings: "wdth" 125; font-size: 28px; color: var(--step); }
+.ug-thx-acts { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; margin-top: 36px; }
+@media (max-width: 600px) { .ug-thx-steps li { grid-template-columns: 44px 1fr; font-size: 14px; } .ug-thx-steps b { font-size: 22px; } }
