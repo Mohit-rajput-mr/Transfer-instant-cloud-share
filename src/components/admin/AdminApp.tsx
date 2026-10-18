@@ -191,6 +191,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
     return () => clearInterval(t);
   }, []);
   const [spin, setSpin] = useState(true);
+  const [layersOpen, setLayersOpen] = useState(false); // phones: the layer chips sit behind one "Layers" button
   // routes on the globe: the live ones, or a set picked in History (all time by default)
   const [hist, setHist] = useState<{ lines: RouteLine[]; label: string } | null>(null);
   const routesLoaded = useRef(false);
@@ -279,7 +280,10 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
             <div className="wide">{n(data?.online)} <small>live</small></div>
             <span className="mono dim">{n(data?.devices)} devices · {n(data?.countries)} countries all-time</span>
           </div>
-          <div className="hq-layers">
+          <button className={`chip hq-layers-btn${layersOpen ? " on" : ""}`} onClick={() => setLayersOpen((o) => !o)}>
+            {layersOpen ? "✕ Close" : `☰ Layers · ${layers.size}`}
+          </button>
+          <div className={`hq-layers${layersOpen ? " open" : ""}`}>
             {LAYERS.map((l) => (
               <button key={l.id} className={`chip${layers.has(l.id) ? " on" : ""}`} onClick={() => toggle(l.id)}>
                 <i style={{ background: l.dot, ...(l.id === "exactSeen" ? { boxShadow: "0 0 0 2px #0d7a34" } : null) }} />{l.label}
