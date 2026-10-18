@@ -9,6 +9,7 @@ html[data-ui="work"] {
   --w-border: #38383c; --w-border-2: #4a4a50; --w-text: #ececee; --w-text-2: #a3a3a9; --w-text-3: #6f6f76;
   --w-accent: #ededee; --w-accent-2: #ffffff; --w-accent-ink: #111113; --w-ok: #3ecf8e; --w-warn: #f5a524; --w-danger: #f04438; --w-info: #7c8cff;
   --w-wire: #77777e; --w-wire-on: #b9b9c0; --w-port: #8a8a91; --w-scrim: rgba(8,8,9,0.6);
+  --w-anon: #a78bfa;
   --w-shadow-s: 0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 2px rgba(0,0,0,0.3);
   --w-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 10px 30px -8px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.25);
   --w-shadow-l: 0 1px 0 rgba(255,255,255,0.06) inset, 0 30px 80px -20px rgba(0,0,0,0.7), 0 8px 24px rgba(0,0,0,0.35);
@@ -25,6 +26,7 @@ html[data-ui="work"][data-theme="light"] {
   --w-border: #e3e3e0; --w-border-2: #cfcfcb; --w-text: #18181b; --w-text-2: #5d5d65; --w-text-3: #9a9aa1;
   --w-accent: #18181b; --w-accent-2: #333338; --w-accent-ink: #ffffff; --w-ok: #16a36a; --w-warn: #c98100; --w-danger: #d92d20; --w-info: #4f5fe8;
   --w-wire: #a9a9b0; --w-wire-on: #5d5d65; --w-port: #a4a4ab; --w-scrim: rgba(20,20,22,0.28);
+  --w-anon: #6d4fe0;
   --w-shadow-s: 0 1px 2px rgba(16,16,20,0.06);
   --w-shadow: 0 1px 2px rgba(16,16,20,0.05), 0 8px 24px -6px rgba(16,16,20,0.10);
   --w-shadow-l: 0 2px 6px rgba(16,16,20,0.06), 0 30px 70px -20px rgba(16,16,20,0.25);
@@ -747,3 +749,15 @@ html[data-ui="work"][data-theme="light"] .w-dock .w-primary, html[data-ui="work"
   box-shadow: inset 0 1px 0 #fff, 0 10px 26px -12px rgba(16,16,20,0.3) !important;
 }
 html[data-ui="work"] .w-fan button svg { color: var(--w-text) !important; }
+
+/* ---------- "Stay anonymous" (components/AnonCard.tsx): the same violet mask, in the work tokens ---------- */
+html[data-ui="work"] .w-icon.anon-chip:hover { color: var(--w-anon); }
+html[data-ui="work"] .w-btn.anon-on { color: var(--w-anon); border-color: color-mix(in srgb, var(--w-anon) 45%, var(--w-border)); background: color-mix(in srgb, var(--w-anon) 12%, var(--w-surface)); }
+html[data-ui="work"] .w-tag.anon { color: var(--w-anon); }
+html[data-ui="work"] .anon-ring { color: var(--w-anon); }
+html[data-ui="work"] .anon-list, html[data-ui="work"] .anon-still { color: var(--w-text-2); font-family: var(--w-font); }
+html[data-ui="work"] .anon-still summary { color: var(--w-text); }
+html[data-ui="work"] .anon-list svg { color: var(--w-anon); }
+html[data-ui="work"] .sd-anon[aria-checked="true"] .sd-switch { background: var(--w-anon); }
+html[data-ui="work"] .sd-anon .sd-ic, html[data-ui="work"] .sd-facts .sd-fact-btn { color: var(--w-anon); background: color-mix(in srgb, var(--w-anon) 14%, transparent); }
+html[data-ui="work"] .sd-switch { background: var(--w-border-2); }

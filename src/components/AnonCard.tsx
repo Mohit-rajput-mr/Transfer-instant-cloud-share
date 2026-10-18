@@ -24,7 +24,7 @@ export function AnonFacts() {
 }
 
 /** what still happens while anonymous */
-export const ANON_STILL = [
+const ANON_STILL = [
   "Like any website, our servers and our cloud storage see your connection (IP address) while you're here. Orbi doesn't record it with anything you do; it only keeps a scrambled key that changes every hour, to stop spam. For more, use a VPN or Tor.",
   "People in the space see the file names (unless you hide them), sizes and when you send.",
   "Notes and tasks aren't end-to-end encrypted: Orbi can read them. Put private things in a file.",
@@ -32,6 +32,11 @@ export const ANON_STILL = [
   "This browser remembers the anonymous spaces you're in, so you can come back, until you leave them.",
   "Paying for Pro needs an email at our payment provider. Sending never does.",
 ];
+
+/** the same, as a plain list (the privacy page) */
+export function AnonStillList() {
+  return <ul>{ANON_STILL.map((t) => <li key={t}>{t}</li>)}</ul>;
+}
 
 function Still({ open }: { open: boolean }) {
   return (

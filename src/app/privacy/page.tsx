@@ -1,6 +1,7 @@
 import { LuArrowLeft } from "react-icons/lu";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AnonFacts, AnonStillList } from "@/components/AnonCard";
 
 export const metadata: Metadata = { title: "Privacy", description: "How Orbi Transfer keeps your files private: encrypted in the browser, deleted after 5–30 minutes, no accounts." };
 
@@ -31,6 +32,11 @@ export default function Privacy() {
       </ul>
       <h2>Usage statistics</h2>
       <p>To keep the service running we keep anonymous usage stats: your approximate location (country, city, coordinates rounded to about 1 km, derived by our host from your connection; if you share your location in the browser, your exact position instead, kept as your most recent location and shown only on Orbit&apos;s own internal live map, never to other people), browser, OS, device type, and when you visit, upload or download. Detailed events are kept for 30 days; daily totals per country, city, device type and route (city to city) are kept longer. This is never linked to your name, never sold and never shared.</p>
+      <h2>Anonymous mode</h2>
+      <p>Turn on <b>Stay anonymous</b> (the mask at the top) to send without anyone knowing who you are or where you are. Orbi has no account, no name, no phone and no email, ever. Anonymous sends go into an anonymous space: a private space with a random title, shared with one link. Its code and its key ride after the # in that link, which browsers never send to a server.</p>
+      <AnonFacts />
+      <p><b>What still happens</b></p>
+      <AnonStillList />
       <h2>No accounts, no ads</h2>
       <p>There are no accounts, no ads and no third-party trackers. Hosting is provided by Vercel, Supabase and Cloudflare.</p>
       <h2>Tip</h2>
