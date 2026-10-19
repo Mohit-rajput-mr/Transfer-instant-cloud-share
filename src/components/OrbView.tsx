@@ -194,6 +194,8 @@ type Drag = {
   tx: number; ty: number; tilt: number; // latest target, painted once per frame
   // geometry cached at pick-up so moves never force a layout read
   bw: number; bh: number; bx: number; by: number;
+  /** the header's bottom edge on screen, read once at pick-up */
+  head?: number;
   /** the map's zoom at pick-up (1 off the map) */
   k: number;
 };
@@ -380,10 +382,12 @@ export default function OrbView(props: {
   // keep the orb inside the void (clear of the header)
   const clamp = (d: Drag, x: number, y: number) => {
     const m = 40;
-    let x0 = m - d.bx, x1 = d.bw - m - d.bx, y0 = (mapView.on ? m : 90) - d.by, y1 = d.bh - m - d.by;
-    // an invisible wall at the screen's edges: a ball can't be dragged (or flung) out of view
+    let x0 = m - d.bx, x1 = d.bw - m - d.bx, y0 = (mapView.on ? m : 6) - d.by, y1 = d.bh - m - d.by;
+    // an invisible wall at the screen's edges: a ball can't be dragged (or flung) out of view. Up top it stops just
+    // under the header that is really there (not a fixed band lower down)
     if (typeof window !== "undefined") {
-      const ex = 56, top = 76, bottom = 96;
+      const head = (d.head ??= document.querySelector(".top, .w-bar")?.getBoundingClientRect().bottom ?? 56);
+      const ex = 56, top = Math.max(8, head + 6), bottom = 96;
       x0 = Math.max(x0, d.ox + (ex - d.sx) / d.k); x1 = Math.min(x1, d.ox + (window.innerWidth - ex - d.sx) / d.k);
       y0 = Math.max(y0, d.oy + (top - d.sy) / d.k); y1 = Math.min(y1, d.oy + (window.innerHeight - bottom - d.sy) / d.k);
     }

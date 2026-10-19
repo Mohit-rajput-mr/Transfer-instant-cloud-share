@@ -93,6 +93,8 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
     [lowK, size, W, H],
   );
   const go = useCallback((v: View, animate: boolean) => {
+    // known at once (not only after the next render): steps a frame apart (smooth wheel zoom) build on each other
+    viewRef.current = v;
     setGlide(animate);
     setView(v);
   }, []);
@@ -176,6 +178,20 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
 
   const emptyRef = useRef(empty);
   emptyRef.current = empty;
+  // smooth wheel zoom: the zoom still owed (g.f) is paid out a part every frame, eased, around the pointer
+  const wz = useRef({ f: 1, x: 0, y: 0, raf: 0 });
+  const step = useCallback(() => {
+    const g = wz.current;
+    const before = viewRef.current.k;
+    const part = Math.abs(Math.log(g.f)) < 0.004 ? g.f : Math.pow(g.f, 0.22);
+    zoomAt(part, g.x, g.y, false);
+    // at the closest or farthest zoom nothing changes: stop owing it
+    g.f = viewRef.current.k === before ? 1 : g.f / part;
+    g.raf = Math.abs(Math.log(g.f)) > 0.0005 ? requestAnimationFrame(step) : 0;
+    if (!g.raf) g.f = 1;
+  }, [zoomAt]);
+  useEffect(() => () => cancelAnimationFrame(wz.current.raf), []);
+
   // wheel: a pinch (ctrl) or a mouse wheel zooms at the pointer; a trackpad's two-finger scroll moves the map
   useEffect(() => {
     const el = box.current;
@@ -189,7 +205,14 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
       const mouse = e.deltaMode === 1 || (e.deltaX === 0 && Math.abs(e.deltaY) >= 40 && Number.isInteger(e.deltaY));
       if (e.ctrlKey || mouse) {
         const d = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
-        zoomAt(Math.exp(-d * (e.ctrlKey ? 0.01 : 0.0022)), e.clientX - r.left, e.clientY - r.top, false);
+        const f = Math.exp(-d * (e.ctrlKey ? 0.01 : 0.0022));
+        // a trackpad pinch is already continuous: follow it as is. A mouse wheel comes in notches: glide there
+        if (e.ctrlKey) return zoomAt(f, e.clientX - r.left, e.clientY - r.top, false);
+        const g = wz.current;
+        g.f *= f;
+        g.x = e.clientX - r.left;
+        g.y = e.clientY - r.top;
+        if (!g.raf) g.raf = requestAnimationFrame(step);
       } else panBy(-e.deltaX, -e.deltaY, false);
     };
     el.addEventListener("wheel", wheel, { passive: false });
@@ -212,7 +235,7 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
       window.removeEventListener("gesturestart", gesture);
       window.removeEventListener("gesturechange", gesture);
     };
-  }, [zoomAt, panBy]);
+  }, [zoomAt, panBy, step]);
 
   // keys, like a map: arrows move, + / - zoom, 0 goes back to the opening view (not while typing or with a card open)
   useEffect(() => {

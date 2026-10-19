@@ -968,3 +968,13 @@ html[data-ui="work"] .member .mball > span:not(.kind-badge):not(.sat) { display:
 /* the drop zone lines up with Upload: both centred on the canvas (right of the 56px rail), not on the window */
 html[data-ui="work"] .trash-zone { left: calc(50% + 28px) !important; }
 @media (max-width: 720px) { html[data-ui="work"] .trash-zone { left: 50% !important; bottom: calc(84px + var(--safe-b)) !important; } }
+
+/* one type family everywhere: Work uses the classic fonts (layout.tsx: Chakra Petch for text, Archivo wide for titles,
+   JetBrains Mono for labels), not a look of its own */
+html[data-ui="work"] {
+  --sans: var(--font-chip), "Helvetica Neue", Arial, sans-serif !important; --display: var(--font-display), "Arial Black", sans-serif !important;
+  --mono: var(--font-mono), ui-monospace, Menlo, monospace !important;
+  --w-font: var(--font-chip), "Helvetica Neue", Arial, sans-serif !important; --w-mono: var(--font-mono), ui-monospace, Menlo, monospace !important; }
+html[data-ui="work"] body { font-family: var(--sans); }
+html[data-ui="work"] :is(.wide, .zoom-title b, .ghost-title, .sp-title, .anon-title, .pop h2, .pop h3, .drawer h2, .w-title b, .orb-label, .zname, .room-name b, .tb-head b) {
+  font-family: var(--display) !important; font-variation-settings: "wdth" 125 !important; font-weight: 800 !important; text-transform: uppercase !important; letter-spacing: 0.01em !important; }

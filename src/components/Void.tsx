@@ -2341,7 +2341,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           id="void"
           // Work: the big faint wordmark behind the canvas is the place you are in
           data-mark={work ? markText : undefined}
-          style={{ ...(flow ? { "--n": rows } : { "--k-auto": grid ? grid.k : map ? 1 : crowdScale(visible.length), ...(grid ? { "--cell": `${grid.cell}px` } : null) }), ...(work ? { "--mark-fs": `${Math.min(17, 150 / Math.max(4, markText.length))}vw` } : null) } as unknown as React.CSSProperties}
+          style={{ ...(flow ? { "--n": rows } : { "--k-auto": grid ? grid.k : map ? 1 : crowdScale(visible.length), ...(grid ? { "--cell": `${grid.cell}px` } : null) }), ...(work ? { "--mark-fs": `${Math.min(15, 112 / Math.max(4, markText.length))}vw` } : null) } as unknown as React.CSSProperties}
         >
           {inArchive && <ArchiveRoom onExit={() => setInArchive(false)} />}
           {/* anonymous: the void goes dark and cold (vignette, grain, scan lines, a big mask), so nobody forgets */}
