@@ -1,0 +1,72 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Why does the price keep bouncing off the exact same spot? Traders call it an order block.",
+   "dur": 5.05,
+   "at": 0.35
+  },
+  {
+   "key": "big",
+   "text": "Big funds can't fill a huge order in one go. They buy in pieces, and some of their orders stay waiting, unfilled.",
+   "dur": 6.923,
+   "at": 5.8
+  },
+  {
+   "key": "candle",
+   "text": "On the chart, an order block is the last red candle before a strong move up. That's where the big buying began.",
+   "dur": 6.455,
+   "at": 13.02
+  },
+  {
+   "key": "move",
+   "text": "The move after it has to be powerful: big candles, and a break above the last high. Traders call that a break of structure.",
+   "dur": 6.845,
+   "at": 19.78
+  },
+  {
+   "key": "zone",
+   "text": "Now mark that last red candle, from its high to its low. That's the zone.",
+   "dur": 4.872,
+   "at": 26.97
+  },
+  {
+   "key": "inside",
+   "text": "Zoom inside the zone, and here's the idea: the fund's leftover buy orders are still sitting there.",
+   "dur": 4.933,
+   "at": 32.24
+  },
+  {
+   "key": "return",
+   "text": "So when the price falls back into the zone, those orders soak up the selling, and the price bounces.",
+   "dur": 4.948,
+   "at": 37.48
+  },
+  {
+   "key": "bear",
+   "text": "Flip it for the drop. The last green candle before a strong fall is a bearish order block, and price often stalls there on the way back up.",
+   "dur": 7.461,
+   "at": 42.78
+  },
+  {
+   "key": "fail",
+   "text": "But it's not magic. If the price closes right through the zone, the orders are gone, and the block is broken.",
+   "dur": 5.632,
+   "at": 50.59
+  },
+  {
+   "key": "tip",
+   "text": "Not financial advice. Wait for the price to react in the zone, and keep your risk small.",
+   "dur": 4.723,
+   "at": 56.62
+  },
+  {
+   "key": "end",
+   "text": "Send this to a friend on Orbi Transfer. Now you know!",
+   "dur": 3.797,
+   "at": 61.74
+  }
+ ],
+ "duration": 67.34
+}
