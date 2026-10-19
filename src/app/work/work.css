@@ -960,3 +960,11 @@ html[data-ui="work"] .orb-body:not(.bubble-body) > .ext { top: auto !important; 
 html[data-ui="work"]:not([data-theme="light"]) .zoom-bubble .blob { background: linear-gradient(160deg, #1f1f22, #141416) !important; background-image: linear-gradient(160deg, #1f1f22, #141416) !important; }
 html[data-ui="work"] .zoom-bubble .blob::before, html[data-ui="work"] .zoom-bubble .blob::after, html[data-ui="work"] .zoom-bubble::before, html[data-ui="work"] .zoom-bubble::after { display: none !important; }
 html[data-ui="work"]:not([data-theme="light"]) .zoom-layer { background: rgba(8,8,9,0.9) !important; }
+/* files inside a closed container show their format too (.ZAP, .PDF…), under the icon */
+html[data-ui="work"] .member .mball { position: relative; }
+html[data-ui="work"] .member .mball > .kind-badge { margin-bottom: 7px; }
+html[data-ui="work"] .member .mball > span:not(.kind-badge):not(.sat) { display: block !important; position: absolute; left: 0; right: 0; bottom: 3px; text-align: center;
+  font: 600 7.5px/1 var(--w-mono, ui-monospace, monospace) !important; letter-spacing: 0.05em; text-transform: uppercase; color: var(--w-text-2) !important; text-shadow: none !important; }
+/* the drop zone lines up with Upload: both centred on the canvas (right of the 56px rail), not on the window */
+html[data-ui="work"] .trash-zone { left: calc(50% + 28px) !important; }
+@media (max-width: 720px) { html[data-ui="work"] .trash-zone { left: 50% !important; bottom: calc(84px + var(--safe-b)) !important; } }
