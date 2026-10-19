@@ -1,6 +1,7 @@
 /* =====================================================================
    /work — Orbi Work. The same void, drawn as a calm editor canvas (dark by default, light on request).
-   Everything is scoped to html[data-ui="work"] (set by app/work/page.tsx), so the main page never changes.
+   Everything is scoped to html[data-ui="work"] (set by components/VoidShell.tsx; loaded on / too by app/(void)/layout.tsx,
+   so the in-place switch needs no new stylesheet), so the main page never changes.
    ===================================================================== */
 
 /* ---------- tokens ---------- */
@@ -108,6 +109,8 @@ html[data-ui="work"] .w-btn { height: 32px; display: inline-flex; align-items: c
 html[data-ui="work"] .w-btn:hover { background: var(--w-hover); }
 html[data-ui="work"] .w-btn svg { width: 14px; height: 14px; }
 html[data-ui="work"] .w-only-s { display: none !important; }
+/* the classic page's guide (SeoContent) stays in the DOM after an in-place switch from / or /fr: not part of /work */
+html[data-ui="work"] .seo { display: none !important; }
 
 /* ---------- left rail ---------- */
 html[data-ui="work"] .w-rail { position: fixed; z-index: 29; left: 0; top: calc(52px + var(--safe-t)); bottom: 0; width: calc(56px + var(--safe-l)); padding: 12px 0 calc(12px + var(--safe-b)) var(--safe-l);

@@ -1,6 +1,7 @@
 "use client";
 import { areaOf, validArea } from "./area";
 import { isAnon } from "./anon";
+import { isMobileDevice } from "./save";
 
 // Where this device is in the void (lib/area.ts). Shared location → the cell it is really in; otherwise the cell its
 // IP points to (rougher). Only the cell is kept on the device and used for the void; the exact fix (in memory only)
@@ -57,10 +58,28 @@ export const setAnonCell = (a: unknown) => {
 };
 export const anonCellNow = () => anonCell;
 
+// A cell border is jittery: a GPS fix wobbles across it, and a network change (VPN, IPv6/IPv4, Wi-Fi/cable) can
+// geolocate the same connection to the next cell and back. Each flip moved this device to another void (and away from
+// the devices next to it), so a new cell counts only once it is read twice in a row.
+let ipNext: string | null = null;
+let gpsNext: string | null = null;
+// ...except the first IP reading of a page load: the stored area may be from another day in another place
+let ipHeard = false;
+
 /** the server's guess from the IP: used only until (or unless) the device shares its location */
 export function fromIp(area: unknown) {
   if (isAnon()) return false;
-  if (!validArea(area) || cur?.how === "gps" || cur?.how === "pick" || cur?.area === area) return false;
+  if (!validArea(area) || cur?.how === "gps" || cur?.how === "pick") return false;
+  const first = !ipHeard;
+  ipHeard = true;
+  // the same as now: any half-heard other cell is forgotten
+  const next = cur?.area === area ? null : area;
+  // (nothing known yet, or the first reading since load: taken at once)
+  if (!next || (cur && !first && ipNext !== next)) {
+    ipNext = next;
+    return false;
+  }
+  ipNext = null;
   save({ area, how: "ip" });
   return true;
 }
@@ -119,19 +138,45 @@ export function locate(): Promise<Where> {
  * more than 100 m from the position Orbit last heard. Returns the stop function. */
 export function follow(onArea: (w: Where) => void, onMoved: () => void) {
   if (!navigator.geolocation || isAnon()) return () => {};
-  const id = navigator.geolocation.watchPosition(
-    (p) => {
-      if (isAnon()) return;
-      const f = setFix(p.coords);
-      const area = areaOf(f.lat, f.lon);
-      if (cur?.area !== area || cur.how !== "gps") {
-        save({ area, how: "gps" });
-        onArea(cur!);
-      }
-      if (!sent || dist(sent, f) > 100) onMoved();
-    },
-    () => {},
-    { enableHighAccuracy: true, timeout: 30_000, maximumAge: 15_000 },
-  );
-  return () => navigator.geolocation.clearWatch(id);
+  // a computer doesn't walk anywhere: high accuracy there means Windows scanning Wi-Fi over and over (the radio leaves
+  // its channel for each scan: lag spikes), for nothing. Phones and tablets keep the precise fix
+  const mobile = isMobileDevice();
+  let stopped = false;
+  let confirmT: ReturnType<typeof setTimeout> | undefined;
+  const commit = (area: string) => {
+    clearTimeout(confirmT);
+    gpsNext = null;
+    save({ area, how: "gps" });
+    onArea(cur!);
+  };
+  const onFix = (p: GeolocationPosition) => {
+    if (stopped || isAnon()) return;
+    const f = setFix(p.coords);
+    const area = areaOf(f.lat, f.lon);
+    if (cur?.area === area && cur.how === "gps") {
+      gpsNext = null;
+      clearTimeout(confirmT);
+    }
+    // the first fix replaces a guess (IP, picked) at once; a move between GPS cells needs a second fix there
+    else if (cur?.how === "gps" && gpsNext !== area) {
+      gpsNext = area;
+      // a computer that stays put may never report again (watchPosition answers moves): asked once more shortly, so
+      // a real move (lid shut at home, opened at the office) isn't left pending until a reload. No answer: nothing
+      // said otherwise, the new cell stands
+      clearTimeout(confirmT);
+      confirmT = setTimeout(() => {
+        if (stopped || gpsNext !== area) return;
+        navigator.geolocation.getCurrentPosition(onFix, () => !stopped && !isAnon() && gpsNext === area && cur?.how === "gps" && commit(area), {
+          enableHighAccuracy: mobile, timeout: 30_000, maximumAge: 0,
+        });
+      }, 20_000);
+    } else commit(area);
+    if (!sent || dist(sent, f) > 100) onMoved();
+  };
+  const id = navigator.geolocation.watchPosition(onFix, () => {}, { enableHighAccuracy: mobile, timeout: 30_000, maximumAge: mobile ? 15_000 : 60_000 });
+  return () => {
+    stopped = true;
+    clearTimeout(confirmT);
+    navigator.geolocation.clearWatch(id);
+  };
 }

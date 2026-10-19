@@ -8,6 +8,7 @@ import { encryptChunk } from "./crypto";
 import { ALIVE_EVERY_MS, PART_CHUNKS, STORE_CHUNK, STORE_TAG, storeChunks } from "./limits";
 import { stayAwake } from "./wake";
 import { Meter } from "./rate";
+import { acquire, netCongested, netHiccup, nudgeNet, tryAcquire, watchNet } from "./net";
 
 export type CloudState = { state: "saving" | "paused" | "saved" | "failed"; frac: number; speed?: string };
 const states = new Map<string, CloudState>();
@@ -38,65 +39,20 @@ export function useCloud() {
   );
 }
 
-const PARALLEL_UP = 3;
 const TRIES = 3;
+/** lanes one file may use at most (how many really run is up to lib/net.ts: 2 gently, 1 on a busy line, 6 at full speed) */
+const LANES_UP = 6;
 
-// ---- a gentle upload: back off as soon as the line starts to choke ----------------------------------
-// A full-speed upload fills the router's queue (bufferbloat): pages, DNS and Windows' own internet check
-// time out and the computer looks offline. While uploads run, a tiny request to our own edge measures the
-// round trip every 1.5 s; when it climbs well above this line's quiet level, uploads drop to one lane and
-// pause briefly between parts so everything else on the network gets through.
-const net = { users: 0, timer: 0 as ReturnType<typeof setInterval> | 0, base: Infinity, recent: [] as number[], congested: false };
-async function probe() {
-  const t = performance.now();
-  const ok = await fetch(`/favicon.ico?rtt=${Date.now()}`, { method: "HEAD", cache: "no-store" }).then((r) => r.ok, () => false);
-  const ms = ok ? performance.now() - t : 5000;
-  net.recent = [...net.recent.slice(-2), ms];
-  if (ok) net.base = Math.min(net.base, ms);
-  const med = [...net.recent].sort((a, b) => a - b)[Math.floor(net.recent.length / 2)];
-  // calm again only once it has clearly come back down (no flapping)
-  const was = net.congested;
-  net.congested = net.congested ? med > Math.max(net.base * 2.5, net.base + 200) : med > Math.max(net.base * 4, net.base + 400);
-  if (was !== net.congested) console.info(net.congested ? `orbi: line busy (${Math.round(med)} ms vs ${Math.round(net.base)} ms), uploading gently` : "orbi: line calm again, full speed");
-}
-function watchNet(on: boolean) {
-  net.users += on ? 1 : -1;
-  if (net.users > 0 && !net.timer) {
-    void probe();
-    net.timer = setInterval(probe, 1500);
-  } else if (net.users <= 0 && net.timer) {
-    clearInterval(net.timer);
-    net.timer = 0;
-    net.users = 0;
-    net.recent = [];
-    net.congested = false;
-  }
-}
-// the person's pick: "gentle" (default) backs off on a busy line, "full" always goes flat out
-const SPEED_KEY = "orbit:upspeed";
-export type UpSpeed = "gentle" | "full";
-export const upSpeed = (): UpSpeed => {
-  try {
-    return localStorage.getItem(SPEED_KEY) === "full" ? "full" : "gentle";
-  } catch {
-    return "gentle";
-  }
-};
-export const setUpSpeed = (v: UpSpeed) => {
-  try {
-    localStorage.setItem(SPEED_KEY, v);
-  } catch {}
-};
-/** the line is choking and this device is set to be gentle: uploads (and device-to-device sends) hold back */
-export const netCongested = () => net.congested && upSpeed() === "gentle";
-/** how many parts may go up at once right now */
-const laneLimit = () => (netCongested() ? 1 : PARALLEL_UP);
-
-/** Switching Work ↔ Classic reloads the page: say so first if a cloud copy is still going up. */
-export function switchView(href: string) {
-  if (cloudSaving() && !confirm("Files are still uploading. Switching now pauses them (they pick up again after). Switch anyway?")) return;
-  window.location.assign(href);
-}
+// ---- a gentle upload: back off as soon as the line starts to choke (lib/net.ts) -----------------------------------
+// Every part (and every small file) takes a turn from the network watch first, across all files at once, so a send of
+// ten 'Separate' files doesn't start thirty parallel uploads. On a busy line one part goes at a time with a pause after
+// it in proportion to how long it took (a duty cycle), so pages, DNS and Windows' own internet check get through.
+export { netCongested, setUpSpeed, upSpeed, type UpSpeed } from "./net";
+/** big files' parts go up in the order the files were picked: the first ball is stored first (a small file, one
+ *  upload, goes ahead of them: see single) */
+let picked = 0;
+/** after a part on a busy line: let the queue drain for half as long as the part took (capped) */
+const breather = (ms: number, signal: AbortSignal) => (netCongested() ? sleep(Math.min(30_000, Math.max(800, ms / 2)), signal) : Promise.resolve());
 
 // ---- uploads that resume -------------------------------------------------------------------------
 // A big upload is remembered on this device (IndexedDB: the object, its owner key, R2's upload id and
@@ -146,7 +102,7 @@ function put(url: string, body: Blob, onSent: (n: number) => void, signal: Abort
     if (signal.aborted) return rej(new DOMException("Aborted", "AbortError"));
     const x = new XMLHttpRequest();
     x.open("PUT", url);
-    x.upload.onprogress = (e) => onSent(e.loaded);
+    x.upload.onprogress = (e) => (onSent(e.loaded), nudgeNet());
     x.onload = () => (x.status >= 200 && x.status < 300 ? res((x.getResponseHeader("ETag") ?? "").trim()) : rej(new Error(`upload ${x.status}`)));
     x.onerror = () => rej(new Error("upload network"));
     x.onabort = () => rej(new DOMException("Aborted", "AbortError"));
@@ -196,6 +152,7 @@ export async function storeCopy(
 ): Promise<boolean> {
   const ac = new AbortController();
   aborts.set(id, ac);
+  const rank = ++picked;
   if (opts?.onFrac) fracs.set(id, opts.onFrac);
   try {
     set(id, { state: "saving", frac: 0 });
@@ -218,13 +175,13 @@ export async function storeCopy(
       return false;
     }
     const s = (await r.json()) as { put?: string; uploadId?: string; urls?: string[] };
-    if (s.put) await single(id, owner, file, key, nonce, s.put, ac.signal);
+    if (s.put) await single(id, owner, file, key, nonce, s.put, ac);
     else if (s.uploadId && s.urls) {
       if (canResume) {
         await remember({ id, owner, uploadId: s.uploadId, fileName: file.name, size: file.size, lastModified: file.lastModified, key, nonce, label, at: Date.now() });
         resumables.add(id);
       }
-      await multi(id, owner, file, key, nonce, s.uploadId, s.urls.map((url, i) => ({ n: i + 1, url })), [], ac);
+      await multi(id, owner, file, key, nonce, s.uploadId, s.urls.map((url, i) => ({ n: i + 1, url })), [], ac, rank);
     } else throw new Error("start");
     set(id, { state: "saved", frac: 1 });
     forgetUpload(id);
@@ -245,11 +202,12 @@ export async function resumeCopy(u: PendingUpload, file: File) {
   if (aborts.has(u.id) || !sameFile(u, file)) return false;
   const ac = new AbortController();
   aborts.set(u.id, ac);
+  const rank = ++picked;
   try {
     set(u.id, { state: "saving", frac: 0 });
     await remember({ ...u, at: Date.now() });
     resumables.add(u.id);
-    await multi(u.id, u.owner, file, u.key, u.nonce, u.uploadId, null, null, ac);
+    await multi(u.id, u.owner, file, u.key, u.nonce, u.uploadId, null, null, ac, rank);
     set(u.id, { state: "saved", frac: 1 });
     forgetUpload(u.id);
     return true;
@@ -263,33 +221,69 @@ export async function resumeCopy(u: PendingUpload, file: File) {
   }
 }
 
-/** A small file: one plain upload, retried through network drops. */
-async function single(id: string, owner: string, file: File, key: CryptoKey, nonce: Uint8Array, url: string, signal: AbortSignal) {
+/** A small file: one plain upload in its turn on the line (lib/net.ts), retried through network drops. Its turn comes
+ *  before any big file's next part (rank 0: one upload of a part's size at most, not an hour behind a 6 GB video), it
+ *  keeps the object in orbit while it waits (as multi does), and a signed link that ran out meanwhile is renewed. */
+async function single(id: string, owner: string, file: File, key: CryptoKey, nonce: Uint8Array, url: string, ac: AbortController) {
+  const { signal } = ac;
   const total = storeChunks(file.size);
   const enc = file.size + total * STORE_TAG;
   const meter = new Meter(enc);
-  for (let attempt = 1; ; attempt++) {
-    try {
-      const body = await sealRange(file, key, nonce, 0, total, total);
-      await put(url, body, (b) => set(id, { state: "saving", frac: Math.min(0.99, b / enc), speed: meter.label(b) }), signal);
-      break;
-    } catch (e) {
-      if (signal.aborted || attempt >= 8) throw e;
-      set(id, { state: "paused", frac: 0 });
-      await backOnline(Math.min(30_000, 1000 * 2 ** attempt), signal);
+  // small files are watched too: ten of them at once choke a line just like one big one
+  await watchNet(true);
+  const beat = setInterval(async () => {
+    const r = await call(id, { owner, action: "alive" }).catch(() => null);
+    if (r?.ok && (await r.json().catch(() => null))?.ok === false) ac.abort(new Gone());
+  }, ALIVE_EVERY_MS);
+  let expired = false;
+  try {
+    for (let attempt = 1; ; attempt++) {
+      let done = tryAcquire("up");
+      if (!done) {
+        set(id, { state: "saving", frac: 0, speed: "waiting its turn" });
+        done = await acquire("up", signal, 0);
+      }
+      try {
+        if (expired) {
+          const r = await call(id, { owner, action: "start" });
+          if (r.status === 404 || r.status === 403) throw new Gone();
+          const fresh = r.ok ? ((await r.json()) as { put?: string }).put : undefined;
+          if (!fresh) throw new Error("start");
+          url = fresh;
+          expired = false;
+        }
+        const body = await sealRange(file, key, nonce, 0, total, total);
+        const t = performance.now();
+        await put(url, body, (b) => set(id, { state: "saving", frac: Math.min(0.99, b / enc), speed: netCongested() ? `${meter.label(b)} · connection busy, going gently` : meter.label(b) }), signal);
+        await breather(performance.now() - t, signal);
+        break;
+      } catch (e) {
+        if (e instanceof Gone || signal.aborted || attempt >= 8) throw e;
+        if (String(e).includes("network")) netHiccup();
+        // its link is signed for an hour: a long wait (a laptop asleep, a choked line) outlives it
+        if (String(e).includes("upload 403")) expired = true;
+        set(id, { state: "paused", frac: 0 });
+        done(); // (nobody waits on a turn held by a paused upload)
+        await backOnline(Math.min(30_000, 1000 * 2 ** attempt), signal);
+      } finally {
+        done();
+      }
     }
+  } finally {
+    clearInterval(beat);
+    watchNet(false);
   }
   await call(id, { owner, action: "saved" }).catch(() => null);
 }
 
 /**
- * A big file in parts, three at a time. Any break (offline, laptop asleep, links expired) pauses it;
+ * A big file in parts, as many at a time as the line allows (lib/net.ts). Any break (offline, laptop asleep, links expired) pauses it;
  * then R2 is asked which parts it already has, and only the rest go up. It gives up only when the
  * object is gone (burnt or destroyed) or the user stops it.
  */
 async function multi(
   id: string, owner: string, file: File, key: CryptoKey, nonce: Uint8Array, uploadId: string,
-  todo: { n: number; url: string }[] | null, have: { n: number; etag: string }[] | null, ac: AbortController,
+  todo: { n: number; url: string }[] | null, have: { n: number; etag: string }[] | null, ac: AbortController, rank: number,
 ) {
   const total = storeChunks(file.size);
   const enc = file.size + total * STORE_TAG;
@@ -302,9 +296,13 @@ async function multi(
   let base = 0;
   const meter = new Meter(enc);
   let paused = false;
+  // parts of this file with a turn on the line right now, and lanes waiting for one (behind other uploads)
+  let turns = 0;
+  let queued = 0;
   const progress = () => {
     const done = base + [...sent.values()].reduce((a, b) => a + b, 0);
-    set(id, { state: paused ? "paused" : "saving", frac: Math.min(0.99, done / enc), speed: paused ? undefined : netCongested() ? `${meter.label(done)} · connection busy, going gently` : meter.label(done) });
+    const speed = paused ? undefined : !turns && queued ? "waiting its turn" : netCongested() ? `${meter.label(done)} · connection busy, going gently` : meter.label(done);
+    set(id, { state: paused ? "paused" : "saving", frac: Math.min(0.99, done / enc), speed });
   };
   const sync = async () => {
     const r = await call(id, { owner, action: "resume", uploadId });
@@ -314,8 +312,9 @@ async function multi(
     have = d.done;
     todo = d.urls;
   };
+  // the line's quiet level first (before the first byte), then watched while this runs
+  await watchNet(true);
   // keeps the object in orbit while this runs, paused or not
-  watchNet(true);
   const beat = setInterval(async () => {
     const r = await call(id, { owner, action: "alive" }).catch(() => null);
     if (r?.ok && (await r.json().catch(() => null))?.ok === false) ac.abort(new Gone());
@@ -336,43 +335,59 @@ async function multi(
       ac.signal.addEventListener("abort", stopRound, { once: true });
       try {
         let next = 0;
-        const worker = async (lane: number) => {
+        const worker = async () => {
           while (next < queue.length && !round.signal.aborted) {
-            // a choked line: only lane 0 keeps going, the others wait until it clears
-            if (lane >= laneLimit()) {
-              await sleep(700, round.signal);
-              continue;
-            }
-            const p = queue[next++];
-            for (let attempt = 1; ; attempt++) {
+            // a turn on the line first, shared with every other upload on this page (a choked line: one at a time)
+            let done = tryAcquire("up");
+            if (!done) {
+              queued++;
+              progress();
               try {
-                const body = await sealRange(file, key, nonce, (p.n - 1) * PART_CHUNKS, Math.min(total, p.n * PART_CHUNKS), total);
-                const etag = await put(p.url, body, (b) => (sent.set(p.n, b), progress()), round.signal);
-                // R2 must expose ETag to the page (bucket CORS); without it the parts can't be put together
-                if (!etag) throw new Error("no etag");
-                etags.set(p.n, etag);
-                sent.set(p.n, partBytes(p.n));
-                paused = false;
-                progress();
-                // give the queued traffic of everything else on the network a moment to drain
-                if (netCongested()) await sleep(1500, round.signal);
-                break;
-              } catch (e) {
-                sent.delete(p.n);
-                if (round.signal.aborted) throw e;
-                if (attempt >= TRIES) {
-                  round.abort();
-                  throw e;
-                }
-                // shows as paused right away, not after the retries run out
-                paused = true;
-                progress();
-                await sleep(800 * attempt, round.signal);
+                done = await acquire("up", round.signal, rank);
+              } finally {
+                queued--;
               }
+            }
+            turns++;
+            try {
+              if (next >= queue.length) return;
+              const p = queue[next++];
+              for (let attempt = 1; ; attempt++) {
+                try {
+                  const body = await sealRange(file, key, nonce, (p.n - 1) * PART_CHUNKS, Math.min(total, p.n * PART_CHUNKS), total);
+                  const t = performance.now();
+                  const etag = await put(p.url, body, (b) => (sent.set(p.n, b), progress()), round.signal);
+                  // R2 must expose ETag to the page (bucket CORS); without it the parts can't be put together
+                  if (!etag) throw new Error("no etag");
+                  etags.set(p.n, etag);
+                  sent.set(p.n, partBytes(p.n));
+                  paused = false;
+                  progress();
+                  // a busy line: keep the turn a while (half as long as this part took) so everything else drains
+                  await breather(performance.now() - t, round.signal);
+                  break;
+                } catch (e) {
+                  sent.delete(p.n);
+                  if (round.signal.aborted) throw e;
+                  // a dropped connection on a choked line: start again gently, not every lane at once
+                  if (String(e).includes("network")) netHiccup();
+                  if (attempt >= TRIES) {
+                    round.abort();
+                    throw e;
+                  }
+                  // shows as paused right away, not after the retries run out
+                  paused = true;
+                  progress();
+                  await sleep(800 * attempt, round.signal);
+                }
+              }
+            } finally {
+              turns--;
+              done();
             }
           }
         };
-        await Promise.all(Array.from({ length: Math.min(PARALLEL_UP, Math.max(1, queue.length)) }, (_, i) => worker(i)));
+        await Promise.all(Array.from({ length: Math.min(LANES_UP, Math.max(1, queue.length)) }, () => worker()));
         const parts = Math.ceil(total / PART_CHUNKS);
         const list = Array.from({ length: parts }, (_, i) => etags.get(i + 1));
         if (list.some((e) => !e)) throw new Error("missing parts");
@@ -436,8 +451,8 @@ export async function waitStored(url: string, ms: number, signal?: AbortSignal) 
 const RANGE_CHUNKS = 2;
 const PARALLEL_DOWN = 4;
 
-/** The stored ciphertext as a stream, fetched in parallel byte ranges and handed out in order. */
-export function fetchStored(url: string, size: number, signal?: AbortSignal): ReadableStream<Uint8Array> {
+/** The stored ciphertext as a stream, fetched in parallel byte ranges (`lanes`; background previews take 1) and handed out in order. */
+export function fetchStored(url: string, size: number, signal?: AbortSignal, lanes = PARALLEL_DOWN): ReadableStream<Uint8Array> {
   const chunks = storeChunks(size);
   const enc = size + chunks * STORE_TAG;
   const step = RANGE_CHUNKS * (STORE_CHUNK + STORE_TAG);
@@ -462,7 +477,7 @@ export function fetchStored(url: string, size: number, signal?: AbortSignal): Re
     }
   };
   const fill = () => {
-    while (next < count && pending.size < PARALLEL_DOWN) {
+    while (next < count && pending.size < lanes) {
       const p = get(next);
       p.catch(() => {});
       pending.set(next++, p);

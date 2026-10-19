@@ -13,12 +13,16 @@ interface Env {
 // only Orbit's own pages may connect (another site can't spend this account's free allowance)
 const ORIGIN = /^(https:\/\/((www\.)?orbitransfer\.com|[a-z0-9-]+\.vercel\.app)|http:\/\/localhost(:\d+)?)$/;
 const ROOM = /^\/(r|s)\/([0-9b-hjkmnp-z]{3}|void|[a-z0-9-]{1,64})$/;
-// a socket that talks more than this is ignored until the window passes
-const BURST = 40, WINDOW = 10_000;
+// a socket that talks more than this is ignored until the window passes. Chatter (launch progress) and the messages
+// said once that must arrive (a landing, a destroy, a change, an invite, who is here) have separate allowances, so a
+// big "Separate" send can never crowd out its own landings
+const BURST = 120, MUST_CAP = 300, WINDOW = 10_000;
+const MUST = /^(landed|gone|sync|pulse|invite|hello)$/;
 const MAX_MSG = 16_000;
 const MAX_SOCKETS = 30_000;
 
-type Tag = { n: number; t: number; id: string | null };
+// k (must count) and s (told to slow down this window) came later: sockets attached before carry only n, t, id
+type Tag = { n: number; k?: number; s?: boolean; t: number; id: string | null };
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
@@ -51,14 +55,27 @@ export class Room extends DurableObject<Env> {
 
   async webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer) {
     if (typeof raw !== "string" || raw.length > MAX_MSG) return;
-    const tag = (ws.deserializeAttachment() as Tag | null) ?? { n: 0, t: 0, id: null };
-    const now = Date.now();
-    if (now - tag.t > WINDOW) (tag.t = now), (tag.n = 0);
-    if (++tag.n > BURST) return ws.serializeAttachment(tag);
+    // read first: which allowance it counts against depends on what it is
     let m: { e?: unknown; p?: unknown; a?: unknown; id?: unknown };
     try {
       m = JSON.parse(raw);
     } catch {
+      return;
+    }
+    if (!m || typeof m !== "object") return;
+    const tag = (ws.deserializeAttachment() as Tag | null) ?? { n: 0, t: 0, id: null };
+    const now = Date.now();
+    if (now - tag.t > WINDOW) (tag.t = now), (tag.n = 0), (tag.k = 0), (tag.s = false);
+    const must = typeof m.e === "string" && MUST.test(m.e);
+    if (must ? (tag.k = (tag.k ?? 0) + 1) > MUST_CAP : ++tag.n > BURST) {
+      // chatter over its allowance: the sender is told once per window, so it holds its progress until then
+      // (pages from before this ignore an event they don't know)
+      if (!must && !tag.s) {
+        tag.s = true;
+        try {
+          ws.send(JSON.stringify({ e: "slow", p: { retry: Math.max(0, tag.t + WINDOW - now) }, a: null }));
+        } catch {}
+      }
       return ws.serializeAttachment(tag);
     }
     // who is here (spaces): a device says its member id once, everyone gets the list of ids online
@@ -68,7 +85,8 @@ export class Room extends DurableObject<Env> {
       return this.presence();
     }
     ws.serializeAttachment(tag);
-    if (typeof m.e !== "string" || !/^[a-z]{1,16}$/.test(m.e)) return;
+    // (slow and presence are said only by the room itself: a page can't pass them off to the others)
+    if (typeof m.e !== "string" || !/^[a-z]{1,16}$/.test(m.e) || m.e === "slow" || m.e === "presence") return;
     const out = JSON.stringify({ e: m.e, p: m.p ?? null, a: typeof m.a === "string" ? m.a.slice(0, 8) : null });
     for (const c of this.ctx.getWebSockets()) {
       if (c === ws) continue;

@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import Link from "next/link";
-import { Arrow, Check, Ghost, HardLink, SecHead, Ticker } from "@/components/SiteChrome";
+import { Arrow, Check, Ghost, VoidLink, SecHead, Ticker } from "@/components/SiteChrome";
 import { FAQ } from "./faq";
 
 const MAIL = "transferorbi@gmail.com";
@@ -310,12 +310,12 @@ function PlanCta({ p, yearly }: { p: Plan; yearly: boolean }) {
   if (p.id === "free")
     return (
       <>
-        <HardLink href="/" className="sx-pill solid">
+        <VoidLink href="/" className="sx-pill solid">
           Open Orbi
-        </HardLink>
-        <HardLink href="/work" className="sx-link">
+        </VoidLink>
+        <VoidLink href="/work" className="sx-link">
           or the Work look <Arrow dir="right" />
-        </HardLink>
+        </VoidLink>
       </>
     );
   if (on) {
@@ -961,9 +961,9 @@ export default function Plans() {
             <span>
               or write to <a href={`mailto:${MAIL}`}>{MAIL}</a>
             </span>
-            <HardLink href="/" className="sx-link">
+            <VoidLink href="/" className="sx-link">
               Or keep sending, free <Arrow dir="right" />
-            </HardLink>
+            </VoidLink>
           </p>
         </div>
       </section>

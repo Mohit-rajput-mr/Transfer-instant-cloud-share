@@ -207,8 +207,17 @@ export async function peekOrb(orb: Orb, signal?: AbortSignal): Promise<Unlocked>
  * Where the ciphertext comes from: this tab (it sent it), the stored copy when it is complete (fast,
  * parallel, and spares the sender's line), or straight from the sender's device. If the direct path
  * can't connect (sender gone, or a network that blocks it), a copy that is still uploading is waited for.
+ * A guess (a background preview nobody asked for yet) takes only a stored copy that is complete now, and fetches it
+ * gently: it never adds a pull on the sender's line (often still uploading that very file), and never waits.
  */
-async function source(r: UnlockReply, signal: AbortSignal | undefined, cloudOnly: boolean) {
+async function source(r: UnlockReply, signal: AbortSignal | undefined, cloudOnly: boolean, guess = false) {
+  if (guess) {
+    // this tab sent it: read here, no network at all (not downloaded back from storage)
+    const id = r.url.slice(P2P_PREFIX.length);
+    if (!cloudOnly && holding(id)) return { body: await pull(id, signal), stored: false };
+    if (r.store && (await isStored(r.store, signal))) return { body: fetchStored(r.store, r.size, signal, 1), stored: true };
+    throw new NotYet("not stored yet");
+  }
   if (cloudOnly) {
     // anonymous: only the stored copy (a direct connection would show each side the other's IP)
     if (r.store && ((await isStored(r.store, signal)) || (await waitStored(r.store, 3 * 60_000, signal))))
@@ -226,13 +235,23 @@ async function source(r: UnlockReply, signal: AbortSignal | undefined, cloudOnly
   }
 }
 
-/** Download and decrypt one object; the screen stays on meanwhile (see receiveNow). */
+/** A background preview whose stored copy isn't complete yet (try again later; nothing was fetched). */
+export class NotYet extends Error {}
+
+let pulling = 0;
+/** a download someone asked for is running on this page (background previews wait for it) */
+export const receiving = () => pulling > 0;
+
+/** Download and decrypt one object; the screen stays on meanwhile (see receiveNow), not for a guess. */
 export async function receive(opts: Parameters<typeof receiveNow>[0]): Promise<Received> {
+  if (opts.guess) return receiveNow(opts);
   const why = `recv-${opts.orb.id}`;
   stayAwake(why, true);
+  pulling++;
   try {
     return await receiveNow(opts);
   } finally {
+    pulling--;
     stayAwake(why, false);
   }
 }
@@ -250,6 +269,8 @@ async function receiveNow(opts: {
   folderTarget?: DirHandle | null;
   /** phones/tablets: never auto-download; hand the File back so the user picks where it goes */
   hold?: boolean;
+  /** a background preview nobody asked for yet: the complete stored copy or nothing (see source) */
+  guess?: boolean;
 }): Promise<Received> {
   const { onProgress, signal } = opts;
   const { key, r } = opts.unlocked;
@@ -288,7 +309,7 @@ async function receiveNow(opts: {
   try {
     if (!isP2P(r.url)) await decrypt();
     else {
-      const src = await source(r, signal, isAnon() || !!opts.orb.anon);
+      const src = await source(r, signal, isAnon() || !!opts.orb.anon, !!opts.guess);
       try {
         await decrypt(src.body);
       } catch (e) {

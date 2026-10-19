@@ -10,7 +10,7 @@ import { supabase, type RealtimeChannel } from "./realtime";
 import { chunkCount, encryptChunk } from "./crypto";
 import { stayAwake } from "./wake";
 import { isAnon } from "./anon";
-import { netCongested } from "./cloud";
+import { acquire, netCongested } from "./net";
 
 const ICE: RTCIceServer[] = [
   { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] },
@@ -35,6 +35,8 @@ export const isP2P = (url: string) => url.startsWith(P2P_PREFIX);
 
 type Held = { file: File; key: CryptoKey; nonce: Uint8Array; chunkSize: number; ch: RealtimeChannel; timer: ReturnType<typeof setTimeout>; peers: Set<RTCPeerConnection> };
 const held = new Map<string, Held>();
+/** each connection's own wrap-up (its turn on the line given back): pc.close() fires no event to run it */
+const enders = new WeakMap<RTCPeerConnection, () => void>();
 
 const chan = (id: string) => supabase.channel(`orbit-p2p-${id}`, { config: { broadcast: { self: false } } });
 
@@ -84,6 +86,39 @@ function sendOver(dc: RTCDataChannel) {
 /** Biggest message both ends take: Chrome 256 KB, Firefox more; 64 KB when unknown. */
 const frameFor = (pc: RTCPeerConnection) => Math.max(16 * 1024, Math.min(MAX_FRAME, pc.sctp?.maxMessageSize || FRAME));
 
+// an address only reachable on this network. A '.local' name (or none shown) is an mDNS host candidate, which only
+// resolves on the same link; a public IPv6 literal could be anywhere, so it counts as the internet
+const LOCAL = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|127\.|fe[89ab][0-9a-f]:|f[cd][0-9a-f]{2}:|::1$)/i;
+/** Both ends talk over local addresses (same Wi-Fi / LAN): the bytes never cross this device's internet line. */
+async function nearby(pc: RTCPeerConnection) {
+  try {
+    const stats = await pc.getStats();
+    let pair: { localCandidateId?: string; remoteCandidateId?: string } | undefined;
+    stats.forEach((r) => {
+      if (r.type === "transport" && r.selectedCandidatePairId) pair = stats.get(r.selectedCandidatePairId);
+    });
+    // (Firefox has no transport entry: the pair itself says it is the one in use)
+    if (!pair)
+      stats.forEach((r) => {
+        if (r.type === "candidate-pair" && r.selected) pair = r;
+      });
+    const loc = pair?.localCandidateId ? stats.get(pair.localCandidateId) : undefined;
+    const rem = pair?.remoteCandidateId ? stats.get(pair.remoteCandidateId) : undefined;
+    const addr = String(rem?.address ?? rem?.ip ?? "");
+    return loc?.candidateType === "host" && rem?.candidateType === "host" && (!addr || addr.endsWith(".local") || LOCAL.test(addr));
+  } catch {
+    return false;
+  }
+}
+/** A send to someone over the internet waits for a turn on this device's line (lib/net.ts: 2 at once, 1 when it is
+ *  busy), so several receivers can't choke it together; same Wi-Fi goes straight away. The receiver just sees an open
+ *  connection that starts a little later (nothing new on the wire, older pages included). */
+async function serveTurn(pc: RTCPeerConnection, signal: AbortSignal) {
+  if (await nearby(pc)) return { far: false, release: () => {} };
+  const release = await acquire("serve", signal).catch(() => () => {});
+  return { far: true, release };
+}
+
 /**
  * Lanes (v2): one download runs over several peer connections at once. A single connection over the
  * internet tops out far below what both ends' lines can carry (one congestion window, one path); the
@@ -92,7 +127,11 @@ const frameFor = (pc: RTCPeerConnection) => Math.max(16 * 1024, Math.min(MAX_FRA
  * receiver grants credit as it writes chunks to disk, so neither side ever buffers more than WINDOW
  * chunks; a chunk lost with a dropped lane is asked for again on another one.
  */
-type Session = { total: number; next: number; acked: number; retry: number[]; open: number; done: boolean; waiters: Set<() => void> };
+type Session = {
+  total: number; next: number; acked: number; retry: number[]; open: number; done: boolean; waiters: Set<() => void>;
+  /** its turn on the line (taken by the first lane, shared by all of them), and the stop for one still waiting */
+  turn: Promise<{ far: boolean; release: () => void }> | null; quit: AbortController;
+};
 const sessions = new Map<string, Session>();
 const wakeAll = (s: Session) => {
   const w = [...s.waiters];
@@ -114,15 +153,18 @@ async function serveLane(h: Held, s: Session, dc: RTCDataChannel, frame: number)
   const send = sendOver(dc);
   let cur = -1;
   try {
+    const { far } = await s.turn!;
     for (;;) {
       cur = await claim(s);
       if (cur < 0) return;
+      const t = performance.now();
       const enc = await sealChunk(h, cur, s.total);
       await send(JSON.stringify({ c: cur, n: enc.length, t: s.total }));
       for (let off = 0; off < enc.length; off += frame) await send(enc.subarray(off, off + frame));
       cur = -1;
-      // the line is choking (cloud upload's probe): leave room between chunks for everything else
-      if (netCongested()) await new Promise((r) => setTimeout(r, 300));
+      // the line is choking (the upload watch, lib/net.ts): over the internet, leave room after each chunk for
+      // everything else, in proportion to how long it took to go out
+      if (far && netCongested()) await new Promise((r) => setTimeout(r, Math.min(5000, Math.max(300, (performance.now() - t) / 2))));
     }
   } catch {
     // the lane dropped mid-chunk: another lane sends it
@@ -149,21 +191,27 @@ export function hold(id: string, file: File, key: CryptoKey, nonce: Uint8Array, 
     const pc = new RTCPeerConnection({ iceServers: ICE });
     peers.add(pc);
     let laneOpen = false;
+    // (an older receiver's single connection: its own turn, given back when it ends)
+    const quit = new AbortController();
     const done = () => {
       if (!peers.has(pc)) return;
       peers.delete(pc);
       sending.delete(pc);
       stayAwake(`send-${id}`, sending.size > 0);
+      quit.abort();
       if (sid && laneOpen) {
         const s = sessions.get(sid);
         if (s && --s.open <= 0) {
           s.done = true;
           wakeAll(s);
           sessions.delete(sid);
+          s.quit.abort();
+          s.turn?.then((t) => t.release());
         }
       }
       setTimeout(() => pc.close(), 1500);
     };
+    enders.set(pc, done);
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === "failed" || pc.connectionState === "closed") done();
     };
@@ -179,16 +227,19 @@ export function hold(id: string, file: File, key: CryptoKey, nonce: Uint8Array, 
         const frame = frameFor(pc);
         if (sid) {
           let s = sessions.get(sid);
-          if (!s) sessions.set(sid, (s = { total: chunkCount(h.file.size, h.chunkSize), next: 0, acked: 0, retry: [], open: 0, done: false, waiters: new Set() }));
+          if (!s) sessions.set(sid, (s = { total: chunkCount(h.file.size, h.chunkSize), next: 0, acked: 0, retry: [], open: 0, done: false, waiters: new Set(), turn: null, quit: new AbortController() }));
           s.open++;
           laneOpen = true;
           const sess = s;
+          sess.turn ??= serveTurn(pc, sess.quit.signal);
           dc.onmessage = (e) => {
             if (typeof e.data !== "string") return;
             try {
               const m = JSON.parse(e.data);
               if (Number.isInteger(m.a) && m.a > sess.acked) sess.acked = m.a;
-              if (Number.isInteger(m.r) && m.r >= 0 && m.r < sess.total) sess.retry.push(m.r);
+              // (only a chunk that went out already: one never sent comes in order anyway, and while this send waits
+              // for its turn the receiver keeps asking for chunk 0, which must not queue it up many times)
+              if (Number.isInteger(m.r) && m.r >= 0 && m.r < sess.next && !sess.retry.includes(m.r)) sess.retry.push(m.r);
               if (m.fin) sess.done = true;
               wakeAll(sess);
             } catch {}
@@ -197,13 +248,18 @@ export function hold(id: string, file: File, key: CryptoKey, nonce: Uint8Array, 
           serveLane(h, sess, dc, frame);
           return;
         }
-        pump(h, sendOver(dc), frame)
+        let release = () => {};
+        // (hung up while it waits for its turn: the turn goes to the next one)
+        dc.addEventListener("close", done);
+        serveTurn(pc, quit.signal)
+          .then((t) => ((release = t.release), quit.signal.aborted ? Promise.reject(new Error("gone")) : pump(h, sendOver(dc), frame)))
           .then(() => {
             // let the last frames drain before closing
             const wait = () => (dc.bufferedAmount > 0 && dc.readyState === "open" ? setTimeout(wait, 100) : (dc.close(), done()));
             wait();
           })
-          .catch(() => done());
+          .catch(() => done())
+          .finally(() => release());
       };
     };
     try {
@@ -229,7 +285,7 @@ export function release(id: string) {
   held.delete(id);
   clearTimeout(h.timer);
   stayAwake(`send-${id}`, false);
-  h.peers.forEach((pc) => pc.close());
+  [...h.peers].forEach((pc) => (enders.get(pc)?.(), pc.close()));
   supabase.removeChannel(h.ch).catch(() => {});
 }
 

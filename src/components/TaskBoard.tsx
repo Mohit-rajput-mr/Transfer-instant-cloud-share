@@ -652,11 +652,12 @@ export function TaskWires({ tasks, orbs, focus, mine, onConnect, onWiring, strai
     // a low-end device: taut cables, fewer redraws (lib/perf.ts)
     const low = isLow();
     const taut = straight || low;
-    const work = document.documentElement.dataset.ui === "work";
     const draw = (now: number) => {
       raf = requestAnimationFrame(draw);
       if (now - last < (low ? 90 : 40) || document.hidden) return;
       last = now;
+      // read per frame: the look can flip in place (components/VoidShell.tsx) without this effect running again
+      const work = document.documentElement.dataset.ui === "work";
       const box = el.getBoundingClientRect();
       // the sphere itself (not the sphere + its name), so a cable meets the ball's middle
       const ballRect = (id: string) => (document.querySelector(`[data-orb="${id}"] .orb-body`) ?? document.querySelector(`[data-orb="${id}"] .orb`))?.getBoundingClientRect();

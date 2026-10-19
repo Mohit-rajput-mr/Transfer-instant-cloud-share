@@ -55,9 +55,13 @@ const SQUISH: Keyframe[] = [
  *  - press feedback: CSS compresses `.lg-press` while held, a squash-and-stretch plays on release
  *  - haptics, also on demand: `window.dispatchEvent(new CustomEvent("orbit:haptic", { detail: "warn" }))`
  * Refraction (backdrop-filter:url()) only runs on desktop Chromium with headroom; phones keep frosted glass.
+ * `ui` can flip while mounted (the in-place Work ↔ Classic switch, components/VoidShell.tsx).
  */
-export default function LiquidGlass() {
+export default function LiquidGlass({ ui }: { ui?: "work" } = {}) {
+  const work = ui === "work";
+  // /work: plain surfaces, no lens and no jelly (haptics stay)
   useEffect(() => {
+    if (work) return;
     const root = document.documentElement;
     const mq = (q: string) => window.matchMedia(q).matches;
     const ua = navigator.userAgent;
@@ -65,10 +69,18 @@ export default function LiquidGlass() {
     const fine = mq("(hover: hover) and (pointer: fine)");
     const calm = !mq("(prefers-reduced-motion: reduce)") && !mq("(prefers-reduced-transparency: reduce)");
     const cores = navigator.hardwareConcurrency ?? 4;
-    // /work: plain surfaces, no lens and no jelly (haptics stay)
-    const work = root.dataset.ui === "work";
     // (the bending filter is the costliest thing on the page: never on a low-end device, lib/perf.ts)
-    if (!work && chromium && fine && calm && cores >= 6 && !isLow()) root.classList.add("lg-refract");
+    if (!(chromium && fine && calm && cores >= 6 && !isLow())) return;
+    root.classList.add("lg-refract");
+    // the filter it points at (#lg-refract below) goes when this does
+    return () => root.classList.remove("lg-refract");
+  }, [work]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const mq = (q: string) => window.matchMedia(q).matches;
+    const fine = mq("(hover: hover) and (pointer: fine)");
+    const calm = !mq("(prefers-reduced-motion: reduce)") && !mq("(prefers-reduced-transparency: reduce)");
 
     let raf = 0;
     let last: PointerEvent | null = null;
@@ -118,12 +130,13 @@ export default function LiquidGlass() {
     // never wobbles it (pointerdown would). Played with the Web Animations API, not a class: a class
     // swap replaced the element's own CSS animations (the Send button replayed its entrance and blinked
     // out), and React rewriting className mid-wobble cut it short.
-    const jelly = !work && !mq("(prefers-reduced-motion: reduce)");
+    // (the look is read per tap: it can flip without this effect running again)
+    const still = mq("(prefers-reduced-motion: reduce)");
     const release = (e: MouseEvent) => {
       const t = e.target as Element | null;
       const el = t?.closest?.(".lg-press") as HTMLElement | null;
       if (!el) return;
-      if (jelly && typeof el.animate === "function") {
+      if (!still && root.dataset.ui !== "work" && typeof el.animate === "function") {
         try {
           el.animate(SQUISH, { duration: 580, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
         } catch {}

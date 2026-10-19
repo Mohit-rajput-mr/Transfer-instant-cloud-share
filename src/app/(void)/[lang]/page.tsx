@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Void from "@/components/Void";
 import SeoContent from "@/components/SeoContent";
 import { OTHER_LANGS, SEO, SITE, pathFor } from "@/lib/seo";
 import { languageAlternates } from "@/lib/seo-meta";
@@ -26,10 +25,6 @@ export default async function LangPage({ params }: { params: Promise<{ lang: str
   const { lang } = await params;
   const c = SEO[lang];
   if (!c) notFound();
-  return (
-    <>
-      <Void />
-      <SeoContent c={c} />
-    </>
-  );
+  // the void itself is in (void)/layout.tsx
+  return <SeoContent c={c} />;
 }

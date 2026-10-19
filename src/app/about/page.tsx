@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
-import SiteChrome, { Arrow, Ghost, HardLink, OrbitMark, SecHead, Ticker } from "@/components/SiteChrome";
+import SiteChrome, { Arrow, Ghost, VoidLink, OrbitMark, SecHead, Ticker } from "@/components/SiteChrome";
 import { DEFAULT_SKIN, SKIN_GROUPS, SKINS } from "@/lib/skin-list";
 import CopyMail from "./CopyMail";
 import "../site.css";
@@ -493,9 +493,9 @@ export default function About() {
                 Orbi Transfer is instant, end-to-end encrypted sharing in your browser. No accounts, no login, no install. It was built by one anonymous developer, for fun: no company, no investors, no name on the door. Just a void that moves your files, and then forgets them.
               </p>
               <div className="ab-ctas sx-h-late">
-                <HardLink href="/" className="sx-pill solid">
+                <VoidLink href="/" className="sx-pill solid">
                   Open the void <Arrow dir="up-right" />
-                </HardLink>
+                </VoidLink>
                 <Link href="#how" className="sx-link">
                   How it works <Arrow dir="down" />
                 </Link>
@@ -594,9 +594,9 @@ export default function About() {
                 <li>Tasks, with files wired in</li>
               </ul>
             </div>
-            <HardLink href="/" className="sx-link ab-how-go">
+            <VoidLink href="/" className="sx-link ab-how-go">
               Launch something into orbit <Arrow />
-            </HardLink>
+            </VoidLink>
           </div>
           <p className="ab-how-sub">The four phases</p>
           <div className="sx-aw ab-phases">
@@ -878,9 +878,9 @@ export default function About() {
                 <h3 className="sx-h3">Classic</h3>
                 <span className="sx-label ab-route">/ — the original</span>
                 <p className="sx-body">The orbit. Files float as planets in a starfield, each with a ring that burns down. Loud, playful, made for showing someone across the table.</p>
-                <HardLink href="/" className="sx-link">
+                <VoidLink href="/" className="sx-link">
                   Open Classic <Arrow dir="up-right" />
-                </HardLink>
+                </VoidLink>
               </figcaption>
             </figure>
             <figure className="ab-look" data-reveal style={v({ "--i": 1 })}>
@@ -896,9 +896,9 @@ export default function About() {
                 <h3 className="sx-h3">Work</h3>
                 <span className="sx-label ab-route">/work — the calm editor</span>
                 <p className="sx-body">The same void as a quiet canvas: office words, cards in a grid, wires in grey. Dark by default, light if you like. Made for a desk and a long day.</p>
-                <HardLink href="/work" className="sx-link">
+                <VoidLink href="/work" className="sx-link">
                   Open Work <Arrow dir="up-right" />
-                </HardLink>
+                </VoidLink>
               </figcaption>
             </figure>
           </div>

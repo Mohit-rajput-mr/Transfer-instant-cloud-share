@@ -1,5 +1,5 @@
 "use client";
-import { switchView } from "@/lib/cloud";
+import { switchView } from "@/lib/view";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { LuArchive, LuArrowUp, LuBriefcase, LuChevronRight, LuCircleHelp, LuFileText, LuImage, LuInfo, LuLayers, LuLayoutGrid, LuLink, LuListChecks, LuMessageSquareText, LuMoon, LuMusic, LuOrbit, LuPalette, LuShieldCheck, LuSparkles, LuSun, LuTimer, LuUser, LuUserX, LuVideo, LuWifi, LuX } from "react-icons/lu";
@@ -100,9 +100,10 @@ export default function MobileMenu(props: {
               <span className="sd-txt"><b>Upgrade</b><small>Pro and Business plans</small></span>
               <LuChevronRight className="sd-go" aria-hidden />
             </Link>
+            {/* in place (lib/view.ts), no reload: the menu closes and the look flips under it */}
             {props.work
-              ? row(<LuOrbit />, "Switch to Classic", "the orbit look", () => switchView("/"))
-              : row(<LuBriefcase />, "Switch to Work", "the calm editor look", () => switchView("/work"))}
+              ? row(<LuOrbit />, "Switch to Classic", "the orbit look", () => (close(), switchView("/")))
+              : row(<LuBriefcase />, "Switch to Work", "the calm editor look", () => (close(), switchView("/work")))}
             {!props.work && row(<LuCircleHelp />, "How it works", "drop · lock · beam · burn", go(props.onHow))}
             <Link className="sd-row lg-press" href="/about" onClick={close}>
               <span className="sd-ic"><LuInfo /></span>

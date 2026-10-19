@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Chakra_Petch, Inter, JetBrains_Mono } from "next/font/google";
+import { Archivo, Chakra_Petch, Geist, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { SEO, SITE } from "@/lib/seo";
 import { languageAlternates } from "@/lib/seo-meta";
@@ -9,6 +9,14 @@ const sans = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
 // the squared, spaced type voice of the classic look (header, cards, body text)
 const chip = Chakra_Petch({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-chip", display: "swap" });
+// the work look's type (app/(void)/work/work.css): declared on every page so the in-place switch to /work has it, but
+// not preloaded, so the classic look never downloads it (VoidShell warms it when the browser is idle)
+const workSans = Geist({ subsets: ["latin"], variable: "--font-work", display: "swap", preload: false });
+const workMono = Geist_Mono({ subsets: ["latin"], variable: "--font-work-mono", display: "swap", preload: false });
+
+// a direct load of /work: the work look and the theme this browser picked (dark unless it chose light) before the
+// first paint. After that VoidShell owns html[data-ui] / [data-theme] and the theme-color (the switch never reloads).
+const boot = `(function(){if(!/^\\/work(\\/|$)/.test(location.pathname))return;var d=document.documentElement;d.dataset.ui="work";var t="dark";try{if(localStorage.getItem("orbit:work-theme")==="light")t="light"}catch(e){}d.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="light"?"#f7f7f6":"#1b1b1c")})()`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
@@ -40,8 +48,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${display.variable} ${sans.variable} ${mono.variable} ${chip.variable}`}>
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning className={`${display.variable} ${sans.variable} ${mono.variable} ${chip.variable} ${workSans.variable} ${workMono.variable}`}>
+      <body>
+        <script dangerouslySetInnerHTML={{ __html: boot }} />
+        {children}
+      </body>
     </html>
   );
 }

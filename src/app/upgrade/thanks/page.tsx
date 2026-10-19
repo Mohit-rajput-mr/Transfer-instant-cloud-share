@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "../../site.css";
 import "./thanks.css";
-import SiteChrome, { HardLink } from "@/components/SiteChrome";
+import SiteChrome, { VoidLink } from "@/components/SiteChrome";
 import { stripe } from "@/lib/stripe";
 
 export const metadata: Metadata = { title: "Thank you", robots: { index: false, follow: false } };
@@ -50,7 +50,7 @@ export default async function Thanks({ searchParams }: { searchParams: Promise<{
         )}
         <div className="ug-thx-acts">
           <Link className="sx-pill" href="/upgrade">Back to plans</Link>
-          <HardLink className="sx-link" href="/">Open Orbi</HardLink>
+          <VoidLink className="sx-link" href="/">Open Orbi</VoidLink>
         </div>
       </section>
     </SiteChrome>

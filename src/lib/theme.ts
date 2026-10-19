@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 
-// /work: dark (default) or light, kept in this browser. The page's boot script applies it before the first paint.
+// /work: dark (default) or light, kept in this browser. The root layout's boot script applies it before the first paint
+// of a direct /work load; VoidShell applies it on the in-place switch.
 export type WorkTheme = "dark" | "light";
 const KEY = "orbit:work-theme";
 const EVT = "orbit:work-theme";

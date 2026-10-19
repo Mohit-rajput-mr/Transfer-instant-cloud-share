@@ -1,5 +1,8 @@
 "use client";
 import type { Bubble } from "./bubbles";
+import type { Orb } from "./client";
+import { MAX_FILE_BYTES } from "./limits";
+import { validSkin } from "./skin-list";
 import type { Task } from "./tasks";
 
 // Live changes: whatever one screen does (a bubble posted or burned, a task added, ticked or removed, an object
@@ -60,6 +63,45 @@ export function cleanTask(v: unknown, serverNow: number): Task | null {
     doneBy: str(t.doneBy, 24) || null,
     assignee: str(t.assignee, 24) || null,
     editedAt: time(t.editedAt),
+  };
+}
+
+const int = (v: unknown, lo: number, hi: number) => (Number.isSafeInteger(v) && (v as number) >= lo && (v as number) <= hi ? (v as number) : null);
+const B64 = /^[A-Za-z0-9+/_=-]{1,128}$/, NET = /^[0-9a-f]{12}$/, FROM = /^[a-f0-9]{10}$/, SLUG = /^[a-z0-9-]{1,64}$/;
+const LIVES = [5, 10, 15, 20, 25, 30];
+/** an object someone beamed as it landed: the finalize answer, the same public shape the list gives. No object
+ * outlives 30 minutes from now, except one wired to a task: that one lives as long as the task (8 hours at most) */
+export function cleanOrb(v: unknown, serverNow: number): Orb | null {
+  const o = v as Record<string, unknown> | null;
+  if (!o || typeof o !== "object" || typeof o.id !== "string" || !ORB_ID.test(o.id)) return null;
+  const fileName = str(o.fileName, 180)?.trim(), mime = str(o.mime, 120)?.trim();
+  const createdAt = time(o.createdAt), expiresAt = time(o.expiresAt);
+  const size = int(o.size, 0, MAX_FILE_BYTES), iterations = int(o.iterations, 100_000, 2_000_000), hue = int(o.hue, 0, 359);
+  if (!fileName || !mime || !createdAt || !expiresAt || size === null || iterations === null || hue === null) return null;
+  if (typeof o.salt !== "string" || !B64.test(o.salt) || (o.status !== "ready" && o.status !== "sealed")) return null;
+  const maxDownloads = o.maxDownloads == null ? null : int(o.maxDownloads, 1, 999);
+  if (o.maxDownloads != null && maxDownloads === null) return null;
+  const task = typeof o.task === "string" && TASK_ID.test(o.task) ? o.task : null;
+  const exp = Date.parse(expiresAt);
+  if (exp <= serverNow || exp > serverNow + (task ? 8 * 60 * 60_000 : 30 * 60_000) + 60_000) return null;
+  if (Date.parse(createdAt) > serverNow + 120_000) return null;
+  return {
+    id: o.id, fileName, mime, size, salt: o.salt, iterations, hue, status: o.status, maxDownloads, createdAt, expiresAt, task,
+    name: str(o.name, 60)?.trim() || "untitled",
+    netHash: typeof o.netHash === "string" && NET.test(o.netHash) ? o.netHash : null,
+    downloads: int(o.downloads, 0, 1e9) ?? 0,
+    devices: int(o.devices, 0, 1e9) ?? 0,
+    views: int(o.views, 0, 1e9) ?? 0,
+    watchers: int(o.watchers, 0, 1e9) ?? 0,
+    by: str(o.by, 24)?.trim() || null,
+    space: typeof o.space === "string" && SLUG.test(o.space) ? o.space : null,
+    life: LIVES.includes(o.life as number) ? (o.life as number) : 30,
+    open: o.open === true,
+    from: typeof o.from === "string" && FROM.test(o.from) ? o.from : null,
+    groupName: str(o.groupName, 40)?.trim() || null,
+    skin: validSkin(o.skin) ? o.skin : null,
+    thumb: o.thumb === true,
+    anon: o.anon === true,
   };
 }
 

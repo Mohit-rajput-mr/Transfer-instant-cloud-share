@@ -2,6 +2,7 @@
 
 Read `CLAUDE.md` first (owner wants SHORT answers, deploy steps, IDs). This file is the live task board.
 Last updated: 2026-10-17 (2nd session: A–D done + deployed).
+- 2026-10-19 (big): Work↔Classic switch is in place (route group src/app/(void)/, VoidShell, lib/view.ts pushState — never Link/router.push/reload). live.ts has outbox + pong watchdog + fast reconnect + resync; landed beams carry the full orb (cleanOrb) and repeat at +2/+6 s; Worker exempts must-messages from the burst limit. lib/net.ts governs upload/serve/peek turns across files; previews only warm small stored copies.
 - 2026-10-19: uploads back off when the line chokes (lib/cloud.ts watchNet: RTT probe → 1 lane + pauses), and Work↔Classic asks before reloading during uploads (switchView).
 - 2026-10-19: HQ has a **Void** tab (every area: files, notes, tasks; burn any, beamed live to the area; migration 023). Bubble notes default 15 min; tasks default 30 min (options to 8 h); screens drop expired tasks/notes every 5 s.
 - 2026-10-18 late: the Vercel connector is read-only (403 on deploy). Vercel project `orbit` is now linked to GitHub, so a push to `claude/festive-keller-rln4jk` should deploy on its own. Work on that branch only.
@@ -135,8 +136,8 @@ G. Earth button: owner rejected zoom-out→Earth; button kept. If owner says rem
 ## /work (Orbi Work) — LIVE in production from branch `claude/work` (commit b5641e3, contains all of `claude/adoring-cray-uq4ool`)
 - ⚠ Before deploying production from another branch, merge `claude/work` into it first, or /work disappears from the site.
 - Office words on /work: `lib/words.ts` (MutationObserver; user text kept via the KEEP selector list).
-- Same Void with `ui="work"` (`src/app/work/page.tsx`): editor look from the owner's n8n / neutral-grey samples. Dark default, light toggle (`lib/theme.ts`, `orbit:work-theme`).
-- All styling in `src/app/work/work.css`, scoped to `html[data-ui="work"]` → main page untouched. Chrome: `components/WorkChrome.tsx` (bar, rail, dock, empty).
+- Same Void with `ui="work"` (route group `src/app/(void)/`: one `components/VoidShell.tsx` keeps one Void mounted for /, /[lang], /work; the switch is `lib/view.ts` pushState, no reload): editor look from the owner's n8n / neutral-grey samples. Dark default, light toggle (`lib/theme.ts`, `orbit:work-theme`).
+- All styling in `src/app/(void)/work/work.css` (loaded by the group layout), scoped to `html[data-ui="work"]` → main page untouched. Chrome: `components/WorkChrome.tsx` (bar, rail, dock, empty).
 - Files = nodes, groups = wide node, bubbles = note cards, tasks = panels, wires grey. Skin forced to "work" (style picker hidden).
 - Test: `node shot.mjs /work out.png [desk|phone] [dark|light] "click=<sel>"` (scratch harness, mocks /api).
 - Shared (both looks): Filter dropdown (`KindFilter`: scope + file type), archive = room (`ArchiveRoom`, `ArchiveRestore`, `inArchive` in Void), wired files placed beside their task (`near` in lib/map.ts), room band fit, single-click preview on cards, wheel scrolls page when the map is empty.

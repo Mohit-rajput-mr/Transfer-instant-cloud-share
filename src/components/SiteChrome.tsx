@@ -14,20 +14,19 @@ export type SitePage = "about" | "upgrade";
 export type ArrowDir = "right" | "up-right" | "down" | "up";
 
 const MAIL = "transferorbi@gmail.com";
-const HOME = "/"; // the logo: a full load into the void
+const HOME = "/"; // the logo: back into the void
 
-type NavItem = { label: string; href: string; hard?: boolean; page?: SitePage; up?: boolean };
-// `hard`: a plain <a> (a full load, so the void and the work look boot clean, as the classic header does)
+type NavItem = { label: string; href: string; page?: SitePage; up?: boolean };
 const NAV: NavItem[] = [
-  { label: "Void", href: "/", hard: true },
+  { label: "Void", href: "/" },
   { label: "How it works", href: "/about#how" },
   { label: "About", href: "/about", page: "about" },
-  { label: "Work", href: "/work", hard: true },
+  { label: "Work", href: "/work" },
   { label: "Upgrade", href: "/upgrade", page: "upgrade", up: true },
 ];
 const BIG: (NavItem & { n: string })[] = [
-  { n: "01", label: "Void", href: "/", hard: true },
-  { n: "02", label: "Work", href: "/work", hard: true },
+  { n: "01", label: "Void", href: "/" },
+  { n: "02", label: "Work", href: "/work" },
   { n: "03", label: "About", href: "/about", page: "about" },
   { n: "04", label: "Upgrade", href: "/upgrade", page: "upgrade" },
 ];
@@ -46,13 +45,15 @@ const FIRST: Record<SitePage, { label: string; total: string }> = {
 const vars = (v: Record<string, string | number>) => v as CSSProperties;
 const cx = (...c: (string | false | undefined)[]) => c.filter(Boolean).join(" ");
 
-/** A nav target: a full-load <a> for / and /work, next/link for everything else. */
+const isVoid = (href: string) => href === "/" || href === "/work";
+
+/** A nav target: next/link everywhere (/ and /work through VoidLink). */
 function Go({ item, className, current, onClick, children }: { item: NavItem; className?: string; current?: boolean; onClick?: () => void; children: ReactNode }) {
   const props = { className, onClick, "aria-current": current ? ("page" as const) : undefined };
-  return item.hard ? (
-    <HardLink href={item.href as "/" | "/work"} {...props}>
+  return isVoid(item.href) ? (
+    <VoidLink href={item.href as "/" | "/work"} {...props}>
       {children}
-    </HardLink>
+    </VoidLink>
   ) : (
     <Link href={item.href} {...props}>
       {children}
@@ -60,13 +61,15 @@ function Go({ item, className, current, onClick, children }: { item: NavItem; cl
   );
 }
 
-/** A plain <a> for "/" and "/work": a full page load, so the void and the work look boot clean.
- *  (next/link for every other page.) Use it in page files too instead of a literal <a href="/">. */
-export function HardLink({ href, className, children, onClick, "aria-label": label, "aria-current": current }: { href: "/" | "/work"; className?: string; children: ReactNode; onClick?: () => void; "aria-label"?: string; "aria-current"?: "page" }) {
+/** A link back into the void ("/" or "/work"): next/link, no full load. VoidShell (app/(void)/layout.tsx) sets the
+ *  look itself, so the work look no longer needs a clean boot, and uploads still running in this tab carry on.
+ *  Not prefetched: the void is a big page to fetch in the background just because a link is on screen.
+ *  Use it in page files too instead of a literal <a href="/">. */
+export function VoidLink({ href, className, children, onClick, "aria-label": label, "aria-current": current }: { href: "/" | "/work"; className?: string; children: ReactNode; onClick?: () => void; "aria-label"?: string; "aria-current"?: "page" }) {
   return (
-    <a href={href} className={className} onClick={onClick} aria-label={label} aria-current={current}>
+    <Link href={href} prefetch={false} className={className} onClick={onClick} aria-label={label} aria-current={current}>
       {children}
-    </a>
+    </Link>
   );
 }
 
@@ -365,10 +368,10 @@ export default function SiteChrome({ page, children }: { page: SitePage; childre
       <header className="sx-top" inert={open || undefined}>
         <div className="sx-r1">
           <div className="sx-r1-l">
-            <a ref={homeRef} href={HOME} className="sx-home" aria-label="Orbi Transfer, home">
+            <Link ref={homeRef} href={HOME} prefetch={false} className="sx-home" aria-label="Orbi Transfer, home">
               {/* eslint-disable-next-line @next/next/no-img-element -- an SVG lockup, nothing to optimise */}
               <img className="sx-logo" src="/logo.svg" alt="" width={152} height={22} draggable={false} />
-            </a>
+            </Link>
             <span className="sx-chipf sx-by">Instant transfer</span>
           </div>
           <nav className="sx-nav sx-chipf" aria-label="Site">
@@ -383,9 +386,9 @@ export default function SiteChrome({ page, children }: { page: SitePage; childre
               <i className="sx-dot" aria-hidden />
               <span className="sx-chipf">Live · free to send</span>
             </span>
-            <HardLink href="/" className="sx-pill sm solid">
+            <VoidLink href="/" className="sx-pill sm solid">
               Send
-            </HardLink>
+            </VoidLink>
             <button ref={btnRef} type="button" className="sx-pill sm sx-mbtn" aria-expanded={open} aria-controls="sx-menu" onClick={() => setOpen(true)}>
               <i className="sx-bars" aria-hidden />
               Menu
@@ -407,10 +410,10 @@ export default function SiteChrome({ page, children }: { page: SitePage; childre
 
       <div id="sx-menu" ref={menuRef} className={cx("sx-menu", open && "open")} role="dialog" aria-modal="true" aria-label="Menu" aria-hidden={!open} inert={!open || undefined}>
         <div className="sx-menu-bar">
-          <a href={HOME} className="sx-home" aria-label="Orbi Transfer, home" onClick={close}>
+          <Link href={HOME} prefetch={false} className="sx-home" aria-label="Orbi Transfer, home" onClick={close}>
             {/* eslint-disable-next-line @next/next/no-img-element -- an SVG lockup, nothing to optimise */}
             <img className="sx-logo" src="/logo.svg" alt="" width={124} height={18} draggable={false} />
-          </a>
+          </Link>
           <button ref={closeRef} type="button" className="sx-pill sm" onClick={close}>
             Close
           </button>
@@ -453,8 +456,8 @@ export default function SiteChrome({ page, children }: { page: SitePage; childre
             <div>
               <h2 className="sx-label sx-foot-h">Orbi</h2>
               <ul>
-                <li><HardLink href="/">Void</HardLink></li>
-                <li><HardLink href="/work">Work</HardLink></li>
+                <li><VoidLink href="/">Void</VoidLink></li>
+                <li><VoidLink href="/work">Work</VoidLink></li>
                 <li><Link href="/about#how">How it works</Link></li>
               </ul>
             </div>

@@ -83,27 +83,34 @@ export async function streamDecrypt(opts: {
   let filled = 0;
   let done = 0;
 
-  while (index < total) {
-    const { value, done: eof } = await reader.read();
-    if (eof) break;
-    let off = 0;
-    while (off < value.length && index < total) {
-      const take = Math.min(buf.length - filled, value.length - off);
-      buf.set(value.subarray(off, off + take), filled);
-      filled += take;
-      off += take;
-      if (filled === buf.length) {
-        const plain = await decryptChunk(key, nonce, index, index === total - 1, buf);
-        await sink.write(plain);
-        done += plain.length;
-        onProgress(done);
-        index++;
-        if (index < total) {
-          buf = new Uint8Array(expected(index));
-          filled = 0;
+  try {
+    while (index < total) {
+      const { value, done: eof } = await reader.read();
+      if (eof) break;
+      let off = 0;
+      while (off < value.length && index < total) {
+        const take = Math.min(buf.length - filled, value.length - off);
+        buf.set(value.subarray(off, off + take), filled);
+        filled += take;
+        off += take;
+        if (filled === buf.length) {
+          const plain = await decryptChunk(key, nonce, index, index === total - 1, buf);
+          await sink.write(plain);
+          done += plain.length;
+          onProgress(done);
+          index++;
+          if (index < total) {
+            buf = new Uint8Array(expected(index));
+            filled = 0;
+          }
         }
       }
     }
+  } catch (e) {
+    // a bad chunk or a sink that can't write (a full disk): hang up too, or a peer connection stays open and the
+    // sender's turn for it (lib/net.ts 'serve') is never given back
+    reader.cancel(e).catch(() => {});
+    throw e;
   }
   // everything is in: hang up (a peer connection closes here)
   reader.cancel().catch(() => {});

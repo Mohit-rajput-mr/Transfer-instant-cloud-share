@@ -20,7 +20,8 @@ import { supabase, type RealtimeChannel } from "@/lib/realtime";
 import SpacePanel, { SpaceRoom } from "./Spaces";
 import BubbleZoom from "./BubbleZoom";
 import { heldIds, release as releaseP2P } from "@/lib/p2p";
-import { cloudSaved, cloudSaving, isResumable, stopCopy, switchView } from "@/lib/cloud";
+import { cloudSaved, cloudSaving, isResumable, stopCopy } from "@/lib/cloud";
+import { replaceUrl, switchView } from "@/lib/view";
 // a ball leaving: stop offering it directly and stop any upload of its stored copy
 const release = (id: string) => {
   releaseP2P(id);
@@ -37,13 +38,13 @@ import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange } from "./BubbleBoard";
 import TaskBoard, { TaskWires, taskGroups } from "./TaskBoard";
 import { addTask, assignTask, burnTask, carryTasks, wireObject, editTask, isMyTask, moveTask, openInvite, parseTask, sealInvite, stageName, taskLabel, taskLine, tickTask, type Task } from "@/lib/tasks";
-import { readSync, type SyncMsg } from "@/lib/sync";
-import { joinLive, liveOn, roomsFor, type Chan } from "@/lib/live";
+import { cleanOrb, ORB_ID, readSync, type SyncMsg } from "@/lib/sync";
+import { joinLive, liveOn, roomsFor, type Chan, type Live } from "@/lib/live";
 import { around } from "@/lib/area";
 import { anonCellNow, asked, dropGps, fixNow, follow, forgetFix, fromIp, locate, markAsked, markSent, permission, pickArea, setAnonCell, where } from "@/lib/where";
 import LocationAsk, { LocationBlocked } from "./LocationAsk";
 import { ArchiveRestore, ArchiveRoom, TrashZone } from "./Trash";
-import { trashLabel, useTrash } from "@/lib/trash";
+import { trashedAt, trashLabel, useTrash } from "@/lib/trash";
 import TaskThrow, { type Grab } from "./TaskThrow";
 import dynamic from "next/dynamic";
 import { perf } from "@/lib/perf";
@@ -57,8 +58,6 @@ import { autoRemember, findDeviceSkin, forgetDeviceLook, pickedPalette, pickedSk
 import { fileKind, type Kind } from "@/lib/skin-list";
 import { WorkBar, WorkDock, WorkRail } from "./WorkChrome";
 import KindFilter from "./KindFilter";
-import { readTheme } from "@/lib/theme";
-import { speakWork } from "@/lib/words";
 
 /** a task with a change applied the way the server will (so the screen updates before it answers) */
 function applyEdit(t: Task, c: { text?: string; route?: string[]; stage?: number }, by: string): Task {
@@ -111,8 +110,9 @@ function overlay<T extends { id: string }>(list: T[], kind: "b" | "t" | "o", mad
 const upsert = <T extends { id: string }>(list: T[], x: T) => (list.some((y) => y.id === x.id) ? list.map((y) => (y.id === x.id ? x : y)) : [x, ...list]);
 const iso = (ms: number) => new Date(ms).toISOString();
 
-/** Someone else's launch, announced over realtime the moment they press Launch (before it has landed). */
-type Incoming = { key: string; by: string | null; life: number; open: boolean; name: string; size: number; files: number; hue: number; createdAt: string; net: string | null; frac: number; seen: number };
+/** Someone else's launch, announced over realtime the moment they press Launch (before it has landed). `a`: the area
+ *  it was announced from (public void) */
+type Incoming = { key: string; by: string | null; life: number; open: boolean; name: string; size: number; files: number; hue: number; createdAt: string; net: string | null; frac: number; seen: number; a: string | null };
 const incomingId = (k: string) => `in-${k}`;
 const isIncoming = (id: string) => id.startsWith("in-");
 // a launch that stops announcing itself (tab closed, network gone) fades out after this
@@ -129,6 +129,96 @@ function incomingOrb(i: Incoming): Orb {
     expiresAt: new Date(new Date(i.createdAt).getTime() + i.life * 60_000).toISOString(),
   };
 }
+
+// ---- the live line, kept at module level: a launch outlives the Void that started it (About and back), and still
+// announces itself and lands through whichever Void is up by then ----
+type Line = { chan: Chan | RealtimeChannel; place: string };
+let line: Line | null = null;
+// said with no line up for its place (the first moments after load, between two Voids, a space just walked into or
+// out of): goes out once there is one, if still fresh. Never into another place's room
+let unsaid: { e: string; p: Record<string, unknown>; place: string; at: number }[] = [];
+const UNSAID_TTL = 60_000;
+/** say something where it belongs: `place` is the space's slug, "" for the public void */
+function say(e: string, p: Record<string, unknown>, place: string, at = Date.now()) {
+  // anonymous: nothing is said in the public void's rooms (only inside an anonymous space)
+  if (isAnon() && !place) return;
+  if (line?.place === place) return void line.chan.send({ type: "broadcast", event: e, payload: p });
+  // (launches are announced afresh as soon as a line is up)
+  if (e !== "launch") unsaid = [...unsaid.filter((x) => Date.now() - x.at < UNSAID_TTL).slice(-49), { e, p, place, at }];
+}
+function setLine(l: Line | null) {
+  line = l;
+  if (!l) return;
+  const n = Date.now(), go = unsaid.filter((x) => x.place === l.place && n - x.at < UNSAID_TTL);
+  unsaid = unsaid.filter((x) => x.place !== l.place);
+  for (const x of go) say(x.e, x.p, x.place, x.at);
+  if (flying.size) flyAt(n);
+}
+// This page's launches in flight, all in one "launch" message: at once for a new one (a "Separate" send of twelve is
+// one message), progress at most every 2 s, else every 6 s (a receiver forgets a launch that is quiet for 20 s).
+const FLY_PROGRESS = 2000, FLY_KEEP = 6000, FLY_PER_MSG = 20;
+const flying = new Map<string, { info: Record<string, unknown>; place: string }>();
+let flyT: ReturnType<typeof setTimeout> | undefined;
+let flyDue = 0, flyLast = 0, flyTurn = 0;
+function flyAt(at: number) {
+  if (flyT !== undefined && flyDue <= at) return;
+  clearTimeout(flyT);
+  flyDue = at;
+  flyT = setTimeout(sayFlying, Math.max(0, at - Date.now()));
+}
+function sayFlying() {
+  flyT = undefined;
+  flyLast = Date.now();
+  const turn = flyTurn++;
+  const by = new Map<string, Record<string, unknown>[]>();
+  for (const x of flying.values()) by.set(x.place, [...(by.get(x.place) ?? []), x.info]);
+  for (const [place, all] of by)
+    for (let i = 0; i < all.length; i += FLY_PER_MSG) {
+      const ls = all.slice(i, i + FLY_PER_MSG);
+      // pages from before batching read only the top-level fields: one launch for them, a different one each time
+      say("launch", ls.length > 1 ? { ...ls[turn % ls.length], ls, b: i / FLY_PER_MSG } : ls[0], place);
+    }
+  if (flying.size) flyAt(Date.now() + FLY_KEEP);
+}
+function flyStart(k: string, info: Record<string, unknown>, place: string) {
+  flying.set(k, { info: { ...info, k }, place });
+  flyAt(Date.now());
+}
+function flyUpdate(k: string, patch: Record<string, unknown>) {
+  const x = flying.get(k);
+  if (!x || Object.entries(patch).every(([f, v]) => x.info[f] === v)) return;
+  x.info = { ...x.info, ...patch };
+  flyAt(flyLast + FLY_PROGRESS);
+}
+function flyEnd(k: string) {
+  flying.delete(k);
+  if (flying.size) return;
+  clearTimeout(flyT);
+  flyT = undefined;
+}
+/** the repeats of a landing still to go out, by object id */
+const replays = new Map<string, ReturnType<typeof setTimeout>[]>();
+/** landed: the record itself goes along (no request on the other side), and is said twice more in case a line
+ *  blinked right then (receivers take it once). The record only ever goes into its own place's room. */
+function sayLanded(k: string, orb: Orb, place: string) {
+  flyEnd(k);
+  const o = (orb.space ?? "") === place ? orb : undefined;
+  say("landed", { k, id: orb.id, o }, place);
+  if (!o) return;
+  // the repeats carry no top-level id: pages from before the record rode along fetch each landed by its id (an
+  // uncached request and a database read each), so they hear only the first
+  const again = () => say("landed", { k, o }, place);
+  replays.set(orb.id, [setTimeout(again, 2000), setTimeout(() => (again(), replays.delete(orb.id)), 6000)]);
+}
+/** destroyed: a repeat still to come would put it back on every screen */
+function unsayLanded(ids: string[]) {
+  for (const id of ids) {
+    replays.get(id)?.forEach(clearTimeout);
+    replays.delete(id);
+  }
+}
+/** in flight from this page (the live line is kept while there are any) */
+const launching = () => flying.size > 0;
 
 type Panel =
   | { kind: "send"; items: Item[] }
@@ -209,22 +299,10 @@ function groupOrbs(list: Orb[]) {
   return { list: out, groups };
 }
 
-/** ui "work": the /work page (same void, calm editor-style look; app/work/work.css) */
+/** ui "work": the /work look (same void, calm editor-style look; app/(void)/work/work.css). It can flip while mounted
+ *  (VoidShell, lib/view.ts), which also owns html[data-ui] / [data-theme] and the work wording. */
 export default function Void({ ui }: { ui?: "work" } = {}) {
   const work = ui === "work";
-  // leaving /work inside the app (About, the classic view): the page underneath is the normal one again
-  useEffect(() => {
-    if (!work) return;
-    const d = document.documentElement;
-    d.dataset.ui = "work";
-    d.dataset.theme = readTheme();
-    const quiet = speakWork();
-    return () => {
-      quiet();
-      delete d.dataset.ui;
-      delete d.dataset.theme;
-    };
-  }, [work]);
   const [orbs, setOrbs] = useState<Orb[]>([]);
   const orbsRef = useRef(orbs);
   orbsRef.current = orbs;
@@ -310,7 +388,15 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     return () => (delete document.body.dataset.archive, window.removeEventListener("keydown", esc));
   }, [inArchive]);
   const [allNotes, setNotes] = useState<Bubble[]>([]);
-  const notes = useMemo(() => (inArchive ? allNotes.filter((b) => trash.has(`b:${senderOf(b)}`)) : trash.size ? allNotes.filter((b) => !trash.has(`b:${senderOf(b)}`)) : allNotes), [allNotes, trash, inArchive]);
+  // an archived stack holds what its sender had written by then: a newer bubble from them shows again
+  const notes = useMemo(() => {
+    if (!trash.size) return inArchive ? [] : allNotes;
+    const hid = (b: Bubble) => {
+      const at = trashedAt(`b:${senderOf(b)}`);
+      return at > 0 && Date.parse(b.createdAt) <= at + skewRef.current;
+    };
+    return allNotes.filter((b) => hid(b) === inArchive);
+  }, [allNotes, trash, inArchive]);
   const knownBubbles = useRef<Map<string, string> | null>(null);
   // tasks in this void/space, which one is in focus (only its files show), and the task a new send is wired to
   const [allTasks, setTasks] = useState<Task[]>([]);
@@ -430,6 +516,15 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   useEffect(() => () => {
     if (menuTimer.current) clearTimeout(menuTimer.current);
   }, []);
+  // the look flipped in place (lib/view.ts): close what belongs to one look only (the send menu, the phone menu, the
+  // style picker) before it paints in the other; launches, uploads, open cards, the map and drafts carry on
+  const [shownUi, setShownUi] = useState(work);
+  if (shownUi !== work) {
+    setShownUi(work);
+    setMenu(false);
+    setMenuOut(false);
+    setPanel((p) => (p?.kind === "menu" || p?.kind === "style" ? null : p));
+  }
   const [compact, setCompact] = useState(false);
   useEffect(() => {
     let raf = 0;
@@ -499,22 +594,34 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     else if (t.assignee && t.assignee.toLowerCase() === me && wasWho !== t.assignee) toast(`Task ${t.num} is for you`);
   };
   const removedRef = useRef<(sp: SpaceSession) => void>(() => {});
-  // Coalesced fetch: at most one request in flight; bursts of triggers collapse into one follow-up.
+  // Coalesced fetch: at most one request in flight; bursts of triggers collapse into one follow-up (2: a fresh one).
   const inflight = useRef<Promise<void> | null>(null);
-  const again = useRef(false);
-  const refresh = useCallback((): Promise<void> => {
+  const again = useRef(0);
+  const netTries = useRef(0);
+  /** fresh: a catch-up after a gap. The public list is cached at the edge; a 2 s bucket in the address gets one made
+   *  now (still one database query per area per bucket, however many devices catch up at once) */
+  const refresh = useCallback((fresh = false): Promise<void> => {
     if (inflight.current) {
-      again.current = true;
+      again.current = Math.max(again.current, fresh ? 2 : 1);
       return inflight.current;
     }
     const run = (async () => {
       const sp = spaceRef.current;
       const a = areaRef.current;
-      const r = await fetch(sp ? `/api/spaces/${sp.slug}/transfers` : `/api/transfers${a ? `?a=${around(a).join(",")}` : ""}`, sp ? { headers: spaceHeaders(), cache: "no-store" } : undefined).catch(() => null);
+      const q = [a && `a=${around(a).join(",")}`, fresh && `v=${Math.floor((Date.now() + skewRef.current) / 2000)}`].filter(Boolean).join("&");
+      const r = await fetch(sp ? `/api/spaces/${sp.slug}/transfers` : `/api/transfers${q ? `?${q}` : ""}`, sp ? { headers: spaceHeaders(), cache: "no-store" } : undefined).catch(() => null);
       if (!sp && areaRef.current !== a) return; // moved to another area while this was in flight
       if (spaceRef.current !== sp) return; // switched while this was in flight
       if (sp && r?.status === 403) return removedRef.current(sp);
-      if (!r?.ok) return;
+      if (!r?.ok) {
+        // no answer (a network blip, a changed network) or a server stumble: asked again after 1 s, then 3 s
+        if ((!r || r.status >= 500) && netTries.current < 2) {
+          const n = netTries.current++;
+          setTimeout(() => refresh(fresh), n ? 3000 : 1000);
+        }
+        return;
+      }
+      netTries.current = 0;
       const d = (await r.json()) as { items: Orb[]; bubbles?: Bubble[]; tasks?: Task[]; online: number; now: number };
       // the edge may hand out a list a few seconds old: changes made since stay on top, and it asks again shortly
       const made = Number(d.now) || 0;
@@ -560,8 +667,9 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     })().finally(() => {
       inflight.current = null;
       if (again.current) {
-        again.current = false;
-        refresh();
+        const f = again.current === 2;
+        again.current = 0;
+        refresh(f);
       }
     });
     inflight.current = run;
@@ -570,26 +678,36 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toast]);
 
+  // After a gap (a line back up, a launch gone quiet, back from the background): the list now, and once more after
+  // the edge's cache has turned over (a list made before the gap closed can still be handed out for a few seconds)
+  const catchT = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const catchUp = useCallback((fresh: boolean) => {
+    refresh(fresh);
+    clearTimeout(catchT.current);
+    catchT.current = setTimeout(() => refresh(), 6000);
+  }, [refresh]);
+  const catchUpRef = useRef(catchUp);
+  catchUpRef.current = catchUp;
+  useEffect(() => () => clearTimeout(catchT.current), []);
+
   // Realtime pulses fan out to every open tab at once; random jitter spreads the refetches
-  // so a million tabs don't hit the edge in the same millisecond.
+  // so a million tabs don't hit the edge in the same millisecond. And at most one every 5 s: a busy area (many
+  // devices, many clicks) must not keep a slow line busy with whole lists (what really changed comes as its own beam)
   const pulseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pulseAt = useRef(0);
   const scheduleRefresh = useCallback(() => {
     if (pulseTimer.current) return;
     pulseTimer.current = setTimeout(() => {
       pulseTimer.current = null;
+      pulseAt.current = Date.now();
       refresh();
-    }, 150 + Math.random() * 900);
+    }, Math.max(150 + Math.random() * 900, pulseAt.current + 5000 - Date.now()));
   }, [refresh]);
+  useEffect(() => () => clearTimeout(pulseTimer.current ?? undefined), []);
 
-  // an anonymous device says nothing in the public void's region rooms (only inside its anonymous space)
-  const broadcast = useCallback(() => {
-    if (isAnon() && !spaceRef.current) return;
-    channel.current?.send({ type: "broadcast", event: "pulse", payload: { at: Date.now() } });
-  }, []);
-  const beam = useCallback((event: "launch" | "landed" | "gone", payload: Record<string, unknown>) => {
-    if (isAnon() && !spaceRef.current) return;
-    channel.current?.send({ type: "broadcast", event, payload });
-  }, []);
+  // (say(): an anonymous device says nothing in the public void's region rooms, only inside its anonymous space)
+  const broadcast = useCallback(() => say("pulse", { at: Date.now() }, spaceRef.current?.slug ?? ""), []);
+  const beam = useCallback((event: "gone", payload: Record<string, unknown>) => say(event, payload, spaceRef.current?.slug ?? ""), []);
 
   // a change, here and now: shown on this screen and kept over older lists
   const applySync = useCallback((m: SyncMsg) => {
@@ -619,6 +737,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     }
     if (m.og?.length) {
       const gone = m.og;
+      unsayLanded(gone);
       gone.forEach((id) => (put("o", id, null), recent.current.delete(id)));
       setOrbs((list) => list.filter((o) => !gone.includes(o.id)));
     }
@@ -627,7 +746,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const sync = useCallback((m: SyncMsg) => {
     applySync(m);
     // (the change itself is enough: no extra "re-fetch" nudge, half the messages on the free plan)
-    if (!(isAnon() && !spaceRef.current)) channel.current?.send({ type: "broadcast", event: "sync", payload: m });
+    say("sync", m, spaceRef.current?.slug ?? "");
   }, [applySync]);
 
   // ---- launches: the card closes on Launch, the ball is in the void at once, a small dock tracks it ----
@@ -662,21 +781,15 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     setLaunches((ls) => [...ls, l]);
     setPanel(null);
     setFitAll((n) => n + 1);
-    // Every other open tab sees the ball right now, and watches it fill up, instead of after the upload.
-    const info = { k: key, name: l.name, size: l.size, files: l.files, hue: l.hue, at: l.createdAt, life: job.life, o: job.open };
-    let frac = 0;
-    let beamed = 0;
-    const announce = () => {
-      beamed = Date.now();
-      beam("launch", { ...info, net: isAnon() ? null : netRef.current, f: frac, by: spaceRef.current?.handle ?? null });
-    };
-    announce();
-    // (every 6 s, progress at most every 1.5 s: few live messages, well inside the 20 s a quiet launch is kept)
-    const keepAlive = setInterval(announce, 6000);
+    // Every other open tab sees the ball right now, and watches it fill up, instead of after the upload. Said from
+    // module level (flyStart…sayLanded) into the place it was launched in, even if this Void is gone by then.
+    const place = spaceRef.current?.slug ?? "";
+    flyStart(key, { name: l.name, size: l.size, files: l.files, hue: l.hue, at: l.createdAt, life: job.life, o: job.open, net: isAnon() ? null : netRef.current, f: 0, by: spaceRef.current?.handle ?? null }, place);
     const onProgress = (st: Stage, f: number) => {
       report(key, st, f);
-      frac = st === "uploading" ? f : st === "finalizing" || st === "done" ? 1 : 0;
-      if (Date.now() - beamed > 1500) announce();
+      const frac = st === "uploading" ? f : st === "finalizing" || st === "done" ? 1 : 0;
+      // (the network's id may arrive after the launch started)
+      flyUpdate(key, { f: Math.round(frac * 100) / 100, net: isAnon() ? null : netRef.current });
     };
     // anonymous "hide file names": the name it goes by says only what kind of thing it is
     const fileName = job.hideNames ? genericFileName(job.file) : undefined;
@@ -688,8 +801,11 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           setPanel((p) => p ?? { kind: "anon-link" });
         }
         if (job.task && job.done) tickTask(job.task, true).then(() => refresh()).catch(() => {});
-        clearInterval(keepAlive);
-        beam("landed", { k: key, id: orb.id });
+        // said where the server put it (spaceBody() at the POST), not where Launch was pressed: walked into a space
+        // (or out of one) during the derive / preview seconds, the record must not go into the other place's room
+        const where = orb.space ?? "";
+        if (where !== place) say("gone", { k: key }, place);
+        sayLanded(key, orb, where);
         const from = pendingId(key);
         inheritSlot(from, orb.id);
         swapped.current.add(from).add(orb.id);
@@ -697,18 +813,20 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         setTimeout(() => (swapped.current.delete(from), swapped.current.delete(orb.id)), 5000);
         recent.current.set(orb.id, orb);
         setTimeout(() => recent.current.delete(orb.id), 20_000);
+        // kept over any cached list made before it landed
+        marks.current.set(`o:${orb.id}`, { at: Date.now() + skewRef.current, rec: orb });
         setOrbs((list) => (list.some((o) => o.id === orb.id) ? list : [...list, orb]));
         setLaunches((ls) => ls.map((x) => (x.key === key ? { ...x, orb } : x)));
+        // (no "pulse" for everyone to re-fetch the list: the landing carries the object itself)
         refresh();
-        broadcast();
       })
       .catch((e: unknown) => {
-        clearInterval(keepAlive);
-        beam("gone", { k: key });
+        flyEnd(key);
+        say("gone", { k: key }, place);
         if (l.abort.signal.aborted) return setLaunches((ls) => ls.filter((x) => x.key !== key));
         setLaunches((ls) => ls.map((x) => (x.key === key ? { ...x, err: e instanceof Error ? e.message : "Launch failed" } : x)));
       });
-    // refresh/broadcast/report are stable; skew only nudges the stand-in's clock
+    // refresh/report are stable; skew only nudges the stand-in's clock
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [skew]);
   // the anonymous space made by the gate whose link isn't copied yet: shown after its first send lands
@@ -737,7 +855,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     // new / landed / destroyed balls arrive instantly over realtime; this is only the safety net
     // (one request a minute per open page keeps the free hosting plan comfortable at scale)
     const t = setInterval(() => document.visibilityState === "visible" && refresh(), 60_000);
-    const onVis = () => document.visibilityState === "visible" && refresh();
+    // back in view: now, and once more past the edge's cache
+    const onVis = () => document.visibilityState === "visible" && catchUp(false);
     document.addEventListener("visibilitychange", onVis);
     const o = new URLSearchParams(window.location.search).get("o");
     if (o && /^[a-z0-9]{4,12}$/.test(o)) setPanel(ownerKey(o) ? { kind: "owner", id: o } : { kind: "unlock", id: o });
@@ -745,7 +864,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       clearInterval(t);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [refresh, spaceReady, areaReady]);
+  }, [refresh, catchUp, spaceReady, areaReady]);
 
   // back into the space this device was last in (no setup twice), and ?space= invite links
   useEffect(() => {
@@ -757,7 +876,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     const frag = new URLSearchParams(window.location.hash.slice(1));
     const anonLike = !!inv && /^anon-[a-z0-9]{8}$/.test(inv);
     let anonInv = anonLike && (frag.has("j") || frag.has("k")) ? inv : null;
-    if (anonInv) window.history.replaceState(null, "", window.location.pathname);
+    if (anonInv) replaceUrl(window.location.pathname);
     (async () => {
       const slug = await lastSpace().catch(() => null);
       const list = await savedSpaces().catch(() => [] as SpaceSession[]);
@@ -1052,69 +1171,112 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     });
   }, []);
 
-  // Someone pressed Launch somewhere: their ball floats here at once and fills up as it uploads.
-  const onLaunchBeam = useCallback((p: Record<string, unknown>) => {
-    const k = p?.k;
-    if (!validKey(k) || landedKeys.current.has(k)) return;
-    const name = (typeof p.name === "string" ? p.name.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 60) : "") || "untitled";
+  // Someone pressed Launch somewhere: their ball floats here at once and fills up as it uploads. Several launched at
+  // once come in one message (ls); pages from before that say one launch per message.
+  const onLaunchBeam = useCallback((p: Record<string, unknown>, a: string | null = null) => {
+    const list = (Array.isArray(p.ls) ? (p.ls as unknown[]).slice(0, 40) : [p]).filter((x): x is Record<string, unknown> => !!x && typeof x === "object");
     const serverNow = Date.now() + skewRef.current;
-    const at = typeof p.at === "string" ? Date.parse(p.at) : NaN;
-    const createdAt = new Date(Number.isFinite(at) && Math.abs(at - serverNow) < 120_000 ? at : serverNow).toISOString();
-    const net = typeof p.net === "string" && /^[0-9a-f]{12}$/.test(p.net) ? p.net : null;
-    const by = typeof p.by === "string" ? p.by.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 24) || null : null;
-    const life = [5, 10, 15, 20, 25, 30].includes(Number(p.life)) ? Number(p.life) : 30;
-    const item: Incoming = {
-      key: k, by, life, open: p.o === true, name, createdAt, net,
-      size: Math.round(num(p.size, 0, 4 * 1024 ** 3, 0)),
-      files: Math.round(num(p.files, 1, 100_000, 1)),
-      hue: Math.round(num(p.hue, 0, 359, 0)),
-      frac: num(p.f, 0, 1, 0),
-      seen: Date.now(),
-    };
-    setIncoming((m) => (!m[k] && Object.keys(m).length >= INCOMING_MAX ? m : { ...m, [k]: m[k] ? { ...item, createdAt: m[k].createdAt } : item }));
-    if (!toasted.current.has(k)) {
-      toasted.current.add(k);
-      setTimeout(() => toasted.current.delete(k), 120_000);
-      toast(`Incoming: ${name}`);
+    const items: Incoming[] = [];
+    for (const x of list) {
+      const k = x.k;
+      if (!validKey(k) || landedKeys.current.has(k)) continue;
+      const name = (typeof x.name === "string" ? x.name.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 60) : "") || "untitled";
+      const at = typeof x.at === "string" ? Date.parse(x.at) : NaN;
+      const createdAt = new Date(Number.isFinite(at) && Math.abs(at - serverNow) < 120_000 ? at : serverNow).toISOString();
+      const netV = x.net ?? p.net, byV = x.by ?? p.by;
+      const net = typeof netV === "string" && /^[0-9a-f]{12}$/.test(netV) ? netV : null;
+      const by = typeof byV === "string" ? byV.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 24) || null : null;
+      const life = [5, 10, 15, 20, 25, 30].includes(Number(x.life)) ? Number(x.life) : 30;
+      items.push({
+        key: k, by, life, open: x.o === true, name, createdAt, net, a,
+        size: Math.round(num(x.size, 0, 4 * 1024 ** 3, 0)),
+        files: Math.round(num(x.files, 1, 100_000, 1)),
+        hue: Math.round(num(x.hue, 0, 359, 0)),
+        frac: num(x.f, 0, 1, 0),
+        seen: Date.now(),
+      });
     }
+    if (!items.length) return;
+    setIncoming((m) => {
+      let next = m;
+      for (const item of items) {
+        const was = next[item.key];
+        if (!was && Object.keys(next).length >= INCOMING_MAX) continue;
+        next = { ...next, [item.key]: was ? { ...item, createdAt: was.createdAt } : item };
+      }
+      return next;
+    });
+    const news = items.filter((i) => !toasted.current.has(i.key));
+    for (const i of news) {
+      toasted.current.add(i.key);
+      setTimeout(() => toasted.current.delete(i.key), 120_000);
+    }
+    if (news.length) toast(news.length > 1 ? `Incoming: ${news.length} items` : `Incoming: ${news[0].name}`);
   }, [toast]);
 
-  // It landed: fetch the real object straight from the server (not the cached list) and swap it in place.
+  // It landed: the record rides along with the message (newer senders), else it is fetched straight from the server
+  // (not the cached list), and it takes the stand-in's place. The sender says it three times (and a neighbour
+  // region may pass it twice): whichever comes first brings it, the rest only tidy up.
+  const landing = useRef(new Set<string>());
   const onLandedBeam = useCallback(async (p: Record<string, unknown>) => {
     const k = p?.k;
-    const id = p?.id;
-    if (!validKey(k) || typeof id !== "string" || !/^[a-z0-9]{4,12}$/.test(id)) return;
+    // (the sender's repeats carry the id only inside the record)
+    const id = p?.id ?? (p?.o as { id?: unknown } | null | undefined)?.id;
+    if (!validKey(k) || typeof id !== "string" || !ORB_ID.test(id)) return;
     landedKeys.current.add(k);
     setTimeout(() => landedKeys.current.delete(k), 60_000);
+    // destroyed meanwhile: a late repeat (or a neighbour region's copy) must not bring it back
+    const burnt = () => {
+      if (marks.current.get(`o:${id}`)?.rec !== null) return false;
+      if (waitFor.current === k) waitFor.current = null;
+      dropIncoming(k);
+      return true;
+    };
+    if (burnt() || landing.current.has(id)) return;
+    if (recent.current.has(id) || orbsRef.current.some((o) => o.id === id)) return dropIncoming(k);
+    landing.current.add(id);
+    const sp = spaceRef.current;
     let orb: Orb | null = null;
-    for (let a = 0; a < 3 && !orb; a++) {
-      if (a) await new Promise((r) => setTimeout(r, 500 * a));
-      const r = await fetch(`/api/transfers/${id}`, { headers: spaceHeaders() }).catch(() => null);
-      if (r?.ok) orb = (await r.json().catch(() => null)) as Orb | null;
-      else if (r?.status === 404) break;
-    }
-    const from = incomingId(k);
-    if (orb) {
-      const got = orb;
-      inheritSlot(from, got.id);
-      swapped.current.add(from).add(got.id);
-      alias.current.set(got.id, alias.current.get(from) ?? from);
-      setTimeout(() => (swapped.current.delete(from), swapped.current.delete(got.id)), 5000);
-      recent.current.set(got.id, got);
-      setTimeout(() => recent.current.delete(got.id), 20_000);
-      known.current?.add(got.id);
-      setOrbs((list) => (list.some((o) => o.id === got.id) ? list : [...list, got]));
-    }
-    dropIncoming(k);
-    if (waitFor.current === k) {
-      waitFor.current = null;
+    try {
+      const serverNow = Date.now() + skewRef.current;
+      orb = cleanOrb(p.o, serverNow);
+      // (only an object of the place this screen is in: a space's stays in the space)
+      if (orb && (orb.id !== id || (orb.space ?? null) !== (sp?.slug ?? null))) orb = null;
+      for (let a = 0; a < 3 && !orb; a++) {
+        if (a) await new Promise((r) => setTimeout(r, 500 * a));
+        const r = await fetch(`/api/transfers/${id}`, { headers: spaceHeaders() }).catch(() => null);
+        if (r?.ok) orb = (await r.json().catch(() => null)) as Orb | null;
+        else if (r?.status === 404) break;
+      }
+      if (spaceRef.current !== sp) return; // walked into another place meanwhile
+      if (burnt()) return; // (destroyed while it was fetched)
+      const from = incomingId(k);
       if (orb) {
         const got = orb;
-        setPanel((cur) => cur ?? { kind: "unlock", id: got.id });
+        inheritSlot(from, got.id);
+        swapped.current.add(from).add(got.id);
+        alias.current.set(got.id, alias.current.get(from) ?? from);
+        setTimeout(() => (swapped.current.delete(from), swapped.current.delete(got.id)), 5000);
+        recent.current.set(got.id, got);
+        setTimeout(() => recent.current.delete(got.id), 20_000);
+        // kept over any cached list made before it landed, and such a list is asked again (refresh's overlay)
+        marks.current.set(`o:${got.id}`, { at: serverNow, rec: got });
+        known.current?.add(got.id);
+        setOrbs((list) => (list.some((o) => o.id === got.id) ? list : [...list, got]));
       }
+      dropIncoming(k);
+      if (waitFor.current === k) {
+        waitFor.current = null;
+        if (orb) {
+          const got = orb;
+          setPanel((cur) => cur ?? { kind: "unlock", id: got.id });
+        }
+      }
+      if (!orb) catchUpRef.current(true);
+    } finally {
+      landing.current.delete(id);
     }
-    if (!orb) refresh();
-  }, [dropIncoming, refresh]);
+  }, [dropIncoming]);
 
   const onGoneBeam = useCallback((p: Record<string, unknown>) => {
     // a sender destroyed objects: they leave every screen now (even ones that just landed here)
@@ -1148,18 +1310,22 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applySync, toast]);
 
-  // a launch whose sender went quiet (closed the tab mid-upload) does not float forever
+  // a launch whose sender went quiet (closed the tab mid-upload) does not float forever. Quiet without a landing may
+  // also mean it landed while a line blinked (this one or the sender's): the list knows, so it is asked
+  const incomingRef = useRef(incoming);
+  incomingRef.current = incoming;
   useEffect(() => {
     const t = setInterval(() => {
       const cut = Date.now() - INCOMING_TTL;
+      const stale = Object.values(incomingRef.current).filter((i) => i.seen < cut).map((i) => i.key);
+      if (!stale.length) return;
       setIncoming((m) => {
-        const stale = Object.values(m).filter((i) => i.seen < cut).map((i) => i.key);
-        if (!stale.length) return m;
         const next = { ...m };
-        for (const k of stale) delete next[k];
-        if (waitFor.current && stale.includes(waitFor.current)) waitFor.current = null;
+        for (const k of stale) if (next[k] && next[k].seen < cut) delete next[k];
         return next;
       });
+      if (waitFor.current && stale.includes(waitFor.current)) waitFor.current = null;
+      if (stale.some((k) => !landedKeys.current.has(k))) catchUpRef.current(true);
     }, 3000);
     return () => clearInterval(t);
   }, []);
@@ -1219,17 +1385,21 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       toast((e as Error).message);
     }
   }, [loadRoom, toast]);
-  // The live connection is the scarce thing on the free plan (about 200 at once): a tab holds one only while it is
-  // looked at, and lets go a minute after it goes to the background. Coming back it reconnects and catches up.
+  // Supabase: the live connection is the scarce thing on the free plan (about 200 at once): a tab holds one only while
+  // it is looked at, and lets go a minute after it goes to the background. Coming back it reconnects and catches up.
+  // Orbit's own rooms (liveOn): a quiet socket hibernates for free, so a hidden (or just covered) tab keeps listening
+  // and things still pop up there.
   const [rtOn, setRtOn] = useState(true);
   useEffect(() => {
+    if (liveOn) return;
     let t: ReturnType<typeof setTimeout> | undefined;
     const on = () => {
       clearTimeout(t);
       if (document.visibilityState === "visible") setRtOn(true);
-      // (a tab still sending or receiving a file keeps it: transfers talk over the same connection)
+      // (a tab still sending, saving or receiving a file keeps it: transfers talk over the same connection, and a
+      // launch still has to say it landed)
       else t = setTimeout(function off() {
-        if (heldIds().length || downloading()) t = setTimeout(off, 60_000);
+        if (heldIds().length || downloading() || cloudSaving() || launching()) t = setTimeout(off, 60_000);
         else setRtOn(false);
       }, 60_000);
     };
@@ -1245,16 +1415,18 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   }, [rtDown, refresh]);
   // realtime broadcast only (no presence): constant cost per message, scales with Supabase's fan-out; in the public
   // void only the people around hear it
+  const liveRef = useRef<Live | null>(null);
   useEffect(() => {
-    // (with no channel left the connection closes by itself)
-    if (!rtOn) return;
+    // (with no channel left the connection closes by itself). Not before the saved space and the area are known: the
+    // rooms would be opened only to be swapped a moment later (meanwhile what is said waits in say()'s queue)
+    if (!rtOn || !spaceReady || !areaReady) return;
     // what someone else said, whichever way it came
-    const heard = async (event: string, payload: Record<string, unknown>) => {
+    const heard = async (event: string, payload: Record<string, unknown>, a: string | null = null) => {
       if (event === "pulse") {
         scheduleRefresh();
         return setPulse((p) => p + 1);
       }
-      if (event === "launch") return beams.current.launch(payload);
+      if (event === "launch") return beams.current.launch(payload, a);
       if (event === "landed") return void beams.current.landed(payload);
       if (event === "gone") return beams.current.gone(payload);
       if (event === "sync") return beams.current.sync(payload);
@@ -1268,25 +1440,40 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         if (pass) setInvite({ slug: p.slug, title: String(p.title ?? "").slice(0, 40), by: String(p.by ?? "").slice(0, 24), pass });
       }
     };
+    // where this line belongs (say() sends a launch only into the place it was launched in)
+    const place = spaceRef.current?.slug ?? "";
     // Orbit's own Cloudflare rooms (lib/live.ts, live/): thousands online at once on the free plan
     if (liveOn) {
+      let opened = false;
       const l = joinLive(chanNames.split(" "), spaceRef.current ? "" : areaRef.current, {
-        on: (e, p) => void heard(e, p),
+        on: (e, p, a) => void heard(e, p, a),
         status: (up) => {
           setRtDown(!up);
           if (!up) return;
-          channel.current = l.chan;
           if (spaceRef.current && myIdRef.current) l.chan.track({ id: myIdRef.current });
           // the socket is live: pull anything created during the handshake, so the first send is never missed
-          refresh();
+          // (back after a drop, resync below catches up)
+          if (!opened) refresh();
+          opened = true;
         },
+        // a room back after a drop (any of them): what was said there meanwhile is in the list
+        resync: () => catchUpRef.current(true),
         presence: (ids) => onPresenceRef.current(ids),
       });
+      liveRef.current = l;
+      // the line from now on, not from when it connects: what is said meanwhile waits in its outbox
+      channel.current = l.chan;
+      const mine: Line = { chan: l.chan, place };
+      setLine(mine);
       return () => {
+        if (liveRef.current === l) liveRef.current = null;
         channel.current = null;
+        if (line === mine) setLine(null);
         l.close();
       };
     }
+    let mine: Line | null = null;
+    let joined = false;
     const chans = chanNames.split(" ").map((name, i) => {
       const ch = supabase.channel(name, { config: { broadcast: { self: false } } });
       for (const ev of ["pulse", "launch", "landed", "gone", "sync", "invite"]) ch.on("broadcast", { event: ev }, ({ payload }) => void heard(ev, payload ?? {}));
@@ -1304,23 +1491,37 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         if (status !== "SUBSCRIBED") return;
         setRtDown(false);
         channel.current = ch;
+        if (!mine || line !== mine) {
+          mine = { chan: ch, place };
+          setLine(mine);
+        }
         if (spaceRef.current && myIdRef.current) ch.track({ id: myIdRef.current }).catch(() => {});
+        // joined again after a drop (supabase-js rejoins by itself): what was said meanwhile is in the list
+        if (joined) catchUpRef.current(true);
+        joined = true;
       });
       return ch;
     });
     return () => {
       channel.current = null;
+      if (mine && line === mine) setLine(null);
       chans.forEach((ch) => supabase.removeChannel(ch));
     };
-    // (on the Cloudflare rooms the area matters too: two areas can share the same regions)
+    // Orbit's rooms are rebuilt only for another space (an area change just moves them, below); Supabase's channels
+    // are named by area, so they follow it
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scheduleRefresh, chanNames, rtOn, liveOn && !space ? area : ""]);
+  }, [scheduleRefresh, rtOn, spaceReady, areaReady, liveOn ? space?.chan ?? "" : chanNames]);
+  // the area moved (a walk, a flight over the Earth, a new IP guess): the same rooms stay open (only their filter and
+  // tag move), new regions open and ones left behind close; nothing said meanwhile is lost
+  useEffect(() => {
+    liveRef.current?.update(chanNames.split(" "), spaceRef.current ? "" : area);
+  }, [chanNames, area]);
   // back from the background: whatever happened meanwhile
   const wasOn = useRef(true);
   useEffect(() => {
-    if (rtOn && !wasOn.current) refresh();
+    if (rtOn && !wasOn.current) catchUp(true);
     wasOn.current = rtOn;
-  }, [rtOn, refresh]);
+  }, [rtOn, catchUp]);
 
   // where this device is: its last area at once; a location already allowed is refreshed quietly; a first visit is
   // asked (after a moment) whether to share it
@@ -1394,7 +1595,12 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // a new area: its void (the first load waits for areaReady and asks with the area by then)
   useEffect(() => {
     if (!area || !areaReady || spaceRef.current) return;
-    setIncoming({});
+    // launches on their way up from areas still around this one stay (a step over a cell border keeps them)
+    const near = new Set(around(area));
+    setIncoming((m) => {
+      const keep = Object.values(m).filter((i) => i.a && near.has(i.a));
+      return keep.length === Object.keys(m).length ? m : Object.fromEntries(keep.map((i) => [i.key, i]));
+    });
     known.current = null;
     knownBubbles.current = null;
     knownTasks.current = null;
@@ -1403,7 +1609,24 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [area, refresh]);
 
-  // opening / closing an object updates live-viewer counts everywhere right away
+  // Opening / closing / zooming an object updates live-viewer counts everywhere. But every such pulse makes every
+  // device in the area fetch its whole list again, so browsing card by card was constant chatter on everyone's line:
+  // the report goes out a moment after the first change, then at most once per 10 s, with whatever is open by then.
+  const viewT = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const viewAt = useRef(0);
+  const viewNews = useCallback(() => {
+    if (viewT.current) return;
+    viewT.current = setTimeout(() => {
+      viewT.current = undefined;
+      viewAt.current = Date.now();
+      // anonymous: what this device opens is never reported (sendPulse sends no viewing then)
+      void sendPulse().then(() => {
+        refresh();
+        broadcast();
+      });
+    }, Math.max(1000, viewAt.current + 10_000 - Date.now()));
+  }, [sendPulse, refresh, broadcast]);
+  useEffect(() => () => clearTimeout(viewT.current), []);
   const firstView = useRef(true);
   useEffect(() => {
     if (firstView.current) {
@@ -1412,11 +1635,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     }
     // anonymous: what this device opens is never reported (it adds nothing to watcher counts)
     if (isAnon()) return;
-    sendPulse().then(() => {
-      refresh();
-      broadcast();
-    });
-  }, [viewing, sendPulse, refresh, broadcast]);
+    viewNews();
+  }, [viewing, viewNews]);
 
   // auto-refresh stale tabs after a new deploy. Never while a card is open, and never while this tab
   // is the source of files in orbit (a reload would take them down for everyone) or still downloading.
@@ -1454,7 +1674,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     const id = panel && (panel.kind === "unlock" || panel.kind === "owner") ? panel.id : null;
     if (id) url.searchParams.set("o", id);
     else url.searchParams.delete("o");
-    window.history.replaceState(null, "", url);
+    // (not a raw replaceState(null): on mount that would wipe Next's mark from this entry, lib/view.ts)
+    replaceUrl(url);
   }, [panel]);
 
   // The open card's object, kept after it leaves the list (expired, or destroyed by the sender right after
@@ -1593,11 +1814,18 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         (scope === "all" || (scope === "near" ? o.netHash === net || !!ownerKey(o.id) : !!ownerKey(o.id))) &&
         (kind === "all" || fileKind(o.fileName, o.mime) === kind),
     );
-    if (!inArchive) return groupOrbs(base.filter((o) => !trash.has(`o:${o.id}`)));
-    // the archive: files archived one by one, and whole containers archived at once
+    // a whole container archived at once holds what its sender had sent by then: newer ones arrive as usual (and,
+    // two or more, make a container again)
+    const boxed = (o: Orb) => {
+      const at = o.from && !o.task ? trashedAt(`o:${GROUP}${o.from}`) : 0;
+      return at > 0 && Date.parse(o.createdAt) <= at + skewRef.current;
+    };
+    if (!inArchive) return groupOrbs(base.filter((o) => !trash.has(`o:${o.id}`) && !boxed(o)));
+    // the archive: files archived one by one, and whole containers archived at once (as they were then)
     const one = groupOrbs(base.filter((o) => trash.has(`o:${o.id}`)));
-    const all = groupOrbs(base.filter((o) => !trash.has(`o:${o.id}`)));
-    const whole = all.list.filter((o) => isGroup(o.id) && trash.has(`o:${o.id}`));
+    const all = groupOrbs(base.filter((o) => !trash.has(`o:${o.id}`) && boxed(o)));
+    // (one file left of such a container is no container any more: it is shown here on its own)
+    const whole = all.list.filter((o) => !isGroup(o.id) || trash.has(`o:${o.id}`));
     return { list: [...one.list, ...whole], groups: new Map([...one.groups, ...whole.map((o) => [o.id, all.groups.get(o.id) ?? []] as const)]) };
   }, [alive, scope, net, kind, archived, trash, inArchive]);
   const groups = grouped.groups;
@@ -1625,18 +1853,16 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       return;
     }
     if (viewing || isAnon()) return; // an open card already reports itself; anonymous ones never do
-    sendPulse().then(() => {
-      refresh();
-      broadcast();
-    });
-  }, [zoomFirst, viewing, sendPulse, refresh, broadcast]);
+    viewNews();
+  }, [zoomFirst, viewing, viewNews]);
   const shown = useMemo(
     () => [
-      ...(inArchive ? grouped.list : grouped.list.filter((o) => !trash.has(`o:${o.id}`))),
+      // (grouped already left out what is archived; a container's id may be in the trash while its newer files show)
+      ...grouped.list,
       ...(inArchive ? [] : pending),
       ...(inArchive || scope === "mine" ? [] : arrivingOrbs.filter((o) => scope === "all" || (!!net && o.netHash === net))),
     ],
-    [grouped, scope, net, pending, arrivingOrbs, trash, inArchive],
+    [grouped, scope, net, pending, arrivingOrbs, inArchive],
   );
   // Your balls are numbered 1..N in launch order, on the ball and on its dock row, so you can count yours at a glance.
   const badges = useMemo(() => {
@@ -1700,11 +1926,12 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     }, 300);
     return () => clearInterval(t);
   }, [tasks.length, archived]);
-  // every open file in sight: decrypted quietly in the background (lib/peek.ts) so a tap previews it at once
+  // small open files in sight: decrypted quietly in the background (lib/peek.ts) so a tap previews them at once. Only
+  // from a complete stored copy and only while nothing else moves on this device: warm() itself says no otherwise
   useEffect(() => {
     const go = () => warm(visible.filter((o) => !isPending(o.id) && !isIncoming(o.id)));
     const t = setTimeout(go, 400);
-    // and again now and then: a file whose sender was busy (or a network blip) gets another try
+    // and again now and then: a file whose stored copy wasn't complete yet (or a busy moment) gets another try
     const again = setInterval(() => document.visibilityState === "visible" && go(), 20_000);
     return () => (clearTimeout(t), clearInterval(again));
   }, [visible]);
@@ -1925,10 +2152,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     if (scope === "mine" && !mineCount) setScope("all");
   }, [scope, mineCount]);
 
-  const onViewed = useCallback(() => {
-    refresh();
-    broadcast();
-  }, [refresh, broadcast]);
+  // (a card's view is counted: told with the next viewer report, not a list refetch everywhere per card)
+  const onViewed = viewNews;
 
   // 10 quick taps on the logo open mission HQ
   const router = useRouter();
@@ -2185,7 +2410,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   return (
     <>
       {!work && <Starfield />}
-      <LiquidGlass />
+      <LiquidGlass ui={ui} />
 
       {work ? (
         <>
@@ -2242,7 +2467,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             <a href="#how">How it works</a>
             <button onClick={openTasks}>Tasks{tasks.length ? ` ${tasks.filter((t) => !t.doneAt).length}` : ""}</button>
             <Link href="/about">About</Link>
-            {/* a full load: the work look starts clean */}
+            {/* in place (lib/view.ts): no reload, uploads and sockets carry on */}
             <button onClick={() => switchView("/work")}>Switch to Work</button>
             <Link href="/upgrade" className="nav-up">Upgrade</Link>
           </nav>
@@ -2837,7 +3062,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
               const s = await createSpace(title, handle, true, pass);
               // invite everyone on this Wi-Fi first, on the public channel (sealed for this network)
               if (netRef.current && inviteKeyRef.current)
-                channel.current?.send({ type: "broadcast", event: "invite", payload: { slug: s.slug, title: s.title, by: handle, net: netRef.current, seal: await sealInvite(inviteKeyRef.current, pass) } });
+                say("invite", { slug: s.slug, title: s.title, by: handle, net: netRef.current, seal: await sealInvite(inviteKeyRef.current, pass) }, spaceRef.current?.slug ?? "");
               const moved = mine.length ? await carryTasks(mine, { slug: s.slug, token: s.token, deviceId: deviceId() }) : 0;
               enterSpace(s);
               try {

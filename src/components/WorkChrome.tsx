@@ -6,6 +6,7 @@ import { BsIncognito } from "react-icons/bs";
 import type { Kind } from "@/lib/skin-list";
 import { useTheme } from "@/lib/theme";
 import KindFilter from "./KindFilter";
+import { switchView } from "@/lib/view";
 
 // The /work chrome: an editor-style top bar, a slim icon rail and a canvas action bar (phones: a bottom tab bar).
 // Everything here only calls into Void's own handlers, so /work does exactly what the main page does.
@@ -109,7 +110,8 @@ export function WorkRail(p: { inSpace: boolean; onHome: () => void; onSpaces: ()
       <div className="w-rail-bot">
         <ThemeToggle />
         <Link href="/about" title="About" aria-label="About"><LuCircleHelp /></Link>
-        <Link href="/" className="w-classic" title="Classic Orbit view" aria-label="Classic Orbit view"><LuOrbit /></Link>
+        {/* in place (lib/view.ts), never a <Link>: a failed fetch on a choked line would turn it into a full reload */}
+        <button className="w-classic" onClick={() => switchView("/")} title="Classic Orbit view" aria-label="Classic Orbit view"><LuOrbit /></button>
       </div>
     </nav>
   );
