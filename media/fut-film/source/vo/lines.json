@@ -4,75 +4,75 @@
   {
    "key": "hook",
    "text": "A farmer and a bakery made a deal hundreds of years ago, and it became one of the biggest markets on Earth. Futures.",
-   "dur": 7.573,
+   "dur": 8.013,
    "at": 0.35
   },
   {
    "key": "deal",
    "text": "The farmer worries wheat will be cheap at harvest. The bakery worries it'll be expensive. So today, they agree on a price for later.",
-   "dur": 8.508,
-   "at": 8.32
+   "dur": 9.016,
+   "at": 8.76
   },
   {
    "key": "what",
    "text": "That's a futures contract: an agreement to buy or sell a set amount, at a set price, on a set future date.",
-   "dur": 6.804,
-   "at": 17.18
+   "dur": 7.203,
+   "at": 18.13
   },
   {
    "key": "oblig",
    "text": "Unlike an option, it's not a choice. Both sides must follow through, or close the contract before the date.",
-   "dur": 6.06,
-   "at": 24.33
+   "dur": 6.413,
+   "at": 25.68
   },
   {
    "key": "exch",
    "text": "Today these contracts trade on exchanges. Oil, gold, wheat, even the whole stock market index.",
-   "dur": 5.863,
-   "at": 30.74
+   "dur": 6.2,
+   "at": 32.45
   },
   {
    "key": "spec",
    "text": "And most traders never want a truck of wheat. They buy the contract, and sell it back before it expires, just for the price move.",
-   "dur": 6.944,
-   "at": 36.91
+   "dur": 7.356,
+   "at": 38.95
   },
   {
    "key": "margin",
    "text": "You don't pay the full value. You put down a deposit called margin, often just a few percent. That's leverage.",
-   "dur": 6.004,
-   "at": 44.2
+   "dur": 6.371,
+   "at": 46.65
   },
   {
    "key": "daily",
    "text": "Every single day, the exchange settles up. If the price moved your way, money lands in your account. If not, it's taken out.",
-   "dur": 7.031,
-   "at": 50.56
+   "dur": 7.437,
+   "at": 53.37
   },
   {
    "key": "call",
    "text": "Drop below the minimum, and you get a margin call: add money, or your position gets closed.",
-   "dur": 4.877,
-   "at": 57.94
+   "dur": 5.155,
+   "at": 61.16
   },
   {
    "key": "why",
    "text": "Why trade futures? Big exposure for little money, markets open nearly all day, and you can bet up or down.",
-   "dur": 7.159,
-   "at": 63.21
+   "dur": 7.587,
+   "at": 66.71
   },
   {
    "key": "tip",
    "text": "Not financial advice. Leverage cuts both ways, so know how much one tick costs you.",
-   "dur": 4.656,
-   "at": 70.72
+   "dur": 4.941,
+   "at": 74.65
   },
   {
    "key": "end",
    "text": "Send this to a friend on Orbi Transfer. Now you know!",
-   "dur": 3.797,
-   "at": 75.78
+   "dur": 4.024,
+   "at": 79.99
   }
  ],
- "duration": 81.38
+ "duration": 85.82
 }
