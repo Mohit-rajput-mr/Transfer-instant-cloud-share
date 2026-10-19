@@ -1,0 +1,96 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Your bank card has no battery. No charger, no switch. Yet every time you tap it, it wakes up, does secret maths, and goes back to sleep. In under a second.",
+   "dur": 11.043,
+   "at": 0.35
+  },
+  {
+   "key": "why",
+   "text": "So where does the power come from? The answer is the same trick that charges your electric toothbrush.",
+   "dur": 5.432,
+   "at": 11.84
+  },
+  {
+   "key": "coil",
+   "text": "Hidden under the plastic, a thin wire loops around the edge of the card. Again, and again, and again.",
+   "dur": 8.589,
+   "at": 17.67
+  },
+  {
+   "key": "field",
+   "text": "The card reader is always humming an invisible magnetic field. It flips direction about thirteen million times a second.",
+   "dur": 9.357,
+   "at": 26.56
+  },
+  {
+   "key": "induce",
+   "text": "Bring your card close, and that flipping field pushes electricity around the loop. No contact at all. Just like the toothbrush on its stand.",
+   "dur": 8.013,
+   "at": 36.22
+  },
+  {
+   "key": "wake",
+   "text": "A tiny chip wakes up on that borrowed power. It only works a few centimetres away. That's why you have to get so close.",
+   "dur": 7.757,
+   "at": 44.58
+  },
+  {
+   "key": "talk",
+   "text": "And here's the weird part. To answer, the card doesn't even transmit. It just flickers how much power it takes, and the reader feels the pattern. Like blinking a torch in morse code.",
+   "dur": 10.275,
+   "at": 52.69
+  },
+  {
+   "key": "key",
+   "text": "Now the clever bit. The chip holds a secret key that never, ever leaves it.",
+   "dur": 5.671,
+   "at": 63.37
+  },
+  {
+   "key": "mix",
+   "text": "For every tap, it mixes that key with the amount, a counter, and a random number, into a one time code.",
+   "dur": 7.181,
+   "at": 69.34
+  },
+  {
+   "key": "bank",
+   "text": "The bank checks the code. It matches? Paid. Beep.",
+   "dur": 3.128,
+   "at": 76.82
+  },
+  {
+   "key": "thief",
+   "text": "So what if a thief secretly records your tap? They get a code that's already been used. Try it again, and the bank just says no.",
+   "dur": 6.716,
+   "at": 80.4
+  },
+  {
+   "key": "reveal",
+   "text": "No battery. No contact. Just a loop of wire, borrowed power, and a code that only works once.",
+   "dur": 6.243,
+   "at": 87.56
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer was built on the same idea. Your file is locked on your own phone, with a code that never leaves it.",
+   "dur": 7.459,
+   "at": 94.31
+  },
+  {
+   "key": "orbi2",
+   "text": "It only shows up on screens near you. Twelve wrong guesses, and it locks itself. Thirty minutes later, it's gone.",
+   "dur": 7.329,
+   "at": 102.06
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. Now you know what happens in every tap.",
+   "dur": 4.284,
+   "at": 109.79
+  }
+ ],
+ "duration": 115.88
+}

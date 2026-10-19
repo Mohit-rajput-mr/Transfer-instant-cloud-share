@@ -86,7 +86,7 @@ When the owner says "new version" / "next", make the next film from the story li
   making "how everyday tech secretly works" films: a shocking true hook in the first 2 s, a promised twist ("and at the end,
   Einstein shows up"), one big everyday metaphor, a cut every 1–2 s, then the Orbi tie-in. The hook's promise must pay off.
   Shorts loop: the last line should echo the hook so the loop feels seamless.
-  Queue (true, surprising, everyday): GPS + Einstein (done) · contactless card has no battery · microwave ovens · touch
+  Queue (true, surprising, everyday): GPS + Einstein (done) · contactless card has no battery (done) · microwave ovens · touch
   screens feel your body's charge · noise-cancelling = anti-sound · night mode stacks many photos · why cold kills batteries ·
   wireless charging · airplane mode · why Wi-Fi goes through walls · how a phone counts steps.
 - **Educational films always tie back to Orbi** (2026-10-18): teach the topic, then end with a true Orbi feature that connects (QR film → every Orbi file has its own QR + code), and the Orbi end card.
@@ -160,7 +160,8 @@ Use them in every film where a feature is shown.
   why your phone storage fills up · how "the cloud" is just someone's computer.
 
 ## Films so far
-- `gps-film/`: suspense science film — your phone never talks to the satellites; it listens to clocks: delay = distance, bubbles → ring → two points → you, 4th satellite fixes the cheap clock, Einstein (+38 µs/day ≈ 10 km drift, clocks tuned slow before launch) → Orbi: rough area only, anonymous = no location, 30-min burn (**latest**)
+- `tap-film/`: suspense science film — your bank card has no battery: wire loop, induction (toothbrush), chip wakes, answers by flickering its load, secret key → one-time code, thief DENIED → Orbi (code never leaves your phone, near you, 12 tries, 30 min) (**latest**)
+- `gps-film/`: suspense science film — your phone never talks to the satellites; it listens to clocks: delay = distance, bubbles → ring → two points → you, 4th satellite fixes the cheap clock, Einstein (+38 µs/day ≈ 10 km drift, clocks tuned slow before launch) → Orbi: rough area only, anonymous = no location, 30-min burn
 - `password-film/`: suspense science film — a hacker steals every password, they're useless: hashing = one-way blender, salt, slow blending → Orbi (code never leaves phone, 310,000×, hash of the proof, 12 tries, 30 min). First film on the kit
 - `work-desk-film/`: Orbi Work desktop demo — real /work recordings on a laptop mockup, camera zooms per feature (`shots.js`), 9:16 (use this format for workspace films)
 - `ghost-film/`: educational "How hackers stay invisible" (IP trail, fingerprint, VPN, Tor onion, mistakes) ending on Orbi privacy
