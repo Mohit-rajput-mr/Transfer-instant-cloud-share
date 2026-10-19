@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { chanFor, getMeta, isOwner, member, roster } from "@/lib/spaces";
+import { chanFor, closesAt, getMeta, isOwner, member, roster } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     {
       slug, title: meta.title, priv: meta.priv, handle: me.handle, chan: chanFor(slug), owner,
       // anonymous spaces and their member lists go 7 days after they were made (migration 020 orbit_reap_anon)
-      anon: !!meta.anon, ends: meta.anon ? meta.at + 7 * 864e5 : null,
+      // a private space closes 8 hours after it was made (lib/spaces.ts closesAt)
+      anon: !!meta.anon, ends: meta.anon ? meta.at + 7 * 864e5 : closesAt(meta),
       members: members.map((m) => ({ id: m.dh, handle: m.handle, you: m.dh === me.dh })),
     },
     { headers: { "Cache-Control": "no-store" } },
