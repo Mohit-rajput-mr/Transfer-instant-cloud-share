@@ -4,9 +4,12 @@ Read `CLAUDE.md` first (owner wants SHORT answers, deploy steps, IDs). This file
 Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 - 2026-10-19: anonymous spaces: 4-letter **knock** (Spaces → Browse; migration 022 applied; invite sealed to the knocker's ECDH key),
   being in an anonymous space always runs a timed session (create: 5–30 min, join: 30), phone ↕ scroll-mode toggle.
-- STILL MISSING in Supabase: `orbit_session_forget`, `orbit_reap_anon` (migration 020). The Supabase MCP hangs on any SQL with
-  `delete` (confirmation never arrives): the owner must paste them in the SQL editor. Until then, turning anonymous on does
-  not erase the browser's heartbeat row, and anonymous spaces are not cleaned up after 7 days.
+- DONE 2026-10-19: `orbit_session_forget` + `orbit_reap_anon` (migration 020) in place (pasted by the owner). The Supabase MCP
+  hangs on any SQL containing `delete`: give the owner the SQL to paste in the SQL editor instead.
+- 2026-10-19: Work <-> Classic switch in-app (lib/cloud.ts switchView via the router Void registers): no reload, uploads keep
+  going. Realtime (re)subscribe / back online -> refresh + queued beams sent; a landed upload sends a 2nd pulse at 4 s.
+  Gentle uploads rest as long as each part took on a busy line. RELEASE bumped (r-2026-10-19-no-reload-switch).
+- OPEN: real-device checks (popup on a 2nd device after a Wi-Fi switch, 4-letter knock, big upload on a slow line).
 - 2026-10-19: uploads back off when the line chokes (lib/cloud.ts watchNet: RTT probe → 1 lane + pauses), and Work↔Classic asks before reloading during uploads (switchView).
 - 2026-10-19: HQ has a **Void** tab (every area: files, notes, tasks; burn any, beamed live to the area; migration 023). Bubble notes default 15 min; tasks default 30 min (options to 8 h); screens drop expired tasks/notes every 5 s.
 - 2026-10-18 late: the Vercel connector is read-only (403 on deploy). Vercel project `orbit` is now linked to GitHub, so a push to `claude/festive-keller-rln4jk` should deploy on its own. Work on that branch only.
