@@ -10,15 +10,17 @@ import { isAnon } from "./anon";
 import { FOLDER_MIME, directoryOutput, folderSink, zipOutput, type DirHandle, type Manifest } from "./bundle";
 import { autoDownload, safeMime, saveName } from "./save";
 import { spaceBody, spaceOpenPass } from "./space";
+import { bubbleName } from "./bubbles";
 import { P2P_PREFIX, hold, holding, isP2P, pull } from "./p2p";
 import { fetchStored, isStored, storeCopy, waitStored } from "./cloud";
 import { stayAwake } from "./wake";
 
-/** A POST that survives a dropped connection (a phone switching networks, a cold server): up to 3 tries, then a clear message. */
+/** A POST that survives a dropped or stuck connection (a phone switching networks, a cold server, a choked line): up to 3 tries of 20 s, then a clear message. */
 async function sendRetry(url: string, init: RequestInit, tries = 3): Promise<Response> {
   for (let i = 0; ; i++) {
     try {
-      return await fetch(url, init);
+      // a busy or half-dead line can leave a request hanging forever (the file sat at "Locking"): 20 s a try
+      return await fetch(url, { ...init, signal: AbortSignal.timeout(20_000) });
     } catch (e) {
       if ((e as Error).name === "AbortError") throw e;
       if (i >= tries - 1) throw new Error("The connection dropped while sending. Check your internet and try again");
@@ -72,7 +74,7 @@ export async function launch(opts: {
     body: JSON.stringify({
       name, fileName: opts.fileName ?? (file.name || "file"), mime: file.type || "application/octet-stream", size: file.size,
       chunkSize: CHUNK, iterations, salt: toB64(salt), nonce: toB64(nonce), auth, owner,
-      maxDownloads, device: deviceLabel(), hue: opts.hue, life: opts.life ?? 30, open: !!opts.open, from: await senderKey(), group: opts.group, task: opts.task, skin: anon ? undefined : pickedSkin() ?? undefined, thumb: !!preview, ...spaceBody(),
+      maxDownloads, device: deviceLabel(), hue: opts.hue, life: opts.life ?? 30, open: !!opts.open, from: await senderKey(), group: opts.group, task: opts.task, skin: anon ? undefined : pickedSkin() ?? undefined, thumb: !!preview, by: anon ? undefined : bubbleName() || deviceLabel(), ...spaceBody(),
     }),
     signal,
   });

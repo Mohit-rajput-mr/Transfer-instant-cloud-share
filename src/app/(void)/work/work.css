@@ -197,7 +197,8 @@ html[data-ui="work"] .orb-body > .kind-badge svg { width: 30px; height: 30px; st
 html[data-ui="work"] .kind-badge.k-photo { color: #a78bfa; } html[data-ui="work"] .kind-badge.k-video { color: #f472b6; } html[data-ui="work"] .kind-badge.k-doc { color: #60a5fa; }
 html[data-ui="work"] .kind-badge.k-audio { color: #2dd4bf; } html[data-ui="work"] .kind-badge.k-archive { color: #fbbf24; } html[data-ui="work"] .kind-badge:not([class*="k-"]) { color: var(--w-text-2); }
 html[data-ui="work"] .orb-body > .ext { position: absolute; left: 0; right: 0; bottom: 7px; display: block; text-align: center; font: 600 8.5px/1 var(--w-mono) !important; letter-spacing: 0.06em !important; color: var(--w-text-3) !important; text-shadow: none !important; text-transform: uppercase; padding: 0 !important; }
-html[data-ui="work"] .orb-body:not(.bubble-body):has(> .kind-badge) > .ext { opacity: 0; }
+/* the format (.PDF, .ZAP…) always shows under the icon */
+html[data-ui="work"] .orb-body:not(.bubble-body) > .ext { opacity: 1; }
 /* lifetime (or upload): a thin bar along the inside bottom edge */
 html[data-ui="work"] .orb-body:not(.bubble-body) > .lifebar, html[data-ui="work"] .lifebar { display: none !important; }
 html[data-ui="work"] .orb-body:not(.bubble-body) { background-image: linear-gradient(var(--w-ok), var(--w-ok)); background-repeat: no-repeat; background-size: calc(var(--life, 1) * (100% - 20px)) 2px; background-position: 10px calc(100% - 5px); }
@@ -838,3 +839,213 @@ html[data-ui="work"][data-anon][data-theme="light"] .w-dock .w-primary, html[dat
   background: rgba(60,64,67,0.9) !important; }
 html[data-ui="work"] .ghost-seal .e .seal-clock { color: var(--dot) !important; }
 html[data-ui="work"] .anon-time .pill.on { background: var(--w-text); color: var(--w-canvas); }
+
+/* container opened (Work): the files float in the panel as before; a plain panel (no stripes), and every file shows
+   its format on the tile */
+html[data-ui="work"] .zoom-bubble .blob { background-image: none !important; }
+html[data-ui="work"] .zext { display: block !important; }
+html[data-ui="work"] .zext::before, html[data-ui="work"] .orb-body > .ext::before, html[data-ui="work"] .mball > span:not(.sat)::before { content: "."; }
+
+/* =====================================================================
+   Work, dark: monochrome studio look. Near-black canvas with a soft grey light and a huge faint wordmark behind it;
+   small uppercase mono labels; light grey pill buttons; files as square nodes (n8n-like: tile, ports, label under,
+   white glow when hovered or picked). Layered last. Light theme keeps its own look.
+   ===================================================================== */
+html[data-ui="work"]:not([data-theme="light"]) {
+  --w-canvas: #0b0b0c; --w-surface: #151516; --w-raised: #1e1e20; --w-hover: #262628;
+  --w-border: rgba(255,255,255,0.08); --w-border-2: rgba(255,255,255,0.14);
+  --w-text: #f2f2f2; --w-text-2: #b4b4b8; --w-text-3: #7c7c82; --w-dot: rgba(255,255,255,0.09);
+}
+html[data-ui="work"]:not([data-theme="light"]) body { background: radial-gradient(90% 70% at 50% 30%, #1d1d1f 0%, #0b0b0c 70%) fixed !important; }
+html[data-ui="work"]:not([data-theme="light"]) .void[data-mark]::before { content: attr(data-mark); position: fixed; left: 50%; top: 52%; translate: -50% -50%; z-index: 0; pointer-events: none;
+  font: 900 clamp(48px, var(--mark-fs, 17vw), 300px)/0.82 var(--display, var(--w-font)); font-variation-settings: "wdth" 125; letter-spacing: -0.04em; white-space: nowrap;
+  color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.035); background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0)); -webkit-background-clip: text; background-clip: text; }
+
+/* top bar: black glass, mono uppercase tabs like a studio nav */
+html[data-ui="work"]:not([data-theme="light"]) .w-bar { background: rgba(8,8,9,0.78) !important; border-bottom: 1px solid rgba(255,255,255,0.07) !important; -webkit-backdrop-filter: blur(14px) !important; backdrop-filter: blur(14px) !important; box-shadow: none !important; }
+html[data-ui="work"]:not([data-theme="light"]) .w-title b { font: 800 15px/1 var(--display, var(--w-font)) !important; font-variation-settings: "wdth" 120; text-transform: uppercase; letter-spacing: 0.01em; }
+html[data-ui="work"]:not([data-theme="light"]) .w-crumb, html[data-ui="work"]:not([data-theme="light"]) .w-tag { font: 500 11px/1 var(--w-mono, ui-monospace, monospace) !important; text-transform: uppercase; letter-spacing: 0.12em; }
+html[data-ui="work"]:not([data-theme="light"]) .w-tabs { background: transparent !important; border: 0 !important; box-shadow: none !important; gap: 2px; }
+html[data-ui="work"]:not([data-theme="light"]) .w-tabs button { font: 500 11.5px/1 var(--w-mono, ui-monospace, monospace) !important; text-transform: uppercase; letter-spacing: 0.12em; color: var(--w-text-3) !important; background: transparent !important; border-radius: 8px !important; }
+html[data-ui="work"]:not([data-theme="light"]) .w-tabs button.on { color: #fff !important; background: rgba(255,255,255,0.08) !important; }
+html[data-ui="work"]:not([data-theme="light"]) .w-tabs button svg { display: none; }
+html[data-ui="work"]:not([data-theme="light"]) .w-live { font: 500 11px/1 var(--w-mono, ui-monospace, monospace) !important; text-transform: uppercase; letter-spacing: 0.1em; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.03); }
+/* buttons: light grey pills (primary) and dark pills, mono uppercase */
+html[data-ui="work"]:not([data-theme="light"]) :is(.w-btn, .kf-btn) { border-radius: 10px !important; background: linear-gradient(180deg, #2a2a2c, #1c1c1e) !important; border: 1px solid rgba(255,255,255,0.12) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08) !important;
+  font: 500 11.5px/1 var(--w-mono, ui-monospace, monospace) !important; text-transform: uppercase; letter-spacing: 0.1em; color: #e9e9ea !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.w-primary, .w-up) { border-radius: 12px !important; background: linear-gradient(180deg, #f4f4f5, #c9c9cc) !important; color: #111 !important; border: 1px solid rgba(255,255,255,0.6) !important;
+  box-shadow: inset 0 1px 0 #fff, inset 0 -2px 0 rgba(0,0,0,0.12), 0 10px 30px rgba(0,0,0,0.5) !important; font: 600 12px/1 var(--w-mono, ui-monospace, monospace) !important; text-transform: uppercase; letter-spacing: 0.12em; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.w-primary, .w-up) svg { color: #111 !important; }
+html[data-ui="work"]:not([data-theme="light"]) .w-ghost { font: 500 11px/1 var(--w-mono, ui-monospace, monospace) !important; text-transform: uppercase; letter-spacing: 0.1em; }
+html[data-ui="work"]:not([data-theme="light"]) .w-rail { background: rgba(8,8,9,0.7) !important; border-right: 1px solid rgba(255,255,255,0.06) !important; }
+
+/* file nodes: square tile, ports, label under, glow on hover */
+html[data-ui="work"]:not([data-theme="light"]) .orb:not(.group) .orb-body { border-radius: 18px !important; background: linear-gradient(160deg, #2b2b2e 0%, #1b1b1d 100%) !important; border: 1.5px solid rgba(255,255,255,0.16) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 12px 28px rgba(0,0,0,0.55) !important; transition: box-shadow 0.18s, border-color 0.18s !important; }
+html[data-ui="work"]:not([data-theme="light"]) .orb:not(.group):hover .orb-body, html[data-ui="work"]:not([data-theme="light"]) .orb.picked .orb-body { border-color: rgba(255,255,255,0.9) !important; box-shadow: 0 0 0 1px rgba(255,255,255,0.5), 0 0 26px rgba(255,255,255,0.28), 0 12px 28px rgba(0,0,0,0.55) !important; }
+html[data-ui="work"]:not([data-theme="light"]) .orb .orb-label { font: 700 13px/1.25 var(--w-font) !important; color: #f4f4f5 !important; letter-spacing: 0 !important; }
+html[data-ui="work"]:not([data-theme="light"]) .orb .orb-meta { font: 500 10.5px/1 var(--w-mono, ui-monospace, monospace) !important; text-transform: uppercase; letter-spacing: 0.08em; color: var(--w-text-3) !important; }
+html[data-ui="work"]:not([data-theme="light"]) .orb .bubble { font: 500 10px/1 var(--w-mono, ui-monospace, monospace) !important; color: var(--w-text-3) !important; }
+
+/* container: a dark card with its files in a neat row of mini tiles */
+html[data-ui="work"]:not([data-theme="light"]) .orb.group .blob { border-radius: 18px !important; background: linear-gradient(160deg, #222224, #161618) !important; border: 1.5px solid rgba(255,255,255,0.14) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 16px 40px rgba(0,0,0,0.6) !important; }
+html[data-ui="work"]:not([data-theme="light"]) .orb.group:hover .blob { border-color: rgba(255,255,255,0.85) !important; box-shadow: 0 0 0 1px rgba(255,255,255,0.45), 0 0 30px rgba(255,255,255,0.22), 0 16px 40px rgba(0,0,0,0.6) !important; }
+html[data-ui="work"]:not([data-theme="light"]) .orb.group .mname { font: 600 11px/1.2 var(--w-font) !important; color: #e8e8ea !important; }
+html[data-ui="work"]:not([data-theme="light"]) .orb.group .mmeta { font: 500 9.5px/1 var(--w-mono, ui-monospace, monospace) !important; text-transform: uppercase; color: var(--w-text-3) !important; }
+
+/* notes: mono header, quiet card */
+html[data-ui="work"]:not([data-theme="light"]) .bub { background: linear-gradient(160deg, #1f1f21, #161618) !important; border: 1px solid rgba(255,255,255,0.12) !important; border-radius: 14px !important; }
+
+/* the bubble chat button, on Work too */
+html[data-ui="work"] .bub-fab { position: fixed; right: max(20px, var(--safe-r)); bottom: calc(22px + var(--safe-b)); z-index: 30; display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px;
+  border-radius: 12px !important; background: linear-gradient(180deg, #2a2a2c, #1c1c1e) !important; color: #f2f2f2 !important; border: 1px solid rgba(255,255,255,0.14) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 30px rgba(0,0,0,0.5) !important; font: 600 11.5px/1 var(--w-mono, ui-monospace, monospace) !important; text-transform: uppercase; letter-spacing: 0.12em; }
+html[data-ui="work"] .bub-fab svg { width: 17px; height: 17px; }
+html[data-ui="work"][data-theme="light"] .bub-fab { background: #fff !important; color: #111 !important; border-color: rgba(0,0,0,0.12) !important; }
+
+
+/* archive drop zone on Work: same as the classic one (globals.css), over the older Work placement */
+html[data-ui="work"] .trash-zone { left: 50% !important; right: auto !important; top: auto !important; bottom: calc(92px + var(--safe-b)) !important; translate: -50% 0 !important; scale: 0.6; transform-origin: 50% 100%; transition: scale 0.22s var(--ease-out, ease), opacity 0.2s !important; }
+html[data-ui="work"] .trash-zone.on { translate: -50% 0 !important; scale: 1; }
+html[data-ui="work"] .trash-hole { width: 96px !important; height: 96px !important; padding: 0 8px !important; gap: 2px !important; border: 2px dashed #ff9a3c !important; background: rgba(255,140,40,0.14) !important; color: #ffb066 !important;
+  box-shadow: 0 0 0 6px rgba(255,140,40,0.08), 0 12px 30px rgba(0,0,0,0.45) !important; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+html[data-ui="work"] .trash-hole svg { width: 22px !important; height: 22px !important; }
+html[data-ui="work"] .trash-hole b { font: 700 10.5px/1.15 var(--sans, sans-serif) !important; color: #ffd1a3 !important; text-transform: none !important; letter-spacing: 0 !important; }
+html[data-ui="work"] .trash-hole small { display: none !important; }
+html[data-ui="work"] .trash-zone.near .trash-hole { scale: 1.18 !important; border-style: solid !important; border-color: #ff8a1f !important; background: #ff8a1f !important; color: #fff !important; }
+html[data-ui="work"] .trash-zone.near .trash-hole b { color: #fff !important; }
+
+/* "Switch to Classic" in the top bar: white button, black text */
+html[data-ui="work"] .w-classic-btn { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 14px; border-radius: 10px; flex: none; cursor: pointer; white-space: nowrap;
+  background: #fff !important; color: #000 !important; border: 1px solid #fff !important; box-shadow: 0 1px 0 rgba(0,0,0,0.2), 0 6px 18px rgba(0,0,0,0.35);
+  font: 600 12px/1 var(--w-mono, ui-monospace, monospace); text-transform: uppercase; letter-spacing: 0.08em; transition: background 0.15s; }
+html[data-ui="work"] .w-classic-btn:hover { background: #e9e9ea !important; }
+html[data-ui="work"] .w-classic-btn svg { width: 15px; height: 15px; color: #000 !important; }
+html[data-ui="work"][data-theme="light"] .w-classic-btn { background: #000 !important; color: #fff !important; border-color: #000 !important; }
+html[data-ui="work"][data-theme="light"] .w-classic-btn svg { color: #fff !important; }
+@media (max-width: 720px) { html[data-ui="work"] .w-classic-btn span { display: none; } html[data-ui="work"] .w-classic-btn { padding: 0 10px; } }
+
+/* ---------- liquid glass (Work, dark): buttons, the Upload menu, the note button and the note window are frosted panes,
+   not flat fills: see-through, blurred and brightened behind, a light rim and a sheen across the top ---------- */
+html[data-ui="work"]:not([data-theme="light"]) :is(.w-fan button, .w-btn, .kf-btn, .bub-fab, .w-ghost, .zoom-top .ic-btn, .w-live) {
+  background: linear-gradient(160deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.05) 45%, rgba(255,255,255,0.09) 100%) !important;
+  border: 1px solid rgba(255,255,255,0.22) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(255,255,255,0.08), inset 0 0 18px rgba(255,255,255,0.05), 0 10px 30px rgba(0,0,0,0.45) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(180%) brightness(1.1) !important; backdrop-filter: blur(18px) saturate(180%) brightness(1.1) !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.w-fan button, .w-btn, .kf-btn, .bub-fab, .w-ghost):hover {
+  background: linear-gradient(160deg, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.13) 100%) !important; border-color: rgba(255,255,255,0.34) !important; }
+html[data-ui="work"]:not([data-theme="light"]) .w-fan button { border-radius: 16px !important; position: relative; overflow: hidden; }
+html[data-ui="work"]:not([data-theme="light"]) .w-fan button::before, html[data-ui="work"]:not([data-theme="light"]) .bub-fab::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(120% 60% at 20% -10%, rgba(255,255,255,0.28), transparent 60%); }
+html[data-ui="work"]:not([data-theme="light"]) .bub-fab { position: fixed; overflow: hidden; }
+/* Upload: a bright glass pill (milky white, light shows through) */
+html[data-ui="work"]:not([data-theme="light"]) :is(.w-primary, .w-up) {
+  background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(232,232,236,0.78) 55%, rgba(205,205,212,0.72) 100%) !important;
+  border: 1px solid rgba(255,255,255,0.75) !important;
+  box-shadow: inset 0 1px 0 #fff, inset 0 -2px 6px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.08), 0 14px 34px rgba(0,0,0,0.55) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important; backdrop-filter: blur(16px) saturate(180%) !important; }
+/* the note window (and other small windows) on Work: a frosted pane */
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop, .bub-pop) {
+  background: linear-gradient(160deg, rgba(60,60,66,0.55) 0%, rgba(24,24,27,0.72) 60%, rgba(34,34,38,0.66) 100%) !important;
+  border: 1px solid rgba(255,255,255,0.2) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), inset 0 0 40px rgba(255,255,255,0.04), 0 30px 80px rgba(0,0,0,0.65) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(170%) !important; backdrop-filter: blur(28px) saturate(170%) !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop, .bub-pop) :is(input, textarea, .line-input) {
+  background: rgba(0,0,0,0.28) !important; border: 1px solid rgba(255,255,255,0.14) !important; box-shadow: inset 0 1px 2px rgba(0,0,0,0.35) !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop, .bub-pop) .cta {
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(214,214,220,0.8)) !important; color: #111 !important; border: 1px solid rgba(255,255,255,0.7) !important;
+  box-shadow: inset 0 1px 0 #fff, 0 8px 22px rgba(0,0,0,0.45) !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop, .bub-pop) .cta:disabled { opacity: 0.4; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop, .bub-pop) .cta svg { color: #111 !important; }
+/* the format sits at the foot of the tile, under the icon */
+html[data-ui="work"] .orb-body:not(.bubble-body) > .ext { top: auto !important; bottom: 4px !important; font-size: 7.5px !important; }
+/* an opened container: a solid dark panel (no stripes, nothing showing through) */
+html[data-ui="work"]:not([data-theme="light"]) .zoom-bubble .blob { background: linear-gradient(160deg, #1f1f22, #141416) !important; background-image: linear-gradient(160deg, #1f1f22, #141416) !important; }
+html[data-ui="work"] .zoom-bubble .blob::before, html[data-ui="work"] .zoom-bubble .blob::after, html[data-ui="work"] .zoom-bubble::before, html[data-ui="work"] .zoom-bubble::after { display: none !important; }
+html[data-ui="work"]:not([data-theme="light"]) .zoom-layer { background: rgba(8,8,9,0.9) !important; }
+/* files inside a closed container show their format too (.ZAP, .PDF…), under the icon */
+html[data-ui="work"] .member .mball { position: relative; }
+html[data-ui="work"] .member .mball > .kind-badge { margin-bottom: 7px; }
+html[data-ui="work"] .member .mball > span:not(.kind-badge):not(.sat) { display: block !important; position: absolute; left: 0; right: 0; bottom: 3px; text-align: center;
+  font: 600 7.5px/1 var(--w-mono, ui-monospace, monospace) !important; letter-spacing: 0.05em; text-transform: uppercase; color: var(--w-text-2) !important; text-shadow: none !important; }
+/* the drop zone lines up with Upload: both centred on the canvas (right of the 56px rail), not on the window */
+html[data-ui="work"] .trash-zone { left: calc(50% + 28px) !important; }
+@media (max-width: 720px) { html[data-ui="work"] .trash-zone { left: 50% !important; bottom: calc(84px + var(--safe-b)) !important; } }
+
+/* one type family everywhere: Work uses the classic fonts (layout.tsx: Chakra Petch for text, Archivo wide for titles,
+   JetBrains Mono for labels), not a look of its own */
+html[data-ui="work"] {
+  --sans: var(--font-chip), "Helvetica Neue", Arial, sans-serif !important; --display: var(--font-display), "Arial Black", sans-serif !important;
+  --mono: var(--font-mono), ui-monospace, Menlo, monospace !important;
+  --w-font: var(--font-chip), "Helvetica Neue", Arial, sans-serif !important; --w-mono: var(--font-mono), ui-monospace, Menlo, monospace !important; }
+html[data-ui="work"] body { font-family: var(--sans); }
+html[data-ui="work"] :is(.wide, .zoom-title b, .ghost-title, .sp-title, .anon-title, .pop h2, .pop h3, .drawer h2, .w-title b, .orb-label, .zname, .room-name b, .tb-head b) {
+  font-family: var(--display) !important; font-variation-settings: "wdth" 125 !important; font-weight: 800 !important; text-transform: uppercase !important; letter-spacing: 0.01em !important; }
+
+/* =====================================================================
+   Work = the classic "Blackboard" theme (src/app/site.css, the About / Contact pages): pure #000 slate, chalk-white
+   Archivo 125/900 uppercase titles, Inter for reading, Chakra Petch uppercase for chrome, tiny JetBrains Mono labels,
+   hairline rules (#1e1e1e / #2a2a2a), ghost words, pill buttons (outlined; solid white for the main action), one
+   green signal for what is live. Layered last; dark only (the light theme keeps its own look).
+   ===================================================================== */
+html[data-ui="work"]:not([data-theme="light"]) {
+  --w-canvas: #000; --w-surface: #050505; --w-raised: #0c0c0c; --w-hover: #141414;
+  --w-border: #1e1e1e; --w-border-2: #2a2a2a; --w-text: #f2f2f2; --w-text-2: #bbbbbb; --w-text-3: #8a8a8a; --w-dot: rgba(255,255,255,0.07);
+  --w-font: var(--font-sans), "Helvetica Neue", Arial, sans-serif !important;
+  --bb-chip: var(--font-chip), var(--font-sans), "Helvetica Neue", Arial, sans-serif;
+}
+html[data-ui="work"]:not([data-theme="light"]) body { background: #000 !important; font-family: var(--font-sans), "Helvetica Neue", Arial, sans-serif; }
+/* ghost word behind the canvas, like the About page's ghost words: solid, barely there */
+html[data-ui="work"]:not([data-theme="light"]) .void[data-mark]::before { color: #121212 !important; -webkit-text-stroke: 0 !important; background: none !important; -webkit-background-clip: border-box !important; background-clip: border-box !important; font-weight: 900 !important; }
+
+/* chrome: hairline bars on black */
+html[data-ui="work"]:not([data-theme="light"]) .w-bar { background: rgba(0,0,0,0.86) !important; border-bottom: 1px solid #1e1e1e !important; }
+html[data-ui="work"]:not([data-theme="light"]) .w-rail { background: #000 !important; border-right: 1px solid #1e1e1e !important; }
+
+/* buttons: pills. Outlined chalk (fills white on hover); the main action solid white. Chakra Petch uppercase. */
+html[data-ui="work"]:not([data-theme="light"]) :is(.w-btn, .kf-btn, .w-ghost, .bub-fab, .zoom-top .ic-btn, .w-live, .w-tabs button, .emoji-btn, .ghost-btn, .pill) {
+  border-radius: 999px !important; background: transparent !important; border: 1px solid #3a3a3a !important; box-shadow: none !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important; color: #f2f2f2 !important;
+  font: 600 10.5px/1 var(--bb-chip) !important; text-transform: uppercase !important; letter-spacing: 0.14em !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.w-btn, .kf-btn, .w-ghost, .bub-fab, .zoom-top .ic-btn, .emoji-btn, .ghost-btn, .pill):hover { background: #fff !important; color: #000 !important; border-color: #fff !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.w-btn, .kf-btn, .w-ghost, .bub-fab, .zoom-top .ic-btn, .ghost-btn, .pill):hover svg { color: #000 !important; }
+html[data-ui="work"]:not([data-theme="light"]) .bub-fab { background: #000 !important; }
+html[data-ui="work"]:not([data-theme="light"]) .bub-fab::before, html[data-ui="work"]:not([data-theme="light"]) .w-fan button::before { display: none !important; }
+html[data-ui="work"]:not([data-theme="light"]) .w-tabs button.on { background: #fff !important; color: #000 !important; border-color: #fff !important; }
+html[data-ui="work"]:not([data-theme="light"]) .w-tabs button:not(.on) { border-color: transparent !important; color: #8a8a8a !important; }
+html[data-ui="work"]:not([data-theme="light"]) .w-live { color: #bbbbbb !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.w-primary, .w-up, .w-classic-btn, .pop .cta, .drawer .cta) {
+  border-radius: 999px !important; background: #fff !important; color: #000 !important; border: 1px solid #fff !important; box-shadow: none !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  font: 700 11px/1 var(--bb-chip) !important; text-transform: uppercase !important; letter-spacing: 0.14em !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.w-primary, .w-up, .w-classic-btn, .pop .cta, .drawer .cta):hover:not(:disabled) { background: #d9d9d9 !important; border-color: #d9d9d9 !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.w-primary, .w-up, .w-classic-btn, .pop .cta, .drawer .cta) svg { color: #000 !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop .cta, .drawer .cta):disabled { background: transparent !important; color: #8a8a8a !important; border-color: #2a2a2a !important; opacity: 1 !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop .cta, .drawer .cta):disabled svg { color: #8a8a8a !important; }
+
+/* the Upload menu: hairline boxes on black, the label in chalk, the hint in mono */
+html[data-ui="work"]:not([data-theme="light"]) .w-fan button { border-radius: 14px !important; background: #000 !important; border: 1px solid #2a2a2a !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html[data-ui="work"]:not([data-theme="light"]) .w-fan button:hover { border-color: #f2f2f2 !important; }
+html[data-ui="work"]:not([data-theme="light"]) .w-fan button b { font: 900 13px/1.1 var(--display) !important; font-variation-settings: "wdth" 125; text-transform: uppercase; color: #f2f2f2 !important; }
+html[data-ui="work"]:not([data-theme="light"]) .w-fan button small { font: 500 10px/1.4 var(--font-mono), ui-monospace, monospace !important; text-transform: uppercase; letter-spacing: 0.08em; color: #8a8a8a !important; }
+
+/* windows (note, anonymous, spaces, sheets): the slate. Black, one hairline, no glass, no gradient */
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop, .bub-pop, .drawer, .spaces-pop, .anon-card) {
+  background: #000 !important; border: 1px solid #2a2a2a !important; border-radius: 18px !important;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.8) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop, .drawer) :is(.pop-head, .drawer-head, header) { border-bottom: 1px solid #1e1e1e !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop, .drawer) :is(.pop-head, .drawer-head) :is(b, span, .mono) { font: 500 10.5px/1.5 var(--font-mono), ui-monospace, monospace !important; text-transform: uppercase; letter-spacing: 0.08em; color: #8a8a8a !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop, .drawer) :is(p, li, .note, .bub-note) { font-family: var(--font-sans), "Helvetica Neue", Arial, sans-serif !important; color: #bbbbbb !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop, .drawer) :is(input, textarea, .line-input) { background: #000 !important; border: 1px solid #2a2a2a !important; border-radius: 12px !important; box-shadow: none !important; color: #f2f2f2 !important; font-family: var(--font-sans), Arial, sans-serif !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop, .drawer) :is(input, textarea, .line-input):focus { border-color: #f2f2f2 !important; outline: none !important; }
+/* choice rows (5 / 10 / 15 min, Current / New…): pills, the chosen one white */
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop, .drawer) :is(.seg, .chips) { background: transparent !important; border: 0 !important; box-shadow: none !important; gap: 6px !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop, .drawer) :is(.seg, .chips) > button { border-radius: 999px !important; background: transparent !important; border: 1px solid #3a3a3a !important; color: #f2f2f2 !important;
+  font: 600 10.5px/1 var(--bb-chip) !important; text-transform: uppercase; letter-spacing: 0.12em; box-shadow: none !important; }
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop, .drawer) :is(.seg, .chips) > button.on, html[data-ui="work"]:not([data-theme="light"]) :is(.pop, .drawer) :is(.seg, .chips) > button[aria-checked="true"] { background: #fff !important; color: #000 !important; border-color: #fff !important; }
+/* small labels: JetBrains Mono, uppercase, dim */
+html[data-ui="work"]:not([data-theme="light"]) :is(.pop, .drawer) :is(label .mono, .field label, .bub-name > .mono) { font: 500 10.5px/1.5 var(--font-mono), ui-monospace, monospace !important; text-transform: uppercase; letter-spacing: 0.08em; color: #8a8a8a !important; }
+html[data-ui="work"]:not([data-theme="light"]) .anon-time button { border-radius: 999px !important; background: transparent !important; border: 1px solid #3a3a3a !important; color: #f2f2f2 !important; box-shadow: none !important;
+  font: 600 10.5px/1 var(--bb-chip) !important; text-transform: uppercase; letter-spacing: 0.12em; }
+html[data-ui="work"]:not([data-theme="light"]) .anon-time button:is(.on, [aria-checked="true"]) { background: #fff !important; color: #000 !important; border-color: #fff !important; }
+html[data-ui="work"]:not([data-theme="light"]) .anon-list li { color: #bbbbbb !important; font-family: var(--font-sans), Arial, sans-serif !important; }

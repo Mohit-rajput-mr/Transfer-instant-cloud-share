@@ -18,7 +18,9 @@ export async function POST(req: NextRequest) {
   const stage = b.stage == null ? null : Number.isInteger(b.stage) && b.stage >= -1 && b.stage < 8 ? b.stage : null;
   // anonymous: the space's alias, or no name at all
   let by = cleanHandle(b.by);
-  if (b.anon === true) by = (b.space != null && (await member(b.space, b.deviceId, b.spaceToken))?.handle) || "";
+  // in a space: your member name (or alias), never what the browser sends; anonymous outside one: no name
+  if (b.space != null) by = (await member(b.space, b.deviceId, b.spaceToken))?.handle || "";
+  else if (b.anon === true) by = "";
   const ok = await rpc<boolean>("orbit_task_edit", {
     p_id: b.id, p_owner_hash: sha256(b.owner), p_body: line(b.text, 140) || null, p_route: route, p_stage: stage, p_by: by,
   }).catch(() => false);

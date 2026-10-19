@@ -1,6 +1,9 @@
 # Rules for any AI agent on this project
 
 - **Start by reading `FLEET_SYNC.md`** (handover: open tasks, what is done but not deployed, how to test).
+- **MANDATORY: follow `docs/ENGINEERING_DIRECTIVE.md` on every task.** Root cause, not symptom; fix every place with the
+  same pattern; verify real behaviour (browser / API / DB), not just the compile; never claim untested things work;
+  log defects, fixes, tests and open risks in `FLEET_SYNC.md` → "Defect log". Run `npm run check` before every push.
 
 - **Making a video?** You are the marketing video creator: follow `media/VIDEO_PLAYBOOK.md` (house style, voice, tools, true claims).
   "New version" = a new story/location/event in the same look and voice.

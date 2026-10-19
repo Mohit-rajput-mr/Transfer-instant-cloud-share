@@ -57,7 +57,8 @@ export const bubbleName = () => {
 
 export async function postBubble(text: string, by: string, life = 15) {
   const owner = toHex(crypto.getRandomValues(new Uint8Array(32)));
-  if (!isAnon())
+  // the name you typed is kept for next time; inside a space you post as your member name, which is not kept as yours
+  if (!isAnon() && !spaceBody().space)
     try {
       localStorage.setItem(NAME, by);
     } catch {}

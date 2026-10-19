@@ -67,9 +67,15 @@ export function persistentId() {
 /** the id every request carries: a throwaway one while anonymous (lib/anon.ts), never linked to the lasting one */
 export const deviceId = () => (isAnon() ? anonId() : persistentId());
 
-/** This device's anonymous sender group: a hash of its random id (not reversible, says nothing about it). */
+// "New container": what this device sends from now on gathers in a fresh container instead of joining its last one
+const BATCH = "orbit:batch";
+export const newContainer = () => safe(() => localStorage.setItem(BATCH, crypto.randomUUID().slice(0, 8)), undefined);
+
+/** This device's anonymous sender group: a hash of its random id (not reversible, says nothing about it), and of the
+ *  container it is filling now (newContainer starts another). */
 export async function senderKey() {
-  const d = new TextEncoder().encode(`orbi-sender:${deviceId()}`);
+  const batch = safe(() => localStorage.getItem(BATCH) ?? "", "");
+  const d = new TextEncoder().encode(`orbi-sender:${deviceId()}${batch ? `:${batch}` : ""}`);
   const h = new Uint8Array(await crypto.subtle.digest("SHA-256", d));
   return Array.from(h.slice(0, 5), (x) => x.toString(16).padStart(2, "0")).join("");
 }
@@ -115,6 +121,8 @@ export function formatBytes(n: number) {
 
 export function formatClock(ms: number) {
   const s = Math.max(0, Math.floor(ms / 1000));
+  // an hour or more (things in a space live up to 8 hours): h:mm:ss
+  if (s >= 3600) return `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 

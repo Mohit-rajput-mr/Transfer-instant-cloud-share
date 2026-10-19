@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as R
 import { setCardOrigin } from "./Panels";
 import { ext, formatBytes, formatClock, type Orb } from "@/lib/client";
 import { fileKind, toneOf, typeHue } from "@/lib/skin-list";
-import { LuArchive, LuFileText, LuImage, LuMusic, LuVideo } from "react-icons/lu";
+import { LuArchive, LuFile, LuFileText, LuImage, LuMusic, LuVideo } from "react-icons/lu";
 import { mapView } from "@/lib/map";
 import { dragAt, overTrash, toTrash } from "@/lib/trash";
 
@@ -194,6 +194,8 @@ type Drag = {
   tx: number; ty: number; tilt: number; // latest target, painted once per frame
   // geometry cached at pick-up so moves never force a layout read
   bw: number; bh: number; bx: number; by: number;
+  /** the header's bottom edge on screen, read once at pick-up */
+  head?: number;
   /** the map's zoom at pick-up (1 off the map) */
   k: number;
 };
@@ -271,24 +273,11 @@ export function tracker() {
  * cell, nudged off-centre by a fixed amount so they float loosely instead of standing in rows; the
  * more balls, the smaller each one.
  */
-export function bubbleLayout(n: number) {
-  const d = n <= 2 ? 58 : n <= 3 ? 52 : n <= 4 ? 48 : n <= 6 ? 42 : n <= 9 ? 36 : n <= 12 ? 32 : 28;
-  const cols = n <= 3 ? n : Math.ceil(Math.sqrt(n * 1.6));
-  const rows = Math.ceil(n / cols);
-  const cw = d * 2.2, ch = d * 2.15, px = d * 0.5, py = d * 0.45;
-  const W = cols * cw + px * 2, H = rows * ch + py * 2;
-  const spots: [number, number][] = [];
-  for (let i = 0; i < n; i++) {
-    const r = Math.floor(i / cols), inRow = r === rows - 1 ? n - r * cols : cols;
-    const c = i - r * cols + (cols - inRow) / 2; // a shorter last row sits in the middle
-    // a fixed per-ball nudge (same every render), so the arrangement looks loose, not gridded
-    const jx = Math.sin(i * 12.9898) * 0.16, jy = Math.cos(i * 78.233) * 0.12;
-    spots.push([(px + (c + 0.5 + jx) * cw) / W, (py + (r + 0.42 + jy) * ch) / H]);
-  }
-  return { d, W, H, spots };
-}
+// container layout (rows and spots): lib/layout.ts
+export { bubbleLayout, smartCols } from "@/lib/layout";
+import { bubbleLayout } from "@/lib/layout";
 
-const KIND_ICON = { photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
+const KIND_ICON = { photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive, other: LuFile } as const;
 /** what kind of file it is (photo, video, document, audio, archive), as a small badge on the ball */
 export function KindBadge(props: { kind: string }) {
   const I = KIND_ICON[props.kind as keyof typeof KIND_ICON];
@@ -364,10 +353,12 @@ export default function OrbView(props: {
   // keep the orb inside the void (clear of the header)
   const clamp = (d: Drag, x: number, y: number) => {
     const m = 40;
-    let x0 = m - d.bx, x1 = d.bw - m - d.bx, y0 = (mapView.on ? m : 90) - d.by, y1 = d.bh - m - d.by;
-    // an invisible wall at the screen's edges: a ball can't be dragged (or flung) out of view
+    let x0 = m - d.bx, x1 = d.bw - m - d.bx, y0 = (mapView.on ? m : 6) - d.by, y1 = d.bh - m - d.by;
+    // an invisible wall at the screen's edges: a ball can't be dragged (or flung) out of view. Up top it stops just
+    // under the header that is really there (not a fixed band lower down)
     if (typeof window !== "undefined") {
-      const ex = 56, top = 76, bottom = 96;
+      const head = (d.head ??= document.querySelector(".top, .w-bar")?.getBoundingClientRect().bottom ?? 56);
+      const ex = 56, top = Math.max(8, head + 6), bottom = 96;
       x0 = Math.max(x0, d.ox + (ex - d.sx) / d.k); x1 = Math.min(x1, d.ox + (window.innerWidth - ex - d.sx) / d.k);
       y0 = Math.max(y0, d.oy + (top - d.sy) / d.k); y1 = Math.min(y1, d.oy + (window.innerHeight - bottom - d.sy) / d.k);
     }

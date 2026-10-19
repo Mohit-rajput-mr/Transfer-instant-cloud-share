@@ -3,6 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { LuCopy, LuLayoutDashboard, LuMaximize, LuMessageCircle, LuMinus, LuPencil, LuPlus, LuSearch, LuShare2, LuTrash2, LuX } from "react-icons/lu";
 import { createPortal } from "react-dom";
 import { Pop } from "./Spaces";
+import EmojiPicker from "./EmojiPicker";
 import { BUBBLE_MAX, bubbleName, hueFor, isMine, senderOf, splitLinks, type Bubble } from "@/lib/bubbles";
 import { formatClock } from "@/lib/client";
 
@@ -484,18 +485,33 @@ export function BubbleCompose(props: {
   const [mode, setMode] = useState<"new" | "append" | "edit">(props.edit?.mode ?? "new");
   const target = props.edit?.bubble ?? (mode === "append" ? props.latest : null) ?? null;
   const [text, setText] = useState(props.edit?.mode === "edit" ? props.edit.bubble.text : "");
-  const [name, setName] = useState(() => bubbleName() || props.defaultName);
+  // in a space you post as your member name (the server signs with it); elsewhere the name this device chose
+  const spaceName = props.inSpace && !props.anon ? props.defaultName : "";
+  const [name, setName] = useState(() => spaceName || bubbleName() || props.defaultName);
   const [busy, setBusy] = useState(false);
   const post = async () => {
     if (!text.trim() || busy) return;
     setBusy(true);
     try {
-      if (mode === "new") await props.onPost(text, props.anon ? "" : name.trim());
+      if (mode === "new") await props.onPost(text, props.anon ? "" : spaceName || name.trim());
       else if (target) await props.onChange(target.id, text, mode);
       props.onClose();
     } catch {
       setBusy(false);
     }
+  };
+  // an emoji goes in where the cursor is (like a chat app), then the cursor sits after it
+  const area = useRef<HTMLTextAreaElement>(null);
+  const addEmoji = (e: string) => {
+    const el = area.current;
+    const at = el ? el.selectionStart : text.length, to = el ? el.selectionEnd : text.length;
+    const next = (text.slice(0, at) + e + text.slice(to)).slice(0, BUBBLE_MAX);
+    setText(next);
+    requestAnimationFrame(() => {
+      if (!el) return;
+      el.focus();
+      el.selectionStart = el.selectionEnd = Math.min(next.length, at + e.length);
+    });
   };
   const label = mode === "edit" ? "Edit bubble" : mode === "append" ? "Add to bubble" : "Bubble text";
   return (
@@ -508,8 +524,15 @@ export function BubbleCompose(props: {
       )}
       {mode === "new" ? (
         <>
-          <p className="dim bub-note">{props.inSpace ? `Only people in ${props.inSpace} see it.` : "Anyone in the public void sees it, as is: no password, nothing to unlock."} It burns in 15 minutes.{props.anon ? " You post as your space alias. Notes aren't end-to-end encrypted." : ""}</p>
-          {!props.anon && <input className="line-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name (optional)" maxLength={24} autoComplete="off" />}
+          <p className="dim bub-note">{props.inSpace ? `Only people in ${props.inSpace} see it.` : "Anyone in the public void sees it, as is: no password, nothing to unlock."} {props.inSpace && !props.anon ? "It stays until the space closes." : "It burns in 15 minutes."}{props.anon ? " You post as your space alias. Notes aren't end-to-end encrypted." : ""}</p>
+          {!props.anon && (spaceName ? (
+            <p className="mono dim bub-as">Posting as <b>{spaceName}</b></p>
+          ) : (
+            <label className="bub-name">
+              <span className="mono dim">Your name <i>(shown on your notes and files)</i></span>
+              <input className="line-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Mohit" maxLength={24} autoComplete="name" />
+            </label>
+          ))}
         </>
       ) : mode === "append" && target ? (
         <blockquote className="bub-quote">{target.text}</blockquote>
@@ -518,6 +541,7 @@ export function BubbleCompose(props: {
       )}
       <div className="bub-write">
         <textarea
+          ref={area}
           autoFocus
           value={text}
           onChange={(e) => setText(e.target.value.slice(0, BUBBLE_MAX))}
@@ -527,6 +551,7 @@ export function BubbleCompose(props: {
         />
         <span className="mono dim">{text.length}/{BUBBLE_MAX}</span>
       </div>
+      <EmojiPicker onPick={addEmoji} />
       <button className="cta lg-press" disabled={!text.trim() || busy} onClick={post}>
         {mode === "new" ? <LuMessageCircle aria-hidden /> : mode === "append" ? <LuPlus aria-hidden /> : <LuPencil aria-hidden />}{" "}
         {busy ? "Saving…" : mode === "new" ? "Post bubble" : mode === "append" ? "Add to bubble" : "Save changes"}

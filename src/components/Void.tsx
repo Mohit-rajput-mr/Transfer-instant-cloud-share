@@ -142,10 +142,15 @@ const UNSAID_TTL = 60_000;
 function say(e: string, p: Record<string, unknown>, place: string, at = Date.now()) {
   // anonymous: nothing is said in the public void's rooms (only inside an anonymous space)
   if (isAnon() && !place) return;
+  // same Wi-Fi, other area: the network's own room hears objects launched into the public void too
+  if (!place && netLine && (e === "launch" || e === "landed" || e === "gone")) netLine.send({ type: "broadcast", event: e, payload: p });
   if (line?.place === place) return void line.chan.send({ type: "broadcast", event: e, payload: p });
   // (launches are announced afresh as soon as a line is up)
   if (e !== "launch") unsaid = [...unsaid.filter((x) => Date.now() - x.at < UNSAID_TTL).slice(-49), { e, p, place, at }];
 }
+// the live room of this device's own network (public void only; Nearby across areas)
+let netLine: Chan | RealtimeChannel | null = null;
+const setNetLine = (c: Chan | RealtimeChannel | null) => void (netLine = c);
 function setLine(l: Line | null) {
   line = l;
   if (!l) return;
@@ -261,19 +266,27 @@ const crowdScale = (n: number) => (n <= 5 ? 1 : n <= 8 ? 0.86 : n <= 12 ? 0.74 :
 // One device's objects gather into a single bubble once it has sent more than one.
 const GROUP = "g-";
 const isGroup = (id: string) => id.startsWith(GROUP);
+// a short stable key for a container's name (ids stay plain letters and digits)
+const nameKey = (n: string) => {
+  let h = 0;
+  for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+};
 function groupOrbs(list: Orb[]) {
   const by = new Map<string, Orb[]>();
   // files wired to a task never fold into a container: each stays its own ball (same colour per sender)
-  for (const o of list) if (o.from && !o.task) by.set(o.from, [...(by.get(o.from) ?? []), o]);
+  // a container is one sender's batch under one name: a differently named one stays separate
+  const keyOf = (o: Orb) => `${o.from}${o.groupName ? `-${nameKey(o.groupName)}` : ""}`;
+  for (const o of list) if (o.from && !o.task) by.set(keyOf(o), [...(by.get(keyOf(o)) ?? []), o]);
   const groups = new Map<string, Orb[]>();
   const out: Orb[] = [];
   for (const o of list) {
-    const m = o.from && !o.task ? by.get(o.from)! : null;
+    const m = o.from && !o.task ? by.get(keyOf(o))! : null;
     if (!m || m.length < 2) {
       out.push(o);
       continue;
     }
-    const id = GROUP + o.from;
+    const id = GROUP + keyOf(o);
     if (groups.has(id)) continue;
     m.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     groups.set(id, m);
@@ -608,6 +621,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     const run = (async () => {
       const sp = spaceRef.current;
       const a = areaRef.current;
+      // the public void also carries what was sent from this network (same Wi-Fi), even when it was pinned to another area
+      const sameNet = !sp && !isAnon() ? fetch("/api/transfers/net").then((x) => (x.ok ? x.json() : null)).then((x) => (x?.items ?? []) as Orb[]).catch(() => [] as Orb[]) : Promise.resolve([] as Orb[]);
       const q = [a && `a=${around(a).join(",")}`, fresh && `v=${Math.floor((Date.now() + skewRef.current) / 2000)}`].filter(Boolean).join("&");
       const r = await fetch(sp ? `/api/spaces/${sp.slug}/transfers` : `/api/transfers${q ? `?${q}` : ""}`, sp ? { headers: spaceHeaders(), cache: "no-store" } : undefined).catch(() => null);
       if (!sp && areaRef.current !== a) return; // moved to another area while this was in flight
@@ -623,6 +638,11 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       }
       netTries.current = 0;
       const d = (await r.json()) as { items: Orb[]; bubbles?: Bubble[]; tasks?: Task[]; online: number; now: number };
+      const extra = await sameNet;
+      if (extra.length) {
+        const have = new Set(d.items.map((o) => o.id));
+        d.items = [...d.items, ...extra.filter((o) => !have.has(o.id))];
+      }
       // the edge may hand out a list a few seconds old: changes made since stay on top, and it asks again shortly
       const made = Number(d.now) || 0;
       const ov = { t: overlay(d.tasks ?? [], "t", made, marks.current), b: overlay(d.bubbles ?? [], "b", made, marks.current), o: overlay(d.items ?? [], "o", made, marks.current) };
@@ -708,6 +728,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // (say(): an anonymous device says nothing in the public void's region rooms, only inside its anonymous space)
   const broadcast = useCallback(() => say("pulse", { at: Date.now() }, spaceRef.current?.slug ?? ""), []);
   const beam = useCallback((event: "gone", payload: Record<string, unknown>) => say(event, payload, spaceRef.current?.slug ?? ""), []);
+  const heardRef = useRef<((event: string, payload: Record<string, unknown>) => unknown) | null>(null);
 
   // a change, here and now: shown on this screen and kept over older lists
   const applySync = useCallback((m: SyncMsg) => {
@@ -858,11 +879,18 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     // back in view: now, and once more past the edge's cache
     const onVis = () => document.visibilityState === "visible" && catchUp(false);
     document.addEventListener("visibilitychange", onVis);
+    // the network came back (Wi-Fi switch, a dropped line): catch up at once, and once more when it has settled
+    const onOnline = () => {
+      refresh();
+      setTimeout(refresh, 3000);
+    };
+    window.addEventListener("online", onOnline);
     const o = new URLSearchParams(window.location.search).get("o");
     if (o && /^[a-z0-9]{4,12}$/.test(o)) setPanel(ownerKey(o) ? { kind: "owner", id: o } : { kind: "unlock", id: o });
     return () => {
       clearInterval(t);
       document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("online", onOnline);
     };
   }, [refresh, catchUp, spaceReady, areaReady]);
 
@@ -1442,6 +1470,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     };
     // where this line belongs (say() sends a launch only into the place it was launched in)
     const place = spaceRef.current?.slug ?? "";
+    heardRef.current = heard;
     // Orbit's own Cloudflare rooms (lib/live.ts, live/): thousands online at once on the free plan
     if (liveOn) {
       let opened = false;
@@ -1516,6 +1545,29 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   useEffect(() => {
     liveRef.current?.update(chanNames.split(" "), spaceRef.current ? "" : area);
   }, [chanNames, area]);
+  // the network's own live room (public void, not anonymous): devices on one Wi-Fi hear each other's launches even
+  // when they are pinned to different areas (one by GPS, the other by IP)
+  useEffect(() => {
+    if (!rtOn || space || anonNow || !net) return;
+    const hear = (e: string, p: Record<string, unknown>) => {
+      // only what concerns objects; pulses and invites keep to the area channels
+      if (e === "launch" || e === "landed" || e === "gone") void heardRef.current?.(e, p);
+    };
+    if (liveOn) {
+      const l = joinLive([`s/n${net}`], "", { on: hear, status: (up) => setNetLine(up ? l.chan : null) });
+      return () => {
+        setNetLine(null);
+        l.close();
+      };
+    }
+    const ch = supabase.channel(`orbit-n-${net}`, { config: { broadcast: { self: false } } });
+    for (const ev of ["launch", "landed", "gone"]) ch.on("broadcast", { event: ev }, ({ payload }) => hear(ev, payload ?? {}));
+    ch.subscribe((st) => setNetLine(st === "SUBSCRIBED" ? ch : null));
+    return () => {
+      setNetLine(null);
+      supabase.removeChannel(ch);
+    };
+  }, [rtOn, space, anonNow, net]);
   // back from the background: whatever happened meanwhile
   const wasOn = useRef(true);
   useEffect(() => {
@@ -2157,6 +2209,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
 
   // 10 quick taps on the logo open mission HQ
   const router = useRouter();
+  const markText = (inArchive ? "Archive" : space ? space.title : "Public workspace").toUpperCase();
   const taps = useRef<number[]>([]);
   const tapLogo = () => {
     const t = performance.now();
@@ -2488,7 +2541,9 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         <section
           className={`void${map ? " map" : ""}${notes.length && !map ? " has-bubbles" : ""}${!map && (new Set(notes.map(senderOf)).size > 1 || (tasks.length && !archived)) ? " bub-two" : ""}${tasks.length && !archived && !map ? " has-tasks" : ""}${taskFocus ? " task-focus" : ""}${grid ? ` arranged${grid.tight ? " tight" : ""}` : ""}${space || inArchive ? " in-space" : ""}${inArchive ? " in-archive" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
           id="void"
-          style={(flow ? { "--n": rows } : { "--k-auto": grid ? grid.k : map ? 1 : crowdScale(visible.length), ...(grid ? { "--cell": `${grid.cell}px` } : null) }) as unknown as React.CSSProperties}
+          // Work: the big faint wordmark behind the canvas is the place you are in
+          data-mark={work ? markText : undefined}
+          style={{ ...(flow ? { "--n": rows } : { "--k-auto": grid ? grid.k : map ? 1 : crowdScale(visible.length), ...(grid ? { "--cell": `${grid.cell}px` } : null) }), ...(work ? { "--mark-fs": `${Math.min(15, 112 / Math.max(4, markText.length))}vw` } : null) } as unknown as React.CSSProperties}
         >
           {inArchive && <ArchiveRoom onExit={() => setInArchive(false)} />}
           {/* anonymous: the void goes dark and cold (vignette, grain, scan lines, a big mask), so nobody forgets */}
@@ -3042,8 +3097,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       {work && !panel && board === false && !inArchive && (
         <WorkDock onFiles={() => pickFiles()} onFolder={() => pickFolder()} onText={compose} onNote={() => setPanel({ kind: "bubble" })} onTasks={openTasks} onSpaces={() => setPanel({ kind: "space" })} />
       )}
-      {!work && !inArchive && !panel && board === false && !(menu && !menuOut) && (
-        <button className={`bub-fab lg lg-press${compact ? " mini" : ""}`} onClick={() => setPanel({ kind: "bubble" })} aria-label="Bubble text: post a note everyone sees">
+      {!inArchive && !panel && board === false && !(menu && !menuOut) && (
+        <button className={`bub-fab lg lg-press${compact && !work ? " mini" : ""}`} onClick={() => setPanel({ kind: "bubble" })} aria-label="Bubble text: post a note everyone sees">
           <LuMessageCircle aria-hidden />
           <span>Bubble</span>
         </button>

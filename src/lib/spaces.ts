@@ -65,14 +65,29 @@ function open<T>(buf: Buffer): T {
   return JSON.parse(Buffer.concat([d.update(buf.subarray(28)), d.final()]).toString());
 }
 
+// A named space (open or private) closes 8 hours after it was made: from then on it is gone everywhere (getMeta), and
+// its name can be taken again (createSpace re-opens the row: migration 025 orbit_space_reopen ends the old one).
+// Anonymous spaces burn with their anonymous session instead.
+export const SPACE_LIFE_MS = 8 * 3600_000;
+export const closesAt = (m: SpaceMeta) => (!m.anon ? m.at + SPACE_LIFE_MS : null);
+const isClosed = (m: SpaceMeta) => {
+  const c = closesAt(m);
+  return c !== null && Date.now() >= c;
+};
+
 const metaCache = new Map<string, { at: number; meta: SpaceMeta | null }>();
-export async function getMeta(slug: string): Promise<SpaceMeta | null> {
+async function rawMeta(slug: string): Promise<SpaceMeta | null> {
   const c = metaCache.get(slug);
   if (c && Date.now() - c.at < META_TTL) return c.meta;
   const sealed = await rpc<string | null>("orbit_space_get", { p_slug: slug }).catch(() => null);
   const meta = unseal(sealed);
   metaCache.set(slug, { at: Date.now(), meta });
   return meta;
+}
+/** the space, or null when there is none (or its 8 hours are up) */
+export async function getMeta(slug: string): Promise<SpaceMeta | null> {
+  const m = await rawMeta(slug);
+  return m && !isClosed(m) ? m : null;
 }
 
 export async function createSpace(
@@ -83,11 +98,16 @@ export async function createSpace(
   // the anon- prefix is kept for anonymous spaces
   if (!opts?.anon && slug.startsWith("anon-")) return null;
   metaCache.delete(slug);
-  if (await getMeta(slug)) return null;
+  const old = await rawMeta(slug);
+  if (old && !isClosed(old)) return null;
   const owner = randomBytes(24).toString("base64url");
   const meta: SpaceMeta = { slug, title, priv, pass: priv && pass ? passHash(slug, pass) : null, owner: sha(owner), at: Date.now(), anon: !!opts?.anon };
-  // two people racing for the same name: only one wins
-  const won = await rpc<boolean>(opts?.anon ? "orbit_space_create_anon" : "orbit_space_create", { p_slug: slug, p_meta: seal(meta).toString("base64") }).catch(() => false);
+  // two people racing for the same name: only one wins. A closed private space's name is taken over (its members,
+  // files, notes and tasks end there)
+  const won = old
+    ? !opts?.anon && (await rpc<boolean>("orbit_space_reopen", { p_slug: slug, p_meta: seal(meta).toString("base64") }).catch(() => false))
+    : await rpc<boolean>(opts?.anon ? "orbit_space_create_anon" : "orbit_space_create", { p_slug: slug, p_meta: seal(meta).toString("base64") }).catch(() => false);
+  if (old) memberCache.delete(slug);
   if (!won) return null;
   metaCache.set(slug, { at: Date.now(), meta });
   slugCache = null;
@@ -136,6 +156,8 @@ export async function member(slug: unknown, deviceId: unknown, token: unknown): 
   if (!validSlug(slug) || typeof deviceId !== "string" || !deviceId || typeof token !== "string") return null;
   const dh = devHash(deviceId);
   if (!same(tokenFor(slug, dh), token)) return null;
+  // a space whose 8 hours are up lets nobody in (no read, no send)
+  if (!(await getMeta(slug))) return null;
   const r = await roster(slug);
   if (r.kicked.has(dh)) return null;
   let me = r.members.find((m) => m.dh === dh);
@@ -165,7 +187,7 @@ export async function search(q: string) {
     .sort((a, b) => Number(b.slug.startsWith(s)) - Number(a.slug.startsWith(s)) || a.slug.length - b.slug.length);
   for (const h of rows) {
     const m = unseal(h.meta);
-    if (!m || m.anon) continue;
+    if (!m || m.anon || isClosed(m)) continue;
     out.push({ slug: m.slug, title: m.title, priv: m.priv });
     if (out.length >= 8) break;
   }
@@ -193,7 +215,7 @@ export const LIVES = [5, 10, 15, 20, 25, 30];
 export function tagName(name: string, t: Tags) {
   const parts: string[] = [];
   if (t.space) parts.push(`s=${t.space}`);
-  if (t.space && t.by) parts.push(`b=${t.by}`);
+  if (t.by) parts.push(`b=${t.by}`);
   if (t.life && t.life < LIFE_MIN) parts.push(`t=${t.life}`);
   if (t.open) parts.push("o=1");
   if (t.from) parts.push(`g=${t.from}`);
@@ -234,4 +256,14 @@ export async function allSpaces(limit = 200) {
       return meta ? { slug: r.slug, title: meta.title, priv: meta.priv, anon: !!meta.anon, at: meta.at, members: r.members, kicked: r.kicked } : null;
     })
     .filter((x): x is NonNullable<typeof x> => !!x);
+}
+
+/** What is posted in a named space lives as long as the space (up to its 8-hour close), not the usual 15-30 minutes
+ *  (migration 026 orbit_space_extend). kind: o file, b note, t task. */
+export async function liveWithSpace(slug: string | null | undefined, kind: "o" | "b" | "t", id: string) {
+  if (!slug) return;
+  const m = await getMeta(slug);
+  const until = m && closesAt(m);
+  if (!until) return;
+  await rpc("orbit_space_extend", { p_slug: slug, p_kind: kind, p_id: id, p_until: new Date(until).toISOString() }).catch(() => {});
 }

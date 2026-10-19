@@ -158,7 +158,7 @@ export default function BubbleZoom(props: {
         <button className="ic-btn" onClick={close} aria-label="Back to the void" title="Back"><LuArrowLeft /></button>
         <div className="zoom-title">
           <b className="wide">{b.name}</b>
-          <span className="mono dim">{n} items · {formatBytes(b.members.reduce((a, o) => a + o.size, 0))}{bubbles.length > 1 ? ` · ${at + 1} of ${bubbles.length}` : ""}</span>
+          <span className="mono dim">{b.members.find((o) => o.by)?.by ? `from ${b.members.find((o) => o.by)!.by} · ` : ""}{n} items · {formatBytes(b.members.reduce((a, o) => a + o.size, 0))}{bubbles.length > 1 ? ` · ${at + 1} of ${bubbles.length}` : ""}</span>
         </div>
         {props.onDestroy && b.members.some((o) => ownerKey(o.id)) ? (
           <button className="ic-btn kill" onClick={() => props.onDestroy?.(b.members.map((o) => o.id))} aria-label="Destroy everything in this container" title="Destroy all"><LuTrash2 /></button>

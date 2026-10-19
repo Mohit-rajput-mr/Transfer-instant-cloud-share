@@ -3554,3 +3554,44 @@ html:has(.arch-bubble) .room:not(.arch-room) .room-top { padding-right: 64px; bo
 .av-burnall { background: #ff3b30 !important; color: #fff !important; border-color: #ff3b30 !important; }
 .hq-filters .pill.on { background: #fff; color: #000; }
 @media (hover: none) { .av-x { opacity: .9; transform: none; } }
+
+/* a private space's clock: it closes 8 hours after it was made (lib/spaces.ts closesAt) */
+.space-clock { position: fixed; z-index: 31; left: 50%; translate: -50% 0; top: calc(64px + var(--safe-t)); padding: 5px 12px; border-radius: 999px; background: rgba(12,12,14,0.82);
+  border: 1px solid rgba(255,255,255,0.16); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.6); pointer-events: none; white-space: nowrap; }
+.space-clock b { color: #3ddc84; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 0.08em; }
+.space-clock.late b { color: #ff6b5e; }
+@media (max-width: 720px) { .space-clock { top: calc(74px + var(--safe-t)); } }
+html[data-ui="work"] .space-clock { top: calc(58px + var(--safe-t)); background: var(--w-surface); border-color: var(--w-border-2); color: var(--w-text-3); text-transform: none; letter-spacing: 0; font: 500 12px/1 var(--w-font); }
+
+/* archive drop zone (both looks): small, orange, just above the Upload button while dragging; never on the Note button */
+html .trash-zone { left: 50% !important; right: auto !important; top: auto !important; bottom: calc(92px + var(--safe-b)) !important; translate: -50% 0 !important; scale: 0.6; transform-origin: 50% 100%; transition: scale 0.22s var(--ease-out, ease), opacity 0.2s !important; }
+html .trash-zone.on { translate: -50% 0 !important; scale: 1; }
+html .trash-hole { width: 96px !important; height: 96px !important; padding: 0 8px !important; gap: 2px !important; border: 2px dashed #ff9a3c !important; background: rgba(255,140,40,0.14) !important; color: #ffb066 !important;
+  box-shadow: 0 0 0 6px rgba(255,140,40,0.08), 0 12px 30px rgba(0,0,0,0.45) !important; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+html .trash-hole svg { width: 22px !important; height: 22px !important; }
+html .trash-hole b { font: 700 10.5px/1.15 var(--sans, sans-serif) !important; color: #ffd1a3 !important; text-transform: none !important; letter-spacing: 0 !important; }
+html .trash-hole small { display: none !important; }
+html .trash-zone.near .trash-hole { scale: 1.18 !important; border-style: solid !important; border-color: #ff8a1f !important; background: #ff8a1f !important; color: #fff !important; }
+html .trash-zone.near .trash-hole b { color: #fff !important; }
+
+/* emoji picker under the note box (components/EmojiPicker.tsx): a smiley button; the grid opens in place below */
+.emoji { display: flex; flex-direction: column; gap: 8px; margin-top: -4px; }
+.emoji-btn { align-self: flex-start; height: 32px; padding: 0 10px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.75); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); }
+.emoji-btn:hover, .emoji-btn.on { color: #fff; background: rgba(255,255,255,0.14); }
+.emoji-btn svg { width: 18px; height: 18px; }
+.emoji-pop { width: 100%; max-height: 230px; display: flex; flex-direction: column; border-radius: 14px; overflow: hidden;
+  background: linear-gradient(160deg, rgba(60,60,66,0.5), rgba(20,20,22,0.7)); border: 1px solid rgba(255,255,255,0.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22); -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%); animation: rise 0.18s var(--ease-out) both; }
+.emoji-tabs { display: flex; gap: 2px; padding: 6px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid rgba(255,255,255,0.08); flex: none; }
+.emoji-tabs button { flex: none; padding: 5px 9px; border-radius: 8px; font: 500 11px/1 var(--mono); letter-spacing: 0.04em; color: rgba(255,255,255,0.6); }
+.emoji-tabs button.on { color: #fff; background: rgba(255,255,255,0.12); }
+.emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); padding: 6px; overflow-y: auto; overscroll-behavior: contain; }
+.emoji-grid button { height: 36px; border-radius: 8px; font-size: 22px; line-height: 1; display: grid; place-items: center; }
+.emoji-grid button:hover { background: rgba(255,255,255,0.1); transform: scale(1.12); }
+html[data-theme="light"] .emoji-pop { background: rgba(255,255,255,0.86); border-color: rgba(0,0,0,0.12); }
+html[data-theme="light"] .emoji-tabs button { color: #555; } html[data-theme="light"] .emoji-tabs button.on { color: #000; background: rgba(0,0,0,0.08); }
+html[data-theme="light"] .emoji-btn { color: #444; background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.12); }
+/* note window: who you post as */
+.bub-name { display: flex; flex-direction: column; gap: 6px; }
+.bub-name .mono i { font-style: normal; opacity: 0.7; text-transform: none; letter-spacing: 0; }
+.bub-as { margin: 0; } .bub-as b { color: #fff; }

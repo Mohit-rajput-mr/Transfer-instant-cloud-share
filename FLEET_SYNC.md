@@ -3,9 +3,46 @@
 Read `CLAUDE.md` first (owner wants SHORT answers, deploy steps, IDs). This file is the live task board.
 Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 - 2026-10-19 (big): Work↔Classic switch is in place (route group src/app/(void)/, VoidShell, lib/view.ts pushState — never Link/router.push/reload). live.ts has outbox + pong watchdog + fast reconnect + resync; landed beams carry the full orb (cleanOrb) and repeat at +2/+6 s; Worker exempts must-messages from the burst limit. lib/net.ts governs upload/serve/peek turns across files; previews only warm small stored copies.
+- 2026-10-19: anonymous spaces: 4-letter **knock** (Spaces → Browse; migration 022 applied; invite sealed to the knocker's ECDH key),
+  being in an anonymous space always runs a timed session (create: 5–30 min, join: 30), phone ↕ scroll-mode toggle.
+- DONE 2026-10-19: `orbit_session_forget` + `orbit_reap_anon` (migration 020) in place (pasted by the owner). The Supabase MCP
+  hangs on any SQL containing `delete`: give the owner the SQL to paste in the SQL editor instead.
+- 2026-10-19 (superseded by the entry above: the switch is history-only via lib/view.ts, Void never remounts): Work <-> Classic switch in-app.  Realtime (re)subscribe / back online -> refresh + queued beams sent; a landed upload sends a 2nd pulse at 4 s.
+  Gentle uploads rest as long as each part took on a busy line. RELEASE bumped (r-2026-10-19-no-reload-switch).
+- OPEN: real-device checks (popup on a 2nd device after a Wi-Fi switch, 4-letter knock, big upload on a slow line).
 - 2026-10-19: uploads back off when the line chokes (lib/cloud.ts watchNet: RTT probe → 1 lane + pauses), and Work↔Classic asks before reloading during uploads (switchView).
 - 2026-10-19: HQ has a **Void** tab (every area: files, notes, tasks; burn any, beamed live to the area; migration 023). Bubble notes default 15 min; tasks default 30 min (options to 8 h); screens drop expired tasks/notes every 5 s.
 - 2026-10-18 late: the Vercel connector is read-only (403 on deploy). Vercel project `orbit` is now linked to GitHub, so a push to `claude/festive-keller-rln4jk` should deploy on its own. Work on that branch only.
+
+## ⚠ MANDATORY: docs/ENGINEERING_DIRECTIVE.md (owner, 2026-10-19)
+Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
+
+## Defect log (running list — keep it current; newest first)
+Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- FIXED 2026-10-19 (H) — No tests / no CI. Now: Vitest unit tests (`npm test`, src/lib/*.test.ts: container rows,
+  knock sealing, clocks/formats, space life, name tags), `npm run check` = tsc + eslint + tests, and
+  .github/workflows/check.yml (typecheck, lint, tests, build) on every push. Add a test with every logic fix.
+- FIXED 2026-10-19 (H, security) — Notes/tasks in a space were signed with whatever name the browser sent (any member could
+  post as anyone; a wrong saved name showed instead of the member name). Server now signs with the member handle in
+  bubbles, tasks, tasks/done, tasks/edit. Root cause of the "24-51 LITTLE NECK REPLY" name: an unlabelled name box saved
+  any text as the device's name for good → box labelled, locked to the member name inside spaces, not saved from spaces.
+- M RISK — Knock (4-letter code → Let in) never run end to end with two real devices (crypto round-trip unit-checked only).
+- M RISK — Nearby across areas (migration 024 + per-network live room) not checked with two devices on one Wi-Fi.
+- M RISK — 8-hour named spaces (025/026): spaces older than 8 h closed at deploy; file/note/task extension to the close time
+  not yet observed on production data.
+- M RISK — "+ New container" (rotating sender key) and sender names on public sends not yet seen with real uploads.
+- M RISK — Gentle uploads (rest = part time on a busy line) never run on a real slow line (scripts/slow-net-test.cjs exists).
+- L OPEN — sendRetry may re-POST /api/transfers after a timeout that actually succeeded → an unfinalized orphan row
+  (never listed; expires). Fix: idempotency key on create.
+- L OPEN — Dev console: "getServerSnapshot should be cached" from useAnon (lib/anon.ts useSyncExternalStore).
+- L OPEN — Supabase MCP hangs on any SQL with `delete` (tooling, not app): hand the owner the SQL to paste.
+- FIXED 2026-10-19 — Work (dark) follows the classic Blackboard theme of /about + /upgrade (site.css): #000, chalk ink,
+  Archivo titles, Inter text, Chakra chrome, mono labels, hairlines, pill buttons; windows incl. the anonymous card.
+  It's the last layer in app/work/work.css; earlier 'studio'/'liquid glass' Work layers above it are overridden.
+- FIXED 2026-10-19 (this session, details in git log): Work↔Classic switch without reload (Playwright: 0 reloads);
+  dropped live messages after reconnect (refresh + queued beams); launches stuck at "Locking" (20 s per try);
+  Nearby empty across areas; container grid 9=3·3·3 / 10=5·5 (rendered); drop zone aligned with Upload (measured);
+  Work fonts = classic (computed font checked); smooth wheel zoom (per-frame scale measured); drag top wall = header.
 
 ## ⚠ Branches (2026-10-18)
 - Production was deployed from `claude/work`; on 2026-10-18 `claude/festive-keller-rln4jk` merged `claude/work` and deployed

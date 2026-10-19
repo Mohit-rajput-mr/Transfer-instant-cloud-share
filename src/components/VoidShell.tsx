@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useLayoutEffect, type ReactNode } from "react";
+import { useLayoutEffect, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import Void from "./Void";
 import { readTheme } from "@/lib/theme";
@@ -50,20 +50,6 @@ export default function VoidShell({ titles, children }: { titles: Record<string,
     const pct = document.title.match(/^\(\d+%\) /)?.[0] ?? "";
     if (want && document.title !== pct + want) document.title = pct + want;
   }, [path, work, titles]);
-
-  // the first switch to Work should not flash the fallback type: fetch Geist once the browser is idle (not preloaded)
-  useEffect(() => {
-    if (work || (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
-    const warm = () => {
-      const css = getComputedStyle(document.documentElement);
-      for (const v of ["--font-work", "--font-work-mono"]) {
-        const f = css.getPropertyValue(v).trim();
-        if (f) document.fonts?.load(`1em ${f}`).catch(() => {});
-      }
-    };
-    const t = setTimeout(() => (typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(warm, { timeout: 5000 }) : warm()), 4000);
-    return () => clearTimeout(t);
-  }, [work]);
 
   return (
     <>

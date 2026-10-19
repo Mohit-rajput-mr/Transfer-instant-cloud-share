@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ANON_AREA, anonNet, areaFor, isHex, netHash, newId, rpc, sha256 } from "@/lib/server";
-import { LIVES, cleanHandle, isAnonSpace, member, validFrom } from "@/lib/spaces";
+import { LIVES, cleanHandle, isAnonSpace, liveWithSpace, member, validFrom } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
     const me = await member(b.space, b.deviceId, b.spaceToken);
     if (!me) return NextResponse.json({ error: "You are no longer in this space" }, { status: 403 });
     space = me.slug;
-    by = by || me.handle;
+    // in a space you are your member name (never what the browser sends: nobody posts as someone else)
+    by = me.handle;
     alias = me.handle;
   }
   // anonymous: only inside an anonymous space, signed with the space's alias, no place, a rotating rate-limit key
@@ -47,5 +48,7 @@ export async function POST(req: NextRequest) {
     if (String(e).includes("rate_limited")) return NextResponse.json({ error: "Too many bubbles from your network. Try again in a while." }, { status: 429 });
     throw e;
   }
+  // in a named space it stays until the space closes
+  if (space && !anon) await liveWithSpace(space, "b", id);
   return NextResponse.json({ id });
 }

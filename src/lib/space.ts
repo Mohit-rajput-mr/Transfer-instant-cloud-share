@@ -2,6 +2,7 @@
 import { deviceId, homePath, persistentId } from "./client";
 import { anonSession, isAnon, newAnonId, setScopedAnon } from "./anon";
 import { myArea } from "./where";
+import { newSealKey, openSealed, sealTo } from "./seal";
 
 /** This device's pass into a space. Kept in IndexedDB so it is never set up twice. */
 export interface SpaceSession {
@@ -148,27 +149,17 @@ export const anonTitle = (slug: string) => "Anonymous · " + slug.slice(5, 9).to
 // ---- knocking on an anonymous space with its 4 letters (supabase/migrations/022_knocks.sql) ----
 // The knocker makes a one-time ECDH key pair and sends only the public half. Someone inside taps Let in and their
 // browser seals the invite (code + key) to it; the server only ever holds the sealed box.
-const b64 = (u: Uint8Array) => btoa(String.fromCharCode(...u));
-const unb64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
-const ECDH = { name: "ECDH", namedCurve: "P-256" } as const;
-const aesFrom = (priv: CryptoKey, pub: CryptoKey) =>
-  crypto.subtle.deriveKey({ name: "ECDH", public: pub }, priv, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
-
 export type Knock = { id: string; title: string; priv: CryptoKey };
 export async function knock(code: string): Promise<Knock> {
-  const kp = await crypto.subtle.generateKey(ECDH, false, ["deriveKey"]);
-  const pub = b64(new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey)));
-  const r = await post<{ id: string; title: string }>("/api/knock", { code, pub });
-  return { ...r, priv: kp.privateKey };
+  const k = await newSealKey();
+  const r = await post<{ id: string; title: string }>("/api/knock", { code, pub: k.pub });
+  return { ...r, priv: k.priv };
 }
 /** the knocker's wait: let in (and in the space), turned away, or the knock ran out */
 export async function knockState(k: Knock): Promise<{ status: "wait" | "no" | "gone" } | { status: "in"; space: SpaceSession }> {
   const d = await fetch(`/api/knock/${k.id}`, { cache: "no-store" }).then((r) => r.json()).catch(() => ({ status: "wait" }));
   if (d.status !== "in") return { status: d.status === "no" || d.status === "gone" ? d.status : "wait" };
-  const box = unb64(d.box);
-  const eph = await crypto.subtle.importKey("raw", box.slice(0, 65), ECDH, false, []);
-  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: box.slice(65, 77) }, await aesFrom(k.priv, eph), box.slice(77));
-  const inv = JSON.parse(new TextDecoder().decode(plain)) as { code: string; key: string };
+  const inv = await openSealed<{ code: string; key: string }>(k.priv, d.box);
   return { status: "in", space: await joinAnonSpace(d.slug, inv.code, inv.key) };
 }
 
@@ -180,14 +171,7 @@ export async function answerKnock(s: SpaceSession, k: Knocker, allow: boolean) {
   let box: string | null = null;
   if (allow) {
     if (!s.code || !s.key) throw new Error("This device doesn't hold the invite");
-    const them = await crypto.subtle.importKey("raw", unb64(k.pub), ECDH, false, []);
-    const eph = await crypto.subtle.generateKey(ECDH, true, ["deriveKey"]);
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await aesFrom(eph.privateKey, them), new TextEncoder().encode(JSON.stringify({ code: s.code, key: s.key }))));
-    const ephRaw = new Uint8Array(await crypto.subtle.exportKey("raw", eph.publicKey));
-    const all = new Uint8Array(ephRaw.length + iv.length + ct.length);
-    all.set(ephRaw, 0); all.set(iv, ephRaw.length); all.set(ct, ephRaw.length + iv.length);
-    box = b64(all);
+    box = await sealTo(k.pub, { code: s.code, key: s.key });
   }
   return post<{ ok: boolean }>(`/api/spaces/${s.slug}/knocks`, { deviceId: idFor(s), token: s.token, id: k.id, allow, box });
 }

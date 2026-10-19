@@ -8,6 +8,7 @@ import { MAX_FILE_BYTES, MAX_LABEL } from "@/lib/limits";
 import { previewUrl } from "@/lib/preview";
 import { release } from "@/lib/p2p";
 import { setUpSpeed, upSpeed, type UpSpeed } from "@/lib/cloud";
+import { newContainer } from "@/lib/client";
 import { enqueue } from "@/lib/downloads";
 import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, filesBundle, isFolder, isLoose, isLinkText, itemName, itemSize, mergeItems, packFolder, pickFolderTarget, textToFile, type DirHandle, type Item } from "@/lib/bundle";
 import { needsSavePicker, pickSaveTarget, receive, unlockOrb, UnlockError, type Unlocked, type Received, type Stage } from "@/lib/transfer";
@@ -555,6 +556,8 @@ export function SendPanel(props: {
   const setName = setTyped;
   const [code, setCode] = useState("");
   const [bubble, setBubble] = useState("");
+  // "New container": this send (and what follows) gathers apart from what this device sent before
+  const [fresh, setFresh] = useState(false);
   const [more, setMore] = useState(false);
   const [speed, setSpeed] = useState<UpSpeed>(() => (typeof window === "undefined" ? "gentle" : upSpeed()));
   const [max, setMax] = useState<number | null>(null);
@@ -570,6 +573,7 @@ export function SendPanel(props: {
     tick("success");
     setPref("life", life);
     if (multi) setPref("split", split);
+    if (fresh) newContainer();
     const common = { passcode: locked ? code : "", maxDownloads: max, life, open: !locked, task: wire ?? undefined, done: !!wire && markDone, hideNames: hide };
     if (split) {
       // one ball per pick, each under its own name, all with the same settings
@@ -610,6 +614,15 @@ export function SendPanel(props: {
             <div className="seg" role="radiogroup" aria-label="Launch as">
               <button role="radio" aria-checked={!split} className={`lg-press${!split ? " on" : ""}`} onClick={() => setSplit(false)}>One ball</button>
               <button role="radio" aria-checked={split} className={`lg-press${split ? " on" : ""}`} onClick={() => setSplit(true)}>{n} balls</button>
+            </div>
+          </div>
+        )}
+        {!props.anon && (
+          <div className="field">
+            <label><span className="mono">Container</span><span className="mono dim">{fresh ? "starts a new one" : "joins your last one"}</span></label>
+            <div className="seg" role="radiogroup" aria-label="Container">
+              <button role="radio" aria-checked={!fresh} className={`lg-press${!fresh ? " on" : ""}`} onClick={() => setFresh(false)}>Current</button>
+              <button role="radio" aria-checked={fresh} className={`lg-press${fresh ? " on" : ""}`} onClick={() => setFresh(true)}>+ New container</button>
             </div>
           </div>
         )}
