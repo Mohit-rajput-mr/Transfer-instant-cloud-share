@@ -19,6 +19,17 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- FIXED 2026-10-19 (H) — Work↔Classic was a full reload (or a router remount): uploads, P2P holds, sockets and previews
+  restarted at once and choked home uplinks (Chrome ERR_NETWORK_CHANGED). Now one mounted Void in the (void) route group,
+  history-only switch (lib/view.ts). Verified: Playwright 20/20 on a prod build (0 document/RSC requests, no remount, back/
+  forward, phones) + re-run after the merge with the other agent's work.
+- FIXED 2026-10-19 (H) — New files sometimes never popped up elsewhere: live messages were fire-and-forget, the Worker
+  dropped >40 msgs/10 s (incl. landed), half-open sockets went unnoticed. Now: live.ts outbox + 25 s ping/8 s pong watchdog
+  + fast reconnect + resync; landed carries the full record (cleanOrb) and repeats at +2/+6 s; Worker exempts must-messages.
+  Verified: 44/44 node tests with a fake socket; production Worker delivered 60/60 rapid landed (was 40).
+- FIXED 2026-10-19 (M) — Preview warm-up downloaded every open file ≤100 MB from the sender's own uplink, endlessly after
+  trims. Now lib/net.ts turns (up/serve/peek) across files; previews only from small stored copies, with cooldowns.
+- RISK (M) — governor/peek limits never run on a real slow line; live outbox never run with two real phones.
 - FIXED 2026-10-19 (H) — No tests / no CI. Now: Vitest unit tests (`npm test`, src/lib/*.test.ts: container rows,
   knock sealing, clocks/formats, space life, name tags), `npm run check` = tsc + eslint + tests, and
   .github/workflows/check.yml (typecheck, lint, tests, build) on every push. Add a test with every logic fix.
