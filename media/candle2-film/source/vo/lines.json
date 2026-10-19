@@ -1,0 +1,96 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Zoom into one candle on a stock chart, and you'll find a war inside.",
+   "dur": 4.353,
+   "at": 0.35
+  },
+  {
+   "key": "book",
+   "text": "Every price is a shelf. Above the price, sell orders wait: people who'll sell, but only at their price. Below it, buy orders wait.",
+   "dur": 7.934,
+   "at": 5.1
+  },
+  {
+   "key": "eat",
+   "text": "The price only moves when someone stops waiting. A buyer who wants in right now eats the cheapest sell orders on the shelf.",
+   "dur": 6.702,
+   "at": 13.39
+  },
+  {
+   "key": "step",
+   "text": "Clear a whole shelf, and the price steps up to the next one. Shelf by shelf, the candle fills green.",
+   "dur": 5.653,
+   "at": 20.39
+  },
+  {
+   "key": "drain",
+   "text": "Now sellers rush in. They eat the buy orders below, and the green starts to drain.",
+   "dur": 4.912,
+   "at": 26.44
+  },
+  {
+   "key": "red",
+   "text": "Eat all the way past the open, and the candle closes red.",
+   "dur": 4.006,
+   "at": 31.65
+  },
+  {
+   "key": "wick",
+   "text": "And the wick? It's the highest shelf the buyers reached, before the sellers dragged it back.",
+   "dur": 4.82,
+   "at": 36.01
+  },
+  {
+   "key": "liq",
+   "text": "Now the smart part. Big players can't just buy a million shares. There aren't enough sellers on the shelves.",
+   "dur": 6.361,
+   "at": 41.28
+  },
+  {
+   "key": "where",
+   "text": "So where do they find sellers? Right here. Just under the obvious low, where everyone's stop loss sits. Every stop is a sell order, waiting to fire.",
+   "dur": 9.588,
+   "at": 47.94
+  },
+  {
+   "key": "sweep",
+   "text": "They push the price down through that line. The stops fire, a flood of sellers hits the shelves, and the big player buys every share.",
+   "dur": 7.734,
+   "at": 57.88
+  },
+  {
+   "key": "rip",
+   "text": "Order filled. The selling dries up, and the price rips back up. That's a liquidity sweep.",
+   "dur": 5.285,
+   "at": 65.91
+  },
+  {
+   "key": "flip",
+   "text": "It works upside down too. Above the obvious high, the stops of short sellers are buy orders, waiting to be swept.",
+   "dur": 8.471,
+   "at": 71.6
+  },
+  {
+   "key": "spot",
+   "text": "How to spot one: a fast wick through an obvious level, then a strong close right back inside.",
+   "dur": 7.098,
+   "at": 80.42
+  },
+  {
+   "key": "tip",
+   "text": "This isn't financial advice. Trade small, and never park your stop exactly where the crowd does.",
+   "dur": 5.971,
+   "at": 87.87
+  },
+  {
+   "key": "end",
+   "text": "Like this? Send it to a friend on Orbi Transfer. Now you know!",
+   "dur": 3.879,
+   "at": 94.24
+  }
+ ],
+ "duration": 99.92
+}
