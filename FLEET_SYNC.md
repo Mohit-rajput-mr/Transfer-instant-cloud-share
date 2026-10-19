@@ -20,6 +20,10 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- FIXED 2026-10-19 (M) — A note title saved as the device's name ("24-51 LITTLE NECK REPLY") showed as the sender on notes,
+  tasks and files. lib/bubbles.ts looksLikeName (unit-tested): a saved value that isn't a name is dropped on read on every
+  device, never saved again; the note box warns. NOTE for session 01DHR116 (owns Void.tsx now): in a space, prefer the
+  member handle over bubbleName() for postName / task "me" (Void.tsx ~2355, ~657, ~1334); server already signs with it.
 - FIXED 2026-10-19 (H) — Work↔Classic was a full reload (or a router remount): uploads, P2P holds, sockets and previews
   restarted at once and choked home uplinks (Chrome ERR_NETWORK_CHANGED). Now one mounted Void in the (void) route group,
   history-only switch (lib/view.ts). Verified: Playwright 20/20 on a prod build (0 document/RSC requests, no remount, back/

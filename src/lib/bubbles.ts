@@ -45,11 +45,24 @@ const write = (m: Record<string, string>) => {
   } catch {}
 };
 export const isMine = (id: string) => !!read()[id];
-/** the name this device signs with (never while anonymous: the space gives an alias) */
+/** Is this a person's name, or something else typed into the name box (a note title, an address, a code)?
+ *  A name: 1-24 characters, letters (any language) with spaces, dots, apostrophes or hyphens, at most 3 words, no digits.
+ *  "Mohit", "Mary-Jane O'Neil", "Rajput M." pass; "24-51 LITTLE NECK REPLY", "comp 1", "a.b@c.com" don't. */
+export function looksLikeName(s: string) {
+  const t = s.trim();
+  return t.length >= 1 && t.length <= 24 && /^[\p{L}\p{M}][\p{L}\p{M} .'’-]*$/u.test(t) && t.split(/\s+/).length <= 3;
+}
+/** the name this device signs with (never while anonymous: the space gives an alias). A saved value that isn't a
+ *  name (e.g. a note title typed into the old unlabelled box) is dropped for good, so it never shows as you. */
 export const bubbleName = () => {
   if (isAnon()) return "";
   try {
-    return localStorage.getItem(NAME) || "";
+    const v = localStorage.getItem(NAME) || "";
+    if (v && !looksLikeName(v)) {
+      localStorage.removeItem(NAME);
+      return "";
+    }
+    return v.trim();
   } catch {
     return "";
   }
@@ -58,9 +71,9 @@ export const bubbleName = () => {
 export async function postBubble(text: string, by: string, life = 15) {
   const owner = toHex(crypto.getRandomValues(new Uint8Array(32)));
   // the name you typed is kept for next time; inside a space you post as your member name, which is not kept as yours
-  if (!isAnon() && !spaceBody().space)
+  if (!isAnon() && !spaceBody().space && looksLikeName(by))
     try {
-      localStorage.setItem(NAME, by);
+      localStorage.setItem(NAME, by.trim());
     } catch {}
   const from = await senderKey();
   const hue = hueFor(from || `n:${by.toLowerCase()}`);

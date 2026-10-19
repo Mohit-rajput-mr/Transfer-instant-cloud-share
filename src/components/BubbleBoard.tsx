@@ -4,7 +4,7 @@ import { LuCopy, LuLayoutDashboard, LuMaximize, LuMessageCircle, LuMinus, LuPenc
 import { createPortal } from "react-dom";
 import { Pop } from "./Spaces";
 import EmojiPicker from "./EmojiPicker";
-import { BUBBLE_MAX, bubbleName, hueFor, isMine, senderOf, splitLinks, type Bubble } from "@/lib/bubbles";
+import { BUBBLE_MAX, bubbleName, hueFor, isMine, looksLikeName, senderOf, splitLinks, type Bubble } from "@/lib/bubbles";
 import { formatClock } from "@/lib/client";
 
 const ago = (iso: string, now: number) => {
@@ -530,7 +530,8 @@ export function BubbleCompose(props: {
           ) : (
             <label className="bub-name">
               <span className="mono dim">Your name <i>(shown on your notes and files)</i></span>
-              <input className="line-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Mohit" maxLength={24} autoComplete="name" />
+              <input className="line-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Mohit" maxLength={24} autoComplete="name" aria-invalid={!!name.trim() && !looksLikeName(name)} />
+              {!!name.trim() && !looksLikeName(name) && <span className="mono bub-name-bad">That looks like a title, not a name: it won&apos;t be saved as you</span>}
             </label>
           ))}
         </>

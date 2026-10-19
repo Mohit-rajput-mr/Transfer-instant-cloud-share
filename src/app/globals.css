@@ -3595,3 +3595,4 @@ html[data-theme="light"] .emoji-btn { color: #444; background: rgba(0,0,0,0.05);
 .bub-name { display: flex; flex-direction: column; gap: 6px; }
 .bub-name .mono i { font-style: normal; opacity: 0.7; text-transform: none; letter-spacing: 0; }
 .bub-as { margin: 0; } .bub-as b { color: #fff; }
+.bub-name-bad { font-size: 10.5px; color: #ffb066; text-transform: none; letter-spacing: 0; }
