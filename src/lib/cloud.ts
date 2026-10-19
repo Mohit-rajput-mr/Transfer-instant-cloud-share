@@ -97,7 +97,15 @@ export const netCongested = () => net.congested && upSpeed() === "gentle";
 const laneLimit = () => (netCongested() ? 1 : PARALLEL_UP);
 
 /** Switching Work ↔ Classic reloads the page: say so first if a cloud copy is still going up. */
+// Switching inside the app (the page's router, registered by Void) keeps this tab's code, uploads, device-to-device
+// sends and live connection running: nothing is downloaded again and nothing restarts. Only without it (very
+// first paint) does it fall back to a full load, and then it asks first while a cloud copy is going up.
+let navigate: ((href: string) => void) | null = null;
+export const setNavigator = (f: ((href: string) => void) | null) => {
+  navigate = f;
+};
 export function switchView(href: string) {
+  if (navigate) return navigate(href);
   if (cloudSaving() && !confirm("Files are still uploading. Switching now pauses them (they pick up again after). Switch anyway?")) return;
   window.location.assign(href);
 }

@@ -20,7 +20,7 @@ import { supabase, type RealtimeChannel } from "@/lib/realtime";
 import SpacePanel, { SpaceRoom } from "./Spaces";
 import BubbleZoom from "./BubbleZoom";
 import { heldIds, release as releaseP2P } from "@/lib/p2p";
-import { cloudSaved, cloudSaving, isResumable, stopCopy, switchView } from "@/lib/cloud";
+import { cloudSaved, cloudSaving, isResumable, setNavigator, stopCopy, switchView } from "@/lib/cloud";
 // a ball leaving: stop offering it directly and stop any upload of its stored copy
 const release = (id: string) => {
   releaseP2P(id);
@@ -586,9 +586,19 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     if (isAnon() && !spaceRef.current) return;
     channel.current?.send({ type: "broadcast", event: "pulse", payload: { at: Date.now() } });
   }, []);
+  // said while the live connection is (re)connecting: kept and sent the moment it is up, never dropped
+  const unsent = useRef<{ event: string; payload: Record<string, unknown>; at: number }[]>([]);
   const beam = useCallback((event: "launch" | "landed" | "gone", payload: Record<string, unknown>) => {
     if (isAnon() && !spaceRef.current) return;
-    channel.current?.send({ type: "broadcast", event, payload });
+    if (channel.current) channel.current.send({ type: "broadcast", event, payload });
+    else unsent.current = [...unsent.current.slice(-19), { event, payload, at: Date.now() }];
+  }, []);
+  const flushBeams = useCallback(() => {
+    const ch = channel.current;
+    if (!ch) return;
+    const list = unsent.current.filter((m) => Date.now() - m.at < 120_000);
+    unsent.current = [];
+    for (const m of list) ch.send({ type: "broadcast", event: m.event, payload: m.payload });
   }, []);
 
   // a change, here and now: shown on this screen and kept over older lists
@@ -690,6 +700,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         if (job.task && job.done) tickTask(job.task, true).then(() => refresh()).catch(() => {});
         clearInterval(keepAlive);
         beam("landed", { k: key, id: orb.id });
+        // a second word a few seconds later: a device whose connection was mid-reconnect for the first still hears it
+        setTimeout(() => broadcast(), 4000);
         const from = pendingId(key);
         inheritSlot(from, orb.id);
         swapped.current.add(from).add(orb.id);
@@ -739,11 +751,18 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     const t = setInterval(() => document.visibilityState === "visible" && refresh(), 60_000);
     const onVis = () => document.visibilityState === "visible" && refresh();
     document.addEventListener("visibilitychange", onVis);
+    // the network came back (Wi-Fi switch, a dropped line): catch up at once, and once more when it has settled
+    const onOnline = () => {
+      refresh();
+      setTimeout(refresh, 3000);
+    };
+    window.addEventListener("online", onOnline);
     const o = new URLSearchParams(window.location.search).get("o");
     if (o && /^[a-z0-9]{4,12}$/.test(o)) setPanel(ownerKey(o) ? { kind: "owner", id: o } : { kind: "unlock", id: o });
     return () => {
       clearInterval(t);
       document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("online", onOnline);
     };
   }, [refresh, spaceReady, areaReady]);
 
@@ -1279,6 +1298,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           if (spaceRef.current && myIdRef.current) l.chan.track({ id: myIdRef.current });
           // the socket is live: pull anything created during the handshake, so the first send is never missed
           refresh();
+          flushBeams();
         },
         presence: (ids) => onPresenceRef.current(ids),
       });
@@ -1305,6 +1325,9 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         setRtDown(false);
         channel.current = ch;
         if (spaceRef.current && myIdRef.current) ch.track({ id: myIdRef.current }).catch(() => {});
+        // (re)connected, e.g. after the network changed: whatever was launched meanwhile, and what this device said
+        refresh();
+        flushBeams();
       });
       return ch;
     });
@@ -1932,6 +1955,15 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
 
   // 10 quick taps on the logo open mission HQ
   const router = useRouter();
+  // Work ↔ Classic inside the app: no reload, uploads and the live connection keep going; the other view is fetched ahead
+  useEffect(() => {
+    setNavigator((href) => router.push(href));
+    const idle = setTimeout(() => router.prefetch(work ? "/" : "/work"), 4000);
+    return () => {
+      clearTimeout(idle);
+      setNavigator(null);
+    };
+  }, [router, work]);
   const taps = useRef<number[]>([]);
   const tapLogo = () => {
     const t = performance.now();
