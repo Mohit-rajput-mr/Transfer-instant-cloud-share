@@ -81,6 +81,18 @@ When the owner says "new version" / "next", make the next film from the story li
 - **Burns:** files expire after 30 minutes by default (tasks can keep them longer); no account, no trace.
 - Also true: works on any device with a browser, folders and many files go in one ball, team Spaces, preview before download.
 
+## Continuous loop (owner 2026-10-19, wins over older notes)
+- Keep making videos until the owner says stop: finish one, research 2–3 minutes (what's trending now: tech news, AI,
+  launches like the Tesla Roadster, viral "how does X work" explainers, competitor channels), pick the strongest topic, make it.
+- Max length **1:30**. Hook in the first second. Same house look, voice and subtitles. Reuse engines
+  (`pw-film`, `candle2-film`, `ob-film`, `nfc-film`, `starlink-film`, `roadster-film`), never rebuild from scratch.
+- **Rotate the Orbi ending** — never the same feature twice in a row. Orbi is not only file sending:
+  Anonymous mode (no profile, throwaway ID, no GPS) · Orbi Work (tasks, routes, step colours, /work board) · private Spaces ·
+  no location sharing / rough area only · files locked on your device · 30-minute burn · QR + code on every file ·
+  nearby without login · big files in parts · bubbles (text notes). Only claim what the code does.
+- Trending claims (news) must be sourced; label company claims as claims.
+- After each film: commit + push, send the MP4, add a line to "Films so far".
+
 ## Owner feedback (latest, wins over older notes)
 - **Educational films always tie back to Orbi** (2026-10-18): teach the topic, then end with a true Orbi feature that connects (QR film → every Orbi file has its own QR + code), and the Orbi end card.
 - **Workspace films use the real /work page** (light theme reads best on screens) and end on something funny (owner liked a dance).
