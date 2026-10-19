@@ -3562,3 +3562,14 @@ html:has(.arch-bubble) .room:not(.arch-room) .room-top { padding-right: 64px; bo
 .space-clock.late b { color: #ff6b5e; }
 @media (max-width: 720px) { .space-clock { top: calc(74px + var(--safe-t)); } }
 html[data-ui="work"] .space-clock { top: calc(58px + var(--safe-t)); background: var(--w-surface); border-color: var(--w-border-2); color: var(--w-text-3); text-transform: none; letter-spacing: 0; font: 500 12px/1 var(--w-font); }
+
+/* archive drop zone (both looks): small, orange, centred on screen while dragging; never on the Note / Upload buttons */
+html .trash-zone { left: 50% !important; right: auto !important; top: 50% !important; bottom: auto !important; translate: -50% -50% !important; scale: 0.6; transition: scale 0.22s var(--ease-out, ease), opacity 0.2s !important; }
+html .trash-zone.on { translate: -50% -50% !important; scale: 1; }
+html .trash-hole { width: 96px !important; height: 96px !important; padding: 0 8px !important; gap: 2px !important; border: 2px dashed #ff9a3c !important; background: rgba(255,140,40,0.14) !important; color: #ffb066 !important;
+  box-shadow: 0 0 0 6px rgba(255,140,40,0.08), 0 12px 30px rgba(0,0,0,0.45) !important; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+html .trash-hole svg { width: 22px !important; height: 22px !important; }
+html .trash-hole b { font: 700 10.5px/1.15 var(--sans, sans-serif) !important; color: #ffd1a3 !important; text-transform: none !important; letter-spacing: 0 !important; }
+html .trash-hole small { display: none !important; }
+html .trash-zone.near .trash-hole { scale: 1.18 !important; border-style: solid !important; border-color: #ff8a1f !important; background: #ff8a1f !important; color: #fff !important; }
+html .trash-zone.near .trash-hole b { color: #fff !important; }

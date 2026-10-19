@@ -1998,6 +1998,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
 
   // 10 quick taps on the logo open mission HQ
   const router = useRouter();
+  const markText = (inArchive ? "Archive" : space ? space.title : "Public workspace").toUpperCase();
   // Work ↔ Classic inside the app: no reload, uploads and the live connection keep going; the other view is fetched ahead
   useEffect(() => {
     setNavigator((href) => router.push(href));
@@ -2338,7 +2339,9 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         <section
           className={`void${map ? " map" : ""}${notes.length && !map ? " has-bubbles" : ""}${!map && (new Set(notes.map(senderOf)).size > 1 || (tasks.length && !archived)) ? " bub-two" : ""}${tasks.length && !archived && !map ? " has-tasks" : ""}${taskFocus ? " task-focus" : ""}${grid ? ` arranged${grid.tight ? " tight" : ""}` : ""}${space || inArchive ? " in-space" : ""}${inArchive ? " in-archive" : ""}${flow ? " flow" : ""}${mode !== "desk" && mode !== "tall" && visible.length > 6 ? " many" : ""}`}
           id="void"
-          style={(flow ? { "--n": rows } : { "--k-auto": grid ? grid.k : map ? 1 : crowdScale(visible.length), ...(grid ? { "--cell": `${grid.cell}px` } : null) }) as unknown as React.CSSProperties}
+          // Work: the big faint wordmark behind the canvas is the place you are in
+          data-mark={work ? markText : undefined}
+          style={{ ...(flow ? { "--n": rows } : { "--k-auto": grid ? grid.k : map ? 1 : crowdScale(visible.length), ...(grid ? { "--cell": `${grid.cell}px` } : null) }), ...(work ? { "--mark-fs": `${Math.min(17, 150 / Math.max(4, markText.length))}vw` } : null) } as unknown as React.CSSProperties}
         >
           {inArchive && <ArchiveRoom onExit={() => setInArchive(false)} />}
           {/* anonymous: the void goes dark and cold (vignette, grain, scan lines, a big mask), so nobody forgets */}
