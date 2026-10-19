@@ -6,6 +6,7 @@ import { BsIncognito } from "react-icons/bs";
 import type { Kind } from "@/lib/skin-list";
 import { useTheme } from "@/lib/theme";
 import KindFilter from "./KindFilter";
+import { switchView } from "@/lib/cloud";
 
 // The /work chrome: an editor-style top bar, a slim icon rail and a canvas action bar (phones: a bottom tab bar).
 // Everything here only calls into Void's own handlers, so /work does exactly what the main page does.
@@ -82,6 +83,8 @@ export function WorkBar(p: {
       </div>
 
       <div className="w-right">
+        {/* back to the orbit look, in the page (no reload: uploads and the live connection keep going) */}
+        <button className="w-classic-btn" onClick={() => switchView("/")} title="Switch to the Classic orbit view"><LuOrbit aria-hidden /><span>Switch to Classic</span></button>
         <KindFilter kind={p.kind} onKind={p.onKind} className="w-filter" />
         <span className="w-live" title={`${p.online} ${p.online > 1 ? "devices" : "device"} online${p.space ? " in this space" : " around you"}`}>
           <i />{p.online}<span> online</span>

@@ -944,3 +944,13 @@ html[data-ui="work"] .trash-hole b { font: 700 10.5px/1.15 var(--sans, sans-seri
 html[data-ui="work"] .trash-hole small { display: none !important; }
 html[data-ui="work"] .trash-zone.near .trash-hole { scale: 1.18 !important; border-style: solid !important; border-color: #ff8a1f !important; background: #ff8a1f !important; color: #fff !important; }
 html[data-ui="work"] .trash-zone.near .trash-hole b { color: #fff !important; }
+
+/* "Switch to Classic" in the top bar: white button, black text */
+html[data-ui="work"] .w-classic-btn { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 14px; border-radius: 10px; flex: none; cursor: pointer; white-space: nowrap;
+  background: #fff !important; color: #000 !important; border: 1px solid #fff !important; box-shadow: 0 1px 0 rgba(0,0,0,0.2), 0 6px 18px rgba(0,0,0,0.35);
+  font: 600 12px/1 var(--w-mono, ui-monospace, monospace); text-transform: uppercase; letter-spacing: 0.08em; transition: background 0.15s; }
+html[data-ui="work"] .w-classic-btn:hover { background: #e9e9ea !important; }
+html[data-ui="work"] .w-classic-btn svg { width: 15px; height: 15px; color: #000 !important; }
+html[data-ui="work"][data-theme="light"] .w-classic-btn { background: #000 !important; color: #fff !important; border-color: #000 !important; }
+html[data-ui="work"][data-theme="light"] .w-classic-btn svg { color: #fff !important; }
+@media (max-width: 720px) { html[data-ui="work"] .w-classic-btn span { display: none; } html[data-ui="work"] .w-classic-btn { padding: 0 10px; } }
