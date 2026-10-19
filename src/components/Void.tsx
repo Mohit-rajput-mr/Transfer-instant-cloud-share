@@ -510,12 +510,19 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     const run = (async () => {
       const sp = spaceRef.current;
       const a = areaRef.current;
+      // the public void also carries what was sent from this network (same Wi-Fi), even when it was pinned to another area
+      const sameNet = !sp && !isAnon() ? fetch("/api/transfers/net").then((x) => (x.ok ? x.json() : null)).then((x) => (x?.items ?? []) as Orb[]).catch(() => [] as Orb[]) : Promise.resolve([] as Orb[]);
       const r = await fetch(sp ? `/api/spaces/${sp.slug}/transfers` : `/api/transfers${a ? `?a=${around(a).join(",")}` : ""}`, sp ? { headers: spaceHeaders(), cache: "no-store" } : undefined).catch(() => null);
       if (!sp && areaRef.current !== a) return; // moved to another area while this was in flight
       if (spaceRef.current !== sp) return; // switched while this was in flight
       if (sp && r?.status === 403) return removedRef.current(sp);
       if (!r?.ok) return;
       const d = (await r.json()) as { items: Orb[]; bubbles?: Bubble[]; tasks?: Task[]; online: number; now: number };
+      const extra = await sameNet;
+      if (extra.length) {
+        const have = new Set(d.items.map((o) => o.id));
+        d.items = [...d.items, ...extra.filter((o) => !have.has(o.id))];
+      }
       // the edge may hand out a list a few seconds old: changes made since stay on top, and it asks again shortly
       const made = Number(d.now) || 0;
       const ov = { t: overlay(d.tasks ?? [], "t", made, marks.current), b: overlay(d.bubbles ?? [], "b", made, marks.current), o: overlay(d.items ?? [], "o", made, marks.current) };
@@ -588,10 +595,14 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   }, []);
   // said while the live connection is (re)connecting: kept and sent the moment it is up, never dropped
   const unsent = useRef<{ event: string; payload: Record<string, unknown>; at: number }[]>([]);
+  const netChan = useRef<{ send: (m: { type: "broadcast"; event: string; payload: Record<string, unknown> }) => unknown } | null>(null);
+  const heardRef = useRef<((event: string, payload: Record<string, unknown>) => unknown) | null>(null);
   const beam = useCallback((event: "launch" | "landed" | "gone", payload: Record<string, unknown>) => {
     if (isAnon() && !spaceRef.current) return;
     if (channel.current) channel.current.send({ type: "broadcast", event, payload });
     else unsent.current = [...unsent.current.slice(-19), { event, payload, at: Date.now() }];
+    // same Wi-Fi, other area: the network's own room hears it too (public void only)
+    if (!spaceRef.current) netChan.current?.send({ type: "broadcast", event, payload });
   }, []);
   const flushBeams = useCallback(() => {
     const ch = channel.current;
@@ -1287,6 +1298,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         if (pass) setInvite({ slug: p.slug, title: String(p.title ?? "").slice(0, 40), by: String(p.by ?? "").slice(0, 24), pass });
       }
     };
+    heardRef.current = heard;
     // Orbit's own Cloudflare rooms (lib/live.ts, live/): thousands online at once on the free plan
     if (liveOn) {
       const l = joinLive(chanNames.split(" "), spaceRef.current ? "" : areaRef.current, {
@@ -1338,6 +1350,29 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     // (on the Cloudflare rooms the area matters too: two areas can share the same regions)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scheduleRefresh, chanNames, rtOn, liveOn && !space ? area : ""]);
+  // the network's own live room (public void, not anonymous): devices on one Wi-Fi hear each other's launches even
+  // when they are pinned to different areas (one by GPS, the other by IP)
+  useEffect(() => {
+    if (!rtOn || space || anonNow || !net) return;
+    const hear = (e: string, p: Record<string, unknown>) => {
+      // only what concerns objects; pulses and invites keep to the area channels
+      if (e === "launch" || e === "landed" || e === "gone") void heardRef.current?.(e, p);
+    };
+    if (liveOn) {
+      const l = joinLive([`s/n${net}`], "", { on: hear, status: (up) => void (netChan.current = up ? l.chan : null) });
+      return () => {
+        netChan.current = null;
+        l.close();
+      };
+    }
+    const ch = supabase.channel(`orbit-n-${net}`, { config: { broadcast: { self: false } } });
+    for (const ev of ["launch", "landed", "gone"]) ch.on("broadcast", { event: ev }, ({ payload }) => hear(ev, payload ?? {}));
+    ch.subscribe((st) => void (netChan.current = st === "SUBSCRIBED" ? ch : null));
+    return () => {
+      netChan.current = null;
+      supabase.removeChannel(ch);
+    };
+  }, [rtOn, space, anonNow, net]);
   // back from the background: whatever happened meanwhile
   const wasOn = useRef(true);
   useEffect(() => {
