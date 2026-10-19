@@ -36,7 +36,9 @@ Severity: C critical · H high · M medium · L low. Status: FIXED (verified how
   (never listed; expires). Fix: idempotency key on create.
 - L OPEN — Dev console: "getServerSnapshot should be cached" from useAnon (lib/anon.ts useSyncExternalStore).
 - L OPEN — Supabase MCP hangs on any SQL with `delete` (tooling, not app): hand the owner the SQL to paste.
-- OPEN (owner to approve) — Work windows/cards to copy the Classic About/Contact theme (fonts already unified).
+- FIXED 2026-10-19 — Work (dark) follows the classic Blackboard theme of /about + /upgrade (site.css): #000, chalk ink,
+  Archivo titles, Inter text, Chakra chrome, mono labels, hairlines, pill buttons; windows incl. the anonymous card.
+  It's the last layer in app/work/work.css; earlier 'studio'/'liquid glass' Work layers above it are overridden.
 - FIXED 2026-10-19 (this session, details in git log): Work↔Classic switch without reload (Playwright: 0 reloads);
   dropped live messages after reconnect (refresh + queued beams); launches stuck at "Locking" (20 s per try);
   Nearby empty across areas; container grid 9=3·3·3 / 10=5·5 (rendered); drop zone aligned with Upload (measured);
