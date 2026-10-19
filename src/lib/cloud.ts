@@ -41,6 +41,46 @@ export function useCloud() {
 const PARALLEL_UP = 3;
 const TRIES = 3;
 
+// ---- a gentle upload: back off as soon as the line starts to choke ----------------------------------
+// A full-speed upload fills the router's queue (bufferbloat): pages, DNS and Windows' own internet check
+// time out and the computer looks offline. While uploads run, a tiny request to our own edge measures the
+// round trip every 1.5 s; when it climbs well above this line's quiet level, uploads drop to one lane and
+// pause briefly between parts so everything else on the network gets through.
+const net = { users: 0, timer: 0 as ReturnType<typeof setInterval> | 0, base: Infinity, recent: [] as number[], congested: false };
+async function probe() {
+  const t = performance.now();
+  const ok = await fetch(`/favicon.ico?rtt=${Date.now()}`, { method: "HEAD", cache: "no-store" }).then((r) => r.ok, () => false);
+  const ms = ok ? performance.now() - t : 5000;
+  net.recent = [...net.recent.slice(-2), ms];
+  if (ok) net.base = Math.min(net.base, ms);
+  const med = [...net.recent].sort((a, b) => a - b)[Math.floor(net.recent.length / 2)];
+  // calm again only once it has clearly come back down (no flapping)
+  net.congested = net.congested ? med > Math.max(net.base * 2.5, net.base + 200) : med > Math.max(net.base * 4, net.base + 400);
+}
+function watchNet(on: boolean) {
+  net.users += on ? 1 : -1;
+  if (net.users > 0 && !net.timer) {
+    void probe();
+    net.timer = setInterval(probe, 1500);
+  } else if (net.users <= 0 && net.timer) {
+    clearInterval(net.timer);
+    net.timer = 0;
+    net.users = 0;
+    net.recent = [];
+    net.congested = false;
+  }
+}
+/** how many parts may go up at once right now */
+const laneLimit = () => (net.congested ? 1 : PARALLEL_UP);
+/** the line is choking: uploads are holding back */
+export const netCongested = () => net.congested;
+
+/** Switching Work ↔ Classic reloads the page: say so first if a cloud copy is still going up. */
+export function switchView(href: string) {
+  if (cloudSaving() && !confirm("Files are still uploading. Switching now pauses them (they pick up again after). Switch anyway?")) return;
+  window.location.assign(href);
+}
+
 // ---- uploads that resume -------------------------------------------------------------------------
 // A big upload is remembered on this device (IndexedDB: the object, its owner key, R2's upload id and
 // the encryption key, which stays non-extractable). After the page closes or crashes, reopening the
@@ -258,6 +298,7 @@ async function multi(
     todo = d.urls;
   };
   // keeps the object in orbit while this runs, paused or not
+  watchNet(true);
   const beat = setInterval(async () => {
     const r = await call(id, { owner, action: "alive" }).catch(() => null);
     if (r?.ok && (await r.json().catch(() => null))?.ok === false) ac.abort(new Gone());
@@ -278,8 +319,13 @@ async function multi(
       ac.signal.addEventListener("abort", stopRound, { once: true });
       try {
         let next = 0;
-        const worker = async () => {
+        const worker = async (lane: number) => {
           while (next < queue.length && !round.signal.aborted) {
+            // a choked line: only lane 0 keeps going, the others wait until it clears
+            if (lane >= laneLimit()) {
+              await sleep(700, round.signal);
+              continue;
+            }
             const p = queue[next++];
             for (let attempt = 1; ; attempt++) {
               try {
@@ -291,6 +337,8 @@ async function multi(
                 sent.set(p.n, partBytes(p.n));
                 paused = false;
                 progress();
+                // give the queued traffic of everything else on the network a moment to drain
+                if (net.congested) await sleep(1500, round.signal);
                 break;
               } catch (e) {
                 sent.delete(p.n);
@@ -307,7 +355,7 @@ async function multi(
             }
           }
         };
-        await Promise.all(Array.from({ length: Math.min(PARALLEL_UP, Math.max(1, queue.length)) }, worker));
+        await Promise.all(Array.from({ length: Math.min(PARALLEL_UP, Math.max(1, queue.length)) }, (_, i) => worker(i)));
         const parts = Math.ceil(total / PART_CHUNKS);
         const list = Array.from({ length: parts }, (_, i) => etags.get(i + 1));
         if (list.some((e) => !e)) throw new Error("missing parts");
@@ -340,6 +388,7 @@ async function multi(
     }
   } finally {
     clearInterval(beat);
+    watchNet(false);
   }
 }
 

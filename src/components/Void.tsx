@@ -20,7 +20,7 @@ import { supabase, type RealtimeChannel } from "@/lib/realtime";
 import SpacePanel, { SpaceRoom } from "./Spaces";
 import BubbleZoom from "./BubbleZoom";
 import { heldIds, release as releaseP2P } from "@/lib/p2p";
-import { cloudSaved, cloudSaving, isResumable, stopCopy } from "@/lib/cloud";
+import { cloudSaved, cloudSaving, isResumable, stopCopy, switchView } from "@/lib/cloud";
 // a ball leaving: stop offering it directly and stop any upload of its stored copy
 const release = (id: string) => {
   releaseP2P(id);
@@ -2243,7 +2243,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             <button onClick={openTasks}>Tasks{tasks.length ? ` ${tasks.filter((t) => !t.doneAt).length}` : ""}</button>
             <Link href="/about">About</Link>
             {/* a full load: the work look starts clean */}
-            <button onClick={() => window.location.assign("/work")}>Switch to Work</button>
+            <button onClick={() => switchView("/work")}>Switch to Work</button>
             <Link href="/upgrade" className="nav-up">Upgrade</Link>
           </nav>
           <div className="top-right">
