@@ -55,7 +55,9 @@ async function probe() {
   if (ok) net.base = Math.min(net.base, ms);
   const med = [...net.recent].sort((a, b) => a - b)[Math.floor(net.recent.length / 2)];
   // calm again only once it has clearly come back down (no flapping)
+  const was = net.congested;
   net.congested = net.congested ? med > Math.max(net.base * 2.5, net.base + 200) : med > Math.max(net.base * 4, net.base + 400);
+  if (was !== net.congested) console.info(net.congested ? `orbi: line busy (${Math.round(med)} ms vs ${Math.round(net.base)} ms), uploading gently` : "orbi: line calm again, full speed");
 }
 function watchNet(on: boolean) {
   net.users += on ? 1 : -1;
@@ -70,10 +72,25 @@ function watchNet(on: boolean) {
     net.congested = false;
   }
 }
+// the person's pick: "gentle" (default) backs off on a busy line, "full" always goes flat out
+const SPEED_KEY = "orbit:upspeed";
+export type UpSpeed = "gentle" | "full";
+export const upSpeed = (): UpSpeed => {
+  try {
+    return localStorage.getItem(SPEED_KEY) === "full" ? "full" : "gentle";
+  } catch {
+    return "gentle";
+  }
+};
+export const setUpSpeed = (v: UpSpeed) => {
+  try {
+    localStorage.setItem(SPEED_KEY, v);
+  } catch {}
+};
+/** the line is choking and this device is set to be gentle: uploads (and device-to-device sends) hold back */
+export const netCongested = () => net.congested && upSpeed() === "gentle";
 /** how many parts may go up at once right now */
-const laneLimit = () => (net.congested ? 1 : PARALLEL_UP);
-/** the line is choking: uploads are holding back */
-export const netCongested = () => net.congested;
+const laneLimit = () => (netCongested() ? 1 : PARALLEL_UP);
 
 /** Switching Work ↔ Classic reloads the page: say so first if a cloud copy is still going up. */
 export function switchView(href: string) {
@@ -287,7 +304,7 @@ async function multi(
   let paused = false;
   const progress = () => {
     const done = base + [...sent.values()].reduce((a, b) => a + b, 0);
-    set(id, { state: paused ? "paused" : "saving", frac: Math.min(0.99, done / enc), speed: paused ? undefined : meter.label(done) });
+    set(id, { state: paused ? "paused" : "saving", frac: Math.min(0.99, done / enc), speed: paused ? undefined : netCongested() ? `${meter.label(done)} · connection busy, going gently` : meter.label(done) });
   };
   const sync = async () => {
     const r = await call(id, { owner, action: "resume", uploadId });
@@ -338,7 +355,7 @@ async function multi(
                 paused = false;
                 progress();
                 // give the queued traffic of everything else on the network a moment to drain
-                if (net.congested) await sleep(1500, round.signal);
+                if (netCongested()) await sleep(1500, round.signal);
                 break;
               } catch (e) {
                 sent.delete(p.n);

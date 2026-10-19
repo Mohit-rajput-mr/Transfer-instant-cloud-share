@@ -7,6 +7,7 @@ import {
 import { MAX_FILE_BYTES, MAX_LABEL } from "@/lib/limits";
 import { previewUrl } from "@/lib/preview";
 import { release } from "@/lib/p2p";
+import { setUpSpeed, upSpeed, type UpSpeed } from "@/lib/cloud";
 import { enqueue } from "@/lib/downloads";
 import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, filesBundle, isFolder, isLoose, isLinkText, itemName, itemSize, mergeItems, packFolder, pickFolderTarget, textToFile, type DirHandle, type Item } from "@/lib/bundle";
 import { needsSavePicker, pickSaveTarget, receive, unlockOrb, UnlockError, type Unlocked, type Received, type Stage } from "@/lib/transfer";
@@ -555,6 +556,7 @@ export function SendPanel(props: {
   const [code, setCode] = useState("");
   const [bubble, setBubble] = useState("");
   const [more, setMore] = useState(false);
+  const [speed, setSpeed] = useState<UpSpeed>(() => (typeof window === "undefined" ? "gentle" : upSpeed()));
   const [max, setMax] = useState<number | null>(null);
   // every send starts open (no password); a password is a deliberate choice each time
   const [locked, setLocked] = useState(false);
@@ -721,6 +723,13 @@ export function SendPanel(props: {
                 {LIVES.map((m) => (
                   <button key={m} role="radio" aria-checked={life === m} className={`chip lg-press${life === m ? " on" : ""}`} onClick={() => setLife(m)}>{m}m</button>
                 ))}
+              </div>
+            </div>
+            <div className="field">
+              <label><span className="mono">Upload speed</span><span className="mono dim">{speed === "gentle" ? "backs off when your connection gets busy" : "always flat out"}</span></label>
+              <div className="seg" role="radiogroup" aria-label="Upload speed">
+                <button role="radio" aria-checked={speed === "gentle"} className={`lg-press${speed === "gentle" ? " on" : ""}`} onClick={() => (setUpSpeed("gentle"), setSpeed("gentle"))}>Gentle</button>
+                <button role="radio" aria-checked={speed === "full"} className={`lg-press${speed === "full" ? " on" : ""}`} onClick={() => (setUpSpeed("full"), setSpeed("full"))}>Full speed</button>
               </div>
             </div>
             <div className="field">
