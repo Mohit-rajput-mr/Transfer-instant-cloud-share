@@ -2,6 +2,11 @@
 
 Read `CLAUDE.md` first (owner wants SHORT answers, deploy steps, IDs). This file is the live task board.
 Last updated: 2026-10-17 (2nd session: A–D done + deployed).
+- 2026-10-19: anonymous spaces: 4-letter **knock** (Spaces → Browse; migration 022 applied; invite sealed to the knocker's ECDH key),
+  being in an anonymous space always runs a timed session (create: 5–30 min, join: 30), phone ↕ scroll-mode toggle.
+- STILL MISSING in Supabase: `orbit_session_forget`, `orbit_reap_anon` (migration 020). The Supabase MCP hangs on any SQL with
+  `delete` (confirmation never arrives): the owner must paste them in the SQL editor. Until then, turning anonymous on does
+  not erase the browser's heartbeat row, and anonymous spaces are not cleaned up after 7 days.
 - 2026-10-19: uploads back off when the line chokes (lib/cloud.ts watchNet: RTT probe → 1 lane + pauses), and Work↔Classic asks before reloading during uploads (switchView).
 - 2026-10-19: HQ has a **Void** tab (every area: files, notes, tasks; burn any, beamed live to the area; migration 023). Bubble notes default 15 min; tasks default 30 min (options to 8 h); screens drop expired tasks/notes every 5 s.
 - 2026-10-18 late: the Vercel connector is read-only (403 on deploy). Vercel project `orbit` is now linked to GitHub, so a push to `claude/festive-keller-rln4jk` should deploy on its own. Work on that branch only.
