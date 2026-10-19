@@ -159,7 +159,7 @@ export default function SpacePanel(props: {
           <div className="sp-hero">
             <span className="mono dim">{current.priv ? "Private space" : "Open space"} · you are <b>{current.handle}</b></span>
             <div className="wide sp-title">{current.title}{current.priv && <Lock />}</div>
-            <span className="mono dim">{info ? `${info.members.length} ${info.members.length === 1 ? "member" : "members"}` : "…"}{info?.owner ? " · you created it" : ""}{current.priv && info?.ends ? ` · closes at ${new Date(info.ends).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}</span>
+            <span className="mono dim">{info ? `${info.members.length} ${info.members.length === 1 ? "member" : "members"}` : "…"}{info?.owner ? " · you created it" : ""}{info?.ends ? ` · closes at ${new Date(info.ends).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}</span>
           </div>
           <p className="note">Only people in this space see what is launched here. Everyone in it floats as a bubble at the top of the glass{info?.owner ? "; tap one to remove them" : ""}.</p>
           <div className="sp-acts">
@@ -359,9 +359,9 @@ function CreateForm(props: { title0: string; handle0: string; onDone: (s: SpaceS
         <div className="field">
           <label><span className="mono">Passcode to enter</span></label>
           <input className="line-input" value={pass} maxLength={64} onChange={(e) => setPass(e.target.value)} placeholder="4+ characters" autoComplete="off" />
-          <span className="mono dim">A private space closes 8 hours after it is made: its people, files, notes and tasks go with it.</span>
         </div>
       )}
+      <p className="note">A space closes 8 hours after it is made: its people, files, notes and tasks go with it. What you send in it stays until then.</p>
       <div className="field">
         <label><span className="mono">Your name in it</span></label>
         <input className="line-input" value={handle} maxLength={24} onChange={(e) => setHandle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} placeholder="How others see your objects" autoComplete="off" />
@@ -432,7 +432,7 @@ export function SpaceRoom(props: { space: SpaceSession; info: SpaceInfo | null; 
   }, [arm]);
   const members = [...(info?.members ?? [])].sort((a, b) => Number(b.you) - Number(a.you) || Number(online.has(b.id)) - Number(online.has(a.id)));
   const live = members.filter((m) => online.has(m.id) || m.you).length;
-  // a private space closes 8 hours after it was made: its clock above the name
+  // a named space closes 8 hours after it was made: its clock above the name
   const ends = !space.anon && info?.ends ? info.ends : null;
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -445,7 +445,7 @@ export function SpaceRoom(props: { space: SpaceSession; info: SpaceInfo | null; 
   return (
     <div className="room" aria-label={`Space ${space.title}`}>
       {ends && (
-        <div className={`space-clock mono${left < 15 * 60_000 ? " late" : ""}`} role="timer" aria-label={`This private space closes in ${clock}`}>
+        <div className={`space-clock mono${left < 15 * 60_000 ? " late" : ""}`} role="timer" aria-label={`This space closes in ${clock}`}>
           closes in <b>{clock}</b>
         </div>
       )}
