@@ -1,0 +1,17 @@
+[
+ {"key":"hook","text":"Your bank card has no battery. No charger, no switch. Yet every time you tap it, it wakes up, does secret maths, and goes back to sleep. In under a second.","emo":1.15,"gap":0.45},
+ {"key":"why","text":"So where does the power come from? The answer is the same trick that charges your electric toothbrush.","emo":1.05,"gap":0.4},
+ {"key":"coil","text":"Hidden under the plastic, a thin wire loops around the edge of the card. Again, and again, and again.","emo":0.95,"gap":0.3},
+ {"key":"field","text":"The card reader is always humming an invisible magnetic field. It flips direction about thirteen million times a second.","emo":1.0,"gap":0.3},
+ {"key":"induce","text":"Bring your card close, and that flipping field pushes electricity around the loop. No contact at all. Just like the toothbrush on its stand.","emo":1.05,"gap":0.35},
+ {"key":"wake","text":"A tiny chip wakes up on that borrowed power. It only works a few centimetres away. That's why you have to get so close.","emo":1.0,"gap":0.35},
+ {"key":"talk","text":"And here's the weird part. To answer, the card doesn't even transmit. It just flickers how much power it takes, and the reader feels the pattern. Like blinking a torch in morse code.","emo":1.1,"gap":0.4},
+ {"key":"key","text":"Now the clever bit. The chip holds a secret key that never, ever leaves it.","emo":1.0,"gap":0.3},
+ {"key":"mix","text":"For every tap, it mixes that key with the amount, a counter, and a random number, into a one time code.","emo":0.95,"gap":0.3},
+ {"key":"bank","text":"The bank checks the code. It matches? Paid. Beep.","emo":1.1,"gap":0.45},
+ {"key":"thief","text":"So what if a thief secretly records your tap? They get a code that's already been used. Try it again, and the bank just says no.","emo":1.1,"gap":0.45},
+ {"key":"reveal","text":"No battery. No contact. Just a loop of wire, borrowed power, and a code that only works once.","emo":1.05,"gap":0.5},
+ {"key":"orbi","text":"Orbi Transfer was built on the same idea. Your file is locked on your own phone, with a code that never leaves it.","emo":0.9,"gap":0.3},
+ {"key":"orbi2","text":"It only shows up on screens near you. Twelve wrong guesses, and it locks itself. Thirty minutes later, it's gone.","emo":0.95,"gap":0.4},
+ {"key":"end","text":"Orbi Transfer dot com. Now you know what happens in every tap.","emo":0.8,"gap":0.0}
+]
