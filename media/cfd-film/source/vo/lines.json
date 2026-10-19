@@ -1,0 +1,78 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "You can trade gold, oil, or Tesla without ever owning any of it. It's called a CFD.",
+   "dur": 6.139,
+   "at": 0.35
+  },
+  {
+   "key": "what",
+   "text": "CFD means contract for difference. You and the broker make a deal: whoever the price moves against pays the other the difference.",
+   "dur": 8.495,
+   "at": 6.89
+  },
+  {
+   "key": "long",
+   "text": "Think the price will rise? Go long. It climbs ten dollars, the broker pays you ten.",
+   "dur": 5.866,
+   "at": 15.73
+  },
+  {
+   "key": "short",
+   "text": "Think it will fall? Go short. It drops ten, you get paid ten. Falling markets become a chance too.",
+   "dur": 6.435,
+   "at": 21.9
+  },
+  {
+   "key": "lev",
+   "text": "Now the hook: leverage. To open a thousand dollar position, you might only put down fifty. That's called margin.",
+   "dur": 6.868,
+   "at": 28.73
+  },
+  {
+   "key": "magnify",
+   "text": "So a five percent move up doubles your fifty. But a five percent move down wipes it out.",
+   "dur": 5.536,
+   "at": 35.95
+  },
+  {
+   "key": "call",
+   "text": "When your losses eat your margin, the broker closes you out automatically. That's a margin call.",
+   "dur": 6.408,
+   "at": 41.84
+  },
+  {
+   "key": "costs",
+   "text": "And it's never free. You pay the spread to get in, and a fee for every night you hold.",
+   "dur": 4.734,
+   "at": 48.65
+  },
+  {
+   "key": "why",
+   "text": "Why do people love it? Small money, big exposure, and you can bet on either direction.",
+   "dur": 5.324,
+   "at": 53.73
+  },
+  {
+   "key": "truth",
+   "text": "But here's the truth: brokers in Europe must publish how many clients lose money. It's usually over seventy percent.",
+   "dur": 6.66,
+   "at": 59.35
+  },
+  {
+   "key": "tip",
+   "text": "Not financial advice. If you try it, use small leverage, and always set a stop.",
+   "dur": 4.944,
+   "at": 66.41
+  },
+  {
+   "key": "end",
+   "text": "Send this to a friend on Orbi Transfer. Now you know!",
+   "dur": 3.797,
+   "at": 71.76
+  }
+ ],
+ "duration": 77.36
+}

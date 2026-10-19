@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>How NFC works</title>
+<title>How Starlink works</title>
 <style>
   @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
   @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
@@ -260,113 +260,92 @@ function phone(t, a, b, k1, k2 = null, mix = 0, hl = null) {
   S($("ph"), { opacity: Math.min(kin * 1.2, 1) * (1 - kout), transform: `translateY(${(1 - kin) * 300 + kout * 400}px) scale(${lerp(0.9, 1, kin)})` });
   if (hl) { const [x, y, w, h, k] = hl; S($("phl"), { left: `${x}px`, top: `${y}px`, width: `${w}px`, height: `${h}px`, opacity: k }); } else S($("phl"), { opacity: 0 });
 }
-const along = (pts, k) => { const n = pts.length - 1, f = clamp(k) * n, i = Math.min(n - 1, Math.floor(f)); return pts[i].clone().lerp(pts[i + 1], f - i); };
+
 const MIS = ["m0", "m1", "m2"];
-desk.visible = laptop.visible = fileBox.visible = false; glow.intensity = 0;
+desk.visible = laptop.visible = fileBox.visible = false; glow.intensity = 0; floor.visible = false; scene.fog = null;
 const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; $(id).innerHTML = html; pop(id, t, a, b, x, y, rot); };
 const say = (id, html, t, a, b, x = 540, y = 160) => { if (t < a || t > b) return; $(id).innerHTML = html; tag(id, t, a, b, x, y); };
-// ---------- the café counter, the terminal, the phone ----------
-const counter = sh(new THREE.Mesh(new THREE.BoxGeometry(4, 1.0, 2), flat(0x6b4a33))); counter.position.set(0, 0.5, 0); scene.add(counter);
-const term = new THREE.Group(); { const b = sh(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.7), flat(0x22262d, { metalness: 0.4 }))); b.position.y = 0.04; term.add(b);
-  const scrT = canvasTex(256, 160, (g) => { g.fillStyle = "#0b1a12"; g.fillRect(0, 0, 256, 160); g.fillStyle = "#3dff8c"; g.font = "800 44px M"; g.textAlign = "center"; g.fillText("$4.50", 128, 70); g.font = "600 24px M"; g.fillText("TAP HERE", 128, 120); });
-  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.25), new THREE.MeshBasicMaterial({ map: scrT, toneMapped: false })); scr.rotation.x = -Math.PI / 2; scr.position.set(0, 0.085, -0.15); term.add(scr); }
-term.position.set(0, 1.0, 0.2); scene.add(term);
-const coilM = new THREE.MeshBasicMaterial({ color: 0xffb347, toneMapped: false });
-const coilT = new THREE.Group(); for (let i = 0; i < 4; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.17 - i * 0.025, 0.007, 6, 40), coilM); r.rotation.x = Math.PI / 2; coilT.add(r); } coilT.position.set(0, 1.09, 0.32); scene.add(coilT);
-const ph = new THREE.Group(); { const b = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.02, 0.74), new THREE.MeshPhysicalMaterial({ color: 0x4a5060, transparent: true, opacity: 0.6, roughness: 0.2, metalness: 0.3, depthWrite: false })); ph.add(b); ph.add(new THREE.LineSegments(new THREE.EdgesGeometry(b.geometry), new THREE.LineBasicMaterial({ color: 0xffffff, toneMapped: false })));
-  for (let i = 0; i < 4; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.14 - i * 0.022, 0.006, 6, 40), coilM); r.rotation.x = Math.PI / 2; r.position.z = 0.08; ph.add(r); } }
-scene.add(ph);
-const chip = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.02, 0.07), new THREE.MeshBasicMaterial({ color: 0x334455, toneMapped: false })); ph.add(chip); chip.position.set(0, 0.012, 0.08);
-const chipGlow = new THREE.PointLight(0x3dff8c, 0, 1.2, 1.5); ph.add(chipGlow); chipGlow.position.set(0, 0.1, 0.08);
-const PH_AT = (h) => ph.position.set(0, 1.09 + h, 0.24);
-// the magnetic field: rings that breathe up out of the coil and fade with distance
-const rings = Array.from({ length: 8 }, () => { const m = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.006, 6, 48), new THREE.MeshBasicMaterial({ color: 0x4f9cff, transparent: true, toneMapped: false, depthWrite: false })); m.rotation.x = Math.PI / 2; m.visible = false; scene.add(m); return m; });
-const fieldOn = (t, strength = 1) => rings.forEach((m, i) => { const k = (t * 0.9 + i / rings.length) % 1; m.visible = true; m.position.set(0, 1.1 + k * 0.5, 0.32); m.scale.setScalar(1 + k * 1.6); m.material.opacity = strength * (1 - k) * (1 - k) * 0.9; });
-// electrons running round the phone coil, and bits flying back
-const elec = Array.from({ length: 14 }, () => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.012, 6, 4), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })); m.visible = false; scene.add(m); return m; });
-const bitTex = ["0", "1"].map((b) => canvasTex(64, 64, (g) => { g.clearRect(0, 0, 64, 64); g.fillStyle = "#3dff8c"; g.font = "800 52px M"; g.textAlign = "center"; g.fillText(b, 32, 50); }));
-const bits = Array.from({ length: 10 }, (_, i) => { const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: bitTex[(i * 7) % 3 ? 1 : 0], transparent: true, toneMapped: false })); m.scale.set(0.07, 0.07, 1); m.visible = false; scene.add(m); return m; });
-// the ruler
-const ruler = new THREE.Group(); { const b = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.6, 0.06), flat(0xffd23d)); b.position.y = 0.3; ruler.add(b); for (let i = 0; i <= 6; i++) { const tk = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.006, 0.065), flat(0x222222)); tk.position.y = i * 0.1; ruler.add(tk); } }
-ruler.position.set(0.32, 1.09, 0.24); scene.add(ruler);
-// barista + you
-const BAR = person(0, -1.3, 0, 0xf08a5d, { sex: "f", phone: false });
-const YOUP = person(0, 1.55, Math.PI, 0x4fc3bd, { sex: "m", phone: false });
-// Orbi ending: two phones in a room with green rings
-const ringO = Array.from({ length: 4 }, () => { const m = new THREE.Mesh(new THREE.TorusGeometry(1, 0.02, 6, 64), new THREE.MeshBasicMaterial({ color: 0x3dff8c, transparent: true, toneMapped: false })); m.rotation.x = Math.PI / 2; m.visible = false; scene.add(m); return m; });
-const NEAR = [person(6, 0, 0.6, 0x4fc3bd, { sex: "f", phone: false }), person(8.4, -0.5, -1.0, 0xf08a5d, { sex: "m", phone: false }), person(7.4, 1.4, 2.8, 0xb48aff, { sex: "f", phone: false })];
-const sideLight = new THREE.PointLight(0xffe0b0, 9, 8, 1.2); sideLight.position.set(1.2, 2.6, 1.8); scene.add(sideLight);
-const oL = new THREE.PointLight(0x3dff8c, 6, 9, 1.2); oL.position.set(7.2, 3, 1.5); scene.add(oL);
+const big = (txt, t, a, b, col = "#fff", top = "380px", size = "110px") => { if (t < a || t > b) return; $("shout1").textContent = txt; S($("shout1"), { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+scene.background = new THREE.Color(0x02040a);
+scene.children.slice().forEach((o) => { if (o.isMesh) o.visible = false; });
+// stars
+{ const g = new THREE.BufferGeometry(); const P = []; seed = 3; for (let i = 0; i < 1500; i++) { const a = rnd() * 6.283, b = Math.acos(2 * rnd() - 1), r = 300; P.push(r * Math.sin(b) * Math.cos(a), r * Math.cos(b), r * Math.sin(b) * Math.sin(a)); } g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3)); scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 0.6 }))); }
+// ---------- the earth: low-poly globe, R = 10 (1 unit ≈ 640 km) ----------
+const R = 10, EARTH = new THREE.Group(); scene.add(EARTH);
+const eg = new THREE.IcosahedronGeometry(R, 5); { const col = []; const pos = eg.attributes.position; seed = 21; for (let i = 0; i < pos.count; i += 3) { const v = V(pos.getX(i), pos.getY(i), pos.getZ(i)).normalize(); const ang = (la, lo) => v.angleTo(V(Math.cos(la * Math.PI / 180) * Math.cos(lo * Math.PI / 180), Math.sin(la * Math.PI / 180), Math.cos(la * Math.PI / 180) * Math.sin(lo * Math.PI / 180))) * 180 / Math.PI; const land = ang(28, 18) < 24 || ang(14, 30) < 9 || ang(-30, 120) < 20 || ang(45, 150) < 18; const c = new THREE.Color(land ? 0x3f8f4f : 0x1d4f8f); for (let k = 0; k < 3; k++) col.push(c.r, c.g, c.b); } eg.setAttribute("color", new THREE.Float32BufferAttribute(col, 3)); }
+const earth = new THREE.Mesh(eg, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.8 })); EARTH.add(earth);
+const atmo = new THREE.Mesh(new THREE.SphereGeometry(R * 1.03, 48, 32), new THREE.MeshBasicMaterial({ color: 0x5aa8ff, transparent: true, opacity: 0.12, side: THREE.BackSide })); EARTH.add(atmo);
+const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(30, 20, 30); scene.add(sun); scene.add(new THREE.AmbientLight(0x406080, 0.6));
+const onSurf = (lat, lon, h = 0) => { const la = lat * Math.PI / 180, lo = lon * Math.PI / 180; return V(Math.cos(la) * Math.cos(lo), Math.sin(la), Math.cos(la) * Math.sin(lo)).multiplyScalar(R + h); };
+// key places: the ship mid-ocean, a ground station on land, a phone tower on the coast
+const SHIP = onSurf(8, 70), GS = onSurf(28, 18), TOWER = onSurf(12, 38);
+const shipM = new THREE.Group(); { const hull = sh(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.16), flat(0xdddddd))); const cab = sh(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.12), flat(0xffffff))); cab.position.set(-0.08, 0.12, 0); const dish = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.01, 0.06), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })); dish.position.set(-0.08, 0.19, 0); shipM.add(hull, cab, dish); }
+const putOn = (obj, p) => { obj.position.copy(p); obj.lookAt(p.clone().multiplyScalar(2)); obj.rotateX(Math.PI / 2); EARTH.add(obj); };
+putOn(shipM, SHIP.clone().multiplyScalar(1.002));
+const gsM = new THREE.Group(); for (let i = 0; i < 3; i++) { const d = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6, 0, 6.283, 0, 1.4), flat(0xeeeeee)); d.position.set(i * 0.2 - 0.2, 0.05, 0); d.rotation.x = Math.PI; gsM.add(d); } putOn(gsM, GS);
+const towerM = new THREE.Group(); { const m = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.05, 0.5, 4), flat(0xcccccc))); m.position.y = 0.25; towerM.add(m); } putOn(towerM, TOWER);
+const towerRing = new THREE.Mesh(new THREE.RingGeometry(0.75, 0.95, 48), new THREE.MeshBasicMaterial({ color: 0xffd23d, transparent: true, opacity: 0.6, side: THREE.DoubleSide, toneMapped: false })); putOn(towerRing, TOWER.clone().multiplyScalar(1.003)); towerRing.rotateX(-Math.PI / 2);
+// satellites: a low shell (550 km ≈ 0.86 units) and one far geostationary bird (36,000 km ≈ 56 units)
+const satM = new THREE.MeshBasicMaterial({ color: 0xdfe8ff, toneMapped: false }), panM = new THREE.MeshBasicMaterial({ color: 0x3a6fd8, toneMapped: false });
+const mkSat = (s = 0.12) => { const g = new THREE.Group(); g.add(new THREE.Mesh(new THREE.BoxGeometry(s, s * 0.3, s * 0.6), satM)); const p = new THREE.Mesh(new THREE.BoxGeometry(s * 3, s * 0.05, s * 0.8), panM); p.position.x = s * 2; g.add(p); return g; };
+const SH = 0.86, NP = 12, NS = 16, SATS = [];
+for (let p = 0; p < NP; p++) for (let s = 0; s < NS; s++) { const m = mkSat(); scene.add(m); SATS.push({ m, inc: 53 * Math.PI / 180, raan: p / NP * 6.283, ph: s / NS * 6.283 + p * 0.37 }); }
+const satPos = (o, t) => { const a = o.ph + t * 0.12; const v = V(Math.cos(a), 0, Math.sin(a)).multiplyScalar(R + SH); v.applyAxisAngle(V(1, 0, 0), o.inc); v.applyAxisAngle(V(0, 1, 0), o.raan); return v; };
+const GEO = mkSat(0.6); scene.add(GEO); const GEOP = onSurf(0, 60, 56);
+// beams
+const beamM = (c) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.9, toneMapped: false });
+const beams = Array.from({ length: 8 }, (_, i) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1, 6), beamM(i < 2 ? 0x3dff8c : 0xff3b5c)); m.visible = false; scene.add(m); return m; });
+const beam = (i, a, b) => { const m = beams[i], d = b.clone().sub(a); m.visible = true; m.position.copy(a).add(b).multiplyScalar(0.5); m.scale.set(1, d.length(), 1); m.quaternion.setFromUnitVectors(V(0, 1, 0), d.normalize()); };
+const pkt = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })); scene.add(pkt);
+
+const along = (pts, k) => { const n = pts.length - 1, f = clamp(k) * n, i = Math.min(n - 1, Math.floor(f)); return pts[i].clone().lerp(pts[i + 1], f - i); };
+// the nearest satellites to a point at time t
+const nearest = (p, t, n = 1, skip = []) => SATS.map((o) => ({ o, d: satPos(o, t).distanceTo(p) })).filter((x) => !skip.includes(x.o)).sort((a, b) => a.d - b.d).slice(0, n).map((x) => x.o);
+// the hop chain from the ship to the ground station: greedy walk toward GS
+function chain(t) { const out = [nearest(SHIP, t)[0]]; for (let k = 0; k < 12; k++) { const last = satPos(out[out.length - 1], t); if (last.distanceTo(GS) < 2.2) break; const cand = SATS.filter((o) => !out.includes(o)).map((o) => ({ o, p: satPos(o, t) })).filter((x) => x.p.distanceTo(last) < 4.2).sort((a, b) => a.p.distanceTo(GS) - b.p.distanceTo(GS))[0]; if (!cand) break; out.push(cand.o); } return out; }
+const camAt = (pos, tgt, fov = 40) => { cam.position.copy(pos); cam.lookAt(tgt); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const shipView = (d = 4, up = 2.2, side = 0) => { const n = SHIP.clone().normalize(); const east = V(0, 1, 0).cross(n).normalize(); const north = n.clone().cross(east); return [SHIP.clone().add(n.clone().multiplyScalar(up)).add(north.clone().multiplyScalar(-d)).add(east.clone().multiplyScalar(side)), SHIP.clone().add(n.clone().multiplyScalar(0.6))]; };
+// the flat dish close-up: a grid of tiny antennas
+const panel = new THREE.Group(); const cells = []; for (let i = 0; i < 12; i++) for (let j = 0; j < 8; j++) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.02, 0.11), new THREE.MeshBasicMaterial({ color: 0x334455, toneMapped: false })); c.position.set((i - 5.5) * 0.13, 0, (j - 3.5) * 0.13); panel.add(c); cells.push([c, i, j]); }
+panel.position.set(60, 0, 0); scene.add(panel);
+const panelBeam = new THREE.Mesh(new THREE.ConeGeometry(0.4, 4, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0x3dff8c, transparent: true, opacity: 0.25, toneMapped: false, depthWrite: false })); scene.add(panelBeam);
 
 window.render = async function (t) {
   for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "ph", "tA", "tB", "tC", "tD", "tE", "tF", "tG", "shout1", "shout2", "tries", "timer", "red", "flash"]) S($(id), { opacity: 0 });
-  const A = at;
-  rings.forEach((m) => (m.visible = false)); elec.forEach((m) => (m.visible = false)); bits.forEach((m) => (m.visible = false)); ringO.forEach((m) => (m.visible = false));
-  standPose(BAR, t, "idle"); standPose(YOUP, t, t < A("orbi") ? "hold" : "idle"); NEAR.forEach((p) => standPose(p, t, "hold"));
-  ruler.visible = t >= A("close") && t < A("token");
-  let h = 0.5, lit = 0;
-  const chipOn = (k) => { lit = k; chip.material.color.setHex(k > 0.5 ? 0x3dff8c : 0x334455); chipGlow.intensity = 0.7 * k; };
-  const runElec = (k) => elec.forEach((m, i) => { const a = t * 6 + i / elec.length * 6.283; m.visible = k > 0; m.position.set(Math.cos(a) * 0.12, ph.position.y + 0.012, ph.position.z + 0.08 + Math.sin(a) * 0.12); });
+  const A = at; const tt = t;
+  SATS.forEach((o) => { o.m.position.copy(satPos(o, tt)); o.m.lookAt(0, 0, 0); });
+  GEO.position.copy(GEOP); GEO.lookAt(0, 0, 0);
+  beams.forEach((m) => (m.visible = false)); pkt.visible = false; panelBeam.visible = false; towerRing.visible = t >= A("tower") && t < A("old");
+  EARTH.rotation.y = 0;
+  if (t < A("tower")) { const k = ease(clamp(t / A("tower"))); const [p, q] = shipView(lerp(2.2, 4.0, k), lerp(0.9, 1.8, k), 0.8); camAt(p, q, 44); big("NO SIGNAL", t, 1.2, A("tower") - 0.3, "#ff4d5a", "300px", "100px"); }
+  else if (t < A("old")) { const k = ease(clamp((t - A("tower")) / (A("old") - A("tower")))); const mid = TOWER.clone().lerp(SHIP, 0.5); const n = mid.clone().normalize(); camAt(mid.clone().add(n.multiplyScalar(lerp(12, 15, k))).add(V(0, -3, 0)), mid, 44);
+    lbl("l0", TOWER.clone().multiplyScalar(1.06), t, A("tower") + 0.6, A("old"), "tower · <b>a few dozen km</b>", "#ffd23d"); lbl("l1", SHIP.clone().multiplyScalar(1.06), t, A("tower") + 1.4, A("old"), "you · <span class='red'>no signal</span>", "#ff6a6a"); }
+  else if (t < A("leo")) { const k = ease(clamp((t - A("old")) / (A("leo") - A("old")))); camAt(V(lerp(30, 70, k), lerp(25, 40, k), lerp(70, 110, k)), V(10, 0, 20), 40);
+    const sp = A("leo") - A("old"), kk = ((t - A("old") - 1) / (sp * 0.7)); beam(2, SHIP, GEOP); beam(3, GEOP, GS); pkt.visible = kk > 0 && kk < 1; pkt.scale.setScalar(5); pkt.position.copy(along([SHIP, GEOP, GS], kk));
+    lbl("l0", GEOP.clone().add(V(0, 4, 0)), t, A("old") + 0.6, A("leo"), "36,000 km up", "#ff6a6a"); say("tA", "There and back · <i>over half a second</i>", t, A("old") + sp * 0.5, A("leo")); }
+  else if (t < A("swarm")) { const k = ease(clamp((t - A("leo")) / (A("swarm") - A("leo")))); const [p, q] = shipView(lerp(9, 5, k), lerp(5, 2.5, k)); camAt(p, q, 44);
+    const s = nearest(SHIP, tt)[0]; const sp = satPos(s, tt); beam(0, SHIP, sp); lbl("l0", sp.clone().add(sp.clone().normalize().multiplyScalar(0.5)), t, A("leo") + 0.6, A("swarm"), "550 km up", "#3dff8c"); say("tA", "A few <b>hundredths</b> of a second", t, A("leo") + 1.4, A("swarm")); }
+  else if (t < A("dish")) { const k = ease(clamp((t - A("swarm")) / (A("dish") - A("swarm")))); camAt(V(lerp(18, 32, k), lerp(14, 22, k), lerp(20, 30, k)), V(0, 0, 0), 44); say("tA", "Thousands of satellites · <b>~95 min</b> per orbit", t, A("swarm") + 0.8, A("dish")); }
+  else if (t < A("ground")) { const sp = A("ground") - A("dish"); camAt(V(61.4, 1.6, 1.8), V(60, 0, 0), 44);
+    const ang = Math.sin((t - A("dish")) * 0.8) * 0.5; cells.forEach(([c, i, j]) => { const ph = (i * Math.sin(ang) * 2.2 - t * 6) % 6.283; c.material.color.setHex(Math.sin(ph) > 0.3 ? 0x3dff8c : 0x1e3a2c); });
+    panelBeam.visible = true; panelBeam.position.set(60 + Math.sin(ang) * 2, 2, 0); panelBeam.rotation.z = -ang; panelBeam.rotation.x = Math.PI;
+    say("tA", "No motor · <b>steered by timing</b>", t, A("dish") + sp * 0.4, A("ground")); lbl("l0", V(60, 0.3, 0.9), t, A("dish") + 0.6, A("ground"), "hundreds of tiny antennas", "#3dff8c"); }
+  else if (t < A("laser")) { const [p, q] = (() => { const mid = GS.clone(); const n = mid.clone().normalize(); return [mid.clone().add(n.multiplyScalar(5)).add(V(-3, 2, 3)), mid]; })(); camAt(p, q, 44);
+    const s = nearest(GS, tt)[0]; const sp = satPos(s, tt); beam(0, sp, GS); lbl("l0", GS.clone().multiplyScalar(1.03), t, A("ground") + 0.6, A("laser"), "ground station · <b>internet</b>", "#3dff8c"); }
+  else if (t < A("orbi")) { const ch = chain(tt); const pts = [SHIP, ...ch.map((o) => satPos(o, tt)), GS];
+    for (let i = 0; i < pts.length - 1 && i < 8; i++) beam(i, pts[i], pts[i + 1]); beams[0].material.color.setHex(0x3dff8c); beams[pts.length - 2] && beams[Math.min(7, pts.length - 2)].material.color.setHex(0x3dff8c);
+    const k = ease(clamp((t - A("laser")) / (A("orbi") - A("laser")))); const mid = SHIP.clone().lerp(GS, 0.5).normalize().multiplyScalar(R); camAt(mid.clone().multiplyScalar(lerp(2.0, 2.4, k)).add(V(0, 3, 0)), mid, 44);
+    const kk = ((t - A("hop")) / (A("orbi") - A("hop") - 0.5)); pkt.visible = kk > 0 && kk < 1; pkt.scale.setScalar(2.5); pkt.position.copy(along(pts, kk));
+    say("tA", t < A("hop") ? "Satellite → satellite · <b>lasers</b>" : "Hop · hop · hop → <b>online</b>", t, A("laser") + 0.6, A("orbi")); }
+  else { const [p, q] = shipView(1.6, 0.7, 0.8); camAt(p, q, 44); const s = nearest(SHIP, tt)[0]; beam(0, SHIP, satPos(s, tt)); say("tA", "Online at sea · <b>Orbi works</b>", t, A("orbi") + 0.6, A("end")); }
 
-  if (t < A("coil")) {
-    const k = ease(clamp(t / A("coil"))); h = lerp(0.6, 0.04, clamp((t - 1.2) / 2.0)); PH_AT(h);
-    look(lerp(1.4, 0.9, k), lerp(2.2, 1.7, k), lerp(2.6, 1.8, k), 0, lerp(1.4, 1.15, k), 0.2, 42);
-    const tapAt = 3.3; if (t > tapAt) { chipOn(1); const s0 = tapAt + 0.2; $("shout1").textContent = "PAID"; S($("shout1"), { opacity: clamp((t - s0) / 0.15) * clamp((A("coil") - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - s0) / 0.25)))}) rotate(-4deg)`, color: "#3dff8c" }); }
-  } else if (t < A("field")) {
-    const k = ease(clamp((t - A("coil")) / (A("field") - A("coil")))); PH_AT(0.45);
-    look(lerp(1.0, 0.8, k), lerp(1.75, 1.85, k), lerp(1.7, 1.5, k), 0, 1.3, 0.28, 42); chipOn(0);
-    lbl("l0", V(0, 1.12, 0.32), t, A("coil") + 0.6, A("field"), "coil · <b>terminal</b>", "#ffb347");
-    lbl("l1", ph.position.clone().add(V(0, 0.12, 0.08)), t, A("coil") + (A("field") - A("coil")) * 0.5, A("field"), "coil · <b>card / phone</b>", "#ffb347");
-  } else if (t < A("power")) {
-    const k = ease(clamp((t - A("field")) / (A("power") - A("field")))); PH_AT(0.9);
-    look(lerp(1.4, 1.6, k), lerp(1.9, 2.1, k), lerp(2.0, 2.4, k), 0, 1.5, 0.3, 42); chipOn(0); fieldOn(t, 1);
-    say("tA", "13.56 MHz · <b>13,560,000 flips a second</b>", t, A("field") + 0.6, A("power"));
-  } else if (t < A("talk")) {
-    const span = A("talk") - A("power"); h = lerp(0.9, 0.05, ease(clamp((t - A("power") - 0.4) / (span * 0.4)))); PH_AT(h);
-    look(0.85, 1.45, 1.15, 0, 1.15, 0.28, 42); fieldOn(t, 1);
-    const on = h < 0.3; chipOn(on ? 1 : 0); runElec(on ? 1 : 0);
-    if (on) say("tA", "Field → <b>power</b> · no battery", t, A("power") + span * 0.45, A("talk"));
-  } else if (t < A("close")) {
-    PH_AT(0.05); look(-0.7, 1.4, 1.0, 0, 1.15, 0.28, 42); fieldOn(t, 1); runElec(1); chipOn(Math.sin(t * 22) > 0 ? 1 : 0.25);
-    bits.forEach((m, i) => { const k = (t * 1.2 + i / bits.length) % 1; m.visible = true; m.position.set(-0.05 + Math.sin(i * 3) * 0.08, lerp(1.15, 1.11, k), lerp(0.24, 0.32, k) + 0.0); m.position.x -= k * 0.0; m.position.y = 1.16 + Math.sin(k * Math.PI) * 0.05; m.position.z = lerp(0.22, 0.4, k); });
-    say("tA", "Flickers → <b>1s and 0s</b>", t, A("talk") + 0.6, A("close"));
-  } else if (t < A("token")) {
-    const span = A("token") - A("close"); h = path3([[0, 0.05], [0.45, 0.6], [0.75, 0.6], [1, 0.03]], (t - A("close")) / span); PH_AT(h);
-    look(1.3, 1.45, 1.3, 0.1, 1.35, 0.24, 44); fieldOn(t, 1); const on = h < 0.4; chipOn(on ? 1 : 0); runElec(on ? 1 : 0);
-    lbl("l0", V(0.36, 1.09 + Math.min(h, 0.6) + 0.06, 0.24), t, A("close") + 0.3, A("token"), `${Math.round(h * 10)} cm${on ? "" : " · <b>off</b>"}`, on ? "#3dff8c" : "#ff6a6a");
-    say("tA", "A few centimeters · <b>on purpose</b>", t, A("close") + span * 0.6, A("token"));
-  } else if (t < A("orbi")) {
-    PH_AT(0.03); look(0.8, 1.8, 1.8, 0, 1.2, 0.2, 44); chipOn(1); fieldOn(t, 0.6);
-    const sp = A("replay") - A("token");
-    card("c0", `<h5>real card</h5><span class="red" style="text-decoration:line-through">4539 1488 0343 6467</span>`, t, A("token") + 0.4, A("orbi"), 80, 230, -2);
-    card("c1", `<h5>sent instead</h5>stand-in <b>5291 ···· 0071</b><br/>one-time code <b>7F3A91</b>`, t, A("token") + sp * 0.45, A("orbi"), 90, 450, 1);
-    if (t > A("replay")) { card("c2", `code <b>7F3A91</b> → <span class="red">ALREADY USED</span>`, t, A("replay") + 0.6, A("orbi"), 90, 700, -2); S($("red"), { opacity: t > A("replay") + 0.6 ? 0.3 : 0 }); }
-  } else {
-    const k = ease(clamp((t - A("orbi")) / 4)); look(lerp(7.2, 7.4, k), lerp(4.0, 5.5, k), lerp(5.5, 6.5, k), 7.2, 0.8, 0.2, 46);
-    ringO.forEach((m, i) => { const kk = (t * 0.5 + i / 4) % 1; m.visible = true; m.position.set(7.2, 0.05, 0.3); m.scale.setScalar(0.4 + kk * 3); m.material.opacity = 1 - kk; });
-    say("tA", "Nearby · <b>no tap</b> · locked first", t, A("orbi") + 0.8, A("end"));
-  }
-
-  // ---- subtitles ----
   let sub = "";
-  for (const ln of LINES.lines) {
-    if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue;
-    const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0);
-    let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; });
-    let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i;
-    const chunksW = []; let c = [];
-    words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { chunksW.push(c); c = []; } }); if (c.length) chunksW.push(c);
-    sub = chunksW.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" ");
-  }
-  $("sub").textContent = sub;
-  S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
-  const e = clamp((t - A("end") + 0.1) / 0.45);
-  S($("endc"), { opacity: e });
-  document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
   S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
   r.render(scene, cam);
 };
-const path3 = (keys, k) => { k = clamp(k); for (let i = 1; i < keys.length; i++) if (k <= keys[i][0]) { const [a, pa] = keys[i - 1], [b, pb] = keys[i]; return lerp(pa, pb, ease((k - a) / (b - a))); } return keys[keys.length - 1][1]; };
 await document.fonts.ready;
 window.ready = true;
 </script>
