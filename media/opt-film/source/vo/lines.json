@@ -4,81 +4,81 @@
   {
    "key": "hook",
    "text": "What if you could lock in today's price, and decide later if you even want to buy? That's an option.",
-   "dur": 5.303,
+   "dur": 5.624,
    "at": 0.35
   },
   {
    "key": "call",
    "text": "A call option is the right, but not the duty, to buy a stock at a fixed price, called the strike, before a set date.",
-   "dur": 7.541,
-   "at": 6.05
+   "dur": 7.992,
+   "at": 6.37
   },
   {
    "key": "prem",
    "text": "That right costs a small fee, the premium. Say the stock is a hundred. You pay three dollars for the right to buy it at a hundred.",
-   "dur": 6.869,
-   "at": 13.94
+   "dur": 7.288,
+   "at": 14.72
   },
   {
    "key": "win",
    "text": "If the stock jumps to a hundred and twenty, your right is worth about twenty. Your three dollars became twenty!",
-   "dur": 6.3,
-   "at": 21.16
+   "dur": 6.695,
+   "at": 22.35
   },
   {
    "key": "lose",
    "text": "If it falls, you just walk away. The most you can lose is the three dollars you paid.",
-   "dur": 5.421,
-   "at": 27.81
+   "dur": 5.731,
+   "at": 29.4
   },
   {
    "key": "put",
    "text": "A put is the mirror: the right to sell at the strike. It pays off when the stock falls, like insurance on your shares.",
-   "dur": 7.107,
-   "at": 33.63
+   "dur": 7.523,
+   "at": 35.53
   },
   {
    "key": "decay",
    "text": "But options melt. Every day, part of the premium disappears. That's time decay.",
-   "dur": 5.276,
-   "at": 41.14
+   "dur": 5.581,
+   "at": 43.45
   },
   {
    "key": "curve",
    "text": "And it speeds up at the end. In the last weeks, the melting gets fast, like an ice cube in the sun.",
-   "dur": 6.298,
-   "at": 46.77
+   "dur": 6.68,
+   "at": 49.38
   },
   {
    "key": "seller",
    "text": "Who gets that melting money? The option seller. They collect premium every day, and hope nothing big happens.",
-   "dur": 6.014,
-   "at": 53.41
+   "dur": 6.371,
+   "at": 56.41
   },
   {
    "key": "vol",
    "text": "One more thing: when traders expect big moves, options get more expensive. That's volatility.",
-   "dur": 5.307,
-   "at": 59.78
+   "dur": 5.624,
+   "at": 63.13
   },
   {
    "key": "why",
    "text": "So why do people love options? Small cost, a capped loss for buyers, huge upside, and a way to insure what you own.",
-   "dur": 8.12,
-   "at": 65.49
+   "dur": 8.611,
+   "at": 69.16
   },
   {
    "key": "tip",
    "text": "Not financial advice. Time is working against every option you buy, so know your date.",
-   "dur": 5.093,
-   "at": 73.96
+   "dur": 5.389,
+   "at": 78.12
   },
   {
    "key": "end",
    "text": "Send this to a friend on Orbi Transfer. Now you know!",
-   "dur": 3.797,
-   "at": 79.45
+   "dur": 4.024,
+   "at": 83.91
   }
  ],
- "duration": 85.05
+ "duration": 89.73
 }
