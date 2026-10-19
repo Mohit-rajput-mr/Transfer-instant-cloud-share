@@ -14,6 +14,19 @@ import { P2P_PREFIX, hold, holding, isP2P, pull } from "./p2p";
 import { fetchStored, isStored, storeCopy, waitStored } from "./cloud";
 import { stayAwake } from "./wake";
 
+/** A POST that survives a dropped connection (a phone switching networks, a cold server): up to 3 tries, then a clear message. */
+async function sendRetry(url: string, init: RequestInit, tries = 3): Promise<Response> {
+  for (let i = 0; ; i++) {
+    try {
+      return await fetch(url, init);
+    } catch (e) {
+      if ((e as Error).name === "AbortError") throw e;
+      if (i >= tries - 1) throw new Error("The connection dropped while sending. Check your internet and try again");
+      await new Promise((r) => setTimeout(r, 800 * 2 ** i));
+    }
+  }
+}
+
 export type Stage = "packing" | "deriving" | "encrypting" | "uploading" | "finalizing" | "decrypting" | "done";
 
 /** Open objects (no passcode) are still encrypted, with this well-known code: the server stays blind to the
@@ -53,7 +66,7 @@ export async function launch(opts: {
   // a picture of what is inside (photo, video frame, PDF page), only for objects anyone may open
   const preview = opts.open && !anon ? await makePreview(file) : null;
 
-  const res = await fetch("/api/transfers", {
+  const res = await sendRetry("/api/transfers", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -85,7 +98,7 @@ export async function launch(opts: {
   const url = `${P2P_PREFIX}${id}`;
 
   onProgress("finalizing", 1);
-  const fin = await fetch(`/api/transfers/${id}/finalize`, {
+  const fin = await sendRetry(`/api/transfers/${id}/finalize`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ owner, url }),
