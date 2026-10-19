@@ -3591,3 +3591,7 @@ html .trash-zone.near .trash-hole b { color: #fff !important; }
 html[data-theme="light"] .emoji-pop { background: rgba(255,255,255,0.86); border-color: rgba(0,0,0,0.12); }
 html[data-theme="light"] .emoji-tabs button { color: #555; } html[data-theme="light"] .emoji-tabs button.on { color: #000; background: rgba(0,0,0,0.08); }
 html[data-theme="light"] .emoji-btn { color: #444; background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.12); }
+/* note window: who you post as */
+.bub-name { display: flex; flex-direction: column; gap: 6px; }
+.bub-name .mono i { font-style: normal; opacity: 0.7; text-transform: none; letter-spacing: 0; }
+.bub-as { margin: 0; } .bub-as b { color: #fff; }

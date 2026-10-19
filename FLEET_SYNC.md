@@ -19,9 +19,13 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
-- H OPEN — No automated tests and no CI gate. Only `npm run check` (tsc + eslint) + manual build + Playwright spot checks.
-  Next: unit tests for pure logic (lib/spaces tagName/untag/closesAt, client formatClock, OrbView smartCols/bubbleLayout,
-  lib/space knock seal/unseal) and a GitHub Action running check + build on push.
+- FIXED 2026-10-19 (H) — No tests / no CI. Now: Vitest unit tests (`npm test`, src/lib/*.test.ts: container rows,
+  knock sealing, clocks/formats, space life, name tags), `npm run check` = tsc + eslint + tests, and
+  .github/workflows/check.yml (typecheck, lint, tests, build) on every push. Add a test with every logic fix.
+- FIXED 2026-10-19 (H, security) — Notes/tasks in a space were signed with whatever name the browser sent (any member could
+  post as anyone; a wrong saved name showed instead of the member name). Server now signs with the member handle in
+  bubbles, tasks, tasks/done, tasks/edit. Root cause of the "24-51 LITTLE NECK REPLY" name: an unlabelled name box saved
+  any text as the device's name for good → box labelled, locked to the member name inside spaces, not saved from spaces.
 - M RISK — Knock (4-letter code → Let in) never run end to end with two real devices (crypto round-trip unit-checked only).
 - M RISK — Nearby across areas (migration 024 + per-network live room) not checked with two devices on one Wi-Fi.
 - M RISK — 8-hour named spaces (025/026): spaces older than 8 h closed at deploy; file/note/task extension to the close time

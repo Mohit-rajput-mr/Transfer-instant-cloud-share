@@ -485,13 +485,15 @@ export function BubbleCompose(props: {
   const [mode, setMode] = useState<"new" | "append" | "edit">(props.edit?.mode ?? "new");
   const target = props.edit?.bubble ?? (mode === "append" ? props.latest : null) ?? null;
   const [text, setText] = useState(props.edit?.mode === "edit" ? props.edit.bubble.text : "");
-  const [name, setName] = useState(() => bubbleName() || props.defaultName);
+  // in a space you post as your member name (the server signs with it); elsewhere the name this device chose
+  const spaceName = props.inSpace && !props.anon ? props.defaultName : "";
+  const [name, setName] = useState(() => spaceName || bubbleName() || props.defaultName);
   const [busy, setBusy] = useState(false);
   const post = async () => {
     if (!text.trim() || busy) return;
     setBusy(true);
     try {
-      if (mode === "new") await props.onPost(text, props.anon ? "" : name.trim());
+      if (mode === "new") await props.onPost(text, props.anon ? "" : spaceName || name.trim());
       else if (target) await props.onChange(target.id, text, mode);
       props.onClose();
     } catch {
@@ -523,7 +525,14 @@ export function BubbleCompose(props: {
       {mode === "new" ? (
         <>
           <p className="dim bub-note">{props.inSpace ? `Only people in ${props.inSpace} see it.` : "Anyone in the public void sees it, as is: no password, nothing to unlock."} {props.inSpace && !props.anon ? "It stays until the space closes." : "It burns in 15 minutes."}{props.anon ? " You post as your space alias. Notes aren't end-to-end encrypted." : ""}</p>
-          {!props.anon && <input className="line-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name (optional)" maxLength={24} autoComplete="off" />}
+          {!props.anon && (spaceName ? (
+            <p className="mono dim bub-as">Posting as <b>{spaceName}</b></p>
+          ) : (
+            <label className="bub-name">
+              <span className="mono dim">Your name <i>(shown on your notes and files)</i></span>
+              <input className="line-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Mohit" maxLength={24} autoComplete="name" />
+            </label>
+          ))}
         </>
       ) : mode === "append" && target ? (
         <blockquote className="bub-quote">{target.text}</blockquote>

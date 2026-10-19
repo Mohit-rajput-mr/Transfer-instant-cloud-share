@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
     const me = await member(b.space, b.deviceId, b.spaceToken);
     if (!me) return NextResponse.json({ error: "You are no longer in this space" }, { status: 403 });
     space = me.slug;
-    by = by || me.handle;
+    // in a space you are your member name (never what the browser sends: nobody posts as someone else)
+    by = me.handle;
     alias = me.handle;
   }
   // anonymous: only inside an anonymous space, signed with the space's alias, no place, a rotating rate-limit key
