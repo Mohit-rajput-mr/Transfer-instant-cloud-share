@@ -49,7 +49,7 @@ const TRIES = 3;
 const net = { users: 0, timer: 0 as ReturnType<typeof setInterval> | 0, base: Infinity, recent: [] as number[], congested: false };
 async function probe() {
   const t = performance.now();
-  const ok = await fetch(`/favicon.ico?rtt=${Date.now()}`, { method: "HEAD", cache: "no-store" }).then((r) => r.ok, () => false);
+  const ok = await fetch(`/favicon.ico?rtt=${Date.now()}`, { method: "HEAD", cache: "no-store", signal: AbortSignal.timeout(5000) }).then((r) => r.ok, () => false);
   const ms = ok ? performance.now() - t : 5000;
   net.recent = [...net.recent.slice(-2), ms];
   if (ok) net.base = Math.min(net.base, ms);
@@ -59,11 +59,14 @@ async function probe() {
   net.congested = net.congested ? med > Math.max(net.base * 2.5, net.base + 200) : med > Math.max(net.base * 4, net.base + 400);
   if (was !== net.congested) console.info(net.congested ? `orbi: line busy (${Math.round(med)} ms vs ${Math.round(net.base)} ms), uploading gently` : "orbi: line calm again, full speed");
 }
-function watchNet(on: boolean) {
+function watchNet(on: boolean): Promise<void> {
   net.users += on ? 1 : -1;
   if (net.users > 0 && !net.timer) {
-    void probe();
+    // the first probe runs before any part goes up, so the line's quiet round trip is known (measured during the
+    // upload, a line busy from the start would look normal and never be eased)
+    const first = probe();
     net.timer = setInterval(probe, 1500);
+    return first;
   } else if (net.users <= 0 && net.timer) {
     clearInterval(net.timer);
     net.timer = 0;
@@ -71,6 +74,7 @@ function watchNet(on: boolean) {
     net.recent = [];
     net.congested = false;
   }
+  return Promise.resolve();
 }
 // the person's pick: "gentle" (default) backs off on a busy line, "full" always goes flat out
 const SPEED_KEY = "orbit:upspeed";
@@ -315,7 +319,7 @@ async function multi(
     todo = d.urls;
   };
   // keeps the object in orbit while this runs, paused or not
-  watchNet(true);
+  await watchNet(true);
   const beat = setInterval(async () => {
     const r = await call(id, { owner, action: "alive" }).catch(() => null);
     if (r?.ok && (await r.json().catch(() => null))?.ok === false) ac.abort(new Gone());
@@ -344,6 +348,7 @@ async function multi(
               continue;
             }
             const p = queue[next++];
+            const t0 = performance.now();
             for (let attempt = 1; ; attempt++) {
               try {
                 const body = await sealRange(file, key, nonce, (p.n - 1) * PART_CHUNKS, Math.min(total, p.n * PART_CHUNKS), total);
@@ -354,8 +359,9 @@ async function multi(
                 sent.set(p.n, partBytes(p.n));
                 paused = false;
                 progress();
-                // give the queued traffic of everything else on the network a moment to drain
-                if (netCongested()) await sleep(1500, round.signal);
+                // a part is 32 MB: one lane alone still fills a slow up-line for its whole length. On a busy line, rest
+                // as long as the part took, so the line is free about half the time and everything else drains
+                if (netCongested()) await sleep(Math.min(30_000, Math.max(1500, performance.now() - t0)), round.signal);
                 break;
               } catch (e) {
                 sent.delete(p.n);

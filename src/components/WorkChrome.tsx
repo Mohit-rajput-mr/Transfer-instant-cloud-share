@@ -5,6 +5,7 @@ import { LuCircleHelp, LuFile, LuX, LuFolderUp, LuGlobe, LuLayers, LuListChecks,
 import { BsIncognito } from "react-icons/bs";
 import type { Kind } from "@/lib/skin-list";
 import { useTheme } from "@/lib/theme";
+import { switchView } from "@/lib/cloud";
 import KindFilter from "./KindFilter";
 
 // The /work chrome: an editor-style top bar, a slim icon rail and a canvas action bar (phones: a bottom tab bar).
@@ -109,7 +110,7 @@ export function WorkRail(p: { inSpace: boolean; onHome: () => void; onSpaces: ()
       <div className="w-rail-bot">
         <ThemeToggle />
         <Link href="/about" title="About" aria-label="About"><LuCircleHelp /></Link>
-        <Link href="/" className="w-classic" title="Classic Orbit view" aria-label="Classic Orbit view"><LuOrbit /></Link>
+        <Link href="/" className="w-classic" title="Classic Orbit view" aria-label="Classic Orbit view" onClick={(e) => { e.preventDefault(); switchView("/"); }}><LuOrbit /></Link>
       </div>
     </nav>
   );
