@@ -151,6 +151,7 @@ Use them in every film where a feature is shown.
   why your phone storage fills up · how "the cloud" is just someone's computer.
 
 ## Films so far
+- `sweep-film/`: "What is a liquidity sweep?" (equal lows, sell-/buy-side liquidity, sweep vs breakdown)
 - `candle2-film/`: "Inside a candle" v2 (order-book shelves filling the candle, liquidity sweep) — owner asked for this deeper version
 - `candle-film/`: "How to read a candle" (stock chart candles, wicks, stop loss, stop hunting; ends with share-on-Orbi line)
 - `pw-film/`: science film "Your bank doesn't know your password" (hash blender, salt, stolen lists, slow hashing → Orbi 310,000 rounds)
