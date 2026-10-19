@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "You tap your phone, and the coffee is paid. No cable, no battery in the card. So how does it work?",
+   "dur": 5.716,
+   "at": 0.35
+  },
+  {
+   "key": "coil",
+   "text": "Inside the payment terminal is a coil of wire. And inside your card, or your phone, is another one.",
+   "dur": 6.006,
+   "at": 6.47
+  },
+  {
+   "key": "field",
+   "text": "The terminal pushes electricity through its coil, flipping thirteen and a half million times a second. That makes an invisible magnetic field.",
+   "dur": 7.785,
+   "at": 12.77
+  },
+  {
+   "key": "power",
+   "text": "Bring the card close, and that field makes electricity in the card's coil. Enough to wake up its tiny chip. That's why a card needs no battery.",
+   "dur": 10.672,
+   "at": 20.91
+  },
+  {
+   "key": "talk",
+   "text": "To answer, the chip doesn't shout back. It just flickers how much power it takes, and the terminal reads those flickers as ones and zeros.",
+   "dur": 9.2,
+   "at": 31.93
+  },
+  {
+   "key": "close",
+   "text": "The field fades fast. A few centimeters away, it's gone. That's not a flaw, it's the point. You have to mean to tap.",
+   "dur": 8.215,
+   "at": 41.48
+  },
+  {
+   "key": "token",
+   "text": "And your real card number usually never leaves. The phone sends a stand-in number, plus a one-time code made just for this payment.",
+   "dur": 7.8,
+   "at": 50.09
+  },
+  {
+   "key": "replay",
+   "text": "Steal that code, and it's useless. It already worked once.",
+   "dur": 3.463,
+   "at": 58.19
+  },
+  {
+   "key": "orbi",
+   "text": "NFC needs a tap. Orbi Transfer reaches phones nearby without touching at all, and locks every file before it leaves.",
+   "dur": 7.587,
+   "at": 62.06
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 69.99
+  }
+ ],
+ "duration": 74.55
+}
