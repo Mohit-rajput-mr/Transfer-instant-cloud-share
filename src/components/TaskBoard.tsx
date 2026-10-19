@@ -380,6 +380,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
         const gDone = g.tasks.filter((t) => stepOf(t) === 3).length;
         return (
           <aside key={g.key} data-map-key={`t:${g.key}`} style={mapped ? spotStyle(props.spots!.get(`t:${g.key}`)) : undefined} className={`task-board lg${isOpen ? " open" : ""}${props.wiring ? " wiring" : ""}${props.laneH ? ` lanes${props.laneH < 62 ? " tight" : ""}` : ""}${g.mine ? " mine" : " theirs"}`} aria-label={g.name}>
+            <div className="tb-top">
             <button className="tb-head" onClick={() => (narrow && gi === 0 && groups.length === 1 ? setOpen((o) => !o) : setShut((x) => { const n = new Set(x); if (n.has(g.key)) n.delete(g.key); else n.add(g.key); if (!open) setOpen(true); return n; }))} aria-expanded={isOpen}>
               <i className="task-dot" aria-hidden />
               <b>{g.mine ? "Tasks" : g.name}</b>
@@ -395,6 +396,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                 <LuRows3 aria-hidden />{props.arranged ? "Arranged" : "Arrange"}
               </button>
             )}
+            </div>
             {isOpen && <ol className="tb-list" style={tbH ? ({ maxHeight: `${tbH}px` } as CSSProperties) : undefined}>{g.tasks.map((t) => row(t, props.tasks.indexOf(t)))}</ol>}
             {isOpen && narrow && g.tasks.length > 1 && (
               <div className="tb-resize" onPointerDown={onResizeDown} onPointerMove={onResizeMove} onPointerUp={onResizeUp} onPointerCancel={onResizeUp} role="separator" aria-label="Drag to resize the task list" title="Drag to resize"><span /></div>

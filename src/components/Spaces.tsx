@@ -2,6 +2,7 @@
 import { homePath } from "@/lib/client";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { BsIncognito } from "react-icons/bs";
+import { ANON_MINUTES, lastMinutes } from "@/lib/anon";
 import {
   createSpace, joinSpace, knock, knockState, savedHandle, savedSpaces, searchSpaces,
   type Knock, type SpaceHit, type SpaceInfo, type SpaceSession,
@@ -75,7 +76,7 @@ export default function SpacePanel(props: {
   /** the "Stay anonymous" switch (lib/anon.ts): named spaces show your name, so they are closed while it is on */
   anon?: boolean;
   /** make an anonymous space (random title, code and key; one link) and step in */
-  onAnonSpace?: () => void;
+  onAnonSpace?: (min?: number) => void;
   copyAnonLink?: () => void;
 }) {
   const { current, info } = props;
@@ -84,6 +85,7 @@ export default function SpacePanel(props: {
   const blocked = (title: string) => props.toast(`Turn off Anonymous to enter ${title}: it shows your name to its members`);
   const ends = info?.ends ? new Date(info.ends).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : null;
   const [quitArm, setQuitArm] = useState(false);
+  const [mins, setMins] = useState<number>(() => lastMinutes());
   // start: a space to look up, or the header's "+" (":create") / search (":search") buttons
   const [tab, setTab] = useState<Tab>(props.start === ":create" ? "create" : props.start ? "browse" : current ? "here" : "browse");
   const [q, setQ] = useState(props.start?.startsWith(":") ? "" : props.start ?? "");
@@ -212,7 +214,20 @@ export default function SpacePanel(props: {
           <div className="sp-hero sp-anon">
             <span className="mono dim"><BsIncognito className="ic-inline" aria-hidden /> <b>Anonymous space</b></span>
             <p className="note">No name, a random title, private. Share it with one link; only people with the link get in and can open what&apos;s sent.</p>
-            <button className="cta lg-press" onClick={props.onAnonSpace}>Create anonymous space <Arrow /></button>
+            {anon ? (
+              <span className="mono dim">It burns with your anonymous session</span>
+            ) : (
+              <>
+                <span className="mono dim">You go anonymous for</span>
+                <div className="seg anon-min" role="radiogroup" aria-label="How long">
+                  {ANON_MINUTES.map((m) => (
+                    <button key={m} role="radio" aria-checked={mins === m} className={mins === m ? "on" : ""} onClick={() => setMins(m)}>{m} min</button>
+                  ))}
+                </div>
+                <span className="mono dim">then you, the space and everything in it burn</span>
+              </>
+            )}
+            <button className="cta lg-press" onClick={() => props.onAnonSpace?.(mins)}>Create anonymous space <Arrow /></button>
           </div>
           {anon ? (
             <p className="note">Named spaces show your name to their members. Turn off Anonymous to make one.</p>

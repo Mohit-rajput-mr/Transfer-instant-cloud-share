@@ -3517,3 +3517,15 @@ html[data-anon] :is(.up-pill, .send-fab, .bub-fab):hover { border-color: rgba(23
   .void.in-space .ghost-title { font-size: 17px; }
   .void.in-space .ghost-sub { font-size: 11.5px; }
 }
+
+/* task panel header: title, count and chevron on the left, Archive and Arrange in the same row on the right, so they
+   can never sit on top of the title (they used to be pinned over it) */
+.tb-top { display: flex; align-items: center; gap: 6px; padding-right: 10px; flex: none; min-width: 0; }
+.tb-top > .tb-head { flex: 1; min-width: 0; padding-right: 6px !important; }
+.tb-top > .tb-archive, .tb-top > .tb-arrange { position: static !important; right: auto !important; top: auto !important; transform: none !important; flex: none; }
+.tb-top > .tb-arrange { white-space: nowrap; }
+.task-board .tb-top .tb-bar { margin-right: 0 !important; }
+.tb-top .tb-head > b { flex: 0 1 auto; }
+/* the round Archive button is pinned top-right: inside a space, the name / people / Exit row leaves room for it */
+html:has(.arch-bubble) .room:not(.arch-room) .room-top { padding-right: 64px; box-sizing: border-box; }
+@media (max-width: 720px) { html:has(.arch-bubble) .room:not(.arch-room) .room-top { padding-right: 58px; } }

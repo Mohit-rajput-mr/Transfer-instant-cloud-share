@@ -13,7 +13,7 @@ import { launch, type Stage } from "@/lib/transfer";
 import { folderFromInput, fromDrop, textToFile, type Item } from "@/lib/bundle";
 import { useRouter } from "next/navigation";
 import { deviceId, deviceInfo, dropOwnerKey, hasGot, ownerKey, homePath, persistentId, type Orb } from "@/lib/client";
-import { aliasOf, anonId, anonSeen, anonSession, anonSwitch, isAnon, markAnonSeen, setAnon, useAnon } from "@/lib/anon";
+import { aliasOf, anonId, anonSeen, anonSession, anonSwitch, isAnon, lastMinutes, markAnonSeen, setAnon, useAnon } from "@/lib/anon";
 import { genericFileName, scrubItems } from "@/lib/scrub";
 import AnonCard, { type AnonMode } from "./AnonCard";
 import { supabase, type RealtimeChannel } from "@/lib/realtime";
@@ -1006,7 +1006,10 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     carryOn.current(then);
   }, [switchSpace, toast]);
   /** a new anonymous space (random title, code and key), stepped into; its one link is copied if it can be */
-  const goAnonSpace = useCallback(async (then?: Then) => {
+  const goAnonSpace = useCallback(async (then?: Then, min?: number) => {
+    // an anonymous space only exists inside a timed anonymous session (5 to 30 min): start one first, so the space
+    // is filed under it and burns with it
+    if (!anonSwitch()) toggleAnon(true, false, min ?? lastMinutes());
     let s: SpaceSession;
     try {
       s = await createAnonSpace();
@@ -1025,7 +1028,13 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     toast(copied ? `${s.title} is ready · link copied` : `${s.title} is ready`);
     if (then) carryOn.current(then);
     else setPanel(copied ? null : { kind: "anon-link" });
-  }, [switchSpace, toast]);
+  }, [switchSpace, toast, toggleAnon]);
+
+  // stepped into an anonymous space (its link, a knock, or a saved one) without the switch on: being in one is being
+  // anonymous, so a session starts (30 min at most) with its clock on the seal, and it ends by itself
+  useEffect(() => {
+    if (space?.anon && !anonOn) toggleAnon(true, false, 30);
+  }, [space, anonOn, toggleAnon]);
 
   const dropIncoming = useCallback((k: string) => {
     setIncoming((m) => {
@@ -2576,7 +2585,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           onClose={() => setPanel(null)}
           toast={toast}
           anon={anonOn}
-          onAnonSpace={() => void goAnonSpace().catch(() => {})}
+          onAnonSpace={(min?: number) => void goAnonSpace(undefined, min).catch(() => {})}
           copyAnonLink={copyAnonLink}
         />
       )}
