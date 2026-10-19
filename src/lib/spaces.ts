@@ -215,7 +215,7 @@ export const LIVES = [5, 10, 15, 20, 25, 30];
 export function tagName(name: string, t: Tags) {
   const parts: string[] = [];
   if (t.space) parts.push(`s=${t.space}`);
-  if (t.space && t.by) parts.push(`b=${t.by}`);
+  if (t.by) parts.push(`b=${t.by}`);
   if (t.life && t.life < LIFE_MIN) parts.push(`t=${t.life}`);
   if (t.open) parts.push("o=1");
   if (t.from) parts.push(`g=${t.from}`);

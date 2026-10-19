@@ -68,6 +68,8 @@ export function WorkBar(p: {
             {p.space ? (p.isPrivate ? <><LuLock aria-hidden />private</> : "space") : p.area ? <><LuGlobe aria-hidden />{p.area}</> : "public"}
           </span>
         )}
+        {/* back to the orbit look, in the page (no reload: uploads and the live connection keep going) */}
+        <button className="w-classic-btn" onClick={() => switchView("/")} title="Switch to the Classic orbit view"><LuOrbit aria-hidden /><span>Switch to Classic</span></button>
       </div>
 
       <div className="w-tabs" role="tablist" aria-label="Show">
@@ -83,8 +85,6 @@ export function WorkBar(p: {
       </div>
 
       <div className="w-right">
-        {/* back to the orbit look, in the page (no reload: uploads and the live connection keep going) */}
-        <button className="w-classic-btn" onClick={() => switchView("/")} title="Switch to the Classic orbit view"><LuOrbit aria-hidden /><span>Switch to Classic</span></button>
         <KindFilter kind={p.kind} onKind={p.onKind} className="w-filter" />
         <span className="w-live" title={`${p.online} ${p.online > 1 ? "devices" : "device"} online${p.space ? " in this space" : " around you"}`}>
           <i />{p.online}<span> online</span>

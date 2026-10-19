@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { MAX_FILE_BYTES, MAX_LABEL } from "@/lib/limits";
 import { ANON_AREA, anonNet, areaFor, areasParam, clean, geo, isB64, isHex, netHash, newId, reap, rpc, sha256 } from "@/lib/server";
 import { validSkin } from "@/lib/skin-list";
-import { LIVES, burnedUp, cleanGroup, isAnonSpace, member, tagName, untag, validFrom, validTask } from "@/lib/spaces";
+import { LIVES, burnedUp, cleanGroup, cleanHandle, isAnonSpace, member, tagName, untag, validFrom, validTask } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +52,11 @@ export async function POST(req: NextRequest) {
     tags.by = me.handle;
     // an anonymous space makes every send anonymous (old clients too)
     if (await isAnonSpace(me.slug)) anon = true;
+  }
+  // who sent it, so everyone sees it on the ball / container (a space signs with the member's name instead; never anonymous)
+  if (!anon && b.space == null) {
+    const by = cleanHandle(b.by);
+    if (by) tags.by = by;
   }
   // the public void pins everything to an area, and an area is a place
   if (anon && b.space == null) return NextResponse.json({ error: "Anonymous sends go into an anonymous space" }, { status: 400 });

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as R
 import { setCardOrigin } from "./Panels";
 import { ext, formatBytes, formatClock, type Orb } from "@/lib/client";
 import { fileKind, toneOf, typeHue } from "@/lib/skin-list";
-import { LuArchive, LuFileText, LuImage, LuMusic, LuVideo } from "react-icons/lu";
+import { LuArchive, LuFile, LuFileText, LuImage, LuMusic, LuVideo } from "react-icons/lu";
 import { mapView } from "@/lib/map";
 import { dragAt, overTrash, toTrash } from "@/lib/trash";
 
@@ -288,7 +288,7 @@ export function bubbleLayout(n: number) {
   return { d, W, H, spots };
 }
 
-const KIND_ICON = { photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
+const KIND_ICON = { photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive, other: LuFile } as const;
 /** what kind of file it is (photo, video, document, audio, archive), as a small badge on the ball */
 export function KindBadge(props: { kind: string }) {
   const I = KIND_ICON[props.kind as keyof typeof KIND_ICON];
