@@ -171,19 +171,27 @@ const crowdScale = (n: number) => (n <= 5 ? 1 : n <= 8 ? 0.86 : n <= 12 ? 0.74 :
 // One device's objects gather into a single bubble once it has sent more than one.
 const GROUP = "g-";
 const isGroup = (id: string) => id.startsWith(GROUP);
+// a short stable key for a container's name (ids stay plain letters and digits)
+const nameKey = (n: string) => {
+  let h = 0;
+  for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+};
 function groupOrbs(list: Orb[]) {
   const by = new Map<string, Orb[]>();
   // files wired to a task never fold into a container: each stays its own ball (same colour per sender)
-  for (const o of list) if (o.from && !o.task) by.set(o.from, [...(by.get(o.from) ?? []), o]);
+  // a container is one sender's batch under one name: a differently named one stays separate
+  const keyOf = (o: Orb) => `${o.from}${o.groupName ? `-${nameKey(o.groupName)}` : ""}`;
+  for (const o of list) if (o.from && !o.task) by.set(keyOf(o), [...(by.get(keyOf(o)) ?? []), o]);
   const groups = new Map<string, Orb[]>();
   const out: Orb[] = [];
   for (const o of list) {
-    const m = o.from && !o.task ? by.get(o.from)! : null;
+    const m = o.from && !o.task ? by.get(keyOf(o))! : null;
     if (!m || m.length < 2) {
       out.push(o);
       continue;
     }
-    const id = GROUP + o.from;
+    const id = GROUP + keyOf(o);
     if (groups.has(id)) continue;
     m.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     groups.set(id, m);
@@ -2884,8 +2892,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       {work && !panel && board === false && !inArchive && (
         <WorkDock onFiles={() => pickFiles()} onFolder={() => pickFolder()} onText={compose} onNote={() => setPanel({ kind: "bubble" })} onTasks={openTasks} onSpaces={() => setPanel({ kind: "space" })} />
       )}
-      {!work && !inArchive && !panel && board === false && !(menu && !menuOut) && (
-        <button className={`bub-fab lg lg-press${compact ? " mini" : ""}`} onClick={() => setPanel({ kind: "bubble" })} aria-label="Bubble text: post a note everyone sees">
+      {!inArchive && !panel && board === false && !(menu && !menuOut) && (
+        <button className={`bub-fab lg lg-press${compact && !work ? " mini" : ""}`} onClick={() => setPanel({ kind: "bubble" })} aria-label="Bubble text: post a note everyone sees">
           <LuMessageCircle aria-hidden />
           <span>Bubble</span>
         </button>
