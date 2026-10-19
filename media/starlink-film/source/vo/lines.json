@@ -4,69 +4,69 @@
   {
    "key": "hook",
    "text": "A hundred miles out at sea. No towers, no signal. And yet, you're streaming video. How?",
-   "dur": 6.918,
+   "dur": 7.331,
    "at": 0.35
   },
   {
    "key": "tower",
    "text": "Your phone normally talks to a cell tower. But a tower only reaches a few dozen kilometers. Past the coast, there's nothing.",
-   "dur": 7.821,
-   "at": 7.67
+   "dur": 8.291,
+   "at": 8.08
   },
   {
    "key": "old",
    "text": "Old satellite internet used satellites thirty-six thousand kilometers up. So far away that every message takes over half a second to go there and back.",
-   "dur": 10.099,
-   "at": 15.84
+   "dur": 10.701,
+   "at": 16.72
   },
   {
    "key": "leo",
    "text": "Starlink flies much lower, about five hundred and fifty kilometers up. So the trip takes just a few hundredths of a second.",
-   "dur": 6.839,
-   "at": 26.29
+   "dur": 7.245,
+   "at": 27.77
   },
   {
    "key": "swarm",
    "text": "But low satellites race across the sky, circling Earth in about an hour and a half. So Starlink uses thousands of them, a whole swarm.",
-   "dur": 8.855,
-   "at": 33.48
+   "dur": 9.383,
+   "at": 35.37
   },
   {
    "key": "dish",
    "text": "On the ship sits a flat dish. It doesn't swing around to chase satellites. Inside, hundreds of tiny antennas steer the beam electronically, hopping from one satellite to the next.",
-   "dur": 10.205,
-   "at": 42.68
+   "dur": 10.812,
+   "at": 45.1
   },
   {
    "key": "ground",
    "text": "Near land, the satellite beams your data straight down to a ground station, wired into the internet.",
-   "dur": 5.652,
-   "at": 53.24
+   "dur": 5.987,
+   "at": 56.26
   },
   {
    "key": "laser",
    "text": "But in the middle of the ocean, there's no ground station below. So the satellites pass your data to each other, with lasers, across space.",
-   "dur": 8.512,
-   "at": 59.19
+   "dur": 9.016,
+   "at": 62.55
   },
   {
    "key": "hop",
    "text": "Hop, hop, hop, until a satellite is above a station on land. Then it drops down, and you're online.",
-   "dur": 6.559,
-   "at": 68.05
+   "dur": 6.96,
+   "at": 71.92
   },
   {
    "key": "orbi",
    "text": "And once you're online, even at sea, Orbi Transfer works too. No login, files locked before they leave.",
-   "dur": 6.391,
-   "at": 75.01
+   "dur": 6.776,
+   "at": 79.28
   },
   {
    "key": "end",
-   "text": "orbitransfer.com. Now you know!",
-   "dur": 2.751,
-   "at": 81.75
+   "text": "Orbi Transfer dot com. Now you know!",
+   "dur": 2.919,
+   "at": 86.4
   }
  ],
- "duration": 86.3
+ "duration": 91.12
 }

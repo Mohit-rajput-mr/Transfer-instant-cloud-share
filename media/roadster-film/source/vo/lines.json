@@ -1,0 +1,78 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "A car drives up a wall, until it's hanging almost upside down. Tesla really did this. So why doesn't it fall?",
+   "dur": 7.208,
+   "at": 0.35
+  },
+  {
+   "key": "demo",
+   "text": "At the reveal of the new Roadster, the car drove up a giant curved ramp, and clung to it, nearly upside down.",
+   "dur": 6.54,
+   "at": 7.96
+  },
+  {
+   "key": "grav",
+   "text": "Normally, tires grip because the car's weight presses them into the road. Upside down, that weight pulls the wrong way.",
+   "dur": 7.709,
+   "at": 14.85
+  },
+  {
+   "key": "fans",
+   "text": "So Tesla built a vacuum into the car. Fans at the back suck the air out from underneath.",
+   "dur": 5.517,
+   "at": 22.91
+  },
+  {
+   "key": "skirts",
+   "text": "Skirts drop down along the sides to seal the gap, so the air can't rush back in.",
+   "dur": 5.068,
+   "at": 28.72
+  },
+  {
+   "key": "press",
+   "text": "Now the air under the car is thinner than the air around it. So the atmosphere itself pushes the car onto the surface.",
+   "dur": 5.544,
+   "at": 34.14
+  },
+  {
+   "key": "num",
+   "text": "Tesla's screen showed about forty-seven hundred kilos of downforce. Far more than the car weighs. So it sticks, even upside down.",
+   "dur": 8.368,
+   "at": 40.04
+  },
+  {
+   "key": "slow",
+   "text": "And unlike wings, fans work even when the car is slow, or standing still.",
+   "dur": 4.786,
+   "at": 48.8
+  },
+  {
+   "key": "old",
+   "text": "The idea isn't new. Race cars tried fans decades ago, and racing banned them for being too good.",
+   "dur": 6.158,
+   "at": 53.94
+  },
+  {
+   "key": "thrust",
+   "text": "Then it jumped. Thrusters blasting compressed air lifted it right off the ground.",
+   "dur": 4.684,
+   "at": 60.5
+  },
+  {
+   "key": "claims",
+   "text": "Tesla claims zero to sixty in under one second, and production in twenty twenty-eight. Those are Tesla's own numbers, not tested yet.",
+   "dur": 8.754,
+   "at": 65.53
+  },
+  {
+   "key": "end",
+   "text": "Send this to a friend on Orbi Transfer. Now you know!",
+   "dur": 3.797,
+   "at": 74.69
+  }
+ ],
+ "duration": 80.28
+}
