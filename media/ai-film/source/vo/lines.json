@@ -1,0 +1,72 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "You ask an AI chatbot a question, and it answers like a person. But it's really playing one simple game, over and over.",
+   "dur": 7.813,
+   "at": 0.35
+  },
+  {
+   "key": "game",
+   "text": "Guess the next word. That's it.",
+   "dur": 2.054,
+   "at": 8.51
+  },
+  {
+   "key": "tokens",
+   "text": "First, your message is chopped into small pieces called tokens. Common words are one piece. Rare words get split up.",
+   "dur": 8.368,
+   "at": 10.97
+  },
+  {
+   "key": "map",
+   "text": "Each token becomes a long list of numbers, an address on a giant map of meaning, where similar words sit close together.",
+   "dur": 7.423,
+   "at": 19.68
+  },
+  {
+   "key": "attn",
+   "text": "Then, layer after layer, every word looks at every other word, to work out what matters. That trick is called attention.",
+   "dur": 7.509,
+   "at": 27.46
+  },
+  {
+   "key": "score",
+   "text": "At the end, every possible next word gets a score. Paris, ninety percent. London, five percent.",
+   "dur": 6.82,
+   "at": 35.32
+  },
+  {
+   "key": "loop",
+   "text": "It picks one, adds it to the text, and runs the whole thing again. Word, by word, by word.",
+   "dur": 6.151,
+   "at": 42.44
+  },
+  {
+   "key": "learn",
+   "text": "How did it learn? By guessing the next word across a mountain of text, and nudging billions of numbers every time it got it wrong.",
+   "dur": 7.789,
+   "at": 48.99
+  },
+  {
+   "key": "wrong",
+   "text": "That's also why it can sound sure, and still be wrong. It predicts what sounds right, not what's been checked.",
+   "dur": 6.336,
+   "at": 57.13
+  },
+  {
+   "key": "orbi",
+   "text": "So be careful what you paste in, many AI services can keep your chats. For a private file, use Orbi Transfer. Locked on your phone, gone in 30 minutes.",
+   "dur": 8.917,
+   "at": 63.86
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 73.13
+  }
+ ],
+ "duration": 77.68
+}
