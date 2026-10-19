@@ -3442,14 +3442,14 @@ html[data-anon] body { background: #050505; }
 .hq-anon th { position: sticky; top: 0; background: #0a0a0a; text-align: left; font-weight: 500; color: #888; padding: 8px 10px; border-bottom: 1px solid #222; white-space: nowrap; }
 .hq-anon td { padding: 7px 10px; border-bottom: 1px solid #161616; white-space: nowrap; }
 
-/* ---------- the session clock on the seal: a ring of dots that goes out with the time ---------- */
-.ghost-seal { border: 0 !important; box-shadow: inset 0 0 90px rgba(0,0,0,0.55), 0 0 0 100vmax rgba(0,0,0,0.35) !important; --dot: #3ddc84; }
+/* ---------- the session clock on the seal's top edge (no dot ring): green, orange from a third left, red at the end ---------- */
+.ghost-seal { --dot: #3ddc84; }
 .ghost-seal.tone-warn { --dot: #ffa13d; }
 .ghost-seal.tone-end { --dot: #ff4d4d; }
-.seal-dots { position: absolute; inset: 0; overflow: visible; }
-.seal-dots circle { transition: r 300ms ease, opacity 300ms linear, fill 600ms ease; }
-.seal-dots circle.on { fill: var(--dot); filter: drop-shadow(0 0 3px color-mix(in srgb, var(--dot) 70%, transparent)); }
-.seal-dots circle.off { fill: rgba(255,255,255,0.13); }
+/* inside a space the seal sits on the glass card's own edges: one frame, no second border or outside dimming */
+.ghost-seal.on-glass { inset: -1px !important; border-radius: inherit !important; border-color: transparent !important; box-shadow: none !important; pointer-events: none; z-index: 2; }
+.ghost-seal.on-glass .k, .ghost-seal.on-glass .e:not(.t) { display: none; } /* the card is the frame; only the clock stays on its top edge */
+.ghost-seal .e.t { color: rgba(255,255,255,0.6); }
 .ghost-seal .e.t b { color: rgba(255,255,255,0.75); font-weight: 600; }
 .ghost-seal .seal-clock { color: var(--dot) !important; font-variant-numeric: tabular-nums; }
 .ghost-seal.tone-end .seal-clock { animation: seal-blink 1s steps(2) infinite; }
