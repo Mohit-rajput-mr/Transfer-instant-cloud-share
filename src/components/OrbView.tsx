@@ -419,7 +419,8 @@ export default function OrbView(props: {
     const el = button.current;
     if (!el) return;
     const tm = (e: TouchEvent) => {
-      if (drag.current?.armed && e.cancelable) e.preventDefault();
+      // scroll mode (the ↕ button on phones): the swipe scrolls the page instead
+      if (drag.current?.armed && e.cancelable && !("scrollmode" in document.documentElement.dataset)) e.preventDefault();
     };
     el.addEventListener("touchmove", tm, { passive: false });
     return () => el.removeEventListener("touchmove", tm);

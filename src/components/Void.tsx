@@ -31,7 +31,8 @@ import { warm } from "@/lib/peek";
 import { anonLink, anonTitle, createAnonSpace, createSpace, joinAnonSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
 import { BsIncognito } from "react-icons/bs";
 import AnonSeal from "./AnonSeal";
-import { LuFlag, LuMessageCircle, LuMapPin, LuMapPinOff, LuMenu, LuPalette, LuSearch, LuPlus, LuX } from "react-icons/lu";
+import KnockBell from "./KnockBell";
+import { LuFlag, LuMessageCircle, LuMapPin, LuMapPinOff, LuMenu, LuPalette, LuSearch, LuPlus, LuX, LuArrowUpDown } from "react-icons/lu";
 import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange } from "./BubbleBoard";
 import TaskBoard, { TaskWires, taskGroups } from "./TaskBoard";
@@ -270,6 +271,14 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const [incoming, setIncoming] = useState<Record<string, Incoming>>({});
   // the space this device is in (null = the public void); restored from IndexedDB before the first load
   const [space, setSpace] = useState<SpaceSession | null>(null);
+  // phones: "scroll mode" (the small ↕ button on the left) lets a swipe scroll the page instead of dragging what's in the space
+  const [scrollMode, setScrollMode] = useState(false);
+  useEffect(() => {
+    const h = document.documentElement;
+    if (scrollMode) h.dataset.scrollmode = "";
+    else delete h.dataset.scrollmode;
+    return () => { delete h.dataset.scrollmode; };
+  }, [scrollMode]);
   const spaceRef = useRef<SpaceSession | null>(null);
   const [spaceReady, setSpaceReady] = useState(false);
   // who is in the space (and who is live right now, via realtime presence on its channel)
@@ -2258,6 +2267,13 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           ) : (
             <button className="where-badge" onClick={() => setPanel({ kind: "space" })} aria-label="You are in the public void. Open spaces"><i aria-hidden />You&apos;re in the public void</button>
           ))}
+          {(space || anonNow) && !inArchive && (
+            <button className={`scroll-tog lg-press${scrollMode ? " on" : ""}`} onClick={() => setScrollMode((m) => !m)}
+              aria-pressed={scrollMode} aria-label={scrollMode ? "Scroll mode on: swipes scroll the page. Tap to drag things again" : "Scroll mode: let swipes scroll the page"}>
+              <LuArrowUpDown aria-hidden />
+            </button>
+          )}
+          {space?.anon && space.code && space.key && <KnockBell space={space} toast={toast} />}
           {space && !inArchive && <SpaceRoom space={space} info={room} online={live} onKick={kick} onExit={() => {
             switchSpace(null);
             toast("Back in the public void");

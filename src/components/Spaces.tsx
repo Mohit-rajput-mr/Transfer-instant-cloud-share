@@ -3,8 +3,8 @@ import { homePath } from "@/lib/client";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { BsIncognito } from "react-icons/bs";
 import {
-  createSpace, joinSpace, savedHandle, savedSpaces, searchSpaces,
-  type SpaceHit, type SpaceInfo, type SpaceSession,
+  createSpace, joinSpace, knock, knockState, savedHandle, savedSpaces, searchSpaces,
+  type Knock, type SpaceHit, type SpaceInfo, type SpaceSession,
 } from "@/lib/space";
 
 const Lock = () => (
@@ -172,6 +172,7 @@ export default function SpacePanel(props: {
 
       {tab === "browse" && (
         <div className="sp-pane" key="browse">
+          <KnockForm onEnter={props.onEnter} />
           <label className="sp-search">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" /></svg>
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search spaces" autoComplete="off" maxLength={32} enterKeyHint="search" />
@@ -240,6 +241,71 @@ export default function SpacePanel(props: {
         />
       )}
     </Pop>
+  );
+}
+
+/**
+ * Anonymous spaces are never listed. Typing their 4 letters (the space's code, or the anonymous person's Anon-XXXX)
+ * knocks; someone inside taps Let in and this device gets the invite, sealed to a one-time key, and steps in.
+ */
+function KnockForm(props: { onEnter: (s: SpaceSession) => void }) {
+  const [code, setCode] = useState("");
+  const [k, setK] = useState<Knock | null>(null);
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+  const ok = /^[A-Z0-9]{4}$/.test(code);
+  const enter = useRef(props.onEnter);
+  enter.current = props.onEnter;
+  const go = async () => {
+    if (!ok || busy) return;
+    setBusy(true);
+    setMsg("");
+    try {
+      setK(await knock(code));
+    } catch (e) {
+      setMsg((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  useEffect(() => {
+    if (!k) return;
+    let live = true;
+    const tick = async () => {
+      const r = await knockState(k).catch((e: Error) => ({ status: "err" as const, e }));
+      if (!live) return;
+      if (r.status === "in") return enter.current(r.space);
+      if (r.status === "no" || r.status === "gone" || r.status === "err") {
+        setK(null);
+        setMsg(r.status === "no" ? "They didn't let you in" : r.status === "gone" ? "No answer: the knock ran out" : "Couldn't step in, try again");
+        return;
+      }
+      t = setTimeout(tick, 2500);
+    };
+    let t = setTimeout(tick, 2500);
+    return () => {
+      live = false;
+      clearTimeout(t);
+    };
+  }, [k]);
+  if (k)
+    return (
+      <div className="knock wait">
+        <span className="mono dim"><BsIncognito className="ic-inline" aria-hidden /> Knocking on <b>{k.title}</b></span>
+        <span className="knock-note">Waiting for someone inside to let you in…</span>
+        <button className="ghost-btn lg-press" onClick={() => setK(null)}>Cancel</button>
+      </div>
+    );
+  return (
+    <div className="knock">
+      <span className="mono dim"><BsIncognito className="ic-inline" aria-hidden /> Anonymous code</span>
+      <div className="knock-row">
+        <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase().replace(/^ANON-?/, "").replace(/[^A-Z0-9]/g, "").slice(0, 4))}
+          onKeyDown={(e) => e.key === "Enter" && go()} placeholder="A1B2" inputMode="text" autoCapitalize="characters" autoComplete="off" spellCheck={false} aria-label="4-letter anonymous code" />
+        <button className="cta lg-press" disabled={!ok || busy} onClick={go}>{busy ? "…" : "Knock"}</button>
+      </div>
+      {msg && <span className="knock-note">{msg}</span>}
+    </div>
   );
 }
 
