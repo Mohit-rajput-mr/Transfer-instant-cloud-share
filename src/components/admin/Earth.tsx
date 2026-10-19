@@ -280,28 +280,31 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
           type: "circle",
           source: k,
           paint: {
-            "circle-radius": k === "visitors" ? 3.5 : 4.5, // pixels: identical at every zoom
+            "circle-radius": k === "visitors" ? 1.75 : 2.25, // pixels: identical at every zoom
             "circle-color": DOT[k],
             "circle-stroke-color": "#000",
-            "circle-stroke-width": 1,
+            "circle-stroke-width": 0.5,
             "circle-pitch-alignment": "viewport", // round from every angle
           },
         });
+        // the dots are tiny, so hover / tap use an invisible wider circle on the same data
+        const hit = `${k}-hit`;
+        m.addLayer({ id: hit, type: "circle", source: k, paint: { "circle-radius": 7, "circle-opacity": 0, "circle-pitch-alignment": "viewport" } });
         // hover: what happened at this place; click / tap: keep it open
         const at = (e: maplibregl.MapLayerMouseEvent) => {
           const p = e.features?.[0]?.properties as { lat: number; lon: number } | undefined;
           return p ? ([Number(p.lon), Number(p.lat)] as [number, number]) : null;
         };
-        m.on("mouseenter", k, (e) => {
+        m.on("mouseenter", hit, (e) => {
           m.getCanvas().style.cursor = "pointer";
           const c = at(e);
           if (c && !pinned.isOpen()) popup.setLngLat(c).setHTML(summary(c)).addTo(m);
         });
-        m.on("mouseleave", k, () => {
+        m.on("mouseleave", hit, () => {
           m.getCanvas().style.cursor = "";
           popup.remove();
         });
-        m.on("click", k, (e) => {
+        m.on("click", hit, (e) => {
           const c = at(e);
           if (!c) return;
           popup.remove();
@@ -371,8 +374,10 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
         properties: { n: a.n ?? 1, label: a.label ?? "" },
       })),
     });
-    for (const id of ["visitors", "uploads", "downloads", "routes"] as Layer[])
+    for (const id of ["visitors", "uploads", "downloads", "routes"] as Layer[]) {
       m.setLayoutProperty(id, "visibility", on.has(id) ? "visible" : "none");
+      if (m.getLayer(`${id}-hit`)) m.setLayoutProperty(`${id}-hit`, "visibility", on.has(id) ? "visible" : "none");
+    }
 
     // live users: DOM markers so they can pulse
     liveMarkers.current.forEach((mk) => mk.remove());

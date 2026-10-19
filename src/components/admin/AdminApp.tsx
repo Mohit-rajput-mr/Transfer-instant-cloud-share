@@ -8,6 +8,7 @@ import AdminVoid from "./AdminVoid";
 import History, { loadHistory, routeLines } from "./History";
 import type { AdminSpace, AdminTransfer, AnonSessionRec, Overview } from "./types";
 import { country, flag, n } from "./fmt";
+import { PIN_KINDS, pinRows, type PinKind } from "./pins";
 
 // three.js only loads for the admin, never for regular visitors
 const Earth = dynamic(() => import("./Earth"), { ssr: false, loading: () => <div className="earth earth-loading mono">Booting globe…</div> });
@@ -173,7 +174,7 @@ const LAYERS: { id: Layer; label: string; dot: string }[] = [
   { id: "routes", label: "Transfer routes", dot: "linear-gradient(90deg,#59b8ff,#ffa045)" },
 ];
 
-type Expand = "history" | "void" | "anon" | "activity" | "countries" | "objects" | "containers" | "cities" | "spaces" | null;
+type Expand = "history" | "void" | "anon" | "activity" | "countries" | "objects" | "containers" | "cities" | "spaces" | "pins" | null;
 
 function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview | null; events: Ev[]; now: number; onRefresh: () => void; onLogout: () => void }) {
   const [layers, setLayers] = useState<Set<Layer>>(new Set(["live", "exact", "exactSeen", "anon", "visitors", "uploads", "downloads", "routes"]));
@@ -232,6 +233,17 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
     onRefresh();
   };
 
+  // the header wraps to two or three rows on phones: full-screen panels start under its real height, never under it
+  const top = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = top.current;
+    if (!el) return;
+    const set = () => document.documentElement.style.setProperty("--hq-top", `${Math.ceil(el.getBoundingClientRect().height)}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const today = data?.today ?? {};
   const cloudIds = useMemo(() => new Set(data?.cloud?.ids ?? []), [data]);
   const cByCc = useMemo(() => new Map((data ? countryRows(data, events) : []).map((r) => [r.cc, r])), [data, events]);
@@ -239,7 +251,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
 
   return (
     <div className="hq">
-      <header className="hq-top">
+      <header className="hq-top" ref={top}>
         <Link href="/" className="brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="brand-logo" src="/logo.svg" alt="Orbi Transfer" width={194} height={28} />
@@ -256,6 +268,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
           <button className={expand === "spaces" ? "on" : ""} onClick={() => setExpand("spaces")}>Spaces <b>{spaces?.length ?? 0}</b></button>
           <button className={expand === "cities" ? "on" : ""} onClick={() => setExpand("cities")}>Places</button>
           <button className={expand === "anon" ? "on" : ""} onClick={() => setExpand("anon")}>Anonymous <b>{data?.anonSessions?.length ?? 0}</b></button>
+          <button className={expand === "pins" ? "on" : ""} onClick={() => setExpand("pins")}>Pins <b>{data ? pinRows(data).length : 0}</b></button>
         </nav>
         <span className="live"><span className="dot" /><b>{n(data?.online)}</b> online now</span>
         <span className="mono dim hq-clock">{new Date(now).toLocaleTimeString()}</span>
@@ -410,8 +423,17 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
           <AnonSessions list={data?.anonSessions ?? []} />
         </div>
       )}
+      {expand === "pins" && (
+        <div className="hq-expand" role="dialog" aria-label="Globe pins">
+          <div className="hq-expand-head">
+            <b className="wide">Globe pins</b>
+            <button className="pill" onClick={() => setExpand(null)}>Close ✕</button>
+          </div>
+          {data ? <Pins data={data} /> : <p className="mono dim">Loading…</p>}
+        </div>
+      )}
       {expand === "void" && <AdminVoid onClose={() => setExpand(null)} />}
-      {expand && expand !== "history" && expand !== "anon" && expand !== "void" && data && <Expanded kind={expand} data={data} events={events} focusCc={focusCc} onCountry={openCountry} spaces={spaces ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} />}
+      {expand && expand !== "history" && expand !== "anon" && expand !== "void" && expand !== "pins" && data && <Expanded kind={expand} data={data} events={events} focusCc={focusCc} onCountry={openCountry} spaces={spaces ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} />}
     </div>
   );
 }
@@ -522,7 +544,7 @@ function Expanded({ kind, data, events, focusCc, onCountry, spaces, now, onClose
   return (
     <div className="hq-expand" role="dialog" aria-label="Details">
       <div className="hq-expand-head">
-        <b className="wide">{({ history: "History", activity: "Activity", countries: "Countries", objects: "Objects in orbit", containers: "Containers", cities: "Places", spaces: "Spaces", anon: "Anonymous", void: "Void" } as const)[kind]}</b>
+        <b className="wide">{({ history: "History", activity: "Activity", countries: "Countries", objects: "Objects in orbit", containers: "Containers", cities: "Places", spaces: "Spaces", anon: "Anonymous", void: "Void", pins: "Globe pins" } as const)[kind]}</b>
         <button className="pill" onClick={onClose}>Close ✕</button>
       </div>
       {kind === "objects" && (
@@ -818,6 +840,53 @@ function Hourly({ data }: { data: Overview | null }) {
 }
 
 /** every anonymous session (migration 021): who (alias), when (UTC and the device's own zone), where from, how it ended */
+// Every pin on the globe as a table: filter by layer, open the spot on a map.
+function Pins({ data }: { data: Overview }) {
+  const [only, setOnly] = useState<PinKind | "all">("all");
+  const rows = useMemo(() => pinRows(data), [data]);
+  const count = (k: PinKind) => rows.filter((x) => x.k === k).length;
+  const shown = only === "all" ? rows : rows.filter((x) => x.k === only);
+  const t = (iso: string | null) => (iso ? new Date(iso).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" }) : "—");
+  return (
+    <>
+      <div className="hq-pins-filter">
+        <button className={`pill${only === "all" ? " on" : ""}`} onClick={() => setOnly("all")}>All <b>{rows.length}</b></button>
+        {PIN_KINDS.map((p) => (
+          <button key={p.k} className={`pill${only === p.k ? " on" : ""}`} onClick={() => setOnly(p.k)}>
+            <i className="hq-pin-dot" style={{ background: p.color }} />{p.label} <b>{count(p.k)}</b>
+          </button>
+        ))}
+      </div>
+      {!shown.length ? <p className="mono dim">No pins in this layer.</p> : (
+        <div className="hq-anon">
+          <table>
+            <thead>
+              <tr><th>Layer</th><th>Place</th><th>Lat, lon</th><th>Count</th><th>Accuracy</th><th>Device / IPs</th><th>Last seen</th><th>Online</th></tr>
+            </thead>
+            <tbody>
+              {shown.map((x, i) => {
+                const kind = PIN_KINDS.find((p) => p.k === x.k)!;
+                return (
+                  <tr key={`${x.k}${i}`}>
+                    <td><i className="hq-pin-dot" style={{ background: kind.color }} />{kind.label}</td>
+                    <td>{flag(x.cc)} {[x.city, x.cc ? country(x.cc) : null].filter(Boolean).join(", ") || "—"}</td>
+                    <td><a href={`https://www.google.com/maps?q=${x.lat},${x.lon}`} target="_blank" rel="noreferrer">{x.lat.toFixed(4)}, {x.lon.toFixed(4)}</a></td>
+                    <td>{n(x.n)}</td>
+                    <td>{x.acc != null ? `±${Math.round(x.acc)} m` : "—"}</td>
+                    <td className="hq-pin-note">{x.note || "—"}</td>
+                    <td>{t(x.at)}</td>
+                    <td>{x.online == null ? "—" : x.online ? "yes" : "no"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
+  );
+}
+
 function AnonSessions({ list }: { list: AnonSessionRec[] }) {
   const t = (iso: string | null, tz?: string | null) => {
     if (!iso) return "now";

@@ -20,6 +20,11 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- DONE 2026-10-19 (owner ask) — HQ globe pins drawn at 50% (globals.css .gdot*, Earth.tsx circle layers); invisible
+  hit area (.gdot::before, `<layer>-hit` circle layers) keeps them hoverable/tappable. New HQ tab "Pins" (admin/pins.ts,
+  unit-tested): every globe pin by layer, filter chips, map link. Verified in Playwright, desktop + 390px.
+- FIXED 2026-10-19 (M) — On phones every HQ full-screen panel (Pins, Anonymous, Countries…) started under the wrapped
+  header (fixed 96px guess). The header's real height now sets --hq-top; .hq-expand starts there. Verified at 390px.
 - FIXED 2026-10-19 (M) — A note title saved as the device's name ("24-51 LITTLE NECK REPLY") showed as the sender on notes,
   tasks and files. lib/bubbles.ts looksLikeName (unit-tested): a saved value that isn't a name is dropped on read on every
   device, never saved again; the note box warns. NOTE for session 01DHR116 (owns Void.tsx now): in a space, prefer the

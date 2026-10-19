@@ -572,12 +572,14 @@ html.card-open .made { opacity: 0; pointer-events: none; }
   .hq-side { border-left: 0; border-top: 1px solid var(--line); padding-bottom: calc(16px + var(--safe-b)); }
   .hq-clock { display: none; }
 }
-.gdot { position: relative; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; pointer-events: auto; cursor: pointer; box-shadow: 0 0 0 1px rgba(0,0,0,0.6); }
+/* pins are drawn at half their old size; ::before keeps a finger-sized invisible hit area around each one */
+.gdot { position: relative; width: 3.5px; height: 3.5px; margin: -1.75px 0 0 -1.75px; border-radius: 50%; pointer-events: auto; cursor: pointer; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.6); }
+.gdot::before { content: ""; position: absolute; inset: -6px; border-radius: 50%; }
 .gdot.visitor { background: #fff; }
 .gdot.upload { background: #59b8ff; }
 .gdot.download { background: #ffa045; }
-.gdot.live { width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; background: #3dff8c; z-index: 2; }
-.gdot.live::after { content: ""; position: absolute; inset: -1px; border-radius: 50%; border: 1.5px solid #3dff8c; animation: gpulse 1.6s ease-out infinite; }
+.gdot.live { width: 4.5px; height: 4.5px; margin: -2.25px 0 0 -2.25px; background: #3dff8c; z-index: 2; }
+.gdot.live::after { content: ""; position: absolute; inset: -0.5px; border-radius: 50%; border: 1px solid #3dff8c; animation: gpulse 1.6s ease-out infinite; }
 @keyframes gpulse { from { transform: scale(1); opacity: 0.9; } to { transform: scale(4); opacity: 0; } }
 
 .earth.maplibregl-map { position: absolute; inset: 0; background: #000; }
@@ -595,13 +597,13 @@ html.card-open .made { opacity: 0; pointer-events: none; }
 .hq .maplibregl-ctrl-attrib a { color: #999; }
 .hq .maplibregl-ctrl-attrib-button { filter: invert(1); }
 .gdot.live { margin: 0; }
-.gdot.exact { width: 11px; height: 11px; margin: 0; background: #ff4fd8; border: 2px solid #fff; z-index: 3; }
+.gdot.exact { width: 5.5px; height: 5.5px; margin: 0; background: #ff4fd8; border: 1px solid #fff; z-index: 3; }
 /* last GPS seen: dark reddish pink with a dark green ring and a black edge so it shows on any map colour */
-.gdot.seen { width: 16px; height: 16px; margin: 0; background: #c2124f; border: 3px solid #0d7a34; z-index: 4; box-shadow: 0 0 0 1.5px #000; }
-.gdot.anon { width: 20px; height: 20px; margin: 0; display: grid; place-items: center; border-radius: 50%; background: rgba(12,12,12,0.85); color: #d8d8d8; border: 1px solid rgba(255,255,255,0.45); z-index: 3; }
-.gdot.anon svg { width: 13px; height: 13px; display: block; pointer-events: none; }
-.gdot.anon.on { color: #fff; border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,0.15); }
-.gdot.exact::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 1.5px solid #ff4fd8; animation: gpulse 1.6s ease-out infinite; }
+.gdot.seen { width: 8px; height: 8px; margin: 0; background: #c2124f; border: 1.5px solid #0d7a34; z-index: 4; box-shadow: 0 0 0 0.75px #000; }
+.gdot.anon { width: 10px; height: 10px; margin: 0; display: grid; place-items: center; border-radius: 50%; background: rgba(12,12,12,0.85); color: #d8d8d8; border: 1px solid rgba(255,255,255,0.45); z-index: 3; }
+.gdot.anon svg { width: 6.5px; height: 6.5px; display: block; pointer-events: none; }
+.gdot.anon.on { color: #fff; border-color: #fff; box-shadow: 0 0 0 1.5px rgba(255,255,255,0.15); }
+.gdot.exact::after { content: ""; position: absolute; inset: -1px; border-radius: 50%; border: 1px solid #ff4fd8; animation: gpulse 1.6s ease-out infinite; }
 
 /* ---------- send choices ---------- */
 .empty-actions { display: flex; gap: 12px; justify-content: center; margin-top: 22px; flex-wrap: wrap; }
@@ -1430,8 +1432,8 @@ html.lg-refract :is(.top, .drawer, .send-menu, .up-pill, .up-card, .send-fab).lg
 .hq-tabs button b { font-weight: 500; color: var(--live); }
 .hq-tabs button.on { background: #fff; color: #000; }
 .hq-tabs button.on b { color: #0a7a3c; }
-.hq-expand { top: calc(48px + var(--safe-t)); z-index: 9; }
-@media (max-width: 860px) { .hq-top { flex-wrap: wrap; height: auto; padding-block: 8px; } .hq-tabs { order: 5; width: 100%; overflow-x: auto; } .hq-expand { top: calc(96px + var(--safe-t)); } }
+.hq-expand { top: var(--hq-top, calc(48px + var(--safe-t))); z-index: 9; }
+@media (max-width: 860px) { .hq-top { flex-wrap: wrap; height: auto; padding-block: 8px; } .hq-tabs { order: 5; width: 100%; overflow-x: auto; } .hq-expand { top: var(--hq-top, calc(96px + var(--safe-t))); } }
 
 /* ---------------- Real glass: clear body, bright hairline edge, top highlight, bottom glint ---------------- */
 .glass {
@@ -3441,6 +3443,11 @@ html[data-anon] body { background: #050505; }
 .hq-anon table { width: 100%; border-collapse: collapse; font: 12px var(--mono); color: #ddd; }
 .hq-anon th { position: sticky; top: 0; background: #0a0a0a; text-align: left; font-weight: 500; color: #888; padding: 8px 10px; border-bottom: 1px solid #222; white-space: nowrap; }
 .hq-anon td { padding: 7px 10px; border-bottom: 1px solid #161616; white-space: nowrap; }
+.hq-anon td a { color: inherit; text-decoration: underline dotted; }
+.hq-pins-filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.hq-pins-filter .pill.on { background: #fff; color: #000; }
+.hq-pin-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; box-shadow: 0 0 0 1px rgba(0,0,0,0.6); }
+.hq-pin-note { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------- the session clock on the seal's top edge (no dot ring): green, orange from a third left, red at the end ---------- */
 .ghost-seal { --dot: #3ddc84; }
