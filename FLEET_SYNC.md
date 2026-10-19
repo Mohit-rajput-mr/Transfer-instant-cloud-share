@@ -14,6 +14,30 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 - 2026-10-19: HQ has a **Void** tab (every area: files, notes, tasks; burn any, beamed live to the area; migration 023). Bubble notes default 15 min; tasks default 30 min (options to 8 h); screens drop expired tasks/notes every 5 s.
 - 2026-10-18 late: the Vercel connector is read-only (403 on deploy). Vercel project `orbit` is now linked to GitHub, so a push to `claude/festive-keller-rln4jk` should deploy on its own. Work on that branch only.
 
+## ⚠ MANDATORY: docs/ENGINEERING_DIRECTIVE.md (owner, 2026-10-19)
+Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
+
+## Defect log (running list — keep it current; newest first)
+Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- H OPEN — No automated tests and no CI gate. Only `npm run check` (tsc + eslint) + manual build + Playwright spot checks.
+  Next: unit tests for pure logic (lib/spaces tagName/untag/closesAt, client formatClock, OrbView smartCols/bubbleLayout,
+  lib/space knock seal/unseal) and a GitHub Action running check + build on push.
+- M RISK — Knock (4-letter code → Let in) never run end to end with two real devices (crypto round-trip unit-checked only).
+- M RISK — Nearby across areas (migration 024 + per-network live room) not checked with two devices on one Wi-Fi.
+- M RISK — 8-hour named spaces (025/026): spaces older than 8 h closed at deploy; file/note/task extension to the close time
+  not yet observed on production data.
+- M RISK — "+ New container" (rotating sender key) and sender names on public sends not yet seen with real uploads.
+- M RISK — Gentle uploads (rest = part time on a busy line) never run on a real slow line (scripts/slow-net-test.cjs exists).
+- L OPEN — sendRetry may re-POST /api/transfers after a timeout that actually succeeded → an unfinalized orphan row
+  (never listed; expires). Fix: idempotency key on create.
+- L OPEN — Dev console: "getServerSnapshot should be cached" from useAnon (lib/anon.ts useSyncExternalStore).
+- L OPEN — Supabase MCP hangs on any SQL with `delete` (tooling, not app): hand the owner the SQL to paste.
+- OPEN (owner to approve) — Work windows/cards to copy the Classic About/Contact theme (fonts already unified).
+- FIXED 2026-10-19 (this session, details in git log): Work↔Classic switch without reload (Playwright: 0 reloads);
+  dropped live messages after reconnect (refresh + queued beams); launches stuck at "Locking" (20 s per try);
+  Nearby empty across areas; container grid 9=3·3·3 / 10=5·5 (rendered); drop zone aligned with Upload (measured);
+  Work fonts = classic (computed font checked); smooth wheel zoom (per-frame scale measured); drag top wall = header.
+
 ## ⚠ Branches (2026-10-18)
 - Production was deployed from `claude/work`; on 2026-10-18 `claude/festive-keller-rln4jk` merged `claude/work` and deployed
   the task update below. **Before deploying from `claude/work` again, merge `origin/claude/festive-keller-rln4jk`**, or these go away:
