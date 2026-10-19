@@ -719,7 +719,14 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // clock
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
+    // tasks and notes leave the screen the moment they expire (the server already stopped listing them)
+    const prune = setInterval(() => {
+      const n = Date.now() + skewRef.current;
+      const alive = <T extends { expiresAt: string }>(xs: T[]) => (xs.some((x) => Date.parse(x.expiresAt) <= n) ? xs.filter((x) => Date.parse(x.expiresAt) > n) : xs);
+      setTasks(alive);
+      setNotes(alive);
+    }, 5000);
+    return () => (clearInterval(t), clearInterval(prune));
   }, []);
 
   // initial load, polling fallback, deep link
@@ -2891,7 +2898,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
               toast("Bubble posted");
               setFitAll((n) => n + 1);
               const at = Date.now() + skew;
-              sync({ b: { id: r.id, text: text.trim(), by: by.trim() || room?.handle || null, from: r.from, hue: r.hue, createdAt: iso(at), expiresAt: iso(at + 30 * 60_000), added: null, editedAt: null, updatedAt: null } });
+              sync({ b: { id: r.id, text: text.trim(), by: by.trim() || room?.handle || null, from: r.from, hue: r.hue, createdAt: iso(at), expiresAt: iso(at + 15 * 60_000), added: null, editedAt: null, updatedAt: null } });
               refresh();
             } catch (e) {
               toast((e as Error).message);

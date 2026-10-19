@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatBytes } from "@/lib/client";
 import type { Layer, RouteLine } from "./Earth";
+import AdminVoid from "./AdminVoid";
 import History, { loadHistory, routeLines } from "./History";
 import type { AdminSpace, AdminTransfer, AnonSessionRec, Overview } from "./types";
 import { country, flag, n } from "./fmt";
@@ -172,7 +173,7 @@ const LAYERS: { id: Layer; label: string; dot: string }[] = [
   { id: "routes", label: "Transfer routes", dot: "linear-gradient(90deg,#59b8ff,#ffa045)" },
 ];
 
-type Expand = "history" | "anon" | "activity" | "countries" | "objects" | "containers" | "cities" | "spaces" | null;
+type Expand = "history" | "void" | "anon" | "activity" | "countries" | "objects" | "containers" | "cities" | "spaces" | null;
 
 function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview | null; events: Ev[]; now: number; onRefresh: () => void; onLogout: () => void }) {
   const [layers, setLayers] = useState<Set<Layer>>(new Set(["live", "exact", "exactSeen", "anon", "visitors", "uploads", "downloads", "routes"]));
@@ -246,6 +247,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
         </Link>
         <nav className="hq-tabs" aria-label="HQ sections">
           <button className={!expand ? "on" : ""} onClick={() => setExpand(null)}>Globe</button>
+          <button className={expand === "void" ? "on" : ""} onClick={() => setExpand("void")}>Void</button>
           <button className={expand === "history" ? "on" : ""} onClick={() => setExpand("history")}>History</button>
           <button className={expand === "activity" ? "on" : ""} onClick={() => (setFocusCc(""), setExpand("activity"))}>Activity</button>
           <button className={expand === "countries" ? "on" : ""} onClick={() => setExpand("countries")}>Countries <b>{data?.topCountries.length ?? 0}</b></button>
@@ -408,7 +410,8 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
           <AnonSessions list={data?.anonSessions ?? []} />
         </div>
       )}
-      {expand && expand !== "history" && expand !== "anon" && data && <Expanded kind={expand} data={data} events={events} focusCc={focusCc} onCountry={openCountry} spaces={spaces ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} />}
+      {expand === "void" && <AdminVoid onClose={() => setExpand(null)} />}
+      {expand && expand !== "history" && expand !== "anon" && expand !== "void" && data && <Expanded kind={expand} data={data} events={events} focusCc={focusCc} onCountry={openCountry} spaces={spaces ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} />}
     </div>
   );
 }
@@ -519,7 +522,7 @@ function Expanded({ kind, data, events, focusCc, onCountry, spaces, now, onClose
   return (
     <div className="hq-expand" role="dialog" aria-label="Details">
       <div className="hq-expand-head">
-        <b className="wide">{({ history: "History", activity: "Activity", countries: "Countries", objects: "Objects in orbit", containers: "Containers", cities: "Places", spaces: "Spaces", anon: "Anonymous" } as const)[kind]}</b>
+        <b className="wide">{({ history: "History", activity: "Activity", countries: "Countries", objects: "Objects in orbit", containers: "Containers", cities: "Places", spaces: "Spaces", anon: "Anonymous", void: "Void" } as const)[kind]}</b>
         <button className="pill" onClick={onClose}>Close ✕</button>
       </div>
       {kind === "objects" && (

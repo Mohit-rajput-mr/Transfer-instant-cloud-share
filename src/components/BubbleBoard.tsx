@@ -119,8 +119,8 @@ function Text({ b, now }: { b: Bubble; now: number }) {
   );
 }
 
-/** Every bubble burns 30 minutes after it was posted: a ring drains down to it, red in the last 5. */
-const BUBBLE_LIFE = 30 * 60_000;
+/** Every bubble burns 15 minutes after it was posted: a ring drains down to it, red in the last 5. */
+const BUBBLE_LIFE = 15 * 60_000;
 function BurnTimer({ b, now }: { b: Bubble; now: number }) {
   const left = Math.max(0, Date.parse(b.expiresAt) - now);
   const life = Math.max(60_000, Date.parse(b.expiresAt) - Date.parse(b.createdAt)) || BUBBLE_LIFE;
@@ -508,7 +508,7 @@ export function BubbleCompose(props: {
       )}
       {mode === "new" ? (
         <>
-          <p className="dim bub-note">{props.inSpace ? `Only people in ${props.inSpace} see it.` : "Anyone in the public void sees it, as is: no password, nothing to unlock."} It burns in 30 minutes.{props.anon ? " You post as your space alias. Notes aren't end-to-end encrypted." : ""}</p>
+          <p className="dim bub-note">{props.inSpace ? `Only people in ${props.inSpace} see it.` : "Anyone in the public void sees it, as is: no password, nothing to unlock."} It burns in 15 minutes.{props.anon ? " You post as your space alias. Notes aren't end-to-end encrypted." : ""}</p>
           {!props.anon && <input className="line-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name (optional)" maxLength={24} autoComplete="off" />}
         </>
       ) : mode === "append" && target ? (

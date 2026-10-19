@@ -80,7 +80,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
   const [draftLabel, setDraftLabel] = useState("");
   // Pro (a code from Mission HQ on this device): tasks stay up to 8 hours
   const [pro, setPro] = useState(false);
-  const [life, setLife] = useState(480);
+  const [life, setLife] = useState(30);
   const [redeem, setRedeem] = useState<string | null>(null);
   const [proErr, setProErr] = useState("");
   useEffect(() => setPro(!!proCode()), []);

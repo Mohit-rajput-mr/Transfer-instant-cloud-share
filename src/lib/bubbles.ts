@@ -55,7 +55,7 @@ export const bubbleName = () => {
   }
 };
 
-export async function postBubble(text: string, by: string, life = 30) {
+export async function postBubble(text: string, by: string, life = 15) {
   const owner = toHex(crypto.getRandomValues(new Uint8Array(32)));
   if (!isAnon())
     try {

@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       p: {
         id, body: text, by, from: validFrom(b.from) ? b.from : "", owner: sha256(b.owner), net, space: space ?? "",
         hue: Number.isInteger(b.hue) && b.hue >= 0 && b.hue < 360 ? b.hue : Math.floor(Math.random() * 360),
-        life: LIVES.includes(Number(b.life)) ? Number(b.life) : 30,
+        life: LIVES.includes(Number(b.life)) ? Number(b.life) : 15,
         area,
       },
     });
