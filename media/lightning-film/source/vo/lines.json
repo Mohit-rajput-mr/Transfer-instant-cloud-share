@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how lightning works? A single bolt can heat the air to about thirty thousand degrees. Hotter than the surface of the Sun.",
+   "dur": 9.137,
+   "at": 0.35
+  },
+  {
+   "key": "ice",
+   "text": "Inside a storm cloud, strong winds toss ice crystals and soft hail called graupel up and down. They crash into each other millions of times.",
+   "dur": 9.741,
+   "at": 9.89
+  },
+  {
+   "key": "charge",
+   "text": "Every collision swaps a little charge. Light crystals carry positive charge to the top. Heavier graupel drags negative charge to the bottom.",
+   "dur": 7.802,
+   "at": 19.93
+  },
+  {
+   "key": "leader",
+   "text": "When the charge gets strong enough, an invisible channel called a stepped leader zigzags down from the cloud, a few dozen meters at a time.",
+   "dur": 8.108,
+   "at": 28.03
+  },
+  {
+   "key": "streamer",
+   "text": "As it gets close, the ground answers. Tall things like trees and towers send up streamers to meet it.",
+   "dur": 6.329,
+   "at": 36.44
+  },
+  {
+   "key": "stroke",
+   "text": "They connect, and a huge current races back up the channel. That's the flash you see. It's over in a fraction of a second.",
+   "dur": 6.924,
+   "at": 43.07
+  },
+  {
+   "key": "thunder",
+   "text": "The air heats so fast it explodes outward. That shock wave is thunder.",
+   "dur": 5.618,
+   "at": 50.29
+  },
+  {
+   "key": "count",
+   "text": "Light reaches you almost instantly, sound doesn't. Count the seconds between the flash and the thunder, divide by three, and that's roughly how many kilometers away it struck.",
+   "dur": 9.334,
+   "at": 56.21
+  },
+  {
+   "key": "close",
+   "text": "So next time, start counting.",
+   "dur": 1.892,
+   "at": 65.89
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 68.19
+  }
+ ],
+ "duration": 72.74
+}
