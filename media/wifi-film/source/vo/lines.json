@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Right now, invisible waves are flying through your body, carrying videos, messages, and memes. That's Wi-Fi.",
+   "dur": 7.108,
+   "at": 0.35
+  },
+  {
+   "key": "radio",
+   "text": "Wi-Fi is just radio. The same kind of wave as your car radio, but much faster. About two to six billion wiggles every second.",
+   "dur": 8.077,
+   "at": 7.86
+  },
+  {
+   "key": "bits",
+   "text": "To send data, the router changes the wave. A little taller, a little shifted. Each tiny change means some ones and zeros.",
+   "dur": 8.017,
+   "at": 16.29
+  },
+  {
+   "key": "qam",
+   "text": "Modern Wi-Fi packs about a thousand different wave shapes, so every single wiggle can carry ten bits at once.",
+   "dur": 6.999,
+   "at": 24.65
+  },
+  {
+   "key": "lanes",
+   "text": "And it doesn't use just one wave. It splits the channel into hundreds of thin lanes, all sending side by side.",
+   "dur": 6.373,
+   "at": 31.95
+  },
+  {
+   "key": "walls",
+   "text": "Walls, water and even your body soak up some of the signal. That's why the far bedroom gets one bar.",
+   "dur": 6.058,
+   "at": 38.67
+  },
+  {
+   "key": "share",
+   "text": "Everyone in the room shares the same air. So devices take turns, thousands of times a second, so fast it feels like nobody waits.",
+   "dur": 7.644,
+   "at": 45.08
+  },
+  {
+   "key": "orbi",
+   "text": "And because everyone on the same Wi-Fi shares one network, Orbi Transfer can show you what's being shared nearby. No login, no contacts, no Bluetooth pairing.",
+   "dur": 10.543,
+   "at": 53.13
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 64.02
+  }
+ ],
+ "duration": 68.57
+}
