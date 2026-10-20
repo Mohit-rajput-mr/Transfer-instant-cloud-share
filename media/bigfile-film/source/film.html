@@ -1,0 +1,184 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>How big files travel</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+const SETS = {}; const set = (k, x) => { const g = new THREE.Group(); g.position.set(x, 0, 0); scene.add(g); SETS[k] = g; return g; };
+const show = (k) => { for (const n in SETS) SETS[n].visible = n === k; };
+const P = (k) => SETS[k].position;
+scene.background = new THREE.Color(0x070a12);
+scene.add(new THREE.HemisphereLight(0xbcd0ff, 0x10121a, 0.9));
+{ const k1 = new THREE.DirectionalLight(0xffffff, 1.6); k1.position.set(6, 12, 14); scene.add(k1); }
+const mkCard = (parent, w, h, draw) => { const c = document.createElement("canvas"); c.width = Math.round(w * 100); c.height = Math.round(h * 100); const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, transparent: true })); m.userData = { c, tex, draw }; parent.add(m); return m; };
+const redraw = (m, ...a) => { const { c, tex, draw } = m.userData; const g = c.getContext("2d"); g.clearRect(0, 0, c.width, c.height); draw(g, c.width, c.height, ...a); tex.needsUpdate = true; };
+// =============== NET: sender, a mesh of routers, receiver ===============
+const NT = set("net", 0);
+{ const grid = new THREE.GridHelper(80, 80, 0x1a2a4a, 0x111a30); grid.rotation.x = Math.PI / 2; grid.position.z = -2; NT.add(grid); }
+const SRC = V(0, 11, 0), DST = V(0, -11, 0);
+const NODES = [V(-3.5, 7, 0), V(3, 7.5, 0), V(-5, 3, 0), V(0.5, 3.5, 0), V(5, 2.5, 0), V(-3, -1, 0), V(2.5, -1.5, 0), V(-5, -5, 0), V(0, -5, 0), V(4.5, -5.5, 0)];
+const EDGES = [[0, 2], [0, 3], [1, 3], [1, 4], [2, 3], [3, 4], [2, 5], [3, 5], [3, 6], [4, 6], [5, 6], [5, 7], [5, 8], [6, 8], [6, 9], [7, 8], [8, 9]];
+const ALLN = [SRC, ...NODES, DST]; // 0 = src, 11 = dst
+const ADJ = Array.from({ length: 12 }, () => []); const addE = (a, b) => { ADJ[a].push(b); ADJ[b].push(a); }; EDGES.forEach(([a, b]) => addE(a + 1, b + 1)); [1, 2].forEach((n) => addE(0, n)); [8, 9, 10].forEach((n) => addE(n, 11));
+const tubeMat = new THREE.MeshBasicMaterial({ color: 0x2a3a5a }); const seen = new Set();
+ADJ.forEach((ns, a) => ns.forEach((b) => { const k = Math.min(a, b) + "-" + Math.max(a, b); if (seen.has(k)) return; seen.add(k); NT.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(ALLN[a], ALLN[b]), 2, 0.06, 6), tubeMat)); }));
+NODES.forEach((p) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.4, 20), new THREE.MeshStandardMaterial({ color: 0x2c323d, metalness: 0.5 })); m.rotation.x = Math.PI / 2; m.position.copy(p); NT.add(m); const l = new THREE.Mesh(new THREE.CircleGeometry(0.16, 12), glow(0x3dff8c)); l.position.copy(p).add(V(0, 0, 0.22)); NT.add(l); });
+const randPath = () => { const path = [0]; let cur = 0; while (cur !== 11 && path.length < 12) { const opts = ADJ[cur].filter((n) => !path.includes(n)); const fwd = opts.filter((n) => ALLN[n].y < ALLN[cur].y + 0.1); const pick = (fwd.length ? fwd : opts); cur = pick[Math.floor(rnd() * pick.length)]; path.push(cur); } return path.map((i) => ALLN[i].clone()); };
+const along = (pts, f) => { const segs = pts.length - 1; const s = Math.min(segs - 1e-6, f * segs); const i = Math.floor(s); return pts[i].clone().lerp(pts[i + 1], s - i); };
+// the file card and the receiver's slots
+const FILE = mkCard(NT, 5.2, 2.2, (g, w, h) => { g.fillStyle = "#12141b"; g.strokeStyle = "#3dff8c"; g.lineWidth = 6; g.beginPath(); g.roundRect(4, 4, w - 8, h - 8, 26); g.fill(); g.stroke(); g.fillStyle = "#3dff8c"; g.font = "800 60px Inter, sans-serif"; g.fillText("▶", 40, 135); g.fillStyle = "#eef0f5"; g.font = "700 50px Inter, sans-serif"; g.fillText("holiday.mp4", 130, 105); g.fillStyle = "#8b91a3"; g.font = "600 40px JetBrains Mono, monospace"; g.fillText("10 GB", 130, 165); });
+FILE.position.copy(SRC).add(V(0, 1.6, 0.3));
+const NS = 12; const SLOTS = Array.from({ length: NS }, (_, i) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.62, 0.2), new THREE.MeshStandardMaterial({ color: 0x1a1d26 })); m.position.copy(DST).add(V((i - (NS - 1) / 2) * 0.72, -1.4, 0)); NT.add(m); return m; });
+const NUMS = SLOTS.map((s, i) => { const m = mkCard(NT, 0.6, 0.6, (g, w, h, col) => { g.fillStyle = col; g.font = "800 34px JetBrains Mono, monospace"; g.textAlign = "center"; g.fillText(String(i + 1), w / 2, h / 2 + 12); }); m.position.copy(s.position).add(V(0, 0, 0.12)); return m; });
+const PK = Array.from({ length: NS }, (_, i) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), glow(0x6ab8ff)); m.userData = { path: randPath(), start: 0.15 + ((i * 7) % NS) / NS * 0.55, dur: 0.3 + rnd() * 0.15 }; NT.add(m); return m; });
+const LOST = 6; const RESEND = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 0.55), glow(0x3dff8c)); RESEND.userData.path = randPath(); NT.add(RESEND);
+const XMARK = mkCard(NT, 1.2, 1.2, (g, w, h) => { g.strokeStyle = "#ff4d5a"; g.lineWidth = 14; g.beginPath(); g.moveTo(20, 20); g.lineTo(w - 20, h - 20); g.moveTo(w - 20, 20); g.lineTo(20, h - 20); g.stroke(); });
+const SHARDS = Array.from({ length: 220 }, () => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.16), glow(0x6ab8ff, { transparent: true })); m.userData.d = V((rnd() - 0.5) * 14, (rnd() - 0.5) * 9, (rnd() - 0.5) * 4); NT.add(m); return m; });
+// checksum card
+const SUM = mkCard(NT, 9, 4.6, (g, w, h, flip) => { g.fillStyle = "#12141b"; g.beginPath(); g.roundRect(4, 4, w - 8, h - 8, 30); g.fill(); g.font = "600 34px JetBrains Mono, monospace"; g.fillStyle = "#8b91a3"; g.fillText("packet data", 40, 70);
+  const bits = "1011001011100101 0110100111010010".split(""); bits.forEach((b, i) => { const bad = flip && i === 9; g.fillStyle = bad ? "#ff4d5a" : "#eef0f5"; g.font = "700 46px JetBrains Mono, monospace"; g.fillText(bad ? (b === "1" ? "0" : "1") : b, 40 + i * 25.5, 140); });
+  g.fillStyle = "#8b91a3"; g.font = "600 34px JetBrains Mono, monospace"; g.fillText("checksum", 40, 230); g.fillStyle = "#8b91a3"; g.fillText("expected", 40, 320);
+  g.font = "800 54px JetBrains Mono, monospace"; g.fillStyle = flip ? "#ff4d5a" : "#3dff8c"; g.fillText(flip ? "71c2" : "a3f9", 330, 232); g.fillStyle = "#3dff8c"; g.fillText("a3f9", 330, 322);
+  g.font = "800 46px Inter, sans-serif"; g.fillStyle = flip ? "#ff4d5a" : "#3dff8c"; g.fillText(flip ? "✗ no match → resend" : "✓ match", 40, 410); });
+// =============== PARTS: three lanes, big parts in parallel ===============
+const PT = set("parts", 600);
+{ const grid = new THREE.GridHelper(80, 80, 0x1a2a4a, 0x111a30); grid.rotation.x = Math.PI / 2; grid.position.z = -2; PT.add(grid); }
+const LANES = [-2.6, 0, 2.6].map((x) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.14, 18, 0.14), new THREE.MeshBasicMaterial({ color: 0x2a3a5a })); m.position.set(x, 0, 0); PT.add(m); return m; });
+const BIGF = mkCard(PT, 6, 2.2, (g, w, h) => FILE.userData.draw(g, w, h)); BIGF.position.set(0, 11, 0.3);
+const RECV = new THREE.Mesh(new THREE.BoxGeometry(8, 1.6, 0.6), new THREE.MeshStandardMaterial({ color: 0x2c323d })); RECV.position.set(0, -10.6, 0); PT.add(RECV);
+const BLOCKS = Array.from({ length: 6 }, (_, i) => { const m = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), new THREE.MeshStandardMaterial({ color: 0x6ab8ff, emissive: 0x10305a })); m.userData = { lane: i % 3, wave: Math.floor(i / 3) }; PT.add(m); return m; });
+const CUT = mkCard(PT, 1.6, 1.6, (g, w, h) => XMARK.userData.draw(g, w, h));
+// =============== ORBI: phone uploading 3 parts at once, drop, resume ===============
+const OB = set("ob", 1200);
+const mkPhone = (parent) => { const g = new THREE.Group(); const c = document.createElement("canvas"); c.width = 512; c.height = 1040; const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; const body = new THREE.Mesh(new THREE.BoxGeometry(3.3, 6.8, 0.36), new THREE.MeshStandardMaterial({ color: 0x2a2e36, metalness: 0.8, roughness: 0.25 })); g.add(body); const scr = new THREE.Mesh(new THREE.PlaneGeometry(3.05, 6.5), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })); scr.position.z = 0.19; g.add(scr); g.userData = { c, tex }; parent.add(g); return g; };
+const OPH = mkPhone(OB); OPH.position.set(0, -2.2, 0);
+function drawOrbi(k, drop, t) { const { c, tex } = OPH.userData; const g = c.getContext("2d"); g.fillStyle = "#07080c"; g.fillRect(0, 0, 512, 1040); g.fillStyle = "#3dff8c"; g.font = "800 40px Inter, sans-serif"; g.fillText("ORBI", 36, 96);
+  g.fillStyle = "#eef0f5"; g.font = "700 32px Inter, sans-serif"; g.fillText("trip-video.mp4", 36, 170); g.fillStyle = "#8b91a3"; g.font = "500 26px JetBrains Mono, monospace"; g.fillText("18.4 GB · 575 parts", 36, 210);
+  const parts = 30; for (let i = 0; i < parts; i++) { const x = 36 + (i % 6) * 74, y = 260 + Math.floor(i / 6) * 74; const done = i < Math.floor(k * parts) - 3; const active = !done && i < Math.floor(k * parts); g.fillStyle = done ? "#3dff8c" : active ? (drop ? "#ff4d5a" : "#6ab8ff") : "#1a1d26"; g.beginPath(); g.roundRect(x, y, 62, 62, 12); g.fill(); }
+  g.fillStyle = "#1a1d26"; g.beginPath(); g.roundRect(36, 660, 440, 22, 11); g.fill(); g.fillStyle = drop ? "#ff4d5a" : "#3dff8c"; g.beginPath(); g.roundRect(36, 660, 440 * k, 22, 11); g.fill();
+  g.font = "600 28px Inter, sans-serif"; g.fillStyle = drop ? "#ff4d5a" : "#eef0f5"; g.fillText(drop ? "connection lost…" : `sending · 3 parts at once`, 36, 740); if (!drop && k > 0.62) { g.fillStyle = "#3dff8c"; g.fillText("resumed · only missing parts", 36, 790); } tex.needsUpdate = true; }
+const VAULT = new THREE.Group(); OB.add(VAULT); VAULT.position.set(0, 5.6, -1); VAULT.scale.setScalar(0.55);
+{ const cab = new THREE.Mesh(new THREE.BoxGeometry(3.2, 5.6, 2), new THREE.MeshStandardMaterial({ color: 0x1b1f27, metalness: 0.6, roughness: 0.4 })); VAULT.add(cab); for (let i = 0; i < 9; i++) { const u = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.42, 0.05), new THREE.MeshStandardMaterial({ color: 0x2c323d, metalness: 0.5 })); u.position.set(0, -2.4 + i * 0.58, 1.01); VAULT.add(u); for (let j = 0; j < 6; j++) { const led = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.02), glow(j % 3 ? 0x3dff8c : 0x6ab8ff)); led.position.set(-1.2 + j * 0.12, -2.4 + i * 0.58, 1.04); VAULT.add(led); } } }
+const OPARTS = Array.from({ length: 3 }, (_, i) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), glow(0x6ab8ff)); m.userData.i = i; OB.add(m); return m; });
+
+window.render = async function (t) { cam.up.set(0, 1, 0);
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  const n0 = P("net"), p0 = P("parts"), o0 = P("ob");
+  PK.forEach((m) => (m.visible = false)); SHARDS.forEach((m) => (m.visible = false)); RESEND.visible = false; XMARK.visible = false; SUM.visible = false; FILE.visible = true; SLOTS.forEach((s) => (s.material.color.setHex(0x1a1d26))); NUMS.forEach((m) => redraw(m, "#3a4258"));
+  if (t < A("route")) { show("net"); redraw(FILE); const sh = clamp((t - A("packets") - 0.8) / 2.5); FILE.visible = sh < 0.2; FILE.rotation.y = Math.sin(t * 0.8) * 0.15; SHARDS.forEach((m) => { m.visible = sh > 0; m.position.copy(SRC).add(V(0, 1.6, 0.3)).add(m.userData.d.clone().multiplyScalar(ease(sh) * 0.6)); m.rotation.set(t, t * 1.3, 0); });
+    const k = ease(clamp(t / 4)); look(n0.clone().add(V(0, lerp(12.6, 11, k), lerp(9, 14, k))), n0.clone().add(SRC).add(V(0, 0.6, 0)), 42); big("NEVER IN ONE PIECE", t, A("hook") + 4.2, A("packets"), "#ffffff", "250px", "74px");
+    card("c0", `packets of <b>≈ 1,500 bytes</b>`, t, A("packets") + 1.6, A("route"), 250, 1480, -2); card("c1", `10 GB ≈ <b>7 million</b> packets`, t, A("packets") + 3.6, A("route"), 260, 1600, 2); }
+  else if (t < A("parts")) { show("net"); FILE.visible = false; look(n0.clone().add(V(0, -1.2, 33)), n0.clone().add(V(0, -1.2, 0)), 44);
+    const kr = clamp((t - A("route") - 0.5) / 5.5);
+    PK.forEach((m, i) => { const u = m.userData; const f = clamp((kr - u.start + 0.15) / u.dur); const lost = i === LOST && t >= A("loss"); m.visible = f > 0 && f < 1 && !(i === LOST && (t >= A("loss") || f > 0.5)); m.position.copy(along(u.path, f)); m.rotation.set(t * 2, t * 3, 0); if (f >= 1 && !(i === LOST)) { SLOTS[i].material.color.setHex(0x2b7bff); redraw(NUMS[i], "#ffffff"); } });
+    if (t >= A("loss")) { const fl = clamp((t - A("loss") - 0.2) / 0.8); XMARK.visible = fl < 1 && t < A("loss") + 2.6; XMARK.position.copy(along(PK[LOST].userData.path, 0.5)).add(V(0, 0, 0.5)); const fr = clamp((t - A("loss") - 3.0) / 2.0); RESEND.visible = fr > 0 && fr < 1; RESEND.position.copy(along(RESEND.userData.path, fr)); if (fr >= 1) { SLOTS[LOST].material.color.setHex(0x3dff8c); redraw(NUMS[LOST], "#04130a"); } else { SLOTS[LOST].material.color.setHex(0x3a1a20); redraw(NUMS[LOST], "#ff4d5a"); } }
+    if (t >= A("check")) { SUM.visible = true; SUM.position.set(0, 1.5, 3); SUM.scale.setScalar(1.25); redraw(SUM, t >= A("check") + 5.4); }
+    card("c0", `different paths · <b>out of order</b>`, t, A("route") + 1.0, A("loss"), 230, 230, -2); card("c1", `put back <b>in sequence</b>`, t, A("route") + 5.0, A("loss"), 300, 1700, 2);
+    card("c0", `gap → <b>resend just that one</b>`, t, A("loss") + 1.4, A("check"), 230, 230, -2); card("c0", `checksum · <b>a short fingerprint</b>`, t, A("check") + 1.0, A("parts"), 220, 230, -2); }
+  else if (t < A("orbi")) { show("parts"); redraw(BIGF); look(p0.clone().add(V(0, 0, 33)), p0.clone(), 44); const k = t - A("parts");
+    BLOCKS.forEach((b) => { const u = b.userData; const st = 1.2 + u.wave * 3.0, f = clamp((k - st) / 2.4); const broken = u.lane === 1 && u.wave === 0; const x = (u.lane - 1) * 2.6; let y = lerp(9.4, -9.2, ease(f)); let col = 0x6ab8ff; if (broken) { if (k > st + 1.2 && k < st + 4.6) { y = lerp(9.4, -9.2, 0.5); col = 0xff4d5a; b.visible = k < st + 2.2; } else if (k >= st + 4.6) { const f2 = clamp((k - st - 4.6) / 2.0); y = lerp(9.4, -9.2, ease(f2)); col = 0x3dff8c; b.visible = true; } else b.visible = f > 0; } else b.visible = f > 0; b.position.set(x, y, 0.4); b.material.color.setHex(col); b.material.emissive.setHex(col).multiplyScalar(0.2); b.rotation.y = t; });
+    LANES[1].material.color.setHex(k > 2.4 && k < 5.8 ? 0xff4d5a : 0x2a3a5a); CUT.visible = k > 2.4 && k < 5.8; CUT.position.set(0, 0.2, 1);
+    card("c0", `big parts · <b>several at once</b>`, t, A("parts") + 1.4, A("orbi"), 230, 230, -2); card("c1", `a drop costs <b>one part</b>`, t, A("parts") + 5.4, A("orbi"), 290, 1700, 2); }
+  else { show("ob"); const k = clamp((t - A("orbi") - 1.0) / (A("end") - A("orbi") - 1.0)); const drop = t > A("orbi") + 6.0 && t < A("orbi") + 8.4; const prog = drop ? 0.48 : t <= A("orbi") + 6 ? lerp(0, 0.48, clamp((t - A("orbi") - 1) / 5)) : lerp(0.48, 1, clamp((t - A("orbi") - 8.4) / 4.5)); drawOrbi(prog, drop, t);
+    OPARTS.forEach((m) => { const f = (t * 0.8 + m.userData.i / 3) % 1; m.visible = !drop && prog < 1; m.position.lerpVectors(V((m.userData.i - 1) * 0.9, 1.3, 0.3), V((m.userData.i - 1) * 0.6, 5.2, 0.3), f); m.rotation.y = t * 2; });
+    look(o0.clone().add(V(0, 0.8, lerp(20, 18.5, ease(k)))), o0.clone().add(V(0, 0.8, 0)), 42);
+    card("c0", `up to <b>20 GB</b> · parts of <b>≈ 32 MB</b>`, t, A("orbi") + 1.6, A("end"), 210, 230, -2); card("c1", `<b>3 at a time</b> · only missing parts resend`, t, A("orbi") + 8.6, A("end"), 190, 1680, 2); }
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
