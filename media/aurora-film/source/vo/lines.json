@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how the northern lights work? Those glowing curtains in the sky actually start ninety three million miles away, at the Sun.",
+   "dur": 7.999,
+   "at": 0.35
+  },
+  {
+   "key": "wind",
+   "text": "The Sun is always throwing off a stream of charged particles, called the solar wind. It reaches Earth in about two to four days.",
+   "dur": 7.927,
+   "at": 8.75
+  },
+  {
+   "key": "shield",
+   "text": "Earth has a shield. Its magnetic field steers most of those particles around the planet.",
+   "dur": 5.073,
+   "at": 16.98
+  },
+  {
+   "key": "poles",
+   "text": "But near the poles, the field lines dive down into the atmosphere, and some particles slide down them.",
+   "dur": 7.021,
+   "at": 22.35
+  },
+  {
+   "key": "hit",
+   "text": "About a hundred kilometers up, they slam into oxygen and nitrogen in the air. That gives those atoms extra energy, and they release it as light.",
+   "dur": 8.159,
+   "at": 29.67
+  },
+  {
+   "key": "colors",
+   "text": "Oxygen glows green, and higher up, red. Nitrogen adds blue and purple at the edges.",
+   "dur": 6.229,
+   "at": 38.13
+  },
+  {
+   "key": "oval",
+   "text": "From space, the lights form a ring around each pole. In the south, they're called the southern lights.",
+   "dur": 5.776,
+   "at": 44.66
+  },
+  {
+   "key": "storm",
+   "text": "When the Sun throws out a huge burst, called a coronal mass ejection, the ring grows, and people see auroras far from the poles.",
+   "dur": 8.189,
+   "at": 50.73
+  },
+  {
+   "key": "close",
+   "text": "So every aurora is the Sun, painting our sky.",
+   "dur": 3.541,
+   "at": 59.27
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 63.21
+  }
+ ],
+ "duration": 67.77
+}
