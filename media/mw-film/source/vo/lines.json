@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "A microwave heats your food in two minutes, but the plate stays cool. How does it pick what to heat?",
+   "dur": 6.761,
+   "at": 0.35
+  },
+  {
+   "key": "waves",
+   "text": "Inside, a tube called a magnetron makes microwaves. The same kind of radio wave as Wi-Fi, at about two point four five gigahertz.",
+   "dur": 8.484,
+   "at": 7.51
+  },
+  {
+   "key": "water",
+   "text": "Food is full of water. And each water molecule has a slightly positive end and a slightly negative end, like a tiny magnet.",
+   "dur": 8.832,
+   "at": 16.34
+  },
+  {
+   "key": "flip",
+   "text": "The microwave's field flips back and forth billions of times a second. The water molecules try to follow, spinning back and forth.",
+   "dur": 7.491,
+   "at": 25.48
+  },
+  {
+   "key": "heat",
+   "text": "All that jostling and bumping is heat. The food warms itself from the water inside.",
+   "dur": 4.768,
+   "at": 33.27
+  },
+  {
+   "key": "plate",
+   "text": "Most plates and glass have almost no free water, so the waves pass right through them. That's why the plate stays cooler.",
+   "dur": 7.487,
+   "at": 38.39
+  },
+  {
+   "key": "spots",
+   "text": "But the waves bounce around the metal box and make hot and cold spots. That's why the plate spins, and why you stir.",
+   "dur": 6.438,
+   "at": 46.22
+  },
+  {
+   "key": "door",
+   "text": "And the dots on the door? That metal mesh has holes far smaller than the waves, so they can't get out. But light can, so you can watch.",
+   "dur": 8.313,
+   "at": 53.01
+  },
+  {
+   "key": "orbi",
+   "text": "Keep it in the box. That's Orbi Transfer's private Space: only people with the passcode get in, and nobody outside even sees it.",
+   "dur": 7.628,
+   "at": 61.72
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 69.7
+  }
+ ],
+ "duration": 74.25
+}
