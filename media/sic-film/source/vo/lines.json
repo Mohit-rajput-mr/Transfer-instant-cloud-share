@@ -3,76 +3,76 @@
  "lines": [
   {
    "key": "hook",
-   "text": "New phones are cramming seven thousand milliamp hours into bodies that are still thin. How do they fit it all in?",
-   "dur": 6.451,
+   "text": "Do you know how silicon-carbon batteries work? They're how new phones fit seven thousand milliamp hours into bodies that are still thin.",
+   "dur": 8.747,
    "at": 0.35
   },
   {
    "key": "inside",
    "text": "Every phone battery has two sides. When you charge it, lithium ions travel over and get stored in the anode.",
    "dur": 6.875,
-   "at": 7.2
+   "at": 9.5
   },
   {
    "key": "graphite",
    "text": "For years, that anode was graphite. Flat sheets of carbon, stacked up. Lithium squeezes in between them, one atom for every six carbons.",
    "dur": 7.9,
-   "at": 14.38
+   "at": 16.67
   },
   {
    "key": "silicon",
    "text": "Silicon is the upgrade. Each silicon atom can grab almost four lithium atoms. By weight, that's about ten times more than graphite.",
    "dur": 8.997,
-   "at": 22.58
+   "at": 24.87
   },
   {
    "key": "swell",
    "text": "So why not use pure silicon? Because it swells. Fill it with lithium and its volume can grow by up to three hundred percent.",
    "dur": 8.399,
-   "at": 31.87
+   "at": 34.17
   },
   {
    "key": "crack",
    "text": "Charge, swell. Use, shrink. After enough cycles, the particles crack, and the battery dies fast.",
    "dur": 7.321,
-   "at": 40.57
+   "at": 42.87
   },
   {
    "key": "sponge",
    "text": "The fix is carbon. Tiny bits of silicon are tucked inside a porous carbon sponge, with empty space around each one.",
    "dur": 6.754,
-   "at": 48.24
+   "at": 50.54
   },
   {
    "key": "room",
    "text": "Now when the silicon swells, it grows into the gaps. The sponge holds its shape.",
    "dur": 4.587,
-   "at": 55.3
+   "at": 57.59
   },
   {
    "key": "mix",
    "text": "Phones only add a small share of silicon, often five to fifteen percent. That's enough for roughly ten to twenty percent more energy in the same space.",
    "dur": 7.866,
-   "at": 60.18
+   "at": 62.48
   },
   {
    "key": "result",
    "text": "That's the jump you're seeing. Same footprint, a lot more battery.",
    "dur": 3.488,
-   "at": 68.4
+   "at": 70.7
   },
   {
    "key": "orbi",
    "text": "More battery means you can send bigger things. Orbi Transfer moves files up to twenty gigabytes, split into parts that fly several at once, and picks up where it stopped if your signal drops.",
    "dur": 10.003,
-   "at": 72.29
+   "at": 74.58
   },
   {
    "key": "end",
-   "text": "orbitransfer.com. Now you know!",
+   "text": "Orbi Transfer dot com. Now you know!",
    "dur": 2.751,
-   "at": 82.64
+   "at": 84.94
   }
  ],
- "duration": 87.19
+ "duration": 89.49
 }
