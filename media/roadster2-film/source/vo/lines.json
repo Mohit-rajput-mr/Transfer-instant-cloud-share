@@ -1,0 +1,84 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "This is Tesla's new Roadster, hanging almost upside down on a curved wall. No glue. No magnets. Just four fans.",
+   "dur": 6.405,
+   "at": 0.35
+  },
+  {
+   "key": "demo",
+   "text": "At the reveal, it drove up this giant curved ramp, until the road was nearly over its head. And it stayed there.",
+   "dur": 7.445,
+   "at": 7.16
+  },
+  {
+   "key": "grip",
+   "text": "Normally, gravity presses the tires into the road. That press is what gives them grip. Upside down, gravity pulls the car away.",
+   "dur": 7.88,
+   "at": 14.95
+  },
+  {
+   "key": "fans",
+   "text": "So look at the back. Under the light bar, four round fans are built right into the diffuser.",
+   "dur": 5.81,
+   "at": 23.18
+  },
+  {
+   "key": "tunnel",
+   "text": "They suck air out from under the car, through channels in the floor, and blow it out the back.",
+   "dur": 4.744,
+   "at": 29.34
+  },
+  {
+   "key": "skirts",
+   "text": "Skirts drop down along the sides to seal the gap, so fresh air can't rush back in underneath.",
+   "dur": 5.751,
+   "at": 34.38
+  },
+  {
+   "key": "low",
+   "text": "Now the air under the car is thinner than the air around it. And the air outside presses on every inch of the car.",
+   "dur": 6.217,
+   "at": 40.48
+  },
+  {
+   "key": "math",
+   "text": "Do the math. The floor is about four square meters. Drop the pressure under it by just one tenth, and the air pushes with over four tonnes.",
+   "dur": 7.677,
+   "at": 47.05
+  },
+  {
+   "key": "num",
+   "text": "Tesla's screen showed about forty-seven hundred kilos of downforce. Far more than the car weighs. So it sticks, even upside down.",
+   "dur": 8.368,
+   "at": 55.08
+  },
+  {
+   "key": "slow",
+   "text": "And unlike a wing, fans work at any speed. Even standing still.",
+   "dur": 4.713,
+   "at": 63.8
+  },
+  {
+   "key": "history",
+   "text": "Race cars tried this in the seventies. The Chaparral and the Brabham fan car were so good, they got banned.",
+   "dur": 6.821,
+   "at": 68.86
+  },
+  {
+   "key": "claims",
+   "text": "Tesla claims zero to sixty in under one second, and production in twenty twenty-eight. Tesla's own numbers, not tested yet.",
+   "dur": 8.189,
+   "at": 76.08
+  },
+  {
+   "key": "end",
+   "text": "Share it with your car crew in a private Orbi Space. Now you know!",
+   "dur": 4.407,
+   "at": 84.67
+  }
+ ],
+ "duration": 90.88
+}
