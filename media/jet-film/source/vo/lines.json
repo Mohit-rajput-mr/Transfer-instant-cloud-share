@@ -4,69 +4,69 @@
   {
    "key": "hook",
    "text": "This is the engine on Boeing's new 777X. Its fan is three point four meters wide, the biggest ever on an airliner. So how does it push a plane?",
-   "dur": 9.485,
+   "dur": 8.956,
    "at": 0.35
   },
   {
    "key": "fan",
    "text": "It starts with the fan. Sixteen carbon fiber blades, swallowing tons of air every second.",
-   "dur": 7.079,
-   "at": 10.24
+   "dur": 6.691,
+   "at": 9.71
   },
   {
    "key": "split",
    "text": "But here's the trick. Most of that air never goes inside. About ten times more air flows around the core than through it.",
-   "dur": 7.591,
-   "at": 17.61
+   "dur": 7.162,
+   "at": 16.7
   },
   {
    "key": "squeeze",
    "text": "The air that does go in hits the compressor. Row after row of spinning blades, each smaller than the last, squeezing it up to sixty times.",
-   "dur": 9.148,
-   "at": 25.5
+   "dur": 8.642,
+   "at": 24.16
   },
   {
    "key": "bang",
    "text": "Then fuel sprays in and burns. The gas gets hotter than the melting point of the metal blades right behind it.",
-   "dur": 6.691,
-   "at": 34.95
+   "dur": 6.317,
+   "at": 33.1
   },
   {
    "key": "cool",
    "text": "So those blades are coated in ceramic and covered in tiny holes, which blow a thin film of cooler air over the surface.",
-   "dur": 7.484,
-   "at": 41.94
+   "dur": 7.059,
+   "at": 39.72
   },
   {
    "key": "turbine",
    "text": "The hot blast spins the turbines. And shafts connect them to the compressor and the fan up front. The engine keeps itself spinning.",
-   "dur": 8.035,
-   "at": 49.73
+   "dur": 7.584,
+   "at": 47.08
   },
   {
    "key": "thrust",
    "text": "Hot gas shoots out the back, but most of the push comes from the fan air around it. Moving lots of air gently is what makes it efficient.",
-   "dur": 7.32,
-   "at": 58.06
+   "dur": 6.9,
+   "at": 54.96
   },
   {
    "key": "sum",
    "text": "Suck. Squeeze. Bang. Blow.",
-   "dur": 3.175,
-   "at": 65.73
+   "dur": 3.003,
+   "at": 62.21
   },
   {
    "key": "orbi",
    "text": "And like that fuel, your files can burn too. On Orbi Transfer, set a timer, and when it runs out, the file is gone for good.",
-   "dur": 8.739,
-   "at": 69.31
+   "dur": 8.241,
+   "at": 65.61
   },
   {
    "key": "end",
-   "text": "Orbi Transfer dot com. Now you know!",
-   "dur": 2.919,
-   "at": 78.4
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 74.2
   }
  ],
- "duration": 83.11
+ "duration": 78.76
 }
