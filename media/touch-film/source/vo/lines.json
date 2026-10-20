@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Your screen works with a finger, but not with a glove or a pen cap. Why does it only feel you?",
+   "dur": 6.241,
+   "at": 0.35
+  },
+  {
+   "key": "grid",
+   "text": "Under the glass is an invisible grid of see-through wires. Rows one way, columns the other.",
+   "dur": 6.442,
+   "at": 6.99
+  },
+  {
+   "key": "charge",
+   "text": "Every crossing point holds a tiny bit of electric charge, like a little bucket. The phone checks every bucket, over and over, more than a hundred times a second.",
+   "dur": 9.053,
+   "at": 13.78
+  },
+  {
+   "key": "finger",
+   "text": "Your body conducts electricity. So when your finger comes close, it pulls a little charge away from the crossings right under it.",
+   "dur": 7.925,
+   "at": 23.19
+  },
+  {
+   "key": "find",
+   "text": "The phone sees which buckets dropped, and works out exactly where you touched, even between the wires.",
+   "dur": 5.535,
+   "at": 31.46
+  },
+  {
+   "key": "multi",
+   "text": "Two fingers? Each one makes its own dip. That's how pinch-to-zoom knows both spots at once.",
+   "dur": 5.84,
+   "at": 37.3
+  },
+  {
+   "key": "glove",
+   "text": "A glove or a plastic pen doesn't conduct, so the buckets don't change. To the screen, you're not there.",
+   "dur": 6.34,
+   "at": 43.49
+  },
+  {
+   "key": "water",
+   "text": "And water does conduct. That's why raindrops can make your screen go a little crazy.",
+   "dur": 5.02,
+   "at": 50.18
+  },
+  {
+   "key": "orbi",
+   "text": "One touch, and your team is in sync. In Orbi Work, drag a file onto a task, tap a step, and everyone sees it change, live.",
+   "dur": 8.937,
+   "at": 55.6
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com, slash work. Now you know!",
+   "dur": 3.367,
+   "at": 64.88
+  }
+ ],
+ "duration": 70.05
+}
