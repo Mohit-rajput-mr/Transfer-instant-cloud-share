@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Your phone battery lasted all day when it was new. Now it's dead by lunch. What actually happened inside?",
+   "dur": 7.133,
+   "at": 0.35
+  },
+  {
+   "key": "inside",
+   "text": "Inside are two layers. On one side, layers of graphite. On the other, a metal oxide. Between them, a liquid.",
+   "dur": 7.511,
+   "at": 7.88
+  },
+  {
+   "key": "charge",
+   "text": "When you charge, lithium ions are pushed across, and packed into the graphite, like cars into a parking garage.",
+   "dur": 5.891,
+   "at": 15.69
+  },
+  {
+   "key": "use",
+   "text": "When you use your phone, they flow back. And for every ion that crosses inside, an electron runs through your phone outside. That's the power.",
+   "dur": 9.461,
+   "at": 21.88
+  },
+  {
+   "key": "wear",
+   "text": "But every trip leaves a little damage. A crusty film grows on the graphite, and it traps some lithium for good.",
+   "dur": 5.91,
+   "at": 31.7
+  },
+  {
+   "key": "lost",
+   "text": "Fewer ions left to travel means less charge. After a few hundred full cycles, many batteries are down to about eighty percent.",
+   "dur": 7.29,
+   "at": 37.91
+  },
+  {
+   "key": "heat",
+   "text": "Heat makes it worse. So does sitting at a hundred percent for hours, or draining all the way to zero.",
+   "dur": 5.514,
+   "at": 45.55
+  },
+  {
+   "key": "tip",
+   "text": "That's why phones now offer to stop charging at eighty percent. It keeps the garage from being packed too tight.",
+   "dur": 6.557,
+   "at": 51.36
+  },
+  {
+   "key": "orbi",
+   "text": "And to send a big file, you don't need another app draining your phone. Orbi Transfer is just a website. No install, no login.",
+   "dur": 8.12,
+   "at": 58.32
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 66.79
+  }
+ ],
+ "duration": 71.34
+}
