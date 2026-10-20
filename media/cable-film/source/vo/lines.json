@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how the internet crosses oceans? Not by satellite. Almost all of it travels through cables lying on the sea floor.",
+   "dur": 8.963,
+   "at": 0.35
+  },
+  {
+   "key": "scale",
+   "text": "Hundreds of these cables, more than one point four million kilometers in total, carry over ninety nine percent of the data between continents.",
+   "dur": 7.893,
+   "at": 9.71
+  },
+  {
+   "key": "inside",
+   "text": "In deep water, a cable is only about as thick as a garden hose. Inside, glass fibers thinner than a hair carry pulses of laser light.",
+   "dur": 8.852,
+   "at": 17.91
+  },
+  {
+   "key": "repeat",
+   "text": "Light fades over distance. So every few dozen kilometers, a repeater boosts it, powered by electricity sent down the cable itself.",
+   "dur": 8.575,
+   "at": 27.06
+  },
+  {
+   "key": "shore",
+   "text": "Near the coast, where anchors and fishing nets are a danger, the cable gets steel armor and is buried under the seabed.",
+   "dur": 6.357,
+   "at": 35.93
+  },
+  {
+   "key": "break",
+   "text": "Breaks still happen. Most are caused by ship anchors and fishing gear. Not sharks.",
+   "dur": 5.152,
+   "at": 42.59
+  },
+  {
+   "key": "repair",
+   "text": "Then a repair ship sails out, hooks the cable up from the bottom, splices it on deck, and lowers it back down.",
+   "dur": 6.588,
+   "at": 48.04
+  },
+  {
+   "key": "orbi",
+   "text": "So a file you send to another continent with Orbi Transfer probably rides along the ocean floor. And every file gets its own QR code and passcode.",
+   "dur": 9.545,
+   "at": 54.98
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 64.88
+  }
+ ],
+ "duration": 69.43
+}
