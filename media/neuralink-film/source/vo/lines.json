@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how Neuralink works? A chip in the brain that lets people move a cursor just by thinking about it.",
+   "dur": 7.183,
+   "at": 0.35
+  },
+  {
+   "key": "coin",
+   "text": "The implant is about the size of a coin. It replaces a small circle of skull, and sits hidden under the skin.",
+   "dur": 6.355,
+   "at": 7.93
+  },
+  {
+   "key": "threads",
+   "text": "From it, sixty four threads, each far thinner than a human hair, reach into the brain, carrying one thousand and twenty four electrodes.",
+   "dur": 8.933,
+   "at": 14.59
+  },
+  {
+   "key": "robot",
+   "text": "They're too fine for human hands. So a surgical robot inserts them, steering around blood vessels.",
+   "dur": 5.759,
+   "at": 23.82
+  },
+  {
+   "key": "spikes",
+   "text": "Neurons talk in tiny electrical spikes. When you even imagine moving your hand, a pattern of spikes fires in the part of the brain that controls movement.",
+   "dur": 7.795,
+   "at": 29.88
+  },
+  {
+   "key": "decode",
+   "text": "The electrodes pick up those spikes, and software learns which pattern means left, right, or click.",
+   "dur": 4.897,
+   "at": 37.98
+  },
+  {
+   "key": "wireless",
+   "text": "The signals go to a computer over Bluetooth. And the battery charges wirelessly, right through the skin.",
+   "dur": 5.97,
+   "at": 43.17
+  },
+  {
+   "key": "people",
+   "text": "By September twenty twenty five, twelve people with paralysis had one, using it to play games and browse the web with their thoughts.",
+   "dur": 7.667,
+   "at": 49.44
+  },
+  {
+   "key": "close",
+   "text": "It's not mind reading. It's movement decoding. For now.",
+   "dur": 4.045,
+   "at": 57.46
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 61.9
+  }
+ ],
+ "duration": 66.45
+}
