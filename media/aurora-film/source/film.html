@@ -1,0 +1,167 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>How the northern lights work</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+const img = (src) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.src = src; });
+const texOf = async (src) => { const t2 = new THREE.Texture(await img(src)); t2.needsUpdate = true; t2.colorSpace = THREE.SRGBColorSpace; return t2; };
+const [dayT, nightT] = await Promise.all([texOf("tex/earth_atmos_2048.jpg"), texOf("tex/earth_lights_2048.png")]);
+const SETS = {}; const set = (k, x) => { const g = new THREE.Group(); g.position.set(x, 0, 0); scene.add(g); SETS[k] = g; return g; };
+const show = (k) => { for (const n in SETS) SETS[n].visible = n === k; };
+const P = (k) => SETS[k].position;
+scene.background = new THREE.Color(0x02030a);
+// =============== SKY: Arctic night, snowy hills, pine silhouettes, a cabin, the aurora curtains ===============
+const SK = set("sky", 0);
+{ const n = 3000, g = new THREE.BufferGeometry(), p = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const th = rnd() * Math.PI * 2, ph = Math.acos(0.05 + rnd() * 0.95); p.set([Math.sin(ph) * Math.cos(th) * 900, Math.cos(ph) * 900, Math.sin(ph) * Math.sin(th) * 900], i * 3); } g.setAttribute("position", new THREE.BufferAttribute(p, 3)); SK.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, sizeAttenuation: false })));
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(950, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, vertexShader: "varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }", fragmentShader: "varying vec3 vP; void main(){ float h = clamp(vP.y,0.0,1.0); vec3 c = mix(vec3(0.03,0.06,0.12), vec3(0.0,0.01,0.03), pow(h,0.5)); gl_FragColor = vec4(c,1.0); }" })); SK.add(sky); }
+const snow = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000, 100, 100), new THREE.MeshStandardMaterial({ color: 0xc8d8e8, roughness: 0.9, emissive: 0x0a2a24 })); { const p = snow.geometry.attributes.position; for (let i = 0; i < p.count; i++) p.setZ(i, 6 * Math.sin(p.getX(i) * 0.012) * Math.cos(p.getY(i) * 0.01) + (p.getY(i) > 200 ? (p.getY(i) - 200) * 0.25 : 0)); snow.geometry.computeVertexNormals(); } snow.rotation.x = -Math.PI / 2; SK.add(snow);
+SK.add(new THREE.HemisphereLight(0x4a8a7a, 0x0a0e18, 0.6));
+for (let i = 0; i < 60; i++) { const h = 8 + rnd() * 10; const t2 = new THREE.Mesh(new THREE.ConeGeometry(h * 0.28, h, 6), new THREE.MeshStandardMaterial({ color: 0x0a120e })); t2.position.set((rnd() - 0.5) * 400, h / 2, -40 - rnd() * 160); SK.add(t2); }
+{ const cab = new THREE.Mesh(new THREE.BoxGeometry(10, 6, 8), new THREE.MeshStandardMaterial({ color: 0x3a2214 })); cab.position.set(-24, 3, -20); SK.add(cab); const roof = new THREE.Mesh(new THREE.ConeGeometry(8, 4, 4), new THREE.MeshStandardMaterial({ color: 0xdfe6ee })); roof.rotation.y = Math.PI / 4; roof.position.set(-24, 8, -20); SK.add(roof); const w = new THREE.Mesh(new THREE.PlaneGeometry(2, 1.6), glow(0xffb45a)); w.position.set(-21, 3, -15.99); SK.add(w); const wl = new THREE.PointLight(0xffa040, 30, 30, 1.5); wl.position.set(-21, 3, -12); SK.add(wl); }
+const auroraMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, uniforms: { t: { value: 0 }, amp: { value: 1 } },
+  vertexShader: "varying vec2 vUv; uniform float t; void main(){ vUv = uv; vec3 p = position; p.z += 18.0*sin(p.x*0.012 + t*0.3) + 8.0*sin(p.x*0.031 - t*0.5); gl_Position = projectionMatrix*modelViewMatrix*vec4(p,1.0); }",
+  fragmentShader: "varying vec2 vUv; uniform float t; uniform float amp; float h(float x){ return fract(sin(x*91.7)*43758.5453); } void main(){ float x = vUv.x*60.0; float rays = 0.55 + 0.45*sin(x*3.1 + t*1.3)*sin(x*1.7 - t*0.7) + 0.3*h(floor(x*4.0)); float y = vUv.y; float base = smoothstep(0.0,0.08,y) * (1.0 - smoothstep(0.08,1.0,y)); vec3 green = vec3(0.2,1.0,0.55); vec3 red = vec3(0.85,0.15,0.35); vec3 purple = vec3(0.45,0.2,0.9); vec3 c = mix(green, red, smoothstep(0.45,0.95,y)); c = mix(purple, c, smoothstep(0.0,0.06,y)); float a = base*rays*amp*0.9; gl_FragColor = vec4(c*a, a); }" });
+const CURT = [[0, -380, 600, 240], [80, -460, 700, 280], [-120, -520, 500, 200]].map(([x, z, w, h]) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h, 120, 1), auroraMat); m.position.set(x, 130 + h / 2, z); SK.add(m); return m; });
+// =============== SPACE: Sun, solar wind, Earth with magnetic field lines, auroral ovals ===============
+const SP = set("space", 3000);
+{ const n = 2500, g = new THREE.BufferGeometry(), p = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const v = V(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).normalize().multiplyScalar(800); p.set([v.x, v.y, v.z], i * 3); } g.setAttribute("position", new THREE.BufferAttribute(p, 3)); SP.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 1.4, sizeAttenuation: false }))); }
+const SUN = new THREE.Mesh(new THREE.SphereGeometry(30, 48, 32), new THREE.MeshBasicMaterial({ color: 0xffd27a, toneMapped: false })); SUN.position.set(-200, 0, 0); SP.add(SUN);
+const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(256, 256, (g) => { const gr = g.createRadialGradient(128, 128, 20, 128, 128, 128); gr.addColorStop(0, "rgba(255,220,140,1)"); gr.addColorStop(0.4, "rgba(255,150,60,0.4)"); gr.addColorStop(1, "rgba(255,100,40,0)"); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); }), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); sunGlow.scale.setScalar(160); sunGlow.position.copy(SUN.position); SP.add(sunGlow);
+const sunL = new THREE.DirectionalLight(0xffffff, 2.2); sunL.position.set(-200, 20, 60); SP.add(sunL); SP.add(new THREE.AmbientLight(0xffffff, 0.12));
+const ER = 12; const EARTH = new THREE.Mesh(new THREE.SphereGeometry(ER, 96, 64), new THREE.MeshPhongMaterial({ map: dayT, emissiveMap: nightT, emissive: 0xffd9a0, emissiveIntensity: 0.6, shininess: 10 })); EARTH.rotation.z = 0.41; SP.add(EARTH); sunL.target = EARTH;
+{ const atm = new THREE.Mesh(new THREE.SphereGeometry(ER * 1.04, 64, 48), new THREE.MeshBasicMaterial({ color: 0x4f9cff, transparent: true, opacity: 0.15, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false })); SP.add(atm); }
+const FIELD = new THREE.Group(); SP.add(FIELD); for (let i = 0; i < 18; i++) { const an = i / 18 * Math.PI * 2; for (const L of [1.8, 2.6, 3.6]) { const pts = []; for (let k = 0; k <= 80; k++) { const th = 0.25 + k / 80 * (Math.PI - 0.5); const r = ER * L * Math.sin(th) ** 2; let x = r * Math.sin(th), y = r * Math.cos(th); const squash = x > 0 ? 1 : 1; const sx = Math.cos(an) * x, sz = Math.sin(an) * x; const tail = Math.cos(an) > 0 ? 1 + 0.9 * Math.cos(an) * (L / 3.6) : 1 - 0.35 * Math.abs(Math.cos(an)); pts.push(V(sx * tail, y, sz)); } FIELD.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x6ab8ff, transparent: true, opacity: 0.32 }))); } }
+FIELD.rotation.z = 0.2;
+const WIND = Array.from({ length: 500 }, () => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.9, 6, 4), glow(0xffc070, { transparent: true })); m.userData = { y: (rnd() - 0.5) * 120, z: (rnd() - 0.5) * 120, o: rnd() }; SP.add(m); return m; });
+const OVAL = [1, -1].map((s2) => { const m = new THREE.Mesh(new THREE.TorusGeometry(ER * 0.36, 0.7, 10, 96), glow(0x3dff8c, { transparent: true, opacity: 0.85 })); m.rotation.x = Math.PI / 2; m.position.y = s2 * ER * 0.95; SP.add(m); m.userData.s = s2; return m; });
+const CME = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16, 0, Math.PI * 2, 0, Math.PI / 3), new THREE.MeshBasicMaterial({ color: 0xff8a3a, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })); CME.rotation.z = -Math.PI / 2; SP.add(CME);
+// =============== ATOMS: an oxygen and a nitrogen atom, struck, glowing ===============
+const AT = set("atom", 6000); AT.add(new THREE.AmbientLight(0xffffff, 0.6)); { const pl = new THREE.PointLight(0xffffff, 60, 60, 1.5); pl.position.set(5, 8, 12); AT.add(pl); }
+const mkAtom = (col, label) => { const g = new THREE.Group(); const nuc = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 16), new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.2 })); g.add(nuc); const orb = [1.8, 2.8].map((r) => { const o = new THREE.Mesh(new THREE.TorusGeometry(r, 0.03, 8, 64), glow(0x6a7a9a)); o.rotation.x = Math.PI / 2 + rnd() * 0.5; g.add(o); return o; }); const e = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 8), glow(0xffffff)); g.add(e); const halo = new THREE.Mesh(new THREE.SphereGeometry(3.2, 24, 16), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(halo); g.userData = { nuc, e, halo, col }; AT.add(g); return g; };
+const OXY = mkAtom(0x3dff8c), NIT = mkAtom(0x9a6aff); OXY.position.set(-3.6, 2, 0); NIT.position.set(3.6, -3, 0);
+const ELEC = Array.from({ length: 2 }, () => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), glow(0xffc070)); AT.add(m); return m; });
+const PHOT = Array.from({ length: 24 }, (_, i) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), glow(i % 2 ? 0x3dff8c : 0x9a6aff)); m.userData = { d: V(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).normalize(), a: i % 2 ? OXY : NIT, o: rnd() }; AT.add(m); return m; });
+
+window.render = async function (t) { cam.up.set(0, 1, 0);
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  auroraMat.uniforms.t.value = t; auroraMat.uniforms.amp.value = 1; WIND.forEach((m) => (m.visible = false)); OVAL.forEach((m) => (m.visible = false)); CME.visible = false; FIELD.visible = false; EARTH.rotation.y = t * 0.05;
+  const skyCam = (k = 0) => look(V(lerp(0, 20, k), lerp(4, 6, k), lerp(60, 40, k)), V(0, lerp(110, 170, k), -300), 52);
+  const c = P("space");
+  if (t < A("wind")) { show("sky"); skyCam(ease(clamp(t / A("wind")))); big("93 MILLION MILES", t, A("hook") + 4.5, A("wind"), "#ffffff", "280px", "84px"); }
+  else if (t < A("colors")) { show("space"); FIELD.visible = t >= A("shield");
+    const kw = t < A("shield") ? clamp((t - A("wind")) / (A("shield") - A("wind"))) : 1; WIND.forEach((m) => { const u = m.userData, f = (t * 0.12 + u.o) % 1; m.visible = true; let x = lerp(-170, 150, f), y = u.y, z = u.z; if (t >= A("shield")) { const d = Math.hypot(y, z), R0 = ER * 3.2; if (x > -60 && d < R0 * 1.4) { const push = Math.max(0, (R0 * 1.4 - d)) * clamp((x + 60) / 40); const k2 = d > 0.01 ? (d + push) / d : 1; y *= k2; z *= k2; } if (t >= A("poles") && Math.abs(u.y) < 6 && Math.abs(u.z) < 20 && x > -10) { y = Math.sign(u.y || 1) * lerp(ER * 2.2, ER * 0.95, clamp((x + 10) / 40)); z = u.z * 0.2; x = Math.min(x, 6); } } m.position.set(x, y, z); m.material.opacity = f < 0.05 ? f * 20 : 1; });
+    if (t < A("shield")) { cam.up.set(-1, 0, 0); look(c.clone().add(V(-95, 0, 330)), c.clone().add(V(-95, 0, 0)), 44); } else if (t < A("poles")) { cam.up.set(-1, 0.3, 0); look(c.clone().add(V(-30, 20, 150)), c.clone().add(V(-20, 0, 0)), 42); } else look(c.clone().add(V(-30, 36, 38)), c.clone().add(V(0, 10, 0)), 42);
+    if (t < A("shield")) card("c0", `solar wind · <b>2–4 days</b> to Earth`, t, A("wind") + 1.0, A("shield"), 230, 230, -2); else if (t < A("poles")) lbl("l0", c.clone().add(V(10, ER * 2.6, 0)), t, A("shield") + 0.6, A("poles"), "magnetic field", "#6ab8ff"); else { OVAL[0].visible = t > A("poles") + 2.5; lbl("l0", c.clone().add(V(0, ER * 1.25, 0)), t, A("poles") + 1.5, A("hit"), "field lines dive in at the poles", "#3dff8c"); }
+    if (t >= A("hit")) { show("atom"); const a = P("atom"); const k = clamp((t - A("hit")) / (A("colors") - A("hit")));
+      ELEC.forEach((e, i) => { const tgt = i ? NIT : OXY; const kk = clamp((k - i * 0.15) / 0.3); e.visible = kk < 1; e.position.copy(tgt.position).add(V(-10 * (1 - kk), 8 * (1 - kk), 0)).add(a); });
+      [OXY, NIT].forEach((g, i) => { const hit = clamp((k - 0.3 - i * 0.15) / 0.1); const pulse = hit > 0 ? 0.5 + 0.5 * Math.sin(t * 6 + i) : 0; g.userData.halo.material.opacity = 0.35 * pulse; g.userData.nuc.material.emissiveIntensity = 0.2 + pulse; g.userData.e.position.set(Math.cos(t * 3 + i) * (hit > 0 ? 2.8 : 1.8), 0, Math.sin(t * 3 + i) * (hit > 0 ? 2.8 : 1.8)); });
+      PHOT.forEach((m) => { const u = m.userData, f = (t * 0.7 + u.o) % 1; m.visible = k > 0.45; m.position.copy(u.a.position).add(u.d.clone().multiplyScalar(2 + f * 8)).add(a); });
+      look(a.clone().add(V(0, 0, 30)), a.clone(), 42); lbl("l0", a.clone().add(OXY.position).add(V(0, 3.8, 0)), t, A("hit") + 1.4, A("colors"), "oxygen", "#3dff8c"); lbl("l1", a.clone().add(NIT.position).add(V(0, -3.8, 0)), t, A("hit") + 2.0, A("colors"), "nitrogen", "#b89aff"); card("c0", `≈ <b>100 km</b> up`, t, A("hit") + 0.8, A("colors"), 260, 230, -2); } }
+  else if (t < A("oval")) { show("sky"); skyCam(0.6); const k = clamp((t - A("colors")) / (A("oval") - A("colors"))); lbl("l0", V(0, 330, -380), t, A("colors") + 1.6, A("oval"), "oxygen · <b>red</b> (higher)", "#ff6a8a"); lbl("l1", V(0, 230, -380), t, A("colors") + 0.6, A("oval"), "oxygen · <b>green</b>", "#3dff8c"); lbl("l2", V(-60, 140, -380), t, A("colors") + 2.6, A("oval"), "nitrogen · <b>blue / purple</b>", "#b89aff"); }
+  else if (t < A("close")) { show("space"); FIELD.visible = true; const k = clamp((t - A("oval")) / (A("close") - A("oval"))); const storm = t >= A("storm") ? ease(clamp((t - A("storm") - 1.0) / 2.5)) : 0;
+    OVAL.forEach((m) => { m.visible = true; m.scale.setScalar(1 + storm * 0.9); m.position.y = m.userData.s * ER * lerp(0.95, 0.82, storm); m.position.x = 0; m.material.color.setHex(storm > 0.5 ? 0xff6a8a : 0x3dff8c).lerp(new THREE.Color(0x3dff8c), 1 - storm); });
+    if (t >= A("storm")) { const kc = clamp((t - A("storm")) / 3); CME.visible = kc < 1; CME.position.copy(SUN.position).add(V(kc * 190, 0, 0)); CME.scale.setScalar(20 + kc * 60); CME.material.opacity = 0.4 * (1 - kc); look(c.clone().add(V(lerp(-60, 30, storm), lerp(60, 30, storm), lerp(200, 50, storm))), c.clone().add(V(lerp(-80, 0, storm), 0, 0)), 42); }
+    else { look(c.clone().add(V(-38 + Math.sin(t * 0.3) * 10, 30, 42)), c.clone(), 42); lbl("l0", c.clone().add(V(0, ER * 1.3, 0)), t, A("oval") + 0.6, A("storm"), "northern lights", "#3dff8c"); lbl("l1", c.clone().add(V(0, -ER * 1.3, 0)), t, A("oval") + 1.6, A("storm"), "southern lights", "#3dff8c"); }
+    if (storm > 0.4) card("c0", `bigger ring · <b>seen far from the poles</b>`, t, A("storm") + 2.5, A("close"), 220, 230, -2); }
+  else { show("sky"); auroraMat.uniforms.amp.value = 1.3; skyCam(1 - ease(clamp((t - A("close")) / 4))); big("PAINTED BY THE SUN", t, A("close") + 0.6, A("end"), "#ffffff", "280px", "84px"); }
+
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
