@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a self-driving car sees? There's no one behind the wheel. So how does it know a child is about to cross?",
+   "dur": 7.03,
+   "at": 0.35
+  },
+  {
+   "key": "lidar",
+   "text": "On the roof, a spinning lidar fires millions of laser pulses every second, and times how long each one takes to bounce back.",
+   "dur": 8.149,
+   "at": 7.78
+  },
+  {
+   "key": "cloud",
+   "text": "Every echo becomes a dot. Together they build a live 3D map of everything around the car.",
+   "dur": 6.081,
+   "at": 16.23
+  },
+  {
+   "key": "camera",
+   "text": "Cameras add color. They read traffic lights, signs and lane lines, which lasers can't.",
+   "dur": 5.525,
+   "at": 22.61
+  },
+  {
+   "key": "radar",
+   "text": "Radar sees through rain and fog, and measures exactly how fast things are moving.",
+   "dur": 5.042,
+   "at": 28.43
+  },
+  {
+   "key": "fuse",
+   "text": "Software fuses all three into one picture. That's a car, that's a cyclist, that's a person.",
+   "dur": 5.889,
+   "at": 33.78
+  },
+  {
+   "key": "predict",
+   "text": "Then it predicts where each one might go in the next few seconds, and plans a safe path around them. Many times every second.",
+   "dur": 7.63,
+   "at": 39.97
+  },
+  {
+   "key": "tesla",
+   "text": "Not everyone agrees on the recipe. Waymo uses lidar, cameras and radar. Tesla bets on cameras alone.",
+   "dur": 6.1,
+   "at": 47.9
+  },
+  {
+   "key": "close",
+   "text": "Either way, it never blinks, and never looks at its phone.",
+   "dur": 3.838,
+   "at": 54.35
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 58.58
+  }
+ ],
+ "duration": 63.13
+}
