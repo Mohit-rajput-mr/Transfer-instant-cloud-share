@@ -1,0 +1,222 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>How a submarine dives</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+// =============== OCEAN: sky above, deep blue below, surface seen from both sides ===============
+r.localClippingEnabled = true;
+const img = (src) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.src = src; });
+const DESK = await img("shots/anon.png");
+const SETS = {}; const set = (k, x) => { const g = new THREE.Group(); g.position.set(x, 0, 0); scene.add(g); SETS[k] = g; return g; };
+const show = (k) => { for (const n in SETS) SETS[n].visible = n === k; };
+const P = (k) => SETS[k].position;
+scene.add(new THREE.HemisphereLight(0xcfe6ff, 0x0a1a2a, 0.9));
+const sunL = new THREE.DirectionalLight(0xffffff, 2.0); sunL.position.set(30, 80, 40); scene.add(sunL);
+const SEA = set("sea", 0);
+const deepFog = new THREE.FogExp2(0x06324a, 0.022), skyCol = new THREE.Color(0x9cc9e8), deepCol = new THREE.Color(0x05283c);
+const surf = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000, 1, 1), new THREE.MeshStandardMaterial({ color: 0x1a5f80, roughness: 0.12, metalness: 0.35, transparent: true, opacity: 0.78, side: THREE.DoubleSide })); surf.rotation.x = -Math.PI / 2; SEA.add(surf);
+const ripT = canvasTex(512, 512, (g, w, h) => { g.fillStyle = "#000"; g.fillRect(0, 0, w, h); for (let i = 0; i < 260; i++) { g.strokeStyle = `rgba(160,230,255,${0.05 + rnd() * 0.18})`; g.lineWidth = 1 + rnd() * 3; g.beginPath(); const x = rnd() * w, y = rnd() * h; g.ellipse(x, y, 10 + rnd() * 40, 4 + rnd() * 10, rnd() * 3, 0, 6.3); g.stroke(); } }); ripT.wrapS = ripT.wrapT = THREE.RepeatWrapping; ripT.repeat.set(60, 60);
+const caust = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshBasicMaterial({ map: ripT, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false })); caust.rotation.x = Math.PI / 2; caust.position.y = -0.05; SEA.add(caust);
+const RAYS = []; for (let i = 0; i < 14; i++) { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 4, 70, 12, 1, true), new THREE.MeshBasicMaterial({ color: 0x8fd8ff, transparent: true, opacity: 0.045, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false, fog: false })); m.position.set((rnd() - 0.5) * 80, -35, (rnd() - 0.5) * 60); m.rotation.z = 0.25; SEA.add(m); RAYS.push(m); }
+const SNOW = (() => { const n = 1800, g = new THREE.BufferGeometry(), p = new Float32Array(n * 3); for (let i = 0; i < n; i++) { p[i * 3] = (rnd() - 0.5) * 120; p[i * 3 + 1] = -rnd() * 400; p[i * 3 + 2] = (rnd() - 0.5) * 80; } g.setAttribute("position", new THREE.BufferAttribute(p, 3)); const m = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xbfe8ff, size: 0.12, transparent: true, opacity: 0.6 })); SEA.add(m); return m; })();
+const sky = new THREE.Mesh(new THREE.SphereGeometry(1500, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.ShaderMaterial({ side: THREE.BackSide, fog: false, depthWrite: false, vertexShader: "varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }", fragmentShader: "varying vec3 vP; void main(){ float h = clamp(vP.y,0.0,1.0); vec3 c = mix(vec3(0.93,0.86,0.74), vec3(0.32,0.56,0.82), pow(h,0.45)); gl_FragColor = vec4(c,1.0); }" })); SEA.add(sky);
+const sunD = new THREE.Mesh(new THREE.CircleGeometry(40, 32), new THREE.MeshBasicMaterial({ color: 0xfff4d8, fog: false, toneMapped: false })); sunD.position.set(-900, 160, -1100); sunD.lookAt(0, 0, 0); SEA.add(sunD);
+const subL = new THREE.PointLight(0xbfe6ff, 0, 60, 1.2); scene.add(subL);
+
+// =============== SUBMARINE (length 20): anechoic-tiled hull, sail with planes, cross tail, pumpjet ===============
+const SUB = new THREE.Group(); SEA.add(SUB);
+const CUT = new THREE.Plane(V(0, 0, -1), 1000);
+const tileT = canvasTex(512, 512, (g, w, h) => { g.fillStyle = "#16181c"; g.fillRect(0, 0, w, h); g.strokeStyle = "rgba(255,255,255,0.05)"; g.lineWidth = 2; for (let i = 0; i <= w; i += 32) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, h); g.stroke(); g.beginPath(); g.moveTo(0, i); g.lineTo(w, i); g.stroke(); } for (let i = 0; i < 40; i++) { g.fillStyle = `rgba(255,255,255,${rnd() * 0.04})`; g.fillRect(Math.floor(rnd() * 16) * 32, Math.floor(rnd() * 16) * 32, 32, 32); } }); tileT.wrapS = tileT.wrapT = THREE.RepeatWrapping; tileT.repeat.set(10, 3);
+const hullM = new THREE.MeshStandardMaterial({ map: tileT, color: 0xffffff, roughness: 0.85, metalness: 0.1, side: THREE.DoubleSide, clippingPlanes: [CUT] });
+const rH = (x) => x > 7 ? 1.5 * Math.sqrt(Math.max(0, 1 - ((x - 7) / 3) ** 2)) : x > -5 ? 1.5 : lerp(1.5, 0.35, ((-5 - x) / 4.6) ** 1.3);
+const axial = (fn, x0, x1, mat, seg = 64, n = 80) => { const pts = []; for (let i = 0; i <= n; i++) { const x = lerp(x0, x1, i / n); pts.push(new THREE.Vector2(Math.max(0.001, fn(x)), x)); } const m = new THREE.Mesh(new THREE.LatheGeometry(pts, seg), mat); m.rotation.z = -Math.PI / 2; return m; };
+SUB.add(axial(rH, -9.6, 10, hullM, 96, 120));
+const sail = (() => { const s2 = new THREE.Shape(); s2.moveTo(1.2, 0); s2.bezierCurveTo(1.2, 0.45, 0.2, 0.42, -1.3, 0.12); s2.lineTo(-1.3, -0.12); s2.bezierCurveTo(0.2, -0.42, 1.2, -0.45, 1.2, 0); const g = new THREE.ExtrudeGeometry(s2, { depth: 2.3, bevelEnabled: true, bevelSize: 0.06, bevelThickness: 0.06, curveSegments: 24 }); const m = new THREE.Mesh(g, hullM); m.rotation.x = -Math.PI / 2; m.position.set(4.2, 1.2, 0); return m; })(); SUB.add(sail);
+for (const z of [-1, 1]) { const pl = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.06, 1.0), hullM); pl.position.set(4.6, 2.6, z * 0.75); SUB.add(pl); }
+const mastM = new THREE.MeshStandardMaterial({ color: 0x2a2d33, roughness: 0.6, clippingPlanes: [CUT] }); for (const [x, h] of [[4.9, 0.9], [4.5, 0.6], [4.1, 0.75]]) { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, h, 10), mastM); m.position.set(x, 3.5 + h / 2 - 0.3, 0); SUB.add(m); }
+const TAIL = []; for (let k = 0; k < 4; k++) { const f = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.08, 1.5), hullM); const an = k * Math.PI / 2; f.position.set(-8.0, Math.sin(an) * 0.9, Math.cos(an) * 0.9); f.rotation.x = -an; f.geometry.translate(0, 0, 0.5); SUB.add(f); if (k % 2 == 0) TAIL.push(f); }
+const pump = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.65, 1.1, 40, 1, true), hullM); pump.rotation.z = Math.PI / 2; pump.position.x = -9.3; SUB.add(pump);
+const hatch = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.05, 20), new THREE.MeshStandardMaterial({ color: 0x24272c, clippingPlanes: [CUT] })); hatch.position.set(1.5, 1.5, 0); SUB.add(hatch);
+// inside (shown when cut): pressure hull, ballast tanks fore/aft with water levels, trim tanks, decks, reactor, air flasks
+const INS = new THREE.Group(); SUB.add(INS);
+const phM = new THREE.MeshStandardMaterial({ color: 0x8c949e, metalness: 0.55, roughness: 0.4, side: THREE.DoubleSide, clippingPlanes: [CUT] });
+const rP = (x) => x > 5.6 ? 1.2 * Math.sqrt(Math.max(0, 1 - ((x - 5.6) / 0.9) ** 2)) : x > -4.6 ? 1.2 : 1.2 * Math.sqrt(Math.max(0, 1 - ((x + 4.6) / 0.9) ** 2));
+INS.add(axial(rP, -5.5, 6.5, phM, 64, 90));
+const TANKS = [[6.6, 9.9], [-9.0, -5.6]].map(([x0, x1]) => { const lv = new THREE.Plane(V(0, -1, 0), 0); const wm = new THREE.MeshStandardMaterial({ color: 0x1e88c8, roughness: 0.2, transparent: true, opacity: 0.85, side: THREE.DoubleSide, clippingPlanes: [CUT, lv], emissive: 0x1666a0 });
+  const water = axial((x) => rH(x) * 0.96, x0, x1, wm, 48, 40); INS.add(water); const air = axial((x) => rH(x) * 0.955, x0, x1, new THREE.MeshBasicMaterial({ color: 0xbfe6ff, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false, clippingPlanes: [CUT] }), 48, 40); INS.add(air);
+  const vent = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.3), new THREE.MeshStandardMaterial({ color: 0x3dff8c, emissive: 0x0a3a1a })); vent.position.set((x0 + x1) / 2, rH((x0 + x1) / 2) + 0.03, 0); SUB.add(vent);
+  const flood = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.06, 0.3), new THREE.MeshStandardMaterial({ color: 0x4f9cff })); flood.position.set((x0 + x1) / 2, -rH((x0 + x1) / 2) - 0.02, 0); SUB.add(flood);
+  return { lv, x: (x0 + x1) / 2, vent, flood }; });
+const setTank = (k) => TANKS.forEach((T) => { T.lv.constant = SUB.position.y + lerp(-1.6, 1.6, k); }); // fill fraction 0..1 (sub-local y)
+const TRIM = [4.6, -3.6].map((x) => { const shell = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 1.0, 24, 1, true), new THREE.MeshStandardMaterial({ color: 0xc8ccd2, transparent: true, opacity: 0.35, side: THREE.DoubleSide, clippingPlanes: [CUT] })); shell.rotation.z = Math.PI / 2; shell.position.set(x, -0.75, 0); INS.add(shell); const w = new THREE.Mesh(new THREE.BoxGeometry(0.98, 1, 0.8), new THREE.MeshStandardMaterial({ color: 0x1e88c8, transparent: true, opacity: 0.85, clippingPlanes: [CUT] })); w.position.set(x, -1.2, 0); INS.add(w); return w; });
+const setTrim = (a) => TRIM.forEach((w, i) => { const f = i == 0 ? a : 1 - a; w.scale.y = 0.05 + 0.85 * f; w.position.y = -1.2 + w.scale.y / 2; });
+{ const deckM = new THREE.MeshStandardMaterial({ color: 0x5a616b, roughness: 0.7, clippingPlanes: [CUT] }); for (const y of [-0.3, 0.45]) { const d = new THREE.Mesh(new THREE.BoxGeometry(9.6, 0.05, 2.0), deckM); d.position.set(0.5, y, 0); INS.add(d); }
+  for (let i = 0; i < 18; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.3 + rnd() * 0.5, 0.25 + rnd() * 0.3, 0.3 + rnd() * 0.5), new THREE.MeshStandardMaterial({ color: [0x2c3138, 0x6e7781, 0x3d6b8a, 0x8a6a3d][i % 4], clippingPlanes: [CUT] })); b.position.set(lerp(-3.5, 5, rnd()), (i % 2 ? -0.3 : 0.45) + 0.18, (rnd() - 0.5) * 1.2); INS.add(b); }
+  const reac = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 1.0, 24), new THREE.MeshStandardMaterial({ color: 0xffd84a, emissive: 0xffa31a, emissiveIntensity: 0.6, clippingPlanes: [CUT] })); reac.position.set(-1.9, -0.6, 0); INS.add(reac); }
+const FLASKS = [7.0, -5.9].map((x) => { const f = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.9, 16), new THREE.MeshStandardMaterial({ color: 0x3dff8c, metalness: 0.4, clippingPlanes: [CUT] })); f.rotation.z = Math.PI / 2; f.position.set(x, 0.9, 0); INS.add(f); return f; });
+INS.visible = false;
+// bubbles (vents while diving, blow while surfacing)
+const BUB = Array.from({ length: 140 }, (_, i) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.08 + (i % 4) * 0.03, 10, 8), new THREE.MeshStandardMaterial({ color: 0xdff6ff, transparent: true, opacity: 0.55, roughness: 0.1, metalness: 0.3 })); m.visible = false; m.userData = { o: rnd(), x: (rnd() - 0.5) * 2.4, z: (rnd() - 0.5) * 1.2, t: i % 2 }; SEA.add(m); return m; });
+// force arrows (buoyancy up, weight down), pressure arrows all around
+const arrow = (col, rad = 0.12) => { const g = new THREE.Group(); const m = glow(col, { transparent: true, fog: false, depthTest: false }); const s2 = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad, 1, 12), m); s2.position.y = 0.5; const h = new THREE.Mesh(new THREE.ConeGeometry(rad * 2.6, rad * 5, 16), m); h.userData.head = true; g.add(s2, h); g.userData = { s: s2, h }; g.renderOrder = 10; g.visible = false; SEA.add(g); return g; };
+const setArrow = (a, from, dir, len) => { a.visible = true; a.position.copy(from); a.quaternion.setFromUnitVectors(V(0, 1, 0), dir.clone().normalize()); a.userData.s.scale.y = len; a.userData.s.position.y = len / 2; a.userData.h.position.y = len + 0.3; };
+const AB = arrow(0x3dff8c, 0.16), AW = arrow(0xff4d5a, 0.16);
+const PRESS = Array.from({ length: 28 }, () => arrow(0x6ab8ff, 0.06));
+// sonar: a far ship on the surface, its noise rings reaching the silent sub
+const SHIPF = new THREE.Group(); { const h = new THREE.Mesh(new THREE.BoxGeometry(14, 2, 3), new THREE.MeshStandardMaterial({ color: 0x1a1d22 })); h.position.y = -0.6; SHIPF.add(h); const prop = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.2, 12), new THREE.MeshStandardMaterial({ color: 0xb08a4a })); prop.rotation.z = Math.PI / 2; prop.position.set(-7.4, -1.4, 0); SHIPF.add(prop); SHIPF.position.set(-30, 0, -10); SEA.add(SHIPF); }
+const RINGS = Array.from({ length: 6 }, () => { const m = new THREE.Mesh(new THREE.SphereGeometry(1, 40, 20), new THREE.MeshBasicMaterial({ color: 0xffd84a, transparent: true, opacity: 0.12, wireframe: true, depthWrite: false, fog: false })); m.visible = false; SEA.add(m); return m; });
+
+// =============== OXYGEN: electrolysis cell (water split into hydrogen and oxygen) ===============
+const OX = set("ox", 400);
+{ const tank = new THREE.Mesh(new THREE.BoxGeometry(5, 3.2, 2.4), new THREE.MeshStandardMaterial({ color: 0x8fd8ff, transparent: true, opacity: 0.18, roughness: 0.1, side: THREE.DoubleSide, depthWrite: false })); OX.add(tank); const wt = new THREE.Mesh(new THREE.BoxGeometry(4.9, 2.6, 2.3), new THREE.MeshStandardMaterial({ color: 0x1e88c8, transparent: true, opacity: 0.35, depthWrite: false })); wt.position.y = -0.3; OX.add(wt);
+  for (const [x, c] of [[-1.3, 0xb8bcc4], [1.3, 0xd4a24a]]) { const e = new THREE.Mesh(new THREE.BoxGeometry(0.18, 3.0, 1.4), new THREE.MeshStandardMaterial({ color: c, metalness: 0.8, roughness: 0.3 })); e.position.set(x, 0.1, 0); OX.add(e); }
+  const wire = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([V(-1.3, 1.6, 0), V(-1.3, 2.6, 0), V(1.3, 2.6, 0), V(1.3, 1.6, 0)]), 30, 0.04, 8), new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 0.8 })); OX.add(wire); const bat = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.4, 0.4), glow(0xffd84a)); bat.position.set(0, 2.6, 0); OX.add(bat); }
+const OXB = Array.from({ length: 90 }, (_, i) => { const isO = i % 3 == 0; const m = new THREE.Mesh(new THREE.SphereGeometry(isO ? 0.11 : 0.08, 12, 8), glow(isO ? 0x6ab8ff : 0xffffff, { transparent: true, opacity: 0.85 })); m.userData = { isO, o: rnd(), z: (rnd() - 0.5) * 1.2, dx: (rnd() - 0.5) * 0.3 }; OX.add(m); return m; });
+const MOL = (() => { const g = new THREE.Group(); const O = new THREE.Mesh(new THREE.SphereGeometry(0.32, 20, 14), new THREE.MeshStandardMaterial({ color: 0xe8414f })); const H1 = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 12), new THREE.MeshStandardMaterial({ color: 0xffffff })); const H2 = H1.clone(); g.add(O, H1, H2); g.userData = { O, H1, H2 }; g.position.set(0, -0.6, 1.4); OX.add(g); return g; })();
+
+// =============== ORBI: laptop showing the real anonymous page ===============
+const OB = set("orbi", 280);
+const LAPW = 2880 / 2, LAPH = 1800 / 2; const lapC = document.createElement("canvas"); lapC.width = LAPW; lapC.height = LAPH; const lapT = new THREE.CanvasTexture(lapC); lapT.colorSpace = THREE.SRGBColorSpace; lapT.anisotropy = 8; lapC.getContext("2d").drawImage(DESK, 0, 0, LAPW, LAPH); lapT.needsUpdate = true;
+const desk = new THREE.Mesh(new THREE.BoxGeometry(6, 0.08, 3), new THREE.MeshStandardMaterial({ color: 0x3a2c22, roughness: 0.7 })); desk.position.y = -0.04; OB.add(desk);
+const LAP = new THREE.Group(); OB.add(LAP); const alu = new THREE.MeshStandardMaterial({ color: 0x9aa0a8, metalness: 0.8, roughness: 0.3 });
+{ const base = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.035, 1.1), alu); base.position.set(0, 0.018, 0.2); LAP.add(base); const kb = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.004, 0.5), new THREE.MeshStandardMaterial({ color: 0x15161a })); kb.position.set(0, 0.037, 0.05); LAP.add(kb);
+  const lid = new THREE.Group(); lid.position.set(0, 0.035, -0.35); lid.rotation.x = -0.18; LAP.add(lid); const lb = new THREE.Mesh(new THREE.BoxGeometry(1.62, 1.04, 0.02), alu); lb.position.y = 0.52; lid.add(lb); const sc = new THREE.Mesh(new THREE.PlaneGeometry(1.54, 0.9625), new THREE.MeshBasicMaterial({ map: lapT, toneMapped: false })); sc.position.set(0, 0.53, 0.011); lid.add(sc); }
+const lampL = new THREE.PointLight(0xffd9a8, 6, 6, 1.6); lampL.position.set(-1.6, 1.6, 0.8); OB.add(lampL);
+
+window.render = async function (t) {
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  CUT.constant = 1000; INS.visible = false; AB.visible = AW.visible = false; PRESS.forEach((a) => (a.visible = false)); BUB.forEach((b) => (b.visible = false)); RINGS.forEach((m) => (m.visible = false)); SUB.rotation.set(0, 0, 0); TAIL.forEach((f) => (f.rotation.z = 0)); setTank(0); setTrim(0.5);
+  caust.material.map.offset.set(t * 0.01, t * 0.007); RAYS.forEach((m, i) => (m.material.opacity = 0.035 + 0.02 * Math.sin(t * 0.8 + i)));
+  const under = (on) => { scene.fog = on ? deepFog : null; scene.background = on ? deepCol : skyCol; sky.visible = sunD.visible = !on; deepFog.density = 0.022; subL.intensity = on ? 40 : 0; subL.position.copy(cam.position); };
+  const depthAt = (y) => { deepFog.color.setHex(0x06324a).lerp(new THREE.Color(0x010a12), clamp(-y / 320)); deepCol.copy(deepFog.color); };
+  const cutOn = () => { CUT.constant = 0; INS.visible = true; };
+  const bubbles = (x, y0, kind, k) => BUB.forEach((b, i) => { const u = b.userData; const f = (t * 0.6 + u.o) % 1; if (u.t != kind % 2 && kind < 2) return; b.visible = k > 0; b.position.set(x + u.x + (i % 2 ? 0 : (kind == 2 ? 0 : 0)) + (i % 3 == 0 && kind == 2 ? -14.2 : 0), y0 + f * 9 * k, u.z); b.scale.setScalar(0.6 + f * 0.8); });
+  show("sea");
+  if (t < A("float")) { under(false); const k = ease(clamp(t / (A("float") - 0.3))); SUB.position.set(0, -0.9, 0); SUB.rotation.z = 0.01 * Math.sin(t * 1.3); look(V(lerp(26, 20, k), lerp(4.5, 2.2, k), lerp(26, 20, k)), V(1, 0.4, 0), 40);
+    big("HOW?", t, A("hook") + (A("float") - A("hook")) * 0.75, A("float"), "#ffffff", "300px", "150px"); tag("thousands of <b>tonnes</b>", t, A("hook") + 0.6, A("hook") + 4, 160); }
+  else if (t < A("ballast")) { under(false); SUB.position.set(0, -0.9, 0); const k = ease(clamp((t - A("float")) / (A("ballast") - A("float")))); look(V(lerp(20, 4, k), lerp(2.0, 0.25, k), lerp(20, 24, k)), V(0, -0.6, 0), 42);
+    const ka = ease(clamp((t - A("float") - 2.5) / 1)); setArrow(AB, V(0, -0.6, 2.2), V(0, 1, 0), 3.2 * ka + 0.01); setArrow(AW, V(0, -0.6, 2.2), V(0, -1, 0), 3.2 * ka + 0.01); AB.position.y += 0.2; AW.position.y -= 0.2;
+    lbl("l0", V(0, 3.6, 2.2), t, A("float") + 3.0, A("ballast"), "water pushes <b>up</b>", "#3dff8c"); lbl("l1", V(0, -4.3, 2.2), t, A("float") + 4.0, A("ballast"), "weight", "#ff6a6a"); card("c0", `push up = weight of<br/><b>water moved aside</b>`, t, A("float") + (A("ballast") - A("float")) * 0.55, A("ballast"), 200, 230, -2); }
+  else if (t < A("planes")) { under(true); cutOn(); const T0 = A("ballast"), T1 = A("trim"), T2 = A("planes");
+    if (t < T1) { const k = clamp((t - T0 - 2.2) / (T1 - T0 - 2.6)); setTank(ease(k)); const y = lerp(-0.9, -6, ease(clamp((k - 0.35) / 0.65))); SUB.position.set(0, y, 0); depthAt(y); bubbles(8.25, y + 1.5, 0, k > 0.02 && k < 0.95 ? 1 : 0); const kc = ease(clamp((k - 0.55) / 0.35)); look(V(lerp(10.5, 10, kc), y + lerp(2.4, 5, kc), lerp(11, 26, kc)), V(lerp(7.6, 2.5, kc), y - 0.2, 0), 42); subL.position.copy(cam.position);
+      if (kc > 0.3) { setArrow(AB, V(0, y, 2.2), V(0, 1, 0), 2.6); setArrow(AW, V(0, y, 2.2), V(0, -1, 0), lerp(2.6, 3.8, ease(k))); } lbl("l0", V(7.6, y + 0.2, 0.5), t, T0 + 0.8, T0 + 6, "ballast tank", "#4f9cff"); lbl("l1", V(8.2, y + 2.2, 0.5), t, T0 + 3.0, T0 + (T1 - T0) * 0.6, "vents open · <b>air out</b>", "#3dff8c"); lbl("l2", V(8.2, y - 2.0, 0.5), t, T0 + 4.2, T0 + (T1 - T0) * 0.6, "seawater <b>in</b>", "#7cc4ff"); }
+    else { const y = -6; setTank(1); SUB.position.set(0, y, 0); depthAt(y); const k = clamp((t - T1) / (T2 - T1)); setTrim(0.5 + 0.35 * Math.sin(k * 7) * (1 - k)); SUB.rotation.z = 0.04 * Math.sin(k * 7) * (1 - k); look(V(6, y + 6, 27), V(0.5, y - 0.4, 0), 42); subL.position.copy(cam.position);
+      setArrow(AB, V(0.5, y + 2.0, 2.2), V(0, 1, 0), 2.2); setArrow(AW, V(0.5, y - 2.0, 2.2), V(0, -1, 0), 2.2); lbl("l0", V(4.6, y - 0.75, 0.5), t, T1 + 0.6, T2, "trim tank", "#7cc4ff"); lbl("l1", V(-3.6, y - 0.75, 0.5), t, T1 + 0.6, T2, "trim tank", "#7cc4ff"); card("c0", `up = down → <b>hover</b>`, t, T1 + (T2 - T1) * 0.6, T2, 260, 230, -2); } }
+  else if (t < A("deep")) { under(true); setTank(1); const k = clamp((t - A("planes")) / (A("deep") - A("planes"))); const pitch = -0.18 * ease(clamp((k - 0.3) / 0.3)); TAIL.forEach((f) => (f.rotation.z = 0)); const y = -6 - k * 12; SUB.position.set(k * 6, y, 0); SUB.rotation.z = pitch; depthAt(y);
+    look(V(k * 6 - 4, y + 5, 22), V(k * 6 + 2, y + 0.6, 0), 40); subL.position.copy(cam.position); lbl("l0", SUB.position.clone().add(V(4.6, 2.9, 1.0)), t, A("planes") + 0.8, A("deep"), "diving planes", "#3dff8c"); lbl("l1", SUB.position.clone().add(V(-8.0, 1.6, 1.4)), t, A("planes") + 1.6, A("deep"), "stern planes", "#3dff8c"); }
+  else if (t < A("rise")) { under(true); setTank(1); const k = clamp((t - A("deep")) / (A("rise") - A("deep"))); const depth = 300 * ease(clamp((k - 0.05) / 0.6)); const y = -18 - depth * 0.06; SUB.position.set(0, y, 0); depthAt(-depth); look(V(14, y + 7, 26), V(0, y, 0), 42); subL.position.copy(cam.position);
+    const kp = clamp((k - 0.4) / 0.4); PRESS.forEach((a, i) => { const an = (i / PRESS.length) * Math.PI * 2, xx = lerp(-9, 9, (i % 14) / 13), side = i < 14 ? 1 : -1; const from = V(xx, y + side * (2.6 + 1.6 * (1 - kp)), 0.4); setArrow(a, from, V(0, -side, 0), 0.4 + 1.2 * kp); });
+    timer(`${Math.round(depth)} m`, t, A("deep") + 0.4, A("rise"), "#7cc4ff", "120px"); card("c0", `≈ <b>${(1 + depth / 10).toFixed(0)} atm</b>`, t, A("deep") + (A("rise") - A("deep")) * 0.35, A("rise"), 260, 460, -2); }
+  else if (t < A("oxygen")) { under(true); cutOn(); const k = clamp((t - A("rise")) / (A("oxygen") - A("rise"))); const kb = ease(clamp(k / 0.45)); setTank(1 - kb); const y = lerp(-8, -1.5, ease(clamp((k - 0.3) / 0.7))); SUB.position.set(0, y, 0); depthAt(y); look(V(13, y + 3.5, 21), V(3.5, y + 0.2, 0), 42); subL.position.copy(cam.position);
+    FLASKS.forEach((f) => f.material.emissive.setHex(k < 0.5 ? 0x1a8a4a : 0)); BUB.forEach((b, i) => { const u = b.userData; const f = (t * 0.8 + u.o) % 1; b.visible = k > 0.05 && k < 0.6; const tx = i % 2 ? 8.25 : -7.3; b.position.set(tx + u.x * 0.6, y - 1.6 - f * 3, u.z); });
+    lbl("l0", V(7.0, y + 0.9 + 0.5, 0.6), t, A("rise") + 0.6, A("oxygen"), "compressed air", "#3dff8c"); lbl("l1", V(8.2, y - 2.4, 0.5), t, A("rise") + 1.6, A("rise") + 4.5, "water <b>out</b>", "#7cc4ff"); }
+  else if (t < A("quiet")) { show("ox"); scene.fog = null; scene.background = new THREE.Color(0x07121a); const c = P("ox"); const k = clamp((t - A("oxygen")) / (A("quiet") - A("oxygen"))); look(c.clone().add(V(lerp(2.5, 1.2, k), 1.0, lerp(9, 7.4, k))), c.clone().add(V(0, 0.2, 0)), 42);
+    OXB.forEach((m) => { const u = m.userData, f = (t * 0.45 + u.o) % 1; m.position.set((u.isO ? 1.3 : -1.3) + (u.isO ? -0.25 : 0.25) + u.dx, -1.4 + f * 2.5, u.z); m.material.opacity = 0.85 * (1 - f * 0.6); });
+    const ks = ease(clamp((k - 0.3) / 0.3)); MOL.userData.H1.position.set(lerp(0.35, -1.0, ks), lerp(0.25, 0.4, ks), 0); MOL.userData.H2.position.set(lerp(-0.35, -1.1, ks), lerp(0.25, -0.2, ks), 0); MOL.userData.O.position.set(lerp(0, 0.9, ks), 0, 0);
+    lbl("l0", c.clone().add(V(1.3, 1.9, 0)), t, A("oxygen") + 1.0, A("quiet"), "oxygen → <b>breathe</b>", "#6ab8ff"); lbl("l1", c.clone().add(V(-1.3, 1.9, 0)), t, A("oxygen") + 1.6, A("quiet"), "hydrogen", "#ffffff"); card("c0", `stays down for <b>months</b>`, t, A("oxygen") + (A("quiet") - A("oxygen")) * 0.6, A("quiet"), 260, 230, -2); }
+  else if (t < A("orbi")) { under(true); deepFog.density = 0.009; setTank(1); const y = -22; SUB.position.set(0, y, 0); depthAt(-120); const k = clamp((t - A("quiet")) / (A("orbi") - A("quiet"))); look(V(lerp(22, 28, k), y + 6, lerp(30, 38, k)), V(-12, y + 9, -6), 44); subL.position.copy(cam.position);
+    RINGS.forEach((m, i) => { const f = ((t - A("quiet")) * 0.25 + i / RINGS.length) % 1; m.visible = true; m.position.set(-30, -1, -10); m.scale.setScalar(4 + f * 45); m.material.opacity = 0.14 * (1 - f); });
+    lbl("l0", V(-30, 3, -10), t, A("quiet") + 0.6, A("orbi"), "ship · <b>noisy</b>", "#ffd84a"); lbl("l1", V(0, y + 2.6, 0), t, A("quiet") + 2.0, A("orbi"), "sub · <b>listens only</b>", "#3dff8c"); }
+  else { show("orbi"); scene.fog = null; scene.background = new THREE.Color(0x07080c); const c = P("orbi"); const k = clamp((t - A("orbi")) / (A("end") - A("orbi"))); look(c.clone().add(V(lerp(1.2, 0.0, ease(k)), lerp(1.6, 0.75, ease(k)), lerp(4.6, 3.0, ease(k)))), c.clone().add(V(0, lerp(0.35, 0.55, ease(k)), -0.3)), 42);
+    card("c0", `no <b>location</b>`, t, A("orbi") + 1.6, A("end"), 260, 230, -2); card("c1", `no <b>name</b>`, t, A("orbi") + 2.4, A("end"), 300, 360, 2); card("c2", `no <b>device</b>`, t, A("orbi") + 3.2, A("end"), 260, 490, -1); }
+
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
