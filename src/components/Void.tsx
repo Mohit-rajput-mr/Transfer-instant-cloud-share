@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Starfield from "./Starfield";
 import Uploader, { Icon } from "./Uploader";
@@ -57,6 +57,7 @@ import StylePicker from "./StylePicker";
 import { autoRemember, findDeviceSkin, forgetDeviceLook, pickedPalette, pickedSkin, skinName, toneOf, useLook } from "@/lib/skins";
 import { fileKind, type Kind } from "@/lib/skin-list";
 import { inScope, SCOPE_EMPTY, type Scope } from "@/lib/scope";
+import { pickFold, rowFits, setFold } from "@/lib/fold";
 import { WorkBar, WorkDock, WorkRail } from "./WorkChrome";
 import KindFilter from "./KindFilter";
 import ScopeTabs from "./ScopeTabs";
@@ -2210,6 +2211,31 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const watchers = useCallback((id: string) => orbs.find((o) => o.id === id)?.watchers ?? 0, [orbs]);
   const nearbyCount = alive.filter((o) => o.netHash === net).length;
   const areaCount = alive.filter((o) => !!area && o.area === area).length;
+  // the Classic bar folds only as far as it must (lib/fold.ts): measured again when its width or contents change
+  const topBar = useRef<HTMLElement>(null);
+  const foldKey = `${areaCount}|${nearbyCount}|${badges.size}|${online}|${tasks.length}|${anonNow}|${anonOn}|${!!space}|${inArchive}|${kind}|${work}`;
+  useLayoutEffect(() => {
+    const el = topBar.current;
+    const row = el?.querySelector<HTMLElement>(".top-row");
+    if (!el || !row) return;
+    const fit = () => {
+      setFold(el, 0);
+      const base = el.offsetHeight;
+      setFold(el, pickFold((l) => (setFold(el, l), rowFits(row))));
+      // a folded bar is taller: what sits under it moves down by exactly that (--scope-h; phones keep the CSS value)
+      const extra = el.offsetHeight - base;
+      if (extra > 0) document.documentElement.style.setProperty("--scope-h", `${extra}px`);
+      else document.documentElement.style.removeProperty("--scope-h");
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    document.fonts?.ready.then(fit).catch(() => {});
+    return () => {
+      ro.disconnect();
+      document.documentElement.style.removeProperty("--scope-h");
+    };
+  }, [foldKey]);
   const mineCount = badges.size;
   useEffect(() => {
     if (scope === "mine" && !mineCount) setScope("all");
@@ -2510,7 +2536,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           />
         </>
       ) : (
-      <header className={`top lg${compact ? " compact" : ""}`}>
+      <header className={`top lg${compact ? " compact" : ""}`} ref={topBar}>
         {/* phones: one slim bar of icons; the rest lives in the menu card */}
         <div className="m-bar">
           <button className="m-brand" onClick={tapLogo} aria-label="Orbi Transfer">
@@ -2528,6 +2554,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             <img className="brand-logo" src="/logo.svg" alt="Orbi Transfer" width={194} height={28} draggable={false} />
             <span className="brand-by">Instant transfer</span>
           </div>
+          <div className="top-mid">
           <nav className="nav">
             <a href="#how">How it works</a>
             <button onClick={openTasks}>Tasks{tasks.length ? ` ${tasks.filter((t) => !t.doneAt).length}` : ""}</button>
@@ -2536,6 +2563,11 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             <button onClick={() => switchView("/work")}>Switch to Work</button>
             <Link href="/upgrade" className="nav-up"><LuRocket aria-hidden />Upgrade</Link>
           </nav>
+          {/* what the void shows: one tap each, in the bar's own row (never inside a dropdown; spaces have their own room) */}
+          {!space && !inArchive && (
+            <ScopeTabs value={scope} onPick={pickScope} counts={{ area: areaCount, near: nearbyCount, mine: mineCount }} anon={anonNow} />
+          )}
+          </div>
           <div className="top-right">
             <KindFilter kind={kind} onKind={setKind} />
             <span className="live" aria-label={`${online} ${online > 1 ? "devices" : "device"} in orbit`}><span className="dot" /><b>{online}</b><span className="live-txt">{space ? "in this space" : online > 1 ? "devices in orbit" : "device in orbit"}</span></span>
@@ -2548,9 +2580,9 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             <button className="pill solid lg-press send-pill" onClick={openMenu}>Send</button>
           </div>
         </div>
-        {/* what the void shows: one tap each, never inside a dropdown (spaces have their own room: no row there) */}
+        {/* phones: the same buttons under the slim icon bar */}
         {!space && !inArchive && (
-          <ScopeTabs value={scope} onPick={pickScope} counts={{ area: areaCount, near: nearbyCount, mine: mineCount }} anon={anonNow} />
+          <ScopeTabs value={scope} onPick={pickScope} counts={{ area: areaCount, near: nearbyCount, mine: mineCount }} anon={anonNow} className="m-scope" />
         )}
       </header>
       )}

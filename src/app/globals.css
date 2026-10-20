@@ -2258,11 +2258,6 @@ em.hq-tag { font-style: normal; }
   .m-brand img { width: 30px; height: 30px; display: block; }
   .m-live { display: inline-flex; align-items: center; gap: 6px; font: 600 13px/1 var(--mono); color: #e6e6e6; font-variant-numeric: tabular-nums; }
   .m-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--live); box-shadow: 0 0 8px var(--live); }
-  .m-scope { margin-left: auto; display: inline-flex; padding: 3px; gap: 2px; border-radius: 15px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); }
-  .m-scope button { position: relative; width: 40px; height: 34px; display: grid; place-items: center; border-radius: 12px; color: #a8a8a8; transition: background var(--dur-1), color var(--dur-1); }
-  .m-scope button svg { width: 18px; height: 18px; display: block; }
-  .m-scope button.on { background: #fff; color: #000; }
-  .m-scope b { position: absolute; top: -6px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--live); color: #000; font: 700 10px/17px var(--sans); text-align: center; box-shadow: 0 0 0 2px #0b0c0f; }
   .m-ic { flex: none; width: 42px; height: 42px; display: grid; place-items: center; border-radius: 14px; border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.06); color: #fff; }
   .m-ic svg { width: 20px; height: 20px; display: block; }
   .m-ic.in { border-color: rgba(61,255,140,0.6); color: var(--live); }
@@ -3626,45 +3621,44 @@ html[data-theme="light"] .emoji-btn { color: #444; background: rgba(0,0,0,0.05);
 }
 .nav a:active, .nav button:active { scale: 0.97; translate: 0 0; }
 .nav-menu { display: none !important; }
-@media (max-width: 1240px) { .brand-by, .live-txt { display: none; } }
-/* mid widths: the links sit centred in the room between logo and icons (not the page centre, which they'd only reach
-   by sliding under the icons) */
-@media (min-width: 1201px) and (max-width: 1480px) {
-  .top-row { grid-template-columns: auto minmax(0, 1fr) auto; }
-  .nav { justify-self: center; }
-}
-@media (min-width: 721px) and (max-width: 1200px), (max-height: 520px) and (orientation: landscape) and (min-width: 721px) {
-  .top-row { grid-template-columns: minmax(0, 1fr) auto; }
-  .nav { display: none; }
-  .nav-menu { display: grid !important; }
-}
 @media (prefers-reduced-motion: reduce) { .nav a, .nav button { transition: none; } .nav a:hover, .nav button:hover { translate: none; scale: none; } }
 
-/* ---------------- What the void shows: Open void · Nearby · Wi-Fi, a row of glass buttons under the navbar's main row
-   (inside the same glass), on every width; phones show it under the slim icon bar ---------------- */
-.scope-tabs { display: flex; justify-content: center; gap: 4px; padding: 0 0 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-.scope-tabs::-webkit-scrollbar { display: none; }
-.scope-tabs button { position: relative; flex: none; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 999px;
-  border: 1px solid transparent; color: rgba(255,255,255,0.72); font: 500 10.5px/1 var(--font-chip, var(--sans)); letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap;
+/* ---------------- The bar's middle: the links, then Open void · Nearby · Wi-Fi, each its own bordered glass button,
+   on the same line. When the line gets short, things leave it in this order (never sliding under each other):
+   "How it works" → ☰ (≤1480) · the other links → ☰ (≤1300) · the three buttons drop to a row under it (≤1040) ·
+   phones: the slim bar, with the buttons under it. Checked with an overlap test at 320–1920 px. ---------------- */
+.top-mid { display: flex; align-items: center; gap: 12px; justify-self: center; min-width: 0; }
+.top-mid .nav + .scope-tabs { padding-left: 12px; border-left: 1px solid rgba(255,255,255,0.14); }
+.scope-tabs { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: nowrap; }
+.scope-tabs button { position: relative; flex: none; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.24); background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.8);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+  font: 500 10.5px/1 var(--font-chip, var(--sans)); letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap;
   transition: translate 0.28s cubic-bezier(.2,1.4,.4,1), scale 0.28s cubic-bezier(.2,1.4,.4,1), background 0.2s, border-color 0.2s, box-shadow 0.25s, color 0.2s; }
 .scope-tabs button svg { width: 13px; height: 13px; flex: none; }
 .scope-tabs button em { font: 600 10px/1 var(--mono); font-style: normal; letter-spacing: 0; padding: 2px 5px; border-radius: 6px; background: rgba(255,255,255,0.12); }
-.scope-tabs button.on { color: #000; background: #fff; border-color: #fff; box-shadow: inset 0 -1px 0 rgba(0,0,0,0.15), 0 4px 14px -6px rgba(255,255,255,0.5); }
+.scope-tabs button.on { color: #000; background: #fff; border-color: #fff; }
 .scope-tabs button.on em { background: rgba(0,0,0,0.1); }
 @media (hover: hover) and (pointer: fine) {
   .scope-tabs button:not(.on):hover { color: #fff; translate: 0 -2px; scale: 1.05;
-    background: linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05) 55%, rgba(255,255,255,0.1)); border-color: rgba(255,255,255,0.32);
+    background: linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05) 55%, rgba(255,255,255,0.1)); border-color: rgba(255,255,255,0.4);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(0,0,0,0.35), 0 8px 18px -6px rgba(0,0,0,0.85); }
 }
+.m-scope { display: none; }
+/* folds, set by the bar itself (lib/fold.ts measures it, data-fold): 1 the small labels and "How it works" go (☰ appears),
+   2 the other links go, 3 the three buttons drop to a row of their own. Only as far as needed for nothing to touch. */
+.top-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+.top:is([data-fold="1"], [data-fold="2"], [data-fold="3"]) :is(.brand-by, .live-txt, .top-right .kf-btn > span, .nav a[href="#how"]) { display: none; }
+.top:is([data-fold="1"], [data-fold="2"], [data-fold="3"]) .nav-menu { display: grid !important; }
+.top:is([data-fold="1"], [data-fold="2"], [data-fold="3"]) .top-right { gap: 8px; }
+.top:is([data-fold="2"], [data-fold="3"]) .top-mid .nav { display: none; }
+.top[data-fold="3"] .top-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 0; height: auto; min-height: 40px; }
+.top[data-fold="3"] .top-mid { grid-column: 1 / -1; grid-row: 2; padding: 2px 0 8px; }
+.top:is([data-fold="2"], [data-fold="3"]) .top-mid .nav + .scope-tabs { padding-left: 0; border-left: 0; }
 @media (max-width: 720px) {
-  .scope-tabs { justify-content: flex-start; padding: 0 2px 8px; }
-  .scope-tabs button { height: 30px; padding: 0 11px; }
+  .m-scope { display: flex; justify-content: space-between; padding: 0 2px 8px; gap: 4px; }
+  .m-scope button { height: 30px; padding: 0 11px; }
+  html:has(.top .m-scope) { --scope-h: 38px; }
 }
-@media (max-width: 480px) { .scope-tabs { gap: 2px; justify-content: space-between; } .scope-tabs button { padding: 0 8px; gap: 5px; letter-spacing: 0.06em; font-size: 10px; } }
-@media (max-width: 380px) { .scope-tabs button { padding: 0 7px; } .scope-tabs button svg { display: none; } }
-@media (max-height: 520px) and (orientation: landscape) { .scope-tabs { padding-bottom: 6px; } .scope-tabs button { height: 26px; } }
-
-/* the scope row makes the classic navbar taller: everything placed under the bar moves down by exactly its height */
-html:has(.top .scope-tabs) { --scope-h: 36px; }
-@media (max-width: 720px) { html:has(.top .scope-tabs) { --scope-h: 38px; } }
-@media (max-height: 520px) and (orientation: landscape) { html:has(.top .scope-tabs) { --scope-h: 32px; } }
+@media (max-width: 480px) { .m-scope { overflow-x: auto; scrollbar-width: none; } .m-scope button { padding: 0 9px; gap: 5px; letter-spacing: 0.06em; font-size: 10px; } .m-scope button svg { display: none; } }
+@media (max-width: 360px) { .m-scope button { padding: 0 7px; letter-spacing: 0.03em; } }

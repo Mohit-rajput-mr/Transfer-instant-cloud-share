@@ -20,6 +20,12 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- FIXED 2026-10-20 (M) — Fixed width breakpoints can't know how wide the bar's contents are (counts, Mine, online
+  number): at 1366–1680 the inline Open void/Nearby/Wi-Fi buttons slid under Filter. The Classic bar now measures itself
+  (lib/fold.ts, unit-tested; data-fold 0–3 in Void.tsx) and folds only as far as needed: small labels + "How it works"
+  → ☰, then the links → ☰, then the buttons to a 2nd row; --scope-h = the measured extra height. The buttons sit inline
+  next to the links, each with its own border. Removed dead `.m-scope` rules (old phone toggle) that collided.
+  Verified: overlap checker 0 issues at 25 sizes 320–1920 with counts/Mine and without, Classic + Work.
 - DONE 2026-10-20 (owner ask) — "Everything" was meaningless: the void's choices are now buttons in the navbar (Classic: a
   row inside the bar; Work: the tabs), not in Filter: Open void (area + 8 around) · Nearby (your own area; asks for
   location, stays on Open void if refused, shows the blocked card) · Wi-Fi (same network) · Mine. Filter keeps file

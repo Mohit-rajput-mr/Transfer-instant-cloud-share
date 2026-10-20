@@ -6,11 +6,11 @@ const ICON = { all: LuGlobe, area: LuMapPin, near: LuWifi, mine: LuUser } as con
 
 /** The navbar's second row: Open void · Nearby · Wi-Fi (· Mine once you sent something). Anonymous: no place and no
  *  network are known, so only the open void exists and the row goes. */
-export default function ScopeTabs({ value, onPick, counts, anon }: { value: Scope; onPick: (s: Scope) => void; counts: { area: number; near: number; mine: number }; anon: boolean }) {
+export default function ScopeTabs({ value, onPick, counts, anon, className = "" }: { value: Scope; onPick: (s: Scope) => void; counts: { area: number; near: number; mine: number }; anon: boolean; className?: string }) {
   if (anon) return null;
   const list: Scope[] = ["all", "area", "near", ...(counts.mine ? (["mine"] as const) : [])];
   return (
-    <div className="scope-tabs" role="tablist" aria-label="Show" data-no-pan>
+    <div className={`scope-tabs ${className}`} role="tablist" aria-label="Show" data-no-pan>
       {list.map((s) => {
         const I = ICON[s];
         const n = s === "all" ? 0 : counts[s];
