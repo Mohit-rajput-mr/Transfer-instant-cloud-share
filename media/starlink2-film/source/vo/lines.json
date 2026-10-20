@@ -21,64 +21,76 @@
   },
   {
    "key": "array",
-   "text": "Inside are hundreds of tiny antennas. Fire them a split second apart, and the waves add up into one beam that bends toward any satellite. No moving parts.",
-   "dur": 9.676,
+   "text": "Inside are hundreds of tiny antennas. Fire them a split second apart, and the beam bends toward any satellite. No moving parts.",
+   "dur": 8.312,
    "at": 20.26
   },
   {
    "key": "sats",
-   "text": "And up there, over six thousand Starlink satellites. Each about the size of a car, with huge solar wings, just five hundred and fifty kilometers up.",
-   "dur": 9.317,
-   "at": 30.28
+   "text": "Up there are over six thousand Starlink satellites, each about the size of a car, just five hundred and fifty kilometers up.",
+   "dur": 6.321,
+   "at": 28.92
   },
   {
    "key": "fast",
    "text": "That low, they race around the Earth in about ninety-five minutes. So the dish keeps handing you from one satellite to the next.",
    "dur": 7.316,
-   "at": 39.95
+   "at": 35.59
   },
   {
    "key": "lag",
    "text": "Old satellite internet sat thirty-six thousand kilometers away. Over half a second there and back. Starlink is usually under fifty milliseconds.",
    "dur": 8.924,
-   "at": 47.62
+   "at": 43.26
   },
   {
    "key": "ground",
    "text": "Near land, the satellite beams your data straight down to a ground station, plugged into the internet.",
    "dur": 6.277,
-   "at": 56.89
+   "at": 52.53
   },
   {
    "key": "laser",
    "text": "But mid-ocean, there's no station below. So the satellites pass your data to each other, with lasers.",
    "dur": 5.978,
-   "at": 63.47
+   "at": 59.11
   },
   {
    "key": "vacuum",
    "text": "And in space, light travels about fifty percent faster than through the glass fibers under the sea.",
    "dur": 5.302,
-   "at": 69.75
+   "at": 65.39
   },
   {
    "key": "hop",
    "text": "Hop, hop, hop, until a satellite is above land. Then down it goes, and you're online.",
    "dur": 4.795,
-   "at": 75.4
+   "at": 71.04
+  },
+  {
+   "key": "plane",
+   "text": "It works on planes too. At cruising height, cell towers can't reach your phone, because their signals point at the ground. So airlines like United and Qatar Airways put a Starlink antenna on the roof, and the whole cabin gets Wi-Fi.",
+   "dur": 14.407,
+   "at": 76.23
+  },
+  {
+   "key": "phone",
+   "text": "And some phones now skip the dish entirely. With T-Mobile's T-Satellite, a normal phone can text and use some apps, straight from a Starlink satellite.",
+   "dur": 8.396,
+   "at": 90.94
   },
   {
    "key": "orbi",
    "text": "And once you're online, even in the middle of the ocean, Orbi Transfer works too. Your file is locked before it ever leaves the ship.",
    "dur": 7.121,
-   "at": 80.59
+   "at": 99.69
   },
   {
    "key": "end",
    "text": "Orbi Transfer dot com. Now you know!",
    "dur": 2.751,
-   "at": 88.06
+   "at": 107.16
   }
  ],
- "duration": 92.61
+ "duration": 111.71
 }
