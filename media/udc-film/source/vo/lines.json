@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "This foldable phone has a selfie camera, but you can't see it. It's hiding under the screen. So how does it take a photo through pixels?",
+   "dur": 8.857,
+   "at": 0.35
+  },
+  {
+   "key": "normal",
+   "text": "Most phones cut a hole in the screen for the camera. A screen is a dense grid of tiny lights and wires, and light can't get through that.",
+   "dur": 7.682,
+   "at": 9.61
+  },
+  {
+   "key": "thin",
+   "text": "So right above the camera, the screen is built differently. The pixels are smaller, and spaced further apart.",
+   "dur": 6.605,
+   "at": 17.64
+  },
+  {
+   "key": "wires",
+   "text": "The wiring there is see-through, made of a transparent conductor, so it doesn't block the light.",
+   "dur": 6.217,
+   "at": 24.54
+  },
+  {
+   "key": "gaps",
+   "text": "Now light can sneak through the gaps between pixels, and reach the camera sitting underneath.",
+   "dur": 5.033,
+   "at": 31.11
+  },
+  {
+   "key": "haze",
+   "text": "But it's like taking a photo through a screen door. The image comes out dim, hazy, with little star-shaped flares.",
+   "dur": 6.558,
+   "at": 36.44
+  },
+  {
+   "key": "fix",
+   "text": "So software takes over. It's trained on thousands of before-and-after photos, and learns to scrub the haze away in a split second.",
+   "dur": 8.442,
+   "at": 43.35
+  },
+  {
+   "key": "hide",
+   "text": "When you're not taking a selfie, those pixels just light up like the rest of the screen. Nothing to see.",
+   "dur": 5.342,
+   "at": 52.14
+  },
+  {
+   "key": "orbi",
+   "text": "Hidden, but there when you need it. That's Orbi Transfer's Anonymous mode: no profile, no name, no location, just a throwaway ID.",
+   "dur": 8.624,
+   "at": 57.89
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 66.86
+  }
+ ],
+ "duration": 71.41
+}
