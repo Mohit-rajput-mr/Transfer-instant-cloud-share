@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how AirDrop works? You tap a photo, and a second later it's on your friend's phone. No internet. No cable.",
+   "dur": 6.254,
+   "at": 0.35
+  },
+  {
+   "key": "ble",
+   "text": "First, your phone whispers over Bluetooth Low Energy. Tiny signals that say, I'm here, and I can receive.",
+   "dur": 6.539,
+   "at": 7.0
+  },
+  {
+   "key": "hash",
+   "text": "In Contacts Only mode, phones don't shout your number. They swap scrambled fingerprints of it, called hashes, and look for a match.",
+   "dur": 7.484,
+   "at": 13.84
+  },
+  {
+   "key": "wifi",
+   "text": "Then the two phones build their own private Wi-Fi link, straight to each other. No router. No internet.",
+   "dur": 6.743,
+   "at": 21.63
+  },
+  {
+   "key": "fast",
+   "text": "That link is far faster than Bluetooth, and the transfer is encrypted. So even a big video moves in seconds.",
+   "dur": 7.006,
+   "at": 28.67
+  },
+  {
+   "key": "range",
+   "text": "It only works up close. Apple says within about nine meters.",
+   "dur": 4.345,
+   "at": 35.98
+  },
+  {
+   "key": "crack",
+   "text": "It's not perfect. In twenty twenty one, researchers showed those scrambled fingerprints can be cracked, revealing the sender's phone number.",
+   "dur": 7.639,
+   "at": 40.62
+  },
+  {
+   "key": "android",
+   "text": "And it's not Apple only anymore. Since late twenty twenty five, Google's Pixel phones can swap files with iPhones this way, through Quick Share.",
+   "dur": 8.352,
+   "at": 48.56
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer goes further. It's just a website, so iPhone, Android or laptop, anyone can send files up to twenty gigabytes. No app, no login.",
+   "dur": 9.479,
+   "at": 57.26
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 67.09
+  }
+ ],
+ "duration": 71.64
+}
