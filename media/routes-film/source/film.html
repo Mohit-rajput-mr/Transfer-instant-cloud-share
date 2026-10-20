@@ -1,0 +1,181 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>How delivery routes work</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+const SETS = {}; const set = (k, x) => { const g = new THREE.Group(); g.position.set(x, 0, 0); scene.add(g); SETS[k] = g; return g; };
+const show = (k) => { for (const n in SETS) SETS[n].visible = n === k; };
+const P = (k) => SETS[k].position;
+scene.background = new THREE.Color(0x070a12);
+scene.add(new THREE.HemisphereLight(0xcfe0ff, 0x10121a, 1.0));
+{ const k1 = new THREE.DirectionalLight(0xffffff, 1.6); k1.position.set(-20, 40, 25); scene.add(k1); }
+// =============== CITY: a street grid, a depot, 25 stops, the route ===============
+const CT = set("city", 0);
+const BLK = 6, NB2 = 9, ST = 1.4; const cityW = NB2 * BLK; const cx = (i) => -cityW / 2 + i * BLK;
+{ const g = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0x1c2230, roughness: 1 })); g.rotation.x = -Math.PI / 2; CT.add(g); }
+for (let i = 0; i < NB2; i++) for (let j = 0; j < NB2 * 1.6; j++) { const w = BLK - ST, h = 0.6 + rnd() * 3.2; const b = new THREE.Mesh(new THREE.BoxGeometry(w * (0.4 + rnd() * 0.5), h, w * (0.4 + rnd() * 0.5)), new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(0.6, 0.12, 0.22 + rnd() * 0.12), roughness: 0.8 })); b.position.set(cx(i) + BLK / 2, h / 2, -cityW * 0.8 + j * BLK + BLK / 2); CT.add(b); }
+const ROADY = 0.03; { const mat = new THREE.MeshStandardMaterial({ color: 0x2c3444, roughness: 0.9 }); for (let i = 0; i <= NB2; i++) { const r = new THREE.Mesh(new THREE.PlaneGeometry(ST, cityW * 1.6), mat); r.rotation.x = -Math.PI / 2; r.position.set(cx(i), ROADY, 0); CT.add(r); } for (let j = 0; j <= NB2 * 1.6; j++) { const r = new THREE.Mesh(new THREE.PlaneGeometry(cityW, ST), mat); r.rotation.x = -Math.PI / 2; r.position.set(0, ROADY + 0.002, -cityW * 0.8 + j * BLK); CT.add(r); } }
+// stops sit on intersections; Manhattan distance like a real street grid
+const NODES = []; { const used = new Set(); while (NODES.length < 25) { const i = 1 + Math.floor(rnd() * (NB2 - 1)), j = 1 + Math.floor(rnd() * (NB2 * 1.6 - 1)); const k = i + "," + j; if (used.has(k) || (i === 4 && j === 7)) continue; used.add(k); NODES.push(V(cx(i), 0, -cityW * 0.8 + j * BLK)); } }
+const DEPOT = V(cx(4), 0, -cityW * 0.8 + 7 * BLK); const ALL = [DEPOT, ...NODES];
+const dist = (a, b) => ALL[a].distanceTo(ALL[b]);
+const tourLen = (tr) => { let s = 0; for (let i = 0; i < tr.length; i++) s += dist(tr[i], tr[(i + 1) % tr.length]); return s; };
+const NN = (() => { const tr = [0], left = new Set(NODES.map((_, i) => i + 1)); while (left.size) { const cur = tr[tr.length - 1]; let best = null, bd = 1e9; for (const j of left) { const d = dist(cur, j); if (d < bd) { bd = d; best = j; } } tr.push(best); left.delete(best); } return tr; })();
+const SNAPS = [NN.slice()]; { let tr = NN.slice(), improved = true; while (improved && SNAPS.length < 40) { improved = false; for (let i = 1; i < tr.length - 1 && !improved; i++) for (let k = i + 1; k < tr.length && !improved; k++) { const nt = tr.slice(0, i).concat(tr.slice(i, k + 1).reverse(), tr.slice(k + 1)); if (tourLen(nt) < tourLen(tr) - 0.01) { tr = nt; SNAPS.push(tr.slice()); improved = true; } } } }
+const lenNN = tourLen(NN), lenBest = tourLen(SNAPS[SNAPS.length - 1]);
+const PINS = NODES.map((p) => { const g = new THREE.Group(); const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 4, 8), new THREE.MeshStandardMaterial({ color: 0xdfe6ee })); stick.position.y = 2; const head = new THREE.Mesh(new THREE.SphereGeometry(1.3, 16, 12), glow(0xffb45a)); head.position.y = 4.6; g.add(stick, head); g.position.copy(p); g.userData.head = head; CT.add(g); return g; });
+{ const d = new THREE.Mesh(new THREE.BoxGeometry(4.5, 3, 4.5), new THREE.MeshStandardMaterial({ color: 0x3dff8c, emissive: 0x0e4a24 })); d.position.copy(DEPOT).add(V(0, 1, 0)); CT.add(d); }
+const routeMat = glow(0x3dff8c); let routeMesh = null, routeKey = "";
+const setRoute = (tr, frac = 1, col = 0x3dff8c) => { const key = tr.join(",") + "|" + frac.toFixed(3); routeMat.color.setHex(col); if (key === routeKey) return; routeKey = key; if (routeMesh) { CT.remove(routeMesh); routeMesh.geometry.dispose(); } const path = new THREE.CurvePath(); const pts = []; for (let i = 0; i <= tr.length; i++) { const a = ALL[tr[i % tr.length]]; pts.push(V(a.x, 0.6, a.z)); }
+  const n = Math.max(1, Math.floor((pts.length - 1) * frac)); for (let i = 0; i < n; i++) { const a = pts[i], b = pts[i + 1]; const mid = V(b.x, 0.6, a.z); if (a.distanceTo(mid) > 0.01) path.add(new THREE.LineCurve3(a, mid)); if (mid.distanceTo(b) > 0.01) path.add(new THREE.LineCurve3(mid, b)); }
+  if (!path.curves.length) { routeMesh = null; return; } routeMesh = new THREE.Mesh(new THREE.TubeGeometry(path, Math.max(8, path.curves.length * 6), 0.55, 6, false), routeMat); CT.add(routeMesh); };
+const VAN = new THREE.Group(); { const b = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.6, 1.2), new THREE.MeshStandardMaterial({ color: 0x8a5a2a })); b.position.y = 1.0; const c = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.1, 1.15), new THREE.MeshStandardMaterial({ color: 0x6a4420 })); c.position.set(1.4, 0.75, 0); VAN.add(b, c); for (const x of [-0.7, 0.9]) for (const z of [-0.6, 0.6]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.2, 12), new THREE.MeshStandardMaterial({ color: 0x111111 })); w.rotation.x = Math.PI / 2; w.position.set(x, 0.3, z); VAN.add(w); } } CT.add(VAN);
+const TRAF = Array.from({ length: 5 }, (_, i) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(ST * 0.9, BLK * 2), glow(0xff4d5a, { transparent: true, opacity: 0 })); m.rotation.x = -Math.PI / 2; m.position.set(cx(1 + i * 2), 0.06, -cityW * 0.8 + (3 + i * 2) * BLK); CT.add(m); return m; });
+// =============== TURN: one intersection, oncoming traffic, a left vs a right turn ===============
+const TU = set("turn", 600);
+{ const g = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ color: 0x2a3a2a })); g.rotation.x = -Math.PI / 2; TU.add(g); const mat = new THREE.MeshStandardMaterial({ color: 0x2c3444 }); const r1 = new THREE.Mesh(new THREE.PlaneGeometry(8, 80), mat); r1.rotation.x = -Math.PI / 2; r1.position.y = 0.02; TU.add(r1); const r2 = new THREE.Mesh(new THREE.PlaneGeometry(80, 8), mat); r2.rotation.x = -Math.PI / 2; r2.position.y = 0.03; TU.add(r2);
+  for (let i = -9; i <= 9; i++) { if (Math.abs(i) < 2) continue; for (const [x, z, rx] of [[0, i * 4, 0], [i * 4, 0, 1]]) { const d = new THREE.Mesh(new THREE.PlaneGeometry(rx ? 2 : 0.2, rx ? 0.2 : 2), glow(0xdfe6ee)); d.rotation.x = -Math.PI / 2; d.position.set(x, 0.05, z); TU.add(d); } } }
+const VAN2 = VAN.clone(); TU.add(VAN2);
+const CARS = Array.from({ length: 4 }, (_, i) => { const c = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 2.2), new THREE.MeshStandardMaterial({ color: [0x3a6aff, 0xdfe6ee, 0xff6a5a, 0x8a8a8a][i] })); c.position.y = 0.6; c.userData.o = i / 4; TU.add(c); return c; });
+const turnPath = (left, f) => { // van comes from the south heading north (−z), turns left (−x) or right (+x)
+  const lane = 2; if (f < 0.4) return [V(lane, 0, lerp(18, 4, f / 0.4)), Math.PI / 2]; const R = left ? 6 : 2; const k = clamp((f - 0.4) / 0.3), ang = k * Math.PI / 2, ex = clamp((f - 0.7) / 0.3) * 12;
+  if (left) { const c = V(lane - R, 0, 4); return [V(c.x + R * Math.cos(ang) - ex, 0, c.z - R * Math.sin(ang)), Math.PI / 2 + ang]; }
+  const c = V(lane + R, 0, 4); return [V(c.x - R * Math.cos(ang) + ex, 0, c.z - R * Math.sin(ang)), Math.PI / 2 - ang]; };
+// =============== WORK: an Orbi Work task board ===============
+const WK = set("work", 1200);
+const BOARD = (() => { const c = document.createElement("canvas"); c.width = 1080; c.height = 1500; const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; const m = new THREE.Mesh(new THREE.PlaneGeometry(10.8, 15), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })); WK.add(m); m.userData = { c, tex }; return m; })();
+function drawBoard(k, t) { const { c, tex } = BOARD.userData; const g = c.getContext("2d"); g.fillStyle = "#07080c"; g.fillRect(0, 0, 1080, 1500);
+  g.fillStyle = "#3dff8c"; g.font = "800 56px Inter, sans-serif"; g.fillText("ORBI WORK", 70, 130); g.fillStyle = "#8b91a3"; g.font = "500 34px JetBrains Mono, monospace"; g.fillText("Thursday deliveries", 70, 190);
+  const steps = [["Pick up", "#3dff8c", "manifest.pdf"], ["Load van", "#ffb45a", "load-plan.png"], ["Route", "#6ab8ff", "route-map.pdf"], ["Deliver", "#b89aff", "proof-photos.zip"], ["Done", "#ff6a8a", "signatures.pdf"]];
+  steps.forEach(([n, col, f], i) => { const a = clamp(k * 6 - i * 0.8); if (a <= 0) return; g.globalAlpha = a; const y = 290 + i * 230; g.fillStyle = "#12141b"; g.beginPath(); g.roundRect(70, y, 940, 190, 30); g.fill(); g.fillStyle = col; g.beginPath(); g.roundRect(70, y, 22, 190, 11); g.fill();
+    g.beginPath(); g.arc(160, y + 70, 30, 0, 7); g.fill(); g.fillStyle = "#04130a"; g.font = "800 34px Inter, sans-serif"; g.fillText(String(i + 1), 149, y + 82);
+    g.fillStyle = "#eef0f5"; g.font = "700 46px Inter, sans-serif"; g.fillText(n, 220, y + 86); g.fillStyle = "#1a1d26"; g.beginPath(); g.roundRect(220, y + 112, 560, 56, 18); g.fill(); g.fillStyle = col; g.font = "600 30px JetBrains Mono, monospace"; g.fillText("📎 " + f, 240, y + 150);
+    if (i < 2) { g.fillStyle = col; g.font = "700 30px Inter, sans-serif"; g.fillText("✓", 940, y + 86); } g.globalAlpha = 1; });
+  if (k > 0.75) { g.globalAlpha = clamp((k - 0.75) * 6); g.strokeStyle = "#3dff8c"; g.lineWidth = 6; const y = 290 + 2 * 230; g.beginPath(); g.roundRect(64, y - 6, 952, 202, 34); g.stroke(); g.globalAlpha = 1; }
+  tex.needsUpdate = true; }
+
+window.render = async function (t) { cam.up.set(0, 1, 0);
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  const c0 = P("city"), tu = P("turn"), wk = P("work");
+  PINS.forEach((p, i) => { p.userData.head.scale.setScalar(1 + 0.12 * Math.sin(t * 3 + i)); }); TRAF.forEach((m) => (m.material.opacity = 0)); VAN.visible = false;
+  const overview = (k = 0) => look(c0.clone().add(V(lerp(0, 4, k), lerp(150, 140, k), lerp(40, 34, k))), c0.clone().add(V(0, 0, -4)), 46);
+  if (t < A("guess")) { show("city"); setRoute([0], 0); if (routeMesh) routeMesh.visible = false; overview(clamp(t / A("guess")));
+    PINS.forEach((p, i) => (p.visible = t > 1.0 + i * 0.12));
+    if (t >= A("explode")) { const n = Math.min(25, Math.floor(3 + (t - A("explode") - 1.2) / 0.22)); let f = 1; for (let i = 2; i <= Math.max(1, n); i++) f *= i; const txt = n < 13 ? f.toLocaleString("en-US") : f.toExponential(1).replace("e+", " × 10^"); card("c0", `<b>${Math.max(1, n)}</b> stops → <b>${txt}</b> orders`, t, A("explode") + 1.2, A("guess"), 160, 230, -2); card("c1", `25 stops · <b>≈ 1.6 × 10²⁵</b> routes<br><span style="font-size:24px">more than Earth's grains of sand (≈ 10¹⁹)</span>`, t, A("explode") + 5.4, A("guess"), 160, 1440, 2); }
+    else big("NO PERFECT ANSWER", t, A("hook") + 4.4, A("explode"), "#ffffff", "250px", "76px"); }
+  else if (t < A("left")) { show("city"); PINS.forEach((p) => (p.visible = true));
+    if (t < A("improve")) { const f = clamp((t - A("guess") - 2.6) / 3.2); routeMesh && (routeMesh.visible = true); setRoute(NN, f, 0xffb45a); if (routeMesh) routeMesh.visible = f > 0.02; overview(0.3); card("c0", `quick guess · <b>nearest stop next</b>`, t, A("guess") + 2.6, A("improve"), 220, 1480, -2); timer(`${Math.round(lenNN * 0.1 * f)} km`, t, A("guess") + 3.0, A("improve"), "#ffb45a", "80px"); }
+    else if (t < A("real")) { const k = clamp((t - A("improve") - 0.8) / 6.5); const idx = Math.min(SNAPS.length - 1, Math.floor(k * (SNAPS.length - 1))); setRoute(SNAPS[idx], 1, k >= 1 ? 0x3dff8c : 0xffd27a); routeMesh.visible = true; overview(0.4); const L = tourLen(SNAPS[idx]); card("c0", `swap · flip · <b>keep if shorter</b>`, t, A("improve") + 0.8, A("real"), 230, 1480, -2); timer(`${Math.round(L * 0.1)} km`, t, A("improve") + 0.8, A("real"), k >= 1 ? "#3dff8c" : "#ffd27a", "80px"); card("c1", `<b>−${Math.round((1 - lenBest / lenNN) * 100)}%</b> distance`, t, A("improve") + 7.4, A("real"), 360, 1600, 2); }
+    else { setRoute(SNAPS[SNAPS.length - 1], 1, 0x3dff8c); routeMesh.visible = true; const k = clamp((t - A("real")) / (A("left") - A("real"))); look(c0.clone().add(V(lerp(4, -6, k), lerp(95, 85, k), lerp(40, 34, k))), c0.clone().add(V(-4, 0, -4)), 46);
+      TRAF.forEach((m, i) => (m.material.opacity = 0.6 * clamp((t - A("real") - 0.8) / 0.4))); VAN.visible = true; { const tr = SNAPS[SNAPS.length - 1]; const f = (t - A("real")) * 0.12 % 1; const seg = Math.floor(f * tr.length), u = f * tr.length - seg; const a = ALL[tr[seg]], b = ALL[tr[(seg + 1) % tr.length]]; const mid = V(b.x, 0, a.z); const pos = u < 0.5 ? a.clone().lerp(mid, u * 2) : mid.clone().lerp(b, (u - 0.5) * 2); VAN.position.copy(pos); }
+      card("c0", `🚦 traffic`, t, A("real") + 0.8, A("left"), 300, 230, -3); card("c1", `🕘 time windows`, t, A("real") + 2.6, A("left"), 280, 360, 2); card("c2", `📦 van capacity`, t, A("real") + 4.4, A("left"), 300, 490, -2); } }
+  else if (t < A("orbi")) { show("turn"); const k = clamp((t - A("left")) / (A("orbi") - A("left")));
+    const leftPhase = t < A("left") + 4.6; const f = leftPhase ? clamp((t - A("left") - 0.4) / 4.0) : clamp((t - A("left") - 4.8) / 2.6); const wait = leftPhase ? (f > 0.4 && f < 0.6 ? 1 : 0) : 0;
+    const ff = leftPhase ? (f < 0.35 ? f / 0.35 * 0.4 : f < 0.65 ? 0.4 : 0.4 + (f - 0.65) / 0.35 * 0.6) : f; const [p, r] = turnPath(leftPhase, ff); VAN2.position.copy(p); VAN2.rotation.y = r;
+    CARS.forEach((c) => { const u = (t * 0.35 + c.userData.o) % 1; c.position.set(-2, 0.6, lerp(-40, 40, u)); });
+    look(tu.clone().add(V(10, 30, 22)), tu.clone().add(V(0, 0, 2)), 46);
+    lbl("l0", tu.clone().add(VAN2.position).add(V(0, 3, 0)), t, A("left") + 0.6, A("left") + 4.6, "left turn · <b>wait for a gap</b>", "#ff6a7a"); lbl("l0", tu.clone().add(VAN2.position).add(V(0, 3, 0)), t, A("left") + 4.8, A("orbi"), "right turn · <b>keep moving</b>", "#3dff8c");
+    card("c0", `fewer left turns · <b>less idling, safer</b>`, t, A("left") + 5.0, A("result"), 210, 230, -2);
+    if (t >= A("result")) { big("100,000,000 MILES", t, A("result") + 0.8, A("orbi"), "#3dff8c", "300px", "60px"); card("c1", `UPS ORION · <b>miles saved / year</b>`, t, A("result") + 1.6, A("orbi"), 170, 1480, 2); } }
+  else { show("work"); const k = clamp((t - A("orbi")) / (A("end") - A("orbi"))); drawBoard(clamp((t - A("orbi") - 0.6) / 4), t); look(wk.clone().add(V(lerp(1.5, 0, ease(k)), lerp(-1, 0, ease(k)), lerp(27, 24.5, ease(k)))), wk.clone().add(V(0, -0.4, 0)), 42);
+    card("c0", `a task · <b>coloured steps</b>`, t, A("orbi") + 1.0, A("end"), 250, 130, -2); card("c1", `files <b>wired to each step</b>`, t, A("orbi") + 4.0, A("end"), 290, 1680, 2); }
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
