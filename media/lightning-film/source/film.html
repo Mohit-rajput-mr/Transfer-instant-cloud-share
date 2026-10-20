@@ -1,0 +1,160 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>How lightning works</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+// =============== STORM: dark sky, anvil cloud of sprites, rain, a field with a tree, a house, a tower ===============
+scene.background = new THREE.Color(0x2a3242); scene.fog = new THREE.Fog(0x2a3242, 200, 900);
+const amb = new THREE.HemisphereLight(0xa8b4d0, 0x202818, 1.0); scene.add(amb);
+const FLASHL = new THREE.PointLight(0xcfe0ff, 0, 900, 1.2); scene.add(FLASHL);
+const gnd = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000, 80, 80), new THREE.MeshStandardMaterial({ color: 0x24301c, roughness: 1 })); { const p = gnd.geometry.attributes.position; for (let i = 0; i < p.count; i++) p.setZ(i, 3 * Math.sin(p.getX(i) * 0.01) * Math.cos(p.getY(i) * 0.013)); gnd.geometry.computeVertexNormals(); } gnd.rotation.x = -Math.PI / 2; scene.add(gnd);
+const TREE = new THREE.Group(); { const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 1.0, 12, 10), new THREE.MeshStandardMaterial({ color: 0x3a2a1c })); tr.position.y = 6; TREE.add(tr); for (let i = 0; i < 6; i++) { const c = new THREE.Mesh(new THREE.IcosahedronGeometry(4 + rnd() * 2, 1), new THREE.MeshStandardMaterial({ color: 0x1e3a1e, flatShading: true })); c.position.set((rnd() - 0.5) * 5, 13 + rnd() * 5, (rnd() - 0.5) * 5); TREE.add(c); } } TREE.position.set(8, 0, 0); scene.add(TREE);
+{ const house = new THREE.Group(); const w = new THREE.Mesh(new THREE.BoxGeometry(12, 7, 9), new THREE.MeshStandardMaterial({ color: 0xc8b8a0 })); w.position.y = 3.5; house.add(w); const r = new THREE.Mesh(new THREE.ConeGeometry(9, 5, 4), new THREE.MeshStandardMaterial({ color: 0x5a2a22 })); r.rotation.y = Math.PI / 4; r.position.y = 9.5; house.add(r); const win = new THREE.Mesh(new THREE.PlaneGeometry(2, 1.6), glow(0xffd9a0)); win.position.set(-2, 3.6, 4.51); house.add(win); house.position.set(-60, 0, 60); scene.add(house);
+  const tow = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 2.2, 70, 4), new THREE.MeshStandardMaterial({ color: 0x8a2a2a, wireframe: true })); tow.position.set(140, 35, -120); scene.add(tow); }
+const PERSON = new THREE.Group(); { const m = new THREE.MeshStandardMaterial({ color: 0x2a3a5a }); const bd = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 1.0, 6, 12), m); bd.position.y = 1.0; const hd = new THREE.Mesh(new THREE.SphereGeometry(0.3, 14, 10), new THREE.MeshStandardMaterial({ color: 0xd9a07a })); hd.position.y = 1.95; PERSON.add(bd, hd); } PERSON.position.set(-40, 0, 140); scene.add(PERSON);
+const cloudT = canvasTex(256, 256, (g) => { const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128); gr.addColorStop(0, "rgba(120,128,150,0.95)"); gr.addColorStop(0.5, "rgba(80,86,104,0.7)"); gr.addColorStop(1, "rgba(60,64,80,0)"); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); });
+const CLOUD = new THREE.Group(); scene.add(CLOUD); const PUFFS = Array.from({ length: 220 }, () => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: cloudT, transparent: true, depthWrite: false, color: 0xb0b8cc, fog: false })); const h = rnd(); const rr = h > 0.82 ? 60 + rnd() * 70 : 25 + rnd() * 35; const a = rnd() * 6.28; sp.position.set(Math.cos(a) * rr * Math.sqrt(rnd()), 180 + h * 160, Math.sin(a) * rr * 0.6 * Math.sqrt(rnd())); sp.scale.setScalar(40 + rnd() * 50); sp.userData.base = 0.8 + rnd() * 0.2; CLOUD.add(sp); return sp; });
+const RAIN = (() => { const n = 4000, g = new THREE.BufferGeometry(), p = new Float32Array(n * 3); for (let i = 0; i < n; i++) p.set([(rnd() - 0.5) * 300, rnd() * 180, (rnd() - 0.5) * 300], i * 3); g.setAttribute("position", new THREE.BufferAttribute(p, 3)); const m = new THREE.Points(g, new THREE.PointsMaterial({ color: 0x9fb4d8, size: 0.5, transparent: true, opacity: 0.5 })); scene.add(m); return m; })();
+// charge particles inside the cloud cutaway
+const CUTBG = new THREE.Mesh(new THREE.PlaneGeometry(260, 220), new THREE.MeshBasicMaterial({ color: 0x1c2232, transparent: true, opacity: 0.9, depthWrite: false })); CUTBG.position.set(0, 265, 40); scene.add(CUTBG);
+const ICE = Array.from({ length: 70 }, (_, i) => { const heavy = i % 2 == 0; const m = new THREE.Mesh(heavy ? new THREE.SphereGeometry(4.2, 12, 10) : new THREE.OctahedronGeometry(3.2), new THREE.MeshStandardMaterial({ color: heavy ? 0xcfd8e8 : 0xeaf6ff, emissive: 0x000000, roughness: 0.4 })); m.userData = { heavy, x: (rnd() - 0.5) * 220, o: rnd(), sp: 0.5 + rnd() * 0.6 }; scene.add(m); return m; });
+const SIGNS = Array.from({ length: 40 }, (_, i) => { const pos = i < 20; const c = document.createElement("canvas"); c.width = c.height = 64; const g = c.getContext("2d"); g.fillStyle = pos ? "#ff5a5a" : "#4f9cff"; g.beginPath(); g.arc(32, 32, 28, 0, 7); g.fill(); g.fillStyle = "#fff"; g.font = "800 50px sans-serif"; g.textAlign = "center"; g.fillText(pos ? "+" : "−", 32, 50); const t2 = new THREE.CanvasTexture(c); const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t2, transparent: true, depthWrite: false, fog: false })); sp.scale.setScalar(9); sp.userData = { pos, x: (rnd() - 0.5) * 130, y: pos ? 320 + rnd() * 40 : 200 + rnd() * 30 }; scene.add(sp); return sp; });
+// bolt geometry: a branching path from cloud base to the tree top
+const TOP = V(8, 20, 0), BASE = V(-10, 185, -5);
+const mkBolt = (seed) => { let s0 = seed; const r2 = () => { s0 = (s0 * 1664525 + 1013904223) % 4294967296; return s0 / 4294967296; }; const main = [BASE.clone()]; const N = 22; for (let i = 1; i <= N; i++) { const k = i / N; const p = BASE.clone().lerp(TOP, k); if (i < N) p.add(V((r2() - 0.5) * 14, (r2() - 0.5) * 3, (r2() - 0.5) * 10)); main.push(p); }
+  const branches = []; for (let b = 0; b < 9; b++) { const i0 = 2 + Math.floor(r2() * (N - 6)); let p = main[i0].clone(); const pts = [p.clone()]; const dir = V(r2() - 0.5, -0.8, r2() - 0.5).normalize(); for (let j = 0; j < 4 + Math.floor(r2() * 4); j++) { p = p.clone().add(dir.clone().multiplyScalar(5 + r2() * 5)).add(V((r2() - 0.5) * 5, 0, (r2() - 0.5) * 4)); pts.push(p); } branches.push({ i0, pts }); } return { main, branches }; };
+const BOLT = mkBolt(42);
+const segMesh = (a, b, rad, mat) => { const d = b.clone().sub(a); const m = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad, 1, 6), mat); m.position.copy(a).add(b).multiplyScalar(0.5); m.scale.set(1, d.length(), 1); m.quaternion.setFromUnitVectors(V(0, 1, 0), d.normalize()); scene.add(m); return m; };
+const leadM = new THREE.MeshBasicMaterial({ color: 0x9fb4ff, transparent: true, opacity: 0.55, toneMapped: false }), hotM = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }), glowM = new THREE.MeshBasicMaterial({ color: 0x9fc4ff, transparent: true, opacity: 0.35, toneMapped: false, depthWrite: false, blending: THREE.AdditiveBlending });
+const MAIN = BOLT.main.slice(1).map((p, i) => ({ lead: segMesh(BOLT.main[i], p, 0.35, leadM), hot: segMesh(BOLT.main[i], p, 0.9, hotM), halo: segMesh(BOLT.main[i], p, 3.2, glowM), i }));
+const BR = BOLT.branches.flatMap((b) => b.pts.slice(1).map((p, j) => ({ m: segMesh(b.pts[j], p, 0.22, leadM), h: segMesh(b.pts[j], p, 0.45, hotM), at: b.i0 + j * 0.6 })));
+const STREAM = [[TREE.position.clone().add(V(0, 20, 0)), 14], [V(140, 70, -120), 24], [V(-60, 12, 60), 6]].map(([p, L]) => { const m = segMesh(p, p.clone().add(V(0, L, 0)), 0.25, new THREE.MeshBasicMaterial({ color: 0xbfe0ff, transparent: true, opacity: 0.8, toneMapped: false })); m.userData = { p, L }; return m; });
+const SHOCK = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.25, depthWrite: false })); scene.add(SHOCK);
+
+window.render = async function (t) {
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  const rp = RAIN.geometry.attributes.position; for (let i = 0; i < rp.count; i++) { let y = (rp.getY(i) - 0.9 * 1); if (y < 0) y += 180; rp.setY(i, (y - (t * 60) % 180 + 360) % 180); } rp.needsUpdate = true;
+  let lead = 0, hot = 0, stream = 0, flash = 0, cut = 0, shock = -1; FLASHL.intensity = 0; amb.intensity = 1.0;
+  const cloudCam = (k = 0) => look(V(lerp(0, 20, k), 265, lerp(240, 220, k)), V(0, 265, 0), 44);
+  const groundCam = (k = 0) => look(V(lerp(150, 130, k), lerp(20, 30, k), lerp(240, 210, k)), V(0, lerp(95, 110, k), 0), 46);
+  if (t < A("ice")) { const k = clamp(t / A("ice")); groundCam(ease(k)); if (t > 2.2 && t < 2.9) { hot = 1; lead = 1; flash = 1 - (t - 2.2) / 0.7; } big("30,000 °C", t, A("hook") + 4.0, A("ice"), "#ffffff", "300px", "120px"); }
+  else if (t < A("leader")) { cut = 1; cloudCam(clamp((t - A("ice")) / (A("leader") - A("ice")))); }
+  else if (t < A("streamer")) { const k = clamp((t - A("leader")) / (A("streamer") - A("leader"))); lead = ease(k) * 0.92; look(V(70, 120, 150), V(0, 100, 0), 46); lbl("l0", BOLT.main[Math.max(1, Math.floor(lead * 22))].clone().add(V(8, 0, 0)), t, A("leader") + 1.0, A("streamer"), "stepped leader", "#9fb4ff"); }
+  else if (t < A("stroke")) { const k = clamp((t - A("streamer")) / (A("stroke") - A("streamer"))); lead = 0.92 + 0.05 * k; stream = ease(clamp(k / 0.6)); look(V(40, 18, 70), V(8, 30, 0), 44); lbl("l0", TREE.position.clone().add(V(0, 36, 0)), t, A("streamer") + 1.2, A("stroke"), "streamer", "#bfe0ff"); }
+  else if (t < A("thunder")) { const k = clamp((t - A("stroke")) / (A("thunder") - A("stroke"))); lead = 1; stream = 1; hot = k < 0.65 ? 1 : 0; const pulses = [0, 0.12, 0.3, 0.46]; flash = Math.max(...pulses.map((p) => Math.max(0, 1 - Math.abs(k - p) * 18))); groundCam(0.6 + 0.4 * k); if (k > 0.2) card("c0", `≈ <b>30,000 °C</b> · 5× the Sun's surface`, t, A("stroke") + (A("thunder") - A("stroke")) * 0.2, A("thunder"), 200, 230, -2); }
+  else if (t < A("count")) { const k = clamp((t - A("thunder")) / (A("count") - A("thunder"))); shock = k; lead = 0.3 * (1 - k); look(V(220, 70, 320), V(0, 70, 0), 46); }
+  else if (t < A("close")) { const k = clamp((t - A("count")) / (A("close") - A("count"))); const T0 = 0.15; if (k > T0 && k < T0 + 0.04) { hot = 1; lead = 1; flash = 1 - (k - T0) / 0.04; } shock = clamp((k - T0) / 0.55); look(PERSON.position.clone().add(V(-6, 3.5, 10)), V(0, 60, 0), 46); const secs = Math.min(6, Math.max(0, Math.floor((k - T0) / 0.55 * 6))); if (k > T0) timer(`${secs} s`, t, A("count") + 0.4, A("close"), "#ffffff", "120px"); if (k > 0.75) card("c0", `6 s ÷ 3 ≈ <b>2 km</b>`, t, A("count") + (A("close") - A("count")) * 0.75, A("close"), 260, 470, -2); }
+  else { const k = clamp((t - A("close")) / (A("end") - A("close"))); groundCam(1); if (k > 0.3 && k < 0.4) { hot = 1; lead = 1; flash = 1; } big("1… 2… 3…", t, A("close") + 0.4, A("end"), "#ffffff", "300px", "120px"); }
+  // apply
+  MAIN.forEach((s2) => { const f = (s2.i + 1) / 22; s2.lead.visible = lead >= f; s2.hot.visible = hot > 0 && lead >= f; s2.halo.visible = s2.hot.visible; });
+  BR.forEach((b) => { const f = b.at / 22; b.m.visible = lead >= f; b.h.visible = hot > 0 && lead >= f; });
+  STREAM.forEach((m) => { const u = m.userData; m.visible = stream > 0; m.scale.y = Math.max(0.01, u.L * stream); m.position.copy(u.p).add(V(0, u.L * stream / 2, 0)); });
+  FLASHL.position.set(0, 120, 30); FLASHL.intensity = flash * 90000; amb.intensity = 1.0 + flash * 3; scene.background.setHex(0x2a3242).lerp(new THREE.Color(0x9fb0d8), flash * 0.7);
+  PUFFS.forEach((p) => { p.material.color.setHex(0xb0b8cc).lerp(new THREE.Color(0xffffff), flash * 0.8); p.material.opacity = cut ? p.userData.base * 0.35 : p.userData.base; });
+  SHOCK.visible = shock >= 0; if (shock >= 0) { SHOCK.position.copy(TOP).add(V(0, 40, 0)); SHOCK.scale.setScalar(5 + shock * 150); SHOCK.material.opacity = 0.3 * (1 - shock); }
+  CUTBG.visible = cut > 0; ICE.forEach((m) => { m.visible = cut > 0; if (!cut) return; const u = m.userData, f = (t * 0.12 * u.sp + u.o) % 1; const y = u.heavy ? 220 + Math.sin(f * 6.28) * 30 : 300 + Math.sin(f * 6.28 + 1) * 40; m.position.set(u.x * 0.6 + Math.sin(t * 2 + u.o * 9) * 6, y, 48); m.rotation.set(t, t * 0.7, 0); const hit = ((t * 3 + u.o * 10) % 1) < 0.08; m.material.emissive.setHex(hit ? 0xffd84a : (u.heavy ? 0x5a6478 : 0x8aa0c0)); });
+  const showSigns = t >= A("charge") && t < A("leader"); SIGNS.forEach((s2) => { s2.visible = showSigns; if (showSigns) { const k = clamp((t - A("charge") - 1.0) / 3); s2.position.set(s2.userData.x, lerp(260, s2.userData.y, ease(k)), 55); s2.material.opacity = clamp(k * 3); } });
+  if (cut && t < A("charge")) { lbl("l0", V(-30, 330, 48), t, A("ice") + 1.0, A("charge"), "ice crystals", "#eaf6ff"); lbl("l1", V(30, 205, 48), t, A("ice") + 2.0, A("charge"), "graupel (soft hail)", "#cfd8e8"); }
+  if (showSigns) { lbl("l0", V(0, 375, 55), t, A("charge") + 1.6, A("leader"), "top: <b>positive</b>", "#ff6a6a"); lbl("l1", V(0, 185, 55), t, A("charge") + 2.4, A("leader"), "bottom: <b>negative</b>", "#6ab8ff"); }
+  RAIN.visible = !cut;
+
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
