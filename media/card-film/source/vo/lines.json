@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Thieves used to copy your bank card in seconds. Then a tiny gold chip showed up, and copying almost stopped. Why?",
+   "dur": 7.471,
+   "at": 0.35
+  },
+  {
+   "key": "stripe",
+   "text": "The old magnetic stripe is like a sticker with your details written on it. Same data, every single time. Swipe it once, and anyone can copy it.",
+   "dur": 8.72,
+   "at": 8.22
+  },
+  {
+   "key": "chip",
+   "text": "The chip is different. It's a tiny computer, with a secret key locked inside that never comes out.",
+   "dur": 6.791,
+   "at": 17.29
+  },
+  {
+   "key": "ask",
+   "text": "When you pay, the terminal sends the chip a fresh random number, plus the amount and the time.",
+   "dur": 5.565,
+   "at": 24.43
+  },
+  {
+   "key": "sign",
+   "text": "The chip mixes them with its secret key, and answers with a one-time code. A cryptogram.",
+   "dur": 5.814,
+   "at": 30.3
+  },
+  {
+   "key": "bank",
+   "text": "Your bank has a copy of the key, so it checks the code. Match? Approved.",
+   "dur": 4.61,
+   "at": 36.41
+  },
+  {
+   "key": "replay",
+   "text": "Next time, the number is different, so the code is different. Copy one, and it's useless the next second.",
+   "dur": 6.564,
+   "at": 41.37
+  },
+  {
+   "key": "tamper",
+   "text": "And the chip is built to destroy its secrets if someone tries to cut it open.",
+   "dur": 3.893,
+   "at": 48.29
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer works the same way: every file gets its own QR code and its own passcode. Scan it, type the passcode, and only then does it unlock.",
+   "dur": 8.692,
+   "at": 52.58
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 61.62
+  }
+ ],
+ "duration": 66.17
+}
