@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "A plane weighs as much as a hundred cars. And yet it floats on thin air. How?",
+   "dur": 5.837,
+   "at": 0.35
+  },
+  {
+   "key": "shape",
+   "text": "It's all in the wing. Look at it from the side: curved on top, tilted slightly up at the front.",
+   "dur": 5.843,
+   "at": 6.59
+  },
+  {
+   "key": "flow",
+   "text": "As the plane rushes forward, air splits around the wing. The wing pushes the air downward, behind it.",
+   "dur": 5.393,
+   "at": 12.78
+  },
+  {
+   "key": "newton",
+   "text": "Push air down, and the air pushes the wing up. Every action has an equal and opposite reaction.",
+   "dur": 6.298,
+   "at": 18.47
+  },
+  {
+   "key": "press",
+   "text": "At the same time, air over the curved top speeds up, and its pressure drops. Higher pressure underneath pushes up too.",
+   "dur": 6.54,
+   "at": 25.12
+  },
+  {
+   "key": "lift",
+   "text": "Together that's lift. Faster speed, more lift. That's why planes race down the runway before they leave the ground.",
+   "dur": 7.207,
+   "at": 32.01
+  },
+  {
+   "key": "flaps",
+   "text": "For takeoff and landing, flaps slide out the back of the wing, making it bigger and more curved, so it lifts more at low speed.",
+   "dur": 7.785,
+   "at": 39.57
+  },
+  {
+   "key": "stall",
+   "text": "But tilt the wing too far, and the air can't follow the curve. It breaks away, and lift collapses. That's a stall.",
+   "dur": 7.208,
+   "at": 47.7
+  },
+  {
+   "key": "orbi",
+   "text": "Flying under the radar? That's Orbi Transfer's Anonymous mode. No profile, no location, no trail. Just a throwaway ID.",
+   "dur": 10.166,
+   "at": 55.31
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 65.83
+  }
+ ],
+ "duration": 70.38
+}
