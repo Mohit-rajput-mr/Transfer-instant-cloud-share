@@ -1,0 +1,152 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>How incognito mode works</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+const img = (src) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.src = src; });
+const ANON = await img("shots/anon.png");
+scene.background = new THREE.Color(0x07080d);
+scene.add(new THREE.HemisphereLight(0xdfe6ff, 0x14101a, 0.8)); { const k1 = new THREE.DirectionalLight(0xffffff, 1.5); k1.position.set(6, 12, 10); scene.add(k1); }
+{ const fl = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0x0c0e14, roughness: 0.5 })); fl.rotation.x = -Math.PI / 2; fl.position.y = -0.05; scene.add(fl); const grid = new THREE.GridHelper(200, 100, 0x1a2238, 0x121828); scene.add(grid); }
+// laptop
+const LW = 1440, LH = 900; const lapC = document.createElement("canvas"); lapC.width = LW; lapC.height = LH; const lapT = new THREE.CanvasTexture(lapC); lapT.colorSpace = THREE.SRGBColorSpace; lapT.anisotropy = 8;
+const SITES = ["news-site.com", "shoes-shop.com", "flights-deals.com", "recipes-daily.com", "jobs-board.com"];
+function drawLap(mode, k) { const g = lapC.getContext("2d"), w = LW, h = LH;
+  if (mode == "anon") { g.drawImage(ANON, 0, 0, w, h); lapT.needsUpdate = true; return; }
+  g.fillStyle = "#202124"; g.fillRect(0, 0, w, h); g.fillStyle = "#35363a"; g.fillRect(0, 0, w, 70); g.fillStyle = "#202124"; g.beginPath(); g.roundRect(20, 14, 320, 50, 12); g.fill(); g.fillStyle = "#e8eaed"; g.font = "500 24px sans-serif"; g.fillText("New Incognito tab", 70, 48); g.fillStyle = "#3c4043"; g.beginPath(); g.roundRect(20, 80, w - 40, 50, 25); g.fill(); g.fillStyle = "#9aa0a6"; g.fillText(mode == "login" ? "account.example.com" : "Search or type URL", 50, 113);
+  if (mode == "inc") { g.fillStyle = "#e8eaed"; g.font = "700 46px sans-serif"; g.textAlign = "center"; g.fillText("🕶  You've gone Incognito", w / 2, 330); g.font = "400 26px sans-serif"; g.fillStyle = "#bdc1c6"; g.fillText("Others who use this device won't see your activity.", w / 2, 400); g.textAlign = "left"; }
+  else if (mode == "hist") { g.fillStyle = "#e8eaed"; g.font = "700 34px sans-serif"; g.fillText("This session", 120, 210); SITES.forEach((s2, i) => { const y = 270 + i * 80; const gone = k > (i + 1) / (SITES.length + 1); g.globalAlpha = gone ? 0.15 : 1; g.fillStyle = "#3c4043"; g.beginPath(); g.roundRect(120, y - 40, 900, 60, 12); g.fill(); g.fillStyle = "#e8eaed"; g.font = "500 28px sans-serif"; g.fillText("🌐 " + s2, 140, y); if (gone) { g.strokeStyle = "#ff4d5a"; g.lineWidth = 4; g.beginPath(); g.moveTo(130, y - 10); g.lineTo(1010, y - 10); g.stroke(); } g.globalAlpha = 1; }); g.fillStyle = "#3dff8c"; g.font = "600 28px sans-serif"; if (k > 0.9) g.fillText("History · cookies · form data → forgotten", 120, 720); }
+  else if (mode == "login") { g.fillStyle = "#e8eaed"; g.font = "700 50px sans-serif"; g.textAlign = "center"; g.fillText("Welcome back, Sam 👋", w / 2, 380); g.fillStyle = "#2b7bff"; g.beginPath(); g.arc(w / 2, 520, 70, 0, 7); g.fill(); g.fillStyle = "#fff"; g.font = "800 70px sans-serif"; g.fillText("S", w / 2, 545); g.textAlign = "left"; }
+  lapT.needsUpdate = true; }
+const LAP = new THREE.Group(); { const alu = new THREE.MeshStandardMaterial({ color: 0x9aa0a8, metalness: 0.8, roughness: 0.3 }); const base = new THREE.Mesh(new THREE.BoxGeometry(3.24, 0.07, 2.2), alu); base.position.set(0, 0.035, 0.4); LAP.add(base); const kb = new THREE.Mesh(new THREE.BoxGeometry(2.72, 0.008, 1.0), new THREE.MeshStandardMaterial({ color: 0x15161a })); kb.position.set(0, 0.074, 0.1); LAP.add(kb);
+  const lid = new THREE.Group(); lid.position.set(0, 0.07, -0.7); lid.rotation.x = -0.18; LAP.add(lid); const lb = new THREE.Mesh(new THREE.BoxGeometry(3.24, 2.08, 0.04), alu); lb.position.y = 1.04; lid.add(lb); const sc = new THREE.Mesh(new THREE.PlaneGeometry(3.08, 1.925), new THREE.MeshBasicMaterial({ map: lapT, toneMapped: false })); sc.position.set(0, 1.06, 0.022); lid.add(sc); } scene.add(LAP);
+// network chain (vertical in screen space: we stack it in depth & height)
+const node = (label, col, y, z, mk) => { const g = new THREE.Group(); mk(g); g.position.set(0, y, z); scene.add(g); const eye = new THREE.Group(); const w = new THREE.Mesh(new THREE.SphereGeometry(0.45, 20, 14), new THREE.MeshStandardMaterial({ color: 0xffffff })); w.scale.set(1.5, 0.8, 0.4); const iris = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12), new THREE.MeshBasicMaterial({ color: col })); iris.position.z = 0.16; eye.add(w, iris); eye.position.set(2.4, 0.6, 0); g.add(eye); g.userData = { eye, label, col }; return g; };
+const ROUTER = node("school / work Wi-Fi", 0xffd84a, 4.2, -2, (g) => { const b = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.5, 1.4), new THREE.MeshStandardMaterial({ color: 0xf2f2f0 })); g.add(b); for (const x of [-0.8, 0.8]) { const a = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.4, 8), new THREE.MeshStandardMaterial({ color: 0xf2f2f0 })); a.position.set(x, 0.9, -0.5); g.add(a); } });
+const ISP = node("internet provider", 0xff9a3a, 8.0, -4, (g) => { const b = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.6, 2.4), new THREE.MeshStandardMaterial({ color: 0x4a5566 })); b.position.y = 0.6; g.add(b); for (let i = 0; i < 6; i++) { const wdw = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.02), glow(0xffd9a0)); wdw.position.set(-0.6 + (i % 3) * 0.6, 0.1 + Math.floor(i / 3) * 0.8, 1.21); g.add(wdw); } const tw = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.12, 2.2, 8), new THREE.MeshStandardMaterial({ color: 0xb03030 })); tw.position.y = 3.0; g.add(tw); });
+const SITE = node("the website", 0xff4d5a, 12.0, -6, (g) => { const r = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.8, 1.4), new THREE.MeshStandardMaterial({ color: 0x1b1f27, metalness: 0.6 })); r.position.y = 0.6; g.add(r); for (let i = 0; i < 6; i++) { const l = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.06, 0.02), glow(i % 2 ? 0x3dff8c : 0x4f9cff)); l.position.set(0, -0.4 + i * 0.4, 0.71); g.add(l); } const globe = new THREE.Mesh(new THREE.SphereGeometry(0.6, 20, 14), new THREE.MeshBasicMaterial({ color: 0x4f9cff, wireframe: true })); globe.position.y = 2.6; g.add(globe); });
+const NODES = [ROUTER, ISP, SITE];
+const PATH = new THREE.CatmullRomCurve3([V(0, 1.6, -0.6), V(0, 3.0, -1.2), ROUTER.position.clone(), V(0, 6.2, -3), ISP.position.clone(), V(0, 10.2, -5), SITE.position.clone()]);
+const pathLine = new THREE.Mesh(new THREE.TubeGeometry(PATH, 100, 0.04, 6), glow(0x2a4a8a)); scene.add(pathLine);
+const pkC = document.createElement("canvas"); pkC.width = 512; pkC.height = 160; const pkT = new THREE.CanvasTexture(pkC); pkT.colorSpace = THREE.SRGBColorSpace; { const g = pkC.getContext("2d"); g.fillStyle = "#0e1420"; g.beginPath(); g.roundRect(4, 4, 504, 152, 26); g.fill(); g.strokeStyle = "#ffd84a"; g.lineWidth = 5; g.stroke(); g.fillStyle = "#ffd84a"; g.font = "700 40px monospace"; g.fillText("IP 203.0.113.42", 34, 70); g.fillStyle = "#cfd4da"; g.font = "500 30px monospace"; g.fillText("→ shoes-shop.com", 34, 124); } pkT.needsUpdate = true;
+const PK = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.75), new THREE.MeshBasicMaterial({ map: pkT, transparent: true, toneMapped: false, side: THREE.DoubleSide })); scene.add(PK);
+const mapC = document.createElement("canvas"); mapC.width = mapC.height = 512; { const g = mapC.getContext("2d"); g.fillStyle = "#1a2a3a"; g.fillRect(0, 0, 512, 512); g.strokeStyle = "#2f4a66"; g.lineWidth = 3; for (let i = 0; i < 30; i++) { g.beginPath(); g.moveTo(rnd() * 512, rnd() * 512); g.lineTo(rnd() * 512, rnd() * 512); g.stroke(); } g.fillStyle = "rgba(255,77,90,0.25)"; g.beginPath(); g.arc(256, 256, 120, 0, 7); g.fill(); g.strokeStyle = "#ff4d5a"; g.lineWidth = 4; g.stroke(); g.fillStyle = "#ff4d5a"; g.beginPath(); g.arc(256, 240, 22, Math.PI, 0); g.lineTo(256, 290); g.closePath(); g.fill(); g.fillStyle = "#fff"; g.font = "700 30px sans-serif"; g.textAlign = "center"; g.fillText("your city · roughly", 256, 430); }
+const mapT = new THREE.CanvasTexture(mapC); mapT.colorSpace = THREE.SRGBColorSpace; const MAP = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.2), new THREE.MeshBasicMaterial({ map: mapT, toneMapped: false })); scene.add(MAP);
+const PERSON = new THREE.Group(); { const m = new THREE.MeshStandardMaterial({ color: 0x2a2e38 }); const hd = new THREE.Mesh(new THREE.SphereGeometry(0.55, 20, 14), m); hd.position.y = 1.9; const bd = new THREE.Mesh(new THREE.CapsuleGeometry(0.7, 1.1, 6, 16), m); bd.position.y = 0.6; PERSON.add(hd, bd); } PERSON.position.set(0, 0, 3.4); scene.add(PERSON);
+
+window.render = async function (t) {
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  NODES.forEach((n) => { n.visible = false; n.userData.eye.visible = false; }); pathLine.visible = false; PK.visible = false; MAP.visible = false; PERSON.visible = false;
+  const lapCam = (k = 0) => look(V(lerp(0.4, 0, k), lerp(3.0, 2.6, k), lerp(9.5, 8.2, k)), V(0, 1.1, -0.6), 40);
+  const netCam = (k = 0) => look(V(lerp(10, 8, k), lerp(7, 7.5, k), lerp(17, 19, k)), V(0, 6.5, -3), 46);
+  const showNet = (eyes) => { pathLine.visible = true; NODES.forEach((n, i) => { n.visible = true; n.userData.eye.visible = eyes > i; n.userData.eye.lookAt(cam.position); n.userData.eye.children[1].position.x = Math.sin(t * 2 + i) * 0.12; }); };
+  if (t < A("forget")) { const k = clamp(t / A("forget")); drawLap("inc", 0); lapCam(ease(k)); big("INVISIBLE?", t, A("hook") + 2.8, A("forget"), "#ffffff", "300px", "120px"); }
+  else if (t < A("see")) { const k = clamp((t - A("forget")) / (A("see") - A("forget"))); drawLap("hist", clamp((k - 0.35) / 0.55)); lapCam(1); }
+  else if (t < A("ip")) { const k = clamp((t - A("see")) / (A("see") - A("see") + (A("ip") - A("see")))); drawLap("inc", 0); showNet(Math.floor(k * 4)); PK.visible = true; PK.position.copy(PATH.getPoint((t * 0.25) % 1)).add(V(1.6, 0.5, 0)); PK.lookAt(cam.position); netCam(ease(k));
+    NODES.forEach((n, i) => lbl("l" + i, n.position.clone().add(V(-1.2, -1.1, 0)), t, A("see") + 0.5 + i * 1.6, A("ip"), n.userData.label, ["#ffd84a", "#ff9a3a", "#ff6a6a"][i])); }
+  else if (t < A("login")) { const k = clamp((t - A("ip")) / (A("login") - A("ip"))); drawLap("inc", 0); showNet(3); PK.visible = true; PK.position.set(2.6, 4.4, 2.5); PK.lookAt(cam.position); MAP.visible = k > 0.35; MAP.position.set(-1.0, 7.4, 3.5); MAP.lookAt(cam.position); netCam(1); }
+  else if (t < A("google")) { const k = clamp((t - A("login")) / (A("google") - A("login"))); drawLap("login", 0); lapCam(1); lbl("l0", V(0, 2.4, -0.7), t, A("login") + 1.2, A("google"), "this site knows: <b>it's Sam</b>", "#ff6a6a"); }
+  else if (t < A("real")) { drawLap("inc", 0); showNet(3); netCam(0.5); card("c0", `<h5>2024 settlement</h5>Google · incognito tracking lawsuit<br/><b>delete billions of records</b>`, t, A("google") + 0.6, A("real"), 200, 230, -2); }
+  else if (t < A("orbi")) { const k = clamp((t - A("real")) / (A("orbi") - A("real"))); drawLap("hist", 1); PERSON.visible = true; showNet(3); look(V(8, 7, 17), V(0, 5.5, -1.5), 46); lbl("l0", V(1.6, 3.4, 3.4), t, A("real") + 0.6, A("orbi"), "next person on the laptop: <b>sees nothing</b>", "#3dff8c"); lbl("l1", V(-1.0, 14.6, -6), t, A("real") + (A("orbi") - A("real")) * 0.45, A("orbi"), "the internet: <b>still sees you</b>", "#ff6a6a"); }
+  else { const k = clamp((t - A("orbi")) / (A("end") - A("orbi"))); drawLap("anon", 0); lapCam(1 - 0.3 * ease(k)); card("c0", `no account · <b>throwaway ID</b>`, t, A("orbi") + 1.0, A("end"), 230, 230, -2); card("c1", `others can't see your<br/><b>location · name · device</b>`, t, A("orbi") + (A("end") - A("orbi")) * 0.45, A("end"), 230, 400, 2); }
+
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
