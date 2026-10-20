@@ -1,1 +1,66 @@
-{"lines": [{"key": "hook", "text": "hook", "at": 0.35, "dur": 6}, {"key": "white", "text": "white", "at": 6.6499999999999995, "dur": 4}, {"key": "bend", "text": "bend", "at": 10.95, "dur": 7}, {"key": "bounce", "text": "bounce", "at": 18.25, "dur": 7.5}, {"key": "angle", "text": "angle", "at": 26.05, "dur": 8}, {"key": "circle", "text": "circle", "at": 34.35, "dur": 5}, {"key": "double", "text": "double", "at": 39.65, "dur": 6}, {"key": "yours", "text": "yours", "at": 45.949999999999996, "dur": 6.5}, {"key": "close", "text": "close", "at": 52.74999999999999, "dur": 3}, {"key": "end", "text": "end", "at": 56.04999999999999, "dur": 3}], "duration": 60.34999999999999}
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how rainbows work? Every rainbow is made by millions of tiny raindrops, each acting like a prism.",
+   "dur": 6.04,
+   "at": 0.35
+  },
+  {
+   "key": "white",
+   "text": "Sunlight looks white, but it's really every colour mixed together.",
+   "dur": 4.183,
+   "at": 6.79
+  },
+  {
+   "key": "bend",
+   "text": "When light enters a raindrop, it slows down and bends. And each colour bends by a slightly different amount, so the colours fan apart.",
+   "dur": 7.48,
+   "at": 11.27
+  },
+  {
+   "key": "bounce",
+   "text": "The light bounces off the back of the drop, and bends again on the way out. It leaves at about forty two degrees for red, and forty for violet.",
+   "dur": 7.545,
+   "at": 19.05
+  },
+  {
+   "key": "angle",
+   "text": "So you only see a rainbow with the Sun behind you. Every drop at that angle from your shadow sends you one colour, and together they form an arc.",
+   "dur": 8.616,
+   "at": 26.9
+  },
+  {
+   "key": "circle",
+   "text": "From a plane, you can sometimes see the whole thing. A rainbow is really a full circle.",
+   "dur": 5.838,
+   "at": 35.81
+  },
+  {
+   "key": "double",
+   "text": "Light can bounce twice inside a drop, making a fainter second rainbow outside the first, with its colours flipped.",
+   "dur": 6.357,
+   "at": 41.95
+  },
+  {
+   "key": "yours",
+   "text": "And the drops that make your rainbow aren't the ones making the rainbow of the person next to you. Everyone sees their own.",
+   "dur": 6.649,
+   "at": 48.61
+  },
+  {
+   "key": "close",
+   "text": "So a rainbow isn't a thing in the sky. It's an angle.",
+   "dur": 4.256,
+   "at": 55.61
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 60.26
+  }
+ ],
+ "duration": 64.81
+}
