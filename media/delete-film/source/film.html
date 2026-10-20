@@ -150,7 +150,7 @@ function drawIndex(strike) { const g = IDX.getContext("2d"); g.clearRect(0, 0, 1
   idxT.needsUpdate = true; }
 const LINKS = PIECES.map((p) => { const b = BLOCKS[p.cell]; const geo = new THREE.BufferGeometry().setFromPoints([V(-0.8, 9.6 - 0.32, 0.35), b.position.clone().add(V(0, 0, 0.2))]); const l = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xffb45a, transparent: true, opacity: 0.0 })); SG.add(l); return l; });
 const SCAN = new THREE.Mesh(new THREE.PlaneGeometry(COLS * (BS + GAP) + 0.6, 0.25), glow(0x3dff8c, { transparent: true, opacity: 0.9 })); SCAN.position.z = 0.3; SG.add(SCAN);
-const KEY = new THREE.Group(); { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.25, 12, 40), new THREE.MeshStandardMaterial({ color: 0xffd27a, metalness: 0.8, roughness: 0.3 })); KEY.add(ring); const shaft = new THREE.Mesh(new THREE.BoxGeometry(3, 0.4, 0.3), ring.material); shaft.position.x = 2.3; KEY.add(shaft); for (const x of [3.2, 3.6]) { const tth = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.7, 0.3), ring.material); tth.position.set(x, -0.45, 0); KEY.add(tth); } KEY.position.set(-1.2, 9.6, 1.5); SG.add(KEY); }
+const KEY = new THREE.Group(); { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.25, 12, 40), new THREE.MeshStandardMaterial({ color: 0xffd27a, metalness: 0.8, roughness: 0.3 })); KEY.add(ring); const shaft = new THREE.Mesh(new THREE.BoxGeometry(3, 0.4, 0.3), ring.material); shaft.position.x = 2.3; KEY.add(shaft); for (const x of [3.2, 3.6]) { const tth = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.7, 0.3), ring.material); tth.position.set(x, -0.45, 0); KEY.add(tth); } KEY.position.set(-1.4, 7.2, 3.0); SG.add(KEY); }
 const SHARDS = Array.from({ length: 30 }, () => { const m = new THREE.Mesh(new THREE.TetrahedronGeometry(0.22), new THREE.MeshStandardMaterial({ color: 0xffd27a, metalness: 0.8, roughness: 0.3 })); m.userData = { d: V(rnd() - 0.5, rnd() - 0.2, rnd() - 0.5).normalize().multiplyScalar(4 + rnd() * 5), s: V(rnd(), rnd(), rnd()) }; SG.add(m); return m; });
 // =============== COPIES: phone in the middle; a cloud, a chat app and a server each keep a copy ===============
 const CP = set("cp", 800);
@@ -178,7 +178,7 @@ window.render = async function (t) { cam.up.set(0, 1, 0);
   const ph = P("ph"), sg = P("st"), cp = P("cp"), ob = P("ob");
   if (t < A("index")) { show("ph"); PHONE.rotation.y = 0.15 * Math.sin(t * 0.4);
     if (t < A("bin")) { const kd = clamp((t - (A("hook") + 3.0)) / 0.8); drawPhone("gallery", kd, t); look(ph.clone().add(V(lerp(2.5, 0.6, ease(clamp(t / 4))), 0.8, lerp(11, 9.6, ease(clamp(t / 4))))), ph.clone().add(V(0, 0.2, 0)), 42); big("NOT GONE.", t, A("hook") + 4.6, A("bin"), "#ffffff", "110px", "100px"); }
-    else { const k = clamp((t - A("bin")) / (A("index") - A("bin"))); drawPhone("bin", k, t); look(ph.clone().add(V(-0.4, 0.4, 9.2)), ph.clone().add(V(0, 0.4, 0)), 42); card("c0", `Recently Deleted · <b>30 days</b>`, t, A("bin") + 3.2, A("index"), 250, 230, -2); } }
+    else { const k = clamp((t - A("bin")) / (A("index") - A("bin"))); drawPhone("bin", k, t); look(ph.clone().add(V(-0.4, 0.4, 9.2)), ph.clone().add(V(0, 0.4, 0)), 42); card("c0", `Recently Deleted · <b>30 days</b>`, t, A("bin") + 3.2, A("index"), 250, 1480, -2); } }
   else if (t < A("copies")) { show("st");
     const kp = clamp((t - A("pointer") - 0.8) / 1.2); drawIndex(t >= A("pointer") ? kp : 0);
     const deleted = t >= A("pointer") + 2.2, overw = t >= A("pointer") + 5.0, ssdK = t >= A("ssd") ? clamp((t - A("ssd") - 2.0) / 3.5) : 0, keyK = t >= A("key") ? clamp((t - A("key") - 3.2) / 1.2) : 0;
@@ -206,7 +206,7 @@ window.render = async function (t) { cam.up.set(0, 1, 0);
     card("c0", `factory reset · <b>key destroyed</b> → noise`, t, A("key") + 3.4, A("copies"), 200, 230, -2); }
   else if (t < A("orbi")) { show("cp"); drawPhone("bin", 0, t, CPHONE); const k = clamp((t - A("copies")) / (A("orbi") - A("copies")));
     ICONS.forEach((ic, i) => { const a = clamp((t - A("copies") - 0.8 - i * 1.0) / 0.5); ic.material.opacity = a; ic.userData.cp.material.opacity = clamp((t - A("copies") - 1.4 - i * 1.0) / 0.3); const f = clamp((t - A("copies") - 0.8 - i * 1.0) / 0.7); FLY[i].visible = f > 0 && f < 1; FLY[i].position.lerpVectors(V(0, 0, 0.5), ic.userData.pos.clone().add(V(1.1, -1.0, 0.1)), ease(f)).add(V(0, 0, 0)); lbl("l" + i, cp.clone().add(ic.userData.pos).add(V(0, i === 2 ? -1.9 : 1.8, 0)), t, A("copies") + 1.0 + i * 1.0, A("orbi"), ic.userData.label, "#c8ccd8"); });
-    look(cp.clone().add(V(0, 0, lerp(24, 22, k))), cp.clone(), 42); }
+    look(cp.clone().add(V(0, -0.4, lerp(31, 29, k))), cp.clone().add(V(0, -0.4, 0)), 42); }
   else { show("ob"); const k = clamp((t - A("orbi")) / (A("end") - A("orbi")));
     { const { c, tex } = OPHONE.userData; const g = c.getContext("2d"); g.fillStyle = "#07080c"; g.fillRect(0, 0, 512, 1040); g.drawImage(PHOTO, 64, 0, 384, 384, 56, 260, 400, 400); g.fillStyle = "#3dff8c"; g.font = "800 40px Inter, sans-serif"; g.fillText("ORBI", 56, 140); g.fillStyle = "#eef0f5"; g.font = "600 30px Inter, sans-serif"; g.fillText(t > A("orbi") + 1.0 ? "🔒 locked on this phone" : "Send", 56, 760); tex.needsUpdate = true; }
     const send = clamp((t - A("orbi") - 1.4) / 2.2), burnAt = A("orbi") + 6.0, bk = clamp((t - burnAt) / 1.6);
