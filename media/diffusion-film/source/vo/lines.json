@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how AI image generators work? They don't cut and paste photos. Every picture starts as pure static.",
+   "dur": 6.828,
+   "at": 0.35
+  },
+  {
+   "key": "train",
+   "text": "During training, the AI sees millions of pictures. Each one gets buried under random noise, a little more at every step.",
+   "dur": 6.841,
+   "at": 7.58
+  },
+  {
+   "key": "learn",
+   "text": "Its one job is to look at a noisy picture and guess exactly which noise was added, so it can be taken away.",
+   "dur": 6.458,
+   "at": 14.72
+  },
+  {
+   "key": "prompt",
+   "text": "When you type a prompt, another model turns your words into a long list of numbers that capture their meaning.",
+   "dur": 7.246,
+   "at": 21.48
+  },
+  {
+   "key": "start",
+   "text": "Then the generator begins with a screen full of random static.",
+   "dur": 3.459,
+   "at": 29.02
+  },
+  {
+   "key": "steps",
+   "text": "Step by step, often twenty to fifty times, it removes a little noise, nudged toward your words, until a picture appears.",
+   "dur": 6.687,
+   "at": 32.78
+  },
+  {
+   "key": "latent",
+   "text": "To save time, many models work on a tiny compressed version of the picture, and only blow it up to full size at the end.",
+   "dur": 7.039,
+   "at": 39.77
+  },
+  {
+   "key": "seed",
+   "text": "Change the starting static, and you get a different picture. Same static, same words, and you get the same picture again.",
+   "dur": 6.88,
+   "at": 47.11
+  },
+  {
+   "key": "close",
+   "text": "So every AI image is sculpted out of noise.",
+   "dur": 2.954,
+   "at": 54.34
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 57.69
+  }
+ ],
+ "duration": 62.24
+}
