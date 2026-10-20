@@ -1,0 +1,175 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>How rainbows work</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+const SETS = {}; const set = (k, x) => { const g = new THREE.Group(); g.position.set(x, 0, 0); scene.add(g); SETS[k] = g; return g; };
+const show = (k) => { for (const n in SETS) SETS[n].visible = n === k; };
+const P = (k) => SETS[k].position;
+scene.background = new THREE.Color(0x0a0e18);
+const SPEC = [0xff3a2a, 0xff8a1a, 0xffe22a, 0x3ad05a, 0x2a9aff, 0x3a4aff, 0x9a3aff];
+// The rainbow is drawn physically: every pixel's angle from the antisolar point picks its colour (red 42°, violet 40°; second bow 50–53° flipped).
+const bowMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.BackSide, uniforms: { camPos: { value: V() }, anti: { value: V(0, -0.34, -0.94).normalize() }, amp: { value: 0 }, amp2: { value: 0 } },
+  vertexShader: "varying vec3 vW; void main(){ vec4 w = modelMatrix*vec4(position,1.0); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }",
+  fragmentShader: `varying vec3 vW; uniform vec3 camPos, anti; uniform float amp, amp2;
+    vec3 spec(float x){ x = clamp(x,0.0,1.0); vec3 c = vec3(0.0); c += vec3(1.0,0.15,0.1)*smoothstep(0.0,0.25,x)*(1.0-smoothstep(0.25,0.45,x)); c += vec3(1.0,0.75,0.1)*smoothstep(0.15,0.35,x)*(1.0-smoothstep(0.35,0.55,x)); c += vec3(0.2,0.9,0.3)*smoothstep(0.4,0.55,x)*(1.0-smoothstep(0.55,0.72,x)); c += vec3(0.2,0.45,1.0)*smoothstep(0.55,0.75,x)*(1.0-smoothstep(0.78,0.92,x)); c += vec3(0.55,0.2,1.0)*smoothstep(0.75,0.9,x)*(1.0-smoothstep(0.95,1.0,x)); return c; }
+    void main(){ vec3 d = normalize(vW - camPos); float th = degrees(acos(clamp(dot(d, anti), -1.0, 1.0)));
+      vec3 c = vec3(0.0); float a = 0.0;
+      if (th > 39.6 && th < 42.6) { float x = (42.6 - th)/3.0; c = spec(x); a = amp*0.9*sin(x*3.14159); }
+      else if (th > 50.0 && th < 53.8) { float x = (th - 50.0)/3.8; c = spec(x); a = amp2*0.45*sin(x*3.14159); }
+      else if (th < 39.6) { c = vec3(1.0); a = amp*0.08*smoothstep(20.0, 39.6, th); }
+      gl_FragColor = vec4(c, a); }` });
+const BOW = new THREE.Mesh(new THREE.SphereGeometry(400, 96, 64), bowMat); scene.add(BOW);
+// =============== LAND: hills, a rain curtain, a person with the Sun behind ===============
+const LD = set("land", 0);
+{ const sky = new THREE.Mesh(new THREE.SphereGeometry(900, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, vertexShader: "varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }", fragmentShader: "varying vec3 vP; void main(){ float h = clamp(vP.y,0.0,1.0); vec3 c = mix(vec3(0.55,0.6,0.68), vec3(0.22,0.26,0.36), pow(h,0.5)); gl_FragColor = vec4(c,1.0); }" })); LD.add(sky); }
+const HILLS = new THREE.Mesh(new THREE.CircleGeometry(380, 128, 0, Math.PI * 2), new THREE.MeshStandardMaterial({ color: 0x4a7a3a, roughness: 1 })); { const p = HILLS.geometry.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i); const r = Math.hypot(x, y); p.setZ(i, (r > 60 ? (r - 60) * 0.05 : 0) * (1 + 0.6 * Math.sin(x * 0.02) * Math.cos(y * 0.017)) + 1.5 * Math.sin(x * 0.05) * Math.sin(y * 0.04)); } HILLS.geometry.computeVertexNormals(); } HILLS.rotation.x = -Math.PI / 2; LD.add(HILLS);
+LD.add(new THREE.HemisphereLight(0xdfe8ff, 0x2a3a20, 0.8)); { const s = new THREE.DirectionalLight(0xfff2dd, 2.0); s.position.set(0, 34, 94); LD.add(s); }
+const RAIN = (() => { const n = 4000, g = new THREE.BufferGeometry(), p = new Float32Array(n * 6); g.setAttribute("position", new THREE.BufferAttribute(p, 3)); const l = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0xcfd8e8, transparent: true, opacity: 0.35 })); l.userData = { n, seeds: Array.from({ length: n }, () => [(rnd() - 0.5) * 500, rnd() * 120, -120 - rnd() * 220, rnd()]) }; LD.add(l); return l; })();
+const rainStep = (t) => { const p = RAIN.geometry.attributes.position.array; RAIN.userData.seeds.forEach(([x, y, z, o], i) => { const yy = ((y - t * 40 - o * 120) % 120 + 120) % 120; p.set([x, yy, z, x - 0.4, yy - 3, z], i * 6); }); RAIN.geometry.attributes.position.needsUpdate = true; };
+const mkPerson = (col) => { const g = new THREE.Group(); const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.45, 1.3, 6, 12), new THREE.MeshStandardMaterial({ color: col })); body.position.y = 1.1; const head = new THREE.Mesh(new THREE.SphereGeometry(0.33, 16, 12), new THREE.MeshStandardMaterial({ color: 0xe8c8a8 })); head.position.y = 2.25; g.add(body, head); const sh = new THREE.Mesh(new THREE.CircleGeometry(0.6, 24), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 })); sh.scale.set(1, 2.6, 1); sh.rotation.x = -Math.PI / 2; sh.position.set(0, 0.05, -1.4); g.add(sh); LD.add(g); return g; };
+const ME = mkPerson(0x2b7bff), YOU = mkPerson(0xff8a3a); ME.position.set(2.2, 0, -2); YOU.position.set(6.2, 0, -2);
+const CONES = [0, 1].map((i) => { const pts = []; for (let k = 0; k <= 24; k++) { const a = Math.PI * (0.2 + 0.6 * k / 24); pts.push(V(0, 0, 0)); const d = V(Math.cos(a) * Math.sin(42 * Math.PI / 180), Math.sin(a) * Math.sin(42 * Math.PI / 180), -Math.cos(42 * Math.PI / 180)); const anti = V(0, -0.34, -0.94).normalize(); const q = new THREE.Quaternion().setFromUnitVectors(V(0, 0, -1), anti); pts.push(d.applyQuaternion(q).multiplyScalar(160)); } const l = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: i ? 0xffb46a : 0x6ab8ff, transparent: true, opacity: 0 })); LD.add(l); return l; });
+// =============== DROP: a raindrop in cross-section, light refracting, reflecting, refracting ===============
+const DR = set("drop", 3000);
+DR.add(new THREE.AmbientLight(0xffffff, 0.6)); { const l = new THREE.PointLight(0xffffff, 80, 60); l.position.set(-6, 8, 10); DR.add(l); }
+const RD = 4; const DROP = new THREE.Mesh(new THREE.SphereGeometry(RD, 64, 48), new THREE.MeshStandardMaterial({ color: 0x9ac8ff, transparent: true, opacity: 0.14, roughness: 0.05, metalness: 0.1, depthWrite: false })); DR.add(DROP);
+{ const rim = new THREE.Mesh(new THREE.RingGeometry(RD - 0.05, RD + 0.05, 96), glow(0xbfe0ff, { transparent: true, opacity: 0.8 })); DR.add(rim); }
+const refract = (I, N, eta) => { const c1 = -I.dot(N); const k = 1 - eta * eta * (1 - c1 * c1); return I.clone().multiplyScalar(eta).add(N.clone().multiplyScalar(eta * c1 - Math.sqrt(Math.max(0, k)))).normalize(); };
+const NIDX = [1.331, 1.3335, 1.336, 1.3385, 1.341, 1.343, 1.345].map((n) => 1.331 + (n - 1.331) * 3); // dispersion ×3 so the fan is visible
+const B = 0.86 * RD; const P0 = V(-Math.sqrt(RD * RD - B * B), B, 0);
+const PATHS = NIDX.map((n) => { const I = V(1, 0, 0); const T = refract(I, P0.clone().normalize(), 1 / n); const P1 = P0.clone().add(T.clone().multiplyScalar(-2 * P0.dot(T))); const N1 = P1.clone().normalize(); const R1 = T.clone().sub(N1.clone().multiplyScalar(2 * T.dot(N1))); const P2 = P1.clone().add(R1.clone().multiplyScalar(-2 * P1.dot(R1))); const O = refract(R1, P2.clone().normalize().negate(), n); return [P0, P1, P2, P2.clone().add(O.clone().multiplyScalar(11))]; });
+const segLine = (pts, col, r = 0.07) => { const l = new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(pts[0], pts[1]), 4, r, 6), glow(col)); DR.add(l); return l; };
+const SUNRAY = segLine([V(-16, B, 0), P0], 0xffffff, 0.12);
+const PLINES = PATHS.map((pts, i) => { const sub = []; for (let s = 0; s < 3; s++) sub.push(segLine([pts[s], pts[s + 1]], SPEC[i])); return sub; });
+// prism for "white light is every colour"
+const PRISM = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 3, 3), new THREE.MeshStandardMaterial({ color: 0xdfefff, transparent: true, opacity: 0.35, roughness: 0.05 })); PRISM.rotation.x = Math.PI / 2; PRISM.position.set(0, -14, 0); DR.add(PRISM);
+const PIN = segLine([V(-14, -14.6, 0), V(-1.0, -14.2, 0)], 0xffffff); const POUT = SPEC.map((c, i) => segLine([V(1.0, -14.0, 0), V(13, -15.4 + i * 0.55, 0)], c));
+// =============== SKY: from a plane, the whole circle on the clouds ===============
+const SK = set("sky", 6000);
+{ const sky = new THREE.Mesh(new THREE.SphereGeometry(900, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, vertexShader: "varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }", fragmentShader: "varying vec3 vP; void main(){ float h = clamp(vP.y*0.5+0.5,0.0,1.0); vec3 c = mix(vec3(0.85,0.88,0.92), vec3(0.35,0.55,0.85), pow(h,1.5)); gl_FragColor = vec4(c,1.0); }" })); SK.add(sky); }
+const CLOUDS = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.ShaderMaterial({ vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }", fragmentShader: "varying vec2 vUv; float hs(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); } float ns(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f); return mix(mix(hs(i), hs(i+vec2(1,0)), f.x), mix(hs(i+vec2(0,1)), hs(i+vec2(1,1)), f.x), f.y); } void main(){ vec2 p = vUv*60.0; float n = ns(p)*0.5 + ns(p*2.1)*0.3 + ns(p*4.3)*0.2; gl_FragColor = vec4(vec3(0.78 + 0.2*n), 1.0); }" })); CLOUDS.rotation.x = -Math.PI / 2; CLOUDS.position.y = -200; SK.add(CLOUDS);
+const PLANE_SH = new THREE.Mesh(new THREE.PlaneGeometry(12, 10), new THREE.MeshBasicMaterial({ map: canvasTex(128, 128, (g) => { g.fillStyle = "rgba(0,0,0,0.35)"; g.fillRect(58, 10, 12, 108); g.fillRect(14, 50, 100, 14); g.fillRect(40, 100, 48, 10); }), transparent: true, depthWrite: false })); PLANE_SH.rotation.x = -Math.PI / 2; SK.add(PLANE_SH);
+
+window.render = async function (t) { cam.up.set(0, 1, 0);
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  const l0 = P("land"), d0 = P("drop"), s0 = P("sky"); rainStep(t);
+  bowMat.uniforms.amp.value = 0; bowMat.uniforms.amp2.value = 0; bowMat.uniforms.anti.value.set(0, -0.34, -0.94).normalize(); bowMat.depthTest = true; BOW.visible = false; CONES.forEach((c) => (c.material.opacity = 0)); YOU.visible = false;
+  const bowOn = (a, a2 = 0) => { BOW.visible = true; BOW.position.copy(cam.position); bowMat.uniforms.camPos.value.copy(cam.position); bowMat.uniforms.amp.value = a; bowMat.uniforms.amp2.value = a2; };
+  const landCam = (k) => { look(l0.clone().add(V(lerp(-3, 0, k), lerp(3.2, 2.4, k), lerp(14, 8, k))), l0.clone().add(V(0, lerp(26, 24, k), -100)), 64); };
+  if (t < A("white")) { show("land"); landCam(ease(clamp(t / A("white")))); bowOn(clamp((t - 0.6) / 1.5), 0.3); big("MILLIONS OF PRISMS", t, A("hook") + 4.2, A("white"), "#ffffff", "250px", "74px"); }
+  else if (t < A("angle")) { show("drop"); const kw = clamp((t - A("white")) / (A("bend") - A("white")));
+    PRISM.visible = t < A("bend"); PIN.visible = POUT[0].visible = t < A("bend"); POUT.forEach((l) => (l.visible = t < A("bend") && t > A("white") + 1.4)); PIN.visible = t < A("bend");
+    const kb = clamp((t - A("bend") - 0.6) / 3), kr = clamp((t - A("bounce") - 0.4) / 3);
+    SUNRAY.visible = t >= A("bend"); PLINES.forEach((sub) => { sub[0].visible = kb > 0.2; sub[1].visible = kr > 0; sub[2].visible = kr > 0.5; });
+    if (t < A("bend")) look(d0.clone().add(V(0, -14.4, 26)), d0.clone().add(V(0, -14.4, 0)), 42);
+    else look(d0.clone().add(V(lerp(-2, -1, kb), -1.5, lerp(34, 30, kb))), d0.clone().add(V(-1.5, -1.8, 0)), 42);
+    card("c0", `white light = <b>every colour</b>`, t, A("white") + 1.2, A("bend"), 230, 230, -2);
+    card("c0", `light slows and <b>bends</b> · each colour differently`, t, A("bend") + 1.2, A("bounce"), 170, 230, -2);
+    card("c0", `red <b>42°</b> · violet <b>40°</b>`, t, A("bounce") + 4.0, A("angle"), 270, 230, -2); lbl("l0", d0.clone().add(V(RD * 0.9, -RD * 0.2, 0)), t, A("bounce") + 1.0, A("bounce") + 4.0, "bounces off the back", "#bfe0ff"); card("c1", `(spread exaggerated)`, t, A("bend") + 1.2, A("angle"), 360, 1560, 0); }
+  else if (t < A("circle")) { show("land"); const k = clamp((t - A("angle")) / (A("circle") - A("angle"))); look(l0.clone().add(V(lerp(10, 3, k), lerp(6, 4, k), lerp(16, 12, k))), l0.clone().add(V(0, lerp(10, 22, k), -100)), 64); bowOn(1, 0.25); CONES[0].material.opacity = 0.5 * clamp((t - A("angle") - 2.5) / 0.8);
+    card("c0", `Sun <b>behind you</b>`, t, A("angle") + 1.0, A("circle"), 290, 230, -2); lbl("l0", l0.clone().add(V(2.2, 3.2, -2)), t, A("angle") + 2.5, A("circle"), "you", "#6ab8ff"); card("c1", `every drop at <b>42°</b> from your shadow`, t, A("angle") + 4.0, A("circle"), 220, 1480, 2); }
+  else if (t < A("double")) { show("sky"); const k = clamp((t - A("circle")) / (A("double") - A("circle"))); const cp = s0.clone().add(V(0, 0, 0)); bowMat.uniforms.anti.value.set(0, -0.8, -0.6).normalize(); const anti = bowMat.uniforms.anti.value; const tgt = cp.clone().add(anti.clone().multiplyScalar(100)); PLANE_SH.position.copy(anti.clone().multiplyScalar(-200 / anti.y)).setY(-199.5); look(cp, tgt, lerp(70, 118, ease(clamp(k * 1.6)))); bowOn(1, 0.3); bowMat.depthTest = false; card("c0", `from above · <b>a full circle</b>`, t, A("circle") + 1.5, A("double"), 240, 230, -2); }
+  else if (t < A("yours")) { show("land"); landCam(1); bowOn(1, clamp((t - A("double") - 1.5) / 1.2)); look(l0.clone().add(V(0, 2.4, 8)), l0.clone().add(V(0, 30, -100)), 74); card("c0", `second bow · <b>colours flipped</b>`, t, A("double") + 2.0, A("yours"), 250, 230, -2); }
+  else if (t < A("close")) { show("land"); YOU.visible = true; const k = clamp((t - A("yours")) / (A("close") - A("yours"))); look(l0.clone().add(V(4.2, lerp(10, 14, k), lerp(12, 16, k))), l0.clone().add(V(4.2, 6, -30)), 58); bowOn(0.6, 0.15); CONES.forEach((c, i) => { c.material.opacity = 0.6 * clamp((t - A("yours") - 1.0 - i * 1.2) / 0.6); c.position.copy(i ? YOU.position : ME.position).add(V(0, 2.2, 0)); }); lbl("l0", l0.clone().add(V(2.2, 3.2, -2)), t, A("yours") + 1.0, A("close"), "you", "#6ab8ff"); lbl("l1", l0.clone().add(V(6.2, 3.2, -2)), t, A("yours") + 2.2, A("close"), "your friend", "#ffb46a"); card("c0", `different drops · <b>your own rainbow</b>`, t, A("yours") + 4.6, A("close"), 210, 230, -2); }
+  else { show("land"); const k = ease(clamp((t - A("close")) / 5)); look(l0.clone().add(V(0, 2.4, lerp(8, 4, k))), l0.clone().add(V(0, 26, -100)), lerp(64, 70, k)); bowOn(1, 0.3); big("IT'S AN ANGLE", t, A("close") + 0.6, A("end"), "#ffffff", "250px", "88px"); }
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
