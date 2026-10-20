@@ -36,17 +36,20 @@ export default function AnonSeal({ sess }: { sess: AnonSession | null }) {
     return () => clearInterval(t);
   }, []);
 
-  // outside a space: the frame's top sits under the navbar's full height (taken against the page, so scrolling or
-  // the navbar shrinking doesn't move it)
+  // outside a space: the frame's top sits under the navbar as it is at the top of the page. The navbar is fixed (its
+  // bottom on screen doesn't move with scrolling) while the layer scrolls with the page, so the frame's top is that
+  // bottom minus where the layer starts on the page. Measured only while the bar is full size: scrolled down it turns
+  // into a smaller pill (.compact), which must not move the frame. (Adding scrollY to the fixed bar's bottom, as this
+  // did before, pushed the frame down on every re-measure while scrolled, and a running max kept it there.)
   useEffect(() => {
     if (glass) return;
-    let hdrMax = 0;
+    let hdrBottom = 0;
     const place = () => {
       const layer = box.current?.parentElement;
       const hdr = document.querySelector<HTMLElement>(".top");
       if (!layer || !hdr) return;
-      hdrMax = Math.max(hdrMax, hdr.getBoundingClientRect().bottom + window.scrollY);
-      const next = Math.round(hdrMax - (layer.getBoundingClientRect().top + window.scrollY) + 18);
+      if (!hdr.classList.contains("compact") || !hdrBottom) hdrBottom = hdr.getBoundingClientRect().bottom;
+      const next = Math.round(hdrBottom - (layer.getBoundingClientRect().top + window.scrollY) + 18);
       setTop((t) => (t === next ? t : next));
     };
     place();

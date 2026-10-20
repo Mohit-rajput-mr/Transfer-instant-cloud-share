@@ -20,6 +20,11 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- FIXED 2026-10-20 (M) — Anonymous frame (AnonSeal) shrank while scrolling and never came back: its top was the fixed
+  navbar's bottom + scrollY, re-measured on every navbar resize (it turns compact on scroll), kept with a running max.
+  Now: the bar's bottom as measured while full size (not compact) minus the layer's page offset. Verified: frame top
+  70/80 px at start, after scrolling 2000 px and back up (1900 px and 390 px wide). No other code mixes scrollY with
+  fixed-element positions (searched).
 - FIXED 2026-10-20 (M) — Fixed width breakpoints can't know how wide the bar's contents are (counts, Mine, online
   number): at 1366–1680 the inline Open void/Nearby/Wi-Fi buttons slid under Filter. The Classic bar now measures itself
   (lib/fold.ts, unit-tested; data-fold 0–3 in Void.tsx) and folds only as far as needed: small labels + "How it works"
