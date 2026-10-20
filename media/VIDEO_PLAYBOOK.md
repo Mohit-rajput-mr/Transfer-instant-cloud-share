@@ -87,6 +87,7 @@ When the owner says "new version" / "next", make the next film from the story li
 - **First line is always the question** (owner 2026-10-20): "Do you know how X works?" ("Do you know how Wi-Fi works?", "Do you know how Starship works?"). Never open with a scene-setting statement ("A hundred miles out at sea…"); the setup comes after the question.
 - Max length **1:30**. Hook in the first second. Same house look, voice and subtitles. Reuse engines
   (`pw-film`, `candle2-film`, `ob-film`, `nfc-film`, `starlink-film`, `roadster-film`), never rebuild from scratch.
+- **Don't force Orbi** (owner 2026-10-20): some films are pure general knowledge. If the topic has no honest link to what Orbi does (rockets, submarines, engines…), skip the feature pitch: end on a strong closing line about the topic, then the plain end card. Only pitch an Orbi feature when it truly fits (internet, files, phones, privacy, work).
 - **Rotate the Orbi ending** — never the same feature twice in a row. Orbi is not only file sending:
   Anonymous mode (no profile, throwaway ID, no GPS) · Orbi Work (tasks, routes, step colours, /work board) · private Spaces ·
   no location sharing / rough area only · files locked on your device · 30-minute burn · QR + code on every file ·

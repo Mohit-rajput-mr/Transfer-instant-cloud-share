@@ -18,7 +18,7 @@ LINES = [
     ("catch",   "The arms close, small pins on the booster settle onto them, and the engines shut off. Caught.", 1.15, 0.35),
     ("why",     "Why bother? No landing legs means less weight. And the booster comes back right where it launched, ready to fly again.", 1.00, 0.30),
     ("first",   "The first catch happened in October twenty twenty four. And it worked on the very first try.", 1.05, 0.40),
-    ("orbi",    "Orbi Transfer has its own kind of catch. Someone nearby opens Orbi and catches your file. No app, no login.", 1.00, 0.35),
+    ("orbi",    "So next time you watch a giant rocket come home, remember. It doesn't land. It gets caught.", 1.00, 0.35),
     ("end",     "Orbi Transfer dot com. Now you know!",                                                                                  1.05, 0.00),
 ]
 
