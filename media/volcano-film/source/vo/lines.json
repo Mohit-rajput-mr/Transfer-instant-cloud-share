@@ -1,1 +1,60 @@
-{"lines": [{"key": "hook", "text": "hook", "at": 0.35, "dur": 5.5}, {"key": "plates", "text": "plates", "at": 6.1499999999999995, "dur": 7}, {"key": "melt", "text": "melt", "at": 13.45, "dur": 9}, {"key": "rise", "text": "rise", "at": 22.75, "dur": 7}, {"key": "gas", "text": "gas", "at": 30.05, "dur": 9}, {"key": "erupt", "text": "erupt", "at": 39.35, "dur": 10}, {"key": "ring", "text": "ring", "at": 49.650000000000006, "dur": 7}, {"key": "close", "text": "close", "at": 56.95, "dur": 3.5}, {"key": "end", "text": "end", "at": 60.75, "dur": 3}], "duration": 65.05}
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how volcanoes work? Deep under your feet, Earth is hot enough to melt rock.",
+   "dur": 4.922,
+   "at": 0.35
+  },
+  {
+   "key": "plates",
+   "text": "Earth's outer shell is broken into giant plates. They move a few centimeters a year, about as fast as your fingernails grow.",
+   "dur": 6.979,
+   "at": 5.67
+  },
+  {
+   "key": "melt",
+   "text": "Where one plate dives under another, it drags water down with it. That water lowers the melting point of the hot rock above, so it melts into magma.",
+   "dur": 9.092,
+   "at": 12.95
+  },
+  {
+   "key": "rise",
+   "text": "Magma is lighter than the solid rock around it, so it rises, and collects in a chamber a few kilometers below the surface.",
+   "dur": 6.842,
+   "at": 22.34
+  },
+  {
+   "key": "gas",
+   "text": "It's full of dissolved gas, like water vapour and carbon dioxide. As it rises, the pressure drops, and the gas forms bubbles, like opening a shaken soda.",
+   "dur": 9.623,
+   "at": 29.49
+  },
+  {
+   "key": "erupt",
+   "text": "When the pressure gets too high, it bursts through. Runny magma pours out as lava, around a thousand degrees Celsius. Sticky magma traps the gas, and explodes into ash.",
+   "dur": 11.365,
+   "at": 39.41
+  },
+  {
+   "key": "ring",
+   "text": "That's why most volcanoes sit where plates meet. The Pacific Ring of Fire has about four hundred and fifty of them.",
+   "dur": 5.956,
+   "at": 51.07
+  },
+  {
+   "key": "close",
+   "text": "So every volcano is Earth, letting out its heat.",
+   "dur": 3.195,
+   "at": 57.38
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 60.97
+  }
+ ],
+ "duration": 65.52
+}
