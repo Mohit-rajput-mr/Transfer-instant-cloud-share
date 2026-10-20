@@ -97,7 +97,7 @@ export function typeHue(fileName: string, mime = "") {
 
 /** Kinds of file for the "Show only" filter. */
 export const KINDS = [
-  { id: "all", name: "Everything" },
+  { id: "all", name: "All files" },
   { id: "photo", name: "Photos" },
   { id: "video", name: "Videos" },
   { id: "doc", name: "Documents" },

@@ -12,6 +12,8 @@ export interface Orb {
   hue: number;
   status: "ready" | "sealed";
   netHash: string | null;
+  /** public void: the area (geohash-4) it was sent from; null when anonymous (migration 027) */
+  area?: string | null;
   maxDownloads: number | null;
   downloads: number;
   devices: number;

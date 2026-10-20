@@ -1,0 +1,29 @@
+// What the public void shows, chosen with the buttons in the navbar:
+//   Open void: everything public around you (your area and the eight around it, lib/area.ts)
+//   Nearby:    only your own area (~20-40 km); needs your location, so picking it asks for it
+//   Wi-Fi:     only what was sent from the same network as you (same Wi-Fi / same public IP)
+//   Mine:      only what you sent
+export type Scope = "all" | "area" | "near" | "mine";
+
+export const SCOPE_NAME: Record<Scope, string> = { all: "Open void", area: "Nearby", near: "Wi-Fi", mine: "Mine" };
+export const SCOPE_HINT: Record<Scope, string> = {
+  all: "Everything public around you",
+  area: "Only your area · uses your location",
+  near: "Only people on your Wi-Fi",
+  mine: "Only what you sent",
+};
+export const SCOPE_EMPTY: Record<Scope, string> = {
+  all: "",
+  area: "Nothing from your area yet",
+  near: "Nothing from your Wi-Fi yet",
+  mine: "You haven't sent anything yet",
+};
+
+/** whether an object shows under a scope; what you sent yourself always shows (except under nothing) */
+export function inScope(o: { area?: string | null; netHash: string | null }, scope: Scope, me: { home: string; net: string | null; mine: boolean }) {
+  if (scope === "all") return true;
+  if (me.mine) return true;
+  if (scope === "area") return !!me.home && o.area === me.home;
+  if (scope === "near") return !!me.net && o.netHash === me.net;
+  return false;
+}

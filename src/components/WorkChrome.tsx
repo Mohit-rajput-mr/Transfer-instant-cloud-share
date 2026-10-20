@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { LuCircleHelp, LuFile, LuX, LuFolderUp, LuGlobe, LuLayers, LuListChecks, LuLock, LuMenu, LuMessageSquareText, LuMoon, LuOrbit, LuRocket, LuShare2, LuStickyNote, LuSun, LuType, LuUpload, LuUser, LuWifi } from "react-icons/lu";
+import { LuCircleHelp, LuFile, LuX, LuFolderUp, LuGlobe, LuListChecks, LuLock, LuMapPin, LuMenu, LuMessageSquareText, LuMoon, LuOrbit, LuRocket, LuShare2, LuStickyNote, LuSun, LuType, LuUpload, LuUser, LuWifi } from "react-icons/lu";
 import { BsIncognito } from "react-icons/bs";
 import type { Kind } from "@/lib/skin-list";
 import { useTheme } from "@/lib/theme";
 import KindFilter from "./KindFilter";
 import { switchView } from "@/lib/view";
+import { SCOPE_HINT, SCOPE_NAME, type Scope } from "@/lib/scope";
 
 // The /work chrome: an editor-style top bar, a slim icon rail and a canvas action bar (phones: a bottom tab bar).
 // Everything here only calls into Void's own handlers, so /work does exactly what the main page does.
@@ -30,8 +31,9 @@ export function WorkBar(p: {
   space: string | null;
   isPrivate: boolean;
   online: number;
-  scope: "all" | "near" | "mine";
-  onScope: (s: "all" | "near" | "mine") => void;
+  scope: Scope;
+  onScope: (s: Scope) => void;
+  areaCount: number;
   nearbyCount: number;
   mineCount: number;
   kind: Kind;
@@ -73,11 +75,16 @@ export function WorkBar(p: {
       </div>
 
       <div className="w-tabs" role="tablist" aria-label="Show">
-        <button role="tab" aria-selected={p.scope === "all"} className={p.scope === "all" ? "on" : ""} onClick={() => p.onScope("all")}><LuLayers aria-hidden /><span>All</span></button>
+        <button role="tab" aria-selected={p.scope === "all"} className={p.scope === "all" ? "on" : ""} onClick={() => p.onScope("all")} title={SCOPE_HINT.all}><LuGlobe aria-hidden /><span>{p.space ? "All" : SCOPE_NAME.all}</span></button>
         {!p.space && !p.anon && (
-          <button role="tab" aria-selected={p.scope === "near"} className={p.scope === "near" ? "on" : ""} onClick={() => p.onScope("near")}>
-            <LuWifi aria-hidden /><span>Nearby</span>{p.nearbyCount ? <em>{p.nearbyCount}</em> : null}
-          </button>
+          <>
+            <button role="tab" aria-selected={p.scope === "area"} className={p.scope === "area" ? "on" : ""} onClick={() => p.onScope("area")} title={SCOPE_HINT.area}>
+              <LuMapPin aria-hidden /><span>{SCOPE_NAME.area}</span>{p.areaCount ? <em>{p.areaCount}</em> : null}
+            </button>
+            <button role="tab" aria-selected={p.scope === "near"} className={p.scope === "near" ? "on" : ""} onClick={() => p.onScope("near")} title={SCOPE_HINT.near}>
+              <LuWifi aria-hidden /><span>{SCOPE_NAME.near}</span>{p.nearbyCount ? <em>{p.nearbyCount}</em> : null}
+            </button>
+          </>
         )}
         <button role="tab" aria-selected={p.scope === "mine"} disabled={!p.mineCount} className={p.scope === "mine" ? "on" : ""} onClick={() => p.onScope(p.scope === "mine" ? "all" : "mine")}>
           <LuUser aria-hidden /><span>Mine</span>{p.mineCount ? <em>{p.mineCount}</em> : null}

@@ -2,13 +2,13 @@
 import { switchView } from "@/lib/view";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { LuArchive, LuArrowUp, LuBriefcase, LuChevronRight, LuCircleHelp, LuFileText, LuImage, LuInfo, LuLayers, LuLayoutGrid, LuLink, LuListChecks, LuMessageSquareText, LuMoon, LuMusic, LuOrbit, LuPalette, LuRocket, LuShieldCheck, LuSun, LuTimer, LuUser, LuUserX, LuVideo, LuWifi, LuX } from "react-icons/lu";
+import { LuArchive, LuArrowUp, LuBriefcase, LuChevronRight, LuCircleHelp, LuFileText, LuGlobe, LuImage, LuInfo, LuMapPin, LuLayoutGrid, LuLink, LuListChecks, LuMessageSquareText, LuMoon, LuMusic, LuOrbit, LuPalette, LuRocket, LuShieldCheck, LuSun, LuTimer, LuUser, LuUserX, LuVideo, LuWifi, LuX } from "react-icons/lu";
 import { BsIncognito } from "react-icons/bs";
 import { KINDS, type Kind } from "@/lib/skin-list";
 import { useTheme } from "@/lib/theme";
 
 const ICON = { all: LuLayoutGrid, photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive } as const;
-type Scope = "all" | "near" | "mine";
+import { SCOPE_NAME, type Scope } from "@/lib/scope";
 
 /** Phones: a sidebar that slides in from the right, holding everything that doesn't fit the slim top bar. */
 export default function MobileMenu(props: {
@@ -23,7 +23,7 @@ export default function MobileMenu(props: {
   taskCount: number;
   onClose: () => void;
   /** what to show (Nearby only in the public void, Mine once you have something up) */
-  scope?: { value: Scope; set: (s: Scope) => void; near: number | null; mine: number };
+  scope?: { value: Scope; set: (s: Scope) => void; area: number | null; near: number | null; mine: number };
   onBoard?: () => void;
   /** /work: theme switch instead of styles, and the way back to the classic look */
   work?: { onBoard: () => void };
@@ -116,9 +116,10 @@ export default function MobileMenu(props: {
             <>
               <span className="sd-sec">Show</span>
               <div className="sd-seg" role="radiogroup" aria-label="Show">
-                <button role="radio" aria-checked={s.value === "all"} className={s.value === "all" ? "on" : ""} onClick={() => s.set("all")}><LuLayers aria-hidden />All</button>
-                {s.near !== null && <button role="radio" aria-checked={s.value === "near"} className={s.value === "near" ? "on" : ""} onClick={() => s.set("near")}><LuWifi aria-hidden />Nearby{s.near ? ` ${s.near}` : ""}</button>}
-                {s.mine > 0 && <button role="radio" aria-checked={s.value === "mine"} className={s.value === "mine" ? "on" : ""} onClick={() => s.set("mine")}><LuUser aria-hidden />Mine {s.mine}</button>}
+                <button role="radio" aria-checked={s.value === "all"} className={s.value === "all" ? "on" : ""} onClick={() => s.set("all")}><LuGlobe aria-hidden />{SCOPE_NAME.all}</button>
+                {s.area !== null && <button role="radio" aria-checked={s.value === "area"} className={s.value === "area" ? "on" : ""} onClick={() => s.set("area")}><LuMapPin aria-hidden />{SCOPE_NAME.area}{s.area ? ` ${s.area}` : ""}</button>}
+                {s.near !== null && <button role="radio" aria-checked={s.value === "near"} className={s.value === "near" ? "on" : ""} onClick={() => s.set("near")}><LuWifi aria-hidden />{SCOPE_NAME.near}{s.near ? ` ${s.near}` : ""}</button>}
+                {s.mine > 0 && <button role="radio" aria-checked={s.value === "mine"} className={s.value === "mine" ? "on" : ""} onClick={() => s.set("mine")}><LuUser aria-hidden />{SCOPE_NAME.mine} {s.mine}</button>}
               </div>
             </>
           )}
@@ -126,7 +127,7 @@ export default function MobileMenu(props: {
           <div className="sd-kinds" role="radiogroup" aria-label="File type">
             {KINDS.map((k) => {
               const I = ICON[k.id];
-              return <button key={k.id} role="radio" aria-checked={props.kind === k.id} className={props.kind === k.id ? "on" : ""} onClick={() => props.onKind(k.id)}><I aria-hidden />{k.id === "all" ? "All" : k.name}</button>;
+              return <button key={k.id} role="radio" aria-checked={props.kind === k.id} className={props.kind === k.id ? "on" : ""} onClick={() => props.onKind(k.id)}><I aria-hidden />{k.name}</button>;
             })}
           </div>
           <div className="sd-facts">

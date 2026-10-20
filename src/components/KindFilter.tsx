@@ -26,7 +26,7 @@ export default function KindFilter({ kind, onKind, scope, className = "" }: { ki
   const active = (kind !== "all" ? 1 : 0) + (scope && scope.value !== "all" ? 1 : 0);
   const scopes: { id: Scope; name: string; icon: typeof LuLayers; n?: number | null }[] = scope
     ? [
-        { id: "all", name: "Everything", icon: LuLayers },
+        { id: "all", name: "Open void", icon: LuLayers },
         ...(scope.near !== null ? [{ id: "near" as const, name: "Nearby", icon: LuWifi, n: scope.near }] : []),
         ...(scope.mine ? [{ id: "mine" as const, name: "Mine", icon: LuUser, n: scope.mine }] : []),
       ]
@@ -60,7 +60,7 @@ export default function KindFilter({ kind, onKind, scope, className = "" }: { ki
             return (
               <button key={k.id} role="option" aria-selected={kind === k.id} className={kind === k.id ? "on" : ""} onClick={() => (onKind(k.id), setOpen(false))}>
                 <KI aria-hidden />
-                <span>{k.id === "all" ? "Everything" : k.name}</span>
+                <span>{k.name}</span>
                 {kind === k.id && <LuCheck className="kf-ok" aria-hidden />}
               </button>
             );

@@ -56,8 +56,10 @@ import { bubbleName, burnBubble, editBubble, hueFor, isMine as isMyBubble, postB
 import StylePicker from "./StylePicker";
 import { autoRemember, findDeviceSkin, forgetDeviceLook, pickedPalette, pickedSkin, skinName, toneOf, useLook } from "@/lib/skins";
 import { fileKind, type Kind } from "@/lib/skin-list";
+import { inScope, SCOPE_EMPTY, type Scope } from "@/lib/scope";
 import { WorkBar, WorkDock, WorkRail } from "./WorkChrome";
 import KindFilter from "./KindFilter";
+import ScopeTabs from "./ScopeTabs";
 
 /** a task with a change applied the way the server will (so the screen updates before it answers) */
 function applyEdit(t: Task, c: { text?: string; route?: string[]; stage?: number }, by: string): Task {
@@ -125,7 +127,7 @@ function incomingOrb(i: Incoming): Orb {
   return {
     id: incomingId(i.key), name: i.name, fileName: i.name, mime: "application/octet-stream", size: i.size,
     salt: "", iterations: 0, hue: i.hue, status: "ready", netHash: i.net, maxDownloads: null, by: i.by,
-    downloads: 0, devices: 0, views: 0, createdAt: i.createdAt, life: i.life, open: i.open,
+    downloads: 0, devices: 0, views: 0, createdAt: i.createdAt, life: i.life, open: i.open, area: i.a,
     expiresAt: new Date(new Date(i.createdAt).getTime() + i.life * 60_000).toISOString(),
   };
 }
@@ -497,7 +499,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // real id → the stand-in's id it replaced: the sphere keeps its React key, so it is the same
   // element (no remount, no second entrance) when the upload lands
   const alias = useRef(new Map<string, string>());
-  const [scope, setScope] = useState<"all" | "near" | "mine">("all");
+  const [scope, setScope] = useState<Scope>("all");
   // "Show only": photos, videos, documents…
   const [kind, setKind] = useState<Kind>("all");
   const [dragging, setDragging] = useState(false);
@@ -1062,7 +1064,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       setNet(null);
       inviteKeyRef.current = "";
       setInvite(null);
-      setScope((sc) => (sc === "near" ? "all" : sc));
+      setScope((sc) => (sc === "near" || sc === "area" ? "all" : sc));
       // the area being looked at is the IP's from now on (the next heartbeat brings it); never the GPS one
       homeRef.current = areaRef.current = "";
       setHome("");
@@ -1115,7 +1117,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       setNet(null);
       inviteKeyRef.current = "";
       setInvite(null);
-      setScope((sc) => (sc === "near" ? "all" : sc));
+      setScope((sc) => (sc === "near" || sc === "area" ? "all" : sc));
       homeRef.current = areaRef.current = "";
       setHome("");
       setArea("");
@@ -1626,18 +1628,25 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const shareLocation = useCallback(async () => {
     setGeoAsk(false);
     // anonymous: location can't be on; the card says why
-    if (isAnon()) return setPanel({ kind: "anon", mode: "status" });
+    if (isAnon()) return (setPanel({ kind: "anon", mode: "status" }), false);
     try {
       const w = await locate();
       setGps(true);
       setHome(w.area);
       toast("Location on: you see what's around you");
+      return true;
     } catch (e) {
       markAsked();
       setGps(false);
       setGeoFail((e as { denied?: boolean }).denied ? "denied" : "failed");
+      return false;
     }
   }, [toast]);
+  // the navbar's Open void / Nearby / Wi-Fi buttons: Nearby needs the device's location, so it asks first
+  const pickScope = useCallback(async (s: Scope) => {
+    if (s === "area" && !gps && !(await shareLocation())) return;
+    setScope(s);
+  }, [gps, shareLocation]);
   // location blocked: this device's area is the one picked on the map (lib/where.ts), not its connection's guess
   const pickHere = useCallback((cell: string) => {
     pickArea(cell);
@@ -1864,7 +1873,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     const base = alive.filter(
       (o) =>
         !(archived && o.task) &&
-        (scope === "all" || (scope === "near" ? o.netHash === net || !!ownerKey(o.id) : !!ownerKey(o.id))) &&
+        inScope(o, scope, { home: area, net, mine: !!ownerKey(o.id) }) &&
         (kind === "all" || fileKind(o.fileName, o.mime) === kind),
     );
     // a whole container archived at once holds what its sender had sent by then: newer ones arrive as usual (and,
@@ -1880,7 +1889,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     // (one file left of such a container is no container any more: it is shown here on its own)
     const whole = all.list.filter((o) => !isGroup(o.id) || trash.has(`o:${o.id}`));
     return { list: [...one.list, ...whole], groups: new Map([...one.groups, ...whole.map((o) => [o.id, all.groups.get(o.id) ?? []] as const)]) };
-  }, [alive, scope, net, kind, archived, trash, inArchive]);
+  }, [alive, scope, net, area, kind, archived, trash, inArchive]);
   const groups = grouped.groups;
   const bubbleActs = {
     now: serverNow,
@@ -1913,9 +1922,9 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       // (grouped already left out what is archived; a container's id may be in the trash while its newer files show)
       ...grouped.list,
       ...(inArchive ? [] : pending),
-      ...(inArchive || scope === "mine" ? [] : arrivingOrbs.filter((o) => scope === "all" || (!!net && o.netHash === net))),
+      ...(inArchive || scope === "mine" ? [] : arrivingOrbs.filter((o) => inScope(o, scope, { home: area, net, mine: false }))),
     ],
-    [grouped, scope, net, pending, arrivingOrbs, inArchive],
+    [grouped, scope, net, area, pending, arrivingOrbs, inArchive],
   );
   // Your balls are numbered 1..N in launch order, on the ball and on its dock row, so you can count yours at a glance.
   const badges = useMemo(() => {
@@ -2200,6 +2209,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   );
   const watchers = useCallback((id: string) => orbs.find((o) => o.id === id)?.watchers ?? 0, [orbs]);
   const nearbyCount = alive.filter((o) => o.netHash === net).length;
+  const areaCount = alive.filter((o) => !!area && o.area === area).length;
   const mineCount = badges.size;
   useEffect(() => {
     if (scope === "mine" && !mineCount) setScope("all");
@@ -2473,7 +2483,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             isPrivate={inArchive || !!space?.priv}
             online={online}
             scope={scope}
-            onScope={setScope}
+            onScope={pickScope}
+            areaCount={anonNow ? 0 : areaCount}
             nearbyCount={anonNow ? 0 : nearbyCount}
             mineCount={mineCount}
             kind={kind}
@@ -2526,7 +2537,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             <Link href="/upgrade" className="nav-up"><LuRocket aria-hidden />Upgrade</Link>
           </nav>
           <div className="top-right">
-            <KindFilter kind={kind} onKind={setKind} scope={{ value: scope, set: setScope, near: space || anonNow ? null : nearbyCount, mine: mineCount }} />
+            <KindFilter kind={kind} onKind={setKind} />
             <span className="live" aria-label={`${online} ${online > 1 ? "devices" : "device"} in orbit`}><span className="dot" /><b>{online}</b><span className="live-txt">{space ? "in this space" : online > 1 ? "devices in orbit" : "device in orbit"}</span></span>
             {anonNow ? <>{anonOnButton("pill lg-press anon-badge", true)}{anonOn && <button className="pill lg-press anon-exit" onClick={() => toggleAnon(false)} title="Turn off Anonymous">Exit</button>}</> : <>{anonOffButton("hd-ic lg-press")}{pinButton("hd-ic lg-press geo-chip")}</>}
             <button className="hd-ic lg-press style-chip" onClick={() => setPanel({ kind: "style" })} aria-label={`Style: ${skinName(skin)}. Change how files look`} title="Style"><LuPalette aria-hidden /></button>
@@ -2537,6 +2548,10 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             <button className="pill solid lg-press send-pill" onClick={openMenu}>Send</button>
           </div>
         </div>
+        {/* what the void shows: one tap each, never inside a dropdown (spaces have their own room: no row there) */}
+        {!space && !inArchive && (
+          <ScopeTabs value={scope} onPick={pickScope} counts={{ area: areaCount, near: nearbyCount, mine: mineCount }} anon={anonNow} />
+        )}
       </header>
       )}
 
@@ -2710,7 +2725,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           {!work && loaded && shown.length === 0 && !(map && map.spots.size) && (
             <div className="empty">
               <p className="mono">
-                {space?.anon ? `${space.title} is empty. What you send here is seen only by people with its link` : space ? `${space.title} is empty. Launch something: only people in this space see it` : scope === "near" ? "Nothing from your network yet" : (
+                {space?.anon ? `${space.title} is empty. What you send here is seen only by people with its link` : space ? `${space.title} is empty. Launch something: only people in this space see it` : scope !== "all" ? SCOPE_EMPTY[scope] : (
                   <>
                     <span className="on-fine">The void is empty. Drop files, folders or text anywhere</span>
                     <span className="on-touch">The void is empty. Tap Send to launch photos, videos, files or text</span>
@@ -2919,7 +2934,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       )}
       {geoAsk && !panel && !anonNow && (
         <LocationAsk
-          onAllow={shareLocation}
+          onAllow={async () => void (await shareLocation())}
           onAnon={() => {
             markAsked();
             setGeoAsk(false);
@@ -2947,7 +2962,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           onClose={() => setPanel((p) => (p?.kind === "menu" ? null : p))}
           work={work ? { onBoard: () => setBoard(null) } : undefined}
           onBoard={() => setBoard(null)}
-          scope={{ value: scope, set: setScope, near: space || anonNow ? null : nearbyCount, mine: mineCount }}
+          scope={space || inArchive ? undefined : { value: scope, set: pickScope, area: anonNow ? null : areaCount, near: anonNow ? null : nearbyCount, mine: mineCount }}
           anon={{
             on: anonOn,
             now: anonNow,

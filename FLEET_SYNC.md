@@ -2,7 +2,7 @@
 
 Read `CLAUDE.md` first (owner wants SHORT answers, deploy steps, IDs). This file is the live task board.
 Last updated: 2026-10-17 (2nd session: A–D done + deployed).
-- IN PROGRESS 2026-10-19 (session 01DHR116): public void → one worldwide room; Nearby (~10 m: GPS + opt-in sound handshake) and Wi-Fi voids with their own looks. Avoid editing Void.tsx/live.ts/api/transfers list until this lands.
+- 2026-10-20: the scope part of session 01DHR116's claim was taken over on the owner's request (that session never pushed): navbar buttons **Open void · Nearby · Wi-Fi** (lib/scope.ts, components/ScopeTabs.tsx). Nearby = only your own area cell (asks for location first; migration 027 puts `area` on each item); Wi-Fi = same netHash. Still open from that claim: worldwide room, ~10 m sound handshake.
 - 2026-10-19 (big): Work↔Classic switch is in place (route group src/app/(void)/, VoidShell, lib/view.ts pushState — never Link/router.push/reload). live.ts has outbox + pong watchdog + fast reconnect + resync; landed beams carry the full orb (cleanOrb) and repeat at +2/+6 s; Worker exempts must-messages from the burst limit. lib/net.ts governs upload/serve/peek turns across files; previews only warm small stored copies.
 - 2026-10-19: anonymous spaces: 4-letter **knock** (Spaces → Browse; migration 022 applied; invite sealed to the knocker's ECDH key),
   being in an anonymous space always runs a timed session (create: 5–30 min, join: 30), phone ↕ scroll-mode toggle.
@@ -20,6 +20,13 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- DONE 2026-10-20 (owner ask) — "Everything" was meaningless: the void's choices are now buttons in the navbar (Classic: a
+  row inside the bar; Work: the tabs), not in Filter: Open void (area + 8 around) · Nearby (your own area; asks for
+  location, stays on Open void if refused, shows the blocked card) · Wi-Fi (same network) · Mine. Filter keeps file
+  types only ("All files"). Migration 027 (applied, verified): private.pub returns `area` (null when anonymous).
+  inScope unit-tested; browser-tested with mocked items: Open 3 / Nearby 1 / Wi-Fi 1, deny path, Classic+Work, 1440+390.
+  Everything placed under the Classic bar moves down by the row's height (--scope-h, set with :has).
+- DONE 2026-10-20 (owner ask) — Upgrade: same as other links, gold glass only on hover, no glow (Classic + Work).
 - FIXED 2026-10-20 (M) — Navbar items slid under each other at 721–1480 px (Classic) and 721–1100 px + short landscape
   (Work): both bars were a `1fr auto 1fr` grid whose side columns overflow into the centre. Classic: links centre in the
   free room at 1201–1480, fold into ☰ (MobileMenu) at 721–1200 and short landscape. Work: All/Nearby/Mine float under
