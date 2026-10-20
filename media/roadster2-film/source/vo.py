@@ -9,7 +9,7 @@ from faster_whisper import WhisperModel
 
 # (key, subtitle text, emotion 0..1, pause after in s). "Orbi" is spoken "Orbee".
 LINES = [
-    ("hook",    "This is Tesla's new Roadster, hanging almost upside down on a curved wall. No glue. No magnets. Just four fans.",     1.10, 0.40),
+    ("hook",    "Do you know how Tesla's new Roadster works? It can hang almost upside down on a curved wall. No glue. No magnets. Just four fans.",     1.10, 0.40),
     ("demo",    "At the reveal, it drove up this giant curved ramp, until the road was nearly over its head. And it stayed there.",     1.00, 0.35),
     ("grip",    "Normally, gravity presses the tires into the road. That press is what gives them grip. Upside down, gravity pulls the car away.", 1.00, 0.35),
     ("fans",    "So look at the back. Under the light bar, four round fans are built right into the diffuser.",                         1.05, 0.35),

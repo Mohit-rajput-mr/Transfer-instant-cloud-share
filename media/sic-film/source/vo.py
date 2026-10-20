@@ -9,7 +9,7 @@ from faster_whisper import WhisperModel
 
 # (key, subtitle text, emotion 0..1, pause after in s). "Orbi" is spoken "Orbee".
 LINES = [
-    ("hook",    "New phones are cramming seven thousand milliamp hours into bodies that are still thin. How do they fit it all in?",  1.10, 0.40),
+    ("hook",    "Do you know how silicon-carbon batteries work? They're how new phones fit seven thousand milliamp hours into bodies that are still thin.",  1.10, 0.40),
     ("inside",  "Every phone battery has two sides. When you charge it, lithium ions travel over and get stored in the anode.", 0.95, 0.30),
     ("graphite", "For years, that anode was graphite. Flat sheets of carbon, stacked up. Lithium squeezes in between them, one atom for every six carbons.", 1.00, 0.30),
     ("silicon", "Silicon is the upgrade. Each silicon atom can grab almost four lithium atoms. By weight, that's about ten times more than graphite.", 1.05, 0.30),

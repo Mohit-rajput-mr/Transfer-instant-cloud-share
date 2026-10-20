@@ -9,7 +9,7 @@ from faster_whisper import WhisperModel
 
 # (key, subtitle text, emotion 0..1, pause after in s). "Orbi" is spoken "Orbee".
 LINES = [
-    ("hook",    "A hundred miles out at sea. No towers. No signal. And yet this ship is streaming video. How?",                     1.10, 0.40),
+    ("hook",    "Do you know how Starlink works? A hundred miles out at sea, no towers, no signal, and this ship is still streaming video.",                     1.10, 0.40),
     ("tower",   "A cell tower only reaches a few dozen kilometers. Out here, the nearest one is far over the horizon.",               1.00, 0.35),
     ("dish",    "So the ship carries this. A flat white Starlink dish. It doesn't tilt or turn to chase satellites. It doesn't need to.", 1.00, 0.35),
     ("array",   "Inside are hundreds of tiny antennas. Fire them a split second apart, and the waves add up into one beam that bends toward any satellite. No moving parts.", 1.00, 0.35),

@@ -9,7 +9,7 @@ from faster_whisper import WhisperModel
 
 # (key, subtitle text, emotion 0..1, pause after in s). "Orbi" is spoken "Orbee".
 LINES = [
-    ("hook",    "A plane weighs as much as a hundred cars. And yet it floats on thin air. How?",                                       1.10, 0.40),
+    ("hook",    "Do you know how a plane works? It weighs as much as a hundred cars, and yet it floats on thin air.",                                       1.10, 0.40),
     ("shape",   "It's all in the wing. Look at it from the side: curved on top, tilted slightly up at the front.",                      1.00, 0.35),
     ("flow",    "As the plane rushes forward, air splits around the wing. The wing pushes the air downward, behind it.",               1.00, 0.30),
     ("newton",  "Push air down, and the air pushes the wing up. Every action has an equal and opposite reaction.",                     1.05, 0.35),

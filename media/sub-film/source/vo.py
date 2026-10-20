@@ -9,7 +9,7 @@ from faster_whisper import WhisperModel
 
 # (key, subtitle text, emotion 0..1, pause after in s). "Orbi" is spoken "Orbee".
 LINES = [
-    ("hook",    "Do you know how a submarine sinks, and comes back up? It weighs thousands of tonnes, yet it can hang perfectly still in the middle of the ocean.", 1.10, 0.40),
+    ("hook",    "Do you know how a submarine works? It weighs thousands of tonnes, yet it can sink, hang perfectly still, and come back up.", 1.10, 0.40),
     ("float",   "Water pushes up on anything in it, with a force equal to the weight of the water it moves aside. On the surface, the sub is lighter than that water. So it floats.", 1.00, 0.30),
     ("ballast", "Between its inner and outer hull are ballast tanks. To dive, vents on top open, air escapes, and seawater floods in. Heavier now, the sub sinks.", 1.05, 0.30),
     ("trim",    "Smaller trim tanks pump water forward and back, until the sub weighs exactly as much as the water around it. Now it hovers.", 1.00, 0.30),
