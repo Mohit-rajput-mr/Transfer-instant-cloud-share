@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how hurricanes work? The biggest storms on Earth are giant heat engines, and their fuel is warm ocean water.",
+   "dur": 6.924,
+   "at": 0.35
+  },
+  {
+   "key": "fuel",
+   "text": "It starts over tropical seas warmer than about twenty six degrees Celsius. Warm, wet air rises off the surface.",
+   "dur": 7.263,
+   "at": 7.67
+  },
+  {
+   "key": "clouds",
+   "text": "As it rises, it cools, and the water vapour turns into towering clouds. That releases heat, which makes the air rise even faster.",
+   "dur": 9.211,
+   "at": 15.24
+  },
+  {
+   "key": "low",
+   "text": "Rising air leaves low pressure at the surface, so more air rushes in from all sides to fill the gap.",
+   "dur": 5.678,
+   "at": 24.75
+  },
+  {
+   "key": "spin",
+   "text": "But Earth is turning, and that bends the incoming air. It's called the Coriolis effect. So the whole storm starts to spin: counterclockwise in the north, clockwise in the south.",
+   "dur": 11.329,
+   "at": 30.73
+  },
+  {
+   "key": "eye",
+   "text": "In the middle, air sinks, forming a calm, clear eye. Around it, the eyewall holds the strongest winds, over two hundred and fifty kilometers per hour in the worst storms.",
+   "dur": 10.425,
+   "at": 42.36
+  },
+  {
+   "key": "land",
+   "text": "Once it moves over land or cold water, the fuel runs out, and the storm slowly falls apart.",
+   "dur": 5.309,
+   "at": 53.08
+  },
+  {
+   "key": "close",
+   "text": "So every hurricane is the ocean's heat, turned into wind.",
+   "dur": 3.461,
+   "at": 58.74
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 62.6
+  }
+ ],
+ "duration": 67.15
+}
