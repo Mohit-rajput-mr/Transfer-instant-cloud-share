@@ -33,7 +33,7 @@ import { anonLink, anonTitle, createAnonSpace, createSpace, joinAnonSpace, joinS
 import { BsIncognito } from "react-icons/bs";
 import AnonSeal from "./AnonSeal";
 import KnockBell from "./KnockBell";
-import { LuFlag, LuMessageCircle, LuMapPin, LuMapPinOff, LuMenu, LuPalette, LuSearch, LuPlus, LuX, LuArrowUpDown } from "react-icons/lu";
+import { LuFlag, LuMessageCircle, LuMapPin, LuMapPinOff, LuMenu, LuPalette, LuSearch, LuPlus, LuX, LuArrowUpDown, LuRocket } from "react-icons/lu";
 import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange } from "./BubbleBoard";
 import TaskBoard, { TaskWires, taskGroups } from "./TaskBoard";
@@ -1597,7 +1597,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         dropGps();
         setGps(false);
       }
-      if (p !== "granted" && !asked()) setTimeout(() => setGeoAsk(true), 1400);
+      // once per browser every 2 days (shown counts, whatever the answer); otherwise only when a feature needs it
+      if (p !== "granted" && !asked()) setTimeout(() => (markAsked(), setGeoAsk(true)), 1400);
     });
     return () => clearTimeout(t);
   }, []);
@@ -2522,7 +2523,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             <Link href="/about">About</Link>
             {/* in place (lib/view.ts): no reload, uploads and sockets carry on */}
             <button onClick={() => switchView("/work")}>Switch to Work</button>
-            <Link href="/upgrade" className="nav-up">Upgrade</Link>
+            <Link href="/upgrade" className="nav-up"><LuRocket aria-hidden />Upgrade</Link>
           </nav>
           <div className="top-right">
             <KindFilter kind={kind} onKind={setKind} scope={{ value: scope, set: setScope, near: space || anonNow ? null : nearbyCount, mine: mineCount }} />
@@ -2531,6 +2532,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             <button className="hd-ic lg-press style-chip" onClick={() => setPanel({ kind: "style" })} aria-label={`Style: ${skinName(skin)}. Change how files look`} title="Style"><LuPalette aria-hidden /></button>
             <button className="hd-ic lg-press" onClick={() => setPanel({ kind: "space", start: ":search" })} aria-label="Search spaces" title="Search spaces"><LuSearch aria-hidden /></button>
             <button className="hd-ic lg-press" onClick={() => setPanel({ kind: "space", start: ":create" })} aria-label="Create a space" title="Create your space"><LuPlus aria-hidden /></button>
+            {/* when the links don't fit on one row (tablets, small windows, short landscape) they live in the menu */}
+            <button className="hd-ic lg-press nav-menu" onClick={() => setPanel({ kind: "menu" })} aria-label="Menu" title="Menu"><LuMenu aria-hidden /></button>
             <button className="pill solid lg-press send-pill" onClick={openMenu}>Send</button>
           </div>
         </div>
@@ -2692,22 +2695,13 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
               onClose={() => (setEarth(false), setPicking(false))}
             />
           )}
-          {!earth && !space && !inArchive && !anonNow && (area !== home || !gps) && !geoAsk && !pillOff && (
+          {/* only while looking at another area; "share location" and "create your space" live in the navbar, not mid-screen */}
+          {!earth && !space && !inArchive && !anonNow && area !== home && !geoAsk && !pillOff && (
             <div className="area-pill lg" data-no-pan>
               <button className="area-x" onClick={() => setPillOff(true)} aria-label="Hide this" title="Hide"><LuX aria-hidden /></button>
-              {area !== home ? (
-                <>
-                  <span>Another area</span>
-                  {!gps && <button className="pill solid lg-press" onClick={() => pickHere(area)}><LuMapPin aria-hidden /> I&apos;m here</button>}
-                  <button className={`pill${gps ? " solid" : ""} lg-press`} onClick={() => setArea(home)}>Back to my area</button>
-                </>
-              ) : (
-                <>
-                  <span>See what&apos;s right around you</span>
-                  <button className="pill solid lg-press" onClick={shareLocation}><LuMapPin aria-hidden /> Share location</button>
-                  <button className="pill lg-press" onClick={() => setPanel({ kind: "space" })}>Create your space</button>
-                </>
-              )}
+              <span>Another area</span>
+              {!gps && <button className="pill solid lg-press" onClick={() => pickHere(area)}><LuMapPin aria-hidden /> I&apos;m here</button>}
+              <button className={`pill${gps ? " solid" : ""} lg-press`} onClick={() => setArea(home)}>Back to my area</button>
             </div>
           )}
           {work && loaded && shown.length === 0 && !(map && map.spots.size) && (

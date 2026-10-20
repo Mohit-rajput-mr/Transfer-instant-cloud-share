@@ -418,7 +418,8 @@ html[data-ui="work"] .area-pill { top: 14px !important; background: var(--w-surf
 
 /* send menu / dock / toasts / drop */
 html[data-ui="work"] .dock-item, html[data-ui="work"] .dl-card { background: var(--w-surface) !important; border: 1px solid var(--w-border-2) !important; border-radius: 10px !important; box-shadow: var(--w-shadow) !important; color: var(--w-text); }
-html[data-ui="work"] .dock { bottom: calc(18px + var(--safe-b)) !important; right: max(18px, var(--safe-r)) !important; }
+/* above the Bubble button (bottom 22px + 44px), never on it */
+html[data-ui="work"] .dock { bottom: calc(76px + var(--safe-b)) !important; right: max(18px, var(--safe-r)) !important; }
 html[data-ui="work"] .dock-bar, html[data-ui="work"] .dl-bar { background: var(--w-hover) !important; border-radius: 2px !important; }
 html[data-ui="work"] .dock-bar i, html[data-ui="work"] .dl-bar i, html[data-ui="work"] .dock-bar > *, html[data-ui="work"] .dl-bar > * { background: var(--w-accent) !important; }
 html[data-ui="work"] .dock-hist-chip { background: var(--w-surface) !important; border: 1px solid var(--w-border-2) !important; color: var(--w-text) !important; border-radius: 9px !important; box-shadow: var(--w-shadow) !important; }
@@ -1049,3 +1050,42 @@ html[data-ui="work"]:not([data-theme="light"]) .anon-time button { border-radius
   font: 600 10.5px/1 var(--bb-chip) !important; text-transform: uppercase; letter-spacing: 0.12em; }
 html[data-ui="work"]:not([data-theme="light"]) .anon-time button:is(.on, [aria-checked="true"]) { background: #fff !important; color: #000 !important; border-color: #fff !important; }
 html[data-ui="work"]:not([data-theme="light"]) .anon-list li { color: #bbbbbb !important; font-family: var(--font-sans), Arial, sans-serif !important; }
+
+/* ---------- the bar on every width: where All / Nearby / Mine can't sit between the two sides (tablets, small
+   windows, short landscape) they float just under the bar, as on phones, instead of sliding under the buttons ---------- */
+@media (min-width: 721px) and (max-width: 1100px), (max-height: 520px) and (orientation: landscape) and (min-width: 721px) {
+  html[data-ui="work"] .w-bar { grid-template-columns: minmax(0, 1fr) auto; }
+  html[data-ui="work"] .w-tabs { position: fixed; left: 50%; transform: translateX(-50%); top: calc(58px + var(--safe-t)); z-index: 30; background: var(--w-surface) !important; box-shadow: var(--w-shadow) !important; padding: 3px; border-radius: 10px; }
+  html[data-ui="work"] .w-right .w-btn:not(.w-upg) span, html[data-ui="work"] .w-right .w-live span, html[data-ui="work"] .w-right .kf-btn > span { display: none; }
+}
+@media (min-width: 721px) and (max-width: 860px) {
+  html[data-ui="work"] .w-classic-btn span, html[data-ui="work"] .w-tag { display: none; }
+  html[data-ui="work"] .w-classic-btn { padding: 0 10px; }
+}
+
+/* ---------- bar buttons: liquid glass that lifts out of the bar on hover; Upgrade is gold glass ---------- */
+html[data-ui="work"] .w-bar :is(.w-btn, .w-classic-btn, .w-icon, .w-tabs button, .kf-btn) {
+  transition: translate 0.28s cubic-bezier(.2,1.4,.4,1), scale 0.28s cubic-bezier(.2,1.4,.4,1), background 0.2s, border-color 0.2s, box-shadow 0.25s, color 0.2s; }
+@media (hover: hover) and (pointer: fine) {
+  html[data-ui="work"] .w-bar :is(.w-btn, .w-classic-btn, .w-icon, .w-tabs button:not(:disabled), .kf-btn):hover {
+    translate: 0 -2px; scale: 1.05;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.3), 0 8px 18px -6px rgba(0,0,0,0.75) !important; }
+}
+html[data-ui="work"] .w-bar .w-upg { color: #ffd479 !important;
+  background: linear-gradient(180deg, rgba(255,214,120,0.24), rgba(201,140,20,0.08) 55%, rgba(255,200,90,0.16)) !important;
+  border: 1px solid rgba(255,212,121,0.5) !important;
+  box-shadow: inset 0 1px 0 rgba(255,240,200,0.45), inset 0 -1px 0 rgba(120,80,0,0.35), 0 0 14px rgba(255,190,60,0.14) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(1.6); backdrop-filter: blur(8px) saturate(1.6); }
+html[data-ui="work"] .w-bar .w-upg svg { color: #ffc94d !important; filter: drop-shadow(0 0 4px rgba(255,190,60,0.6)); }
+html[data-ui="work"][data-theme="light"] .w-bar .w-upg { color: #8a5a00 !important; }
+html[data-ui="work"][data-theme="light"] .w-bar .w-upg svg { color: #b57900 !important; }
+@media (hover: hover) and (pointer: fine) {
+  html[data-ui="work"] .w-bar .w-upg:hover { color: #ffe3a3 !important;
+    background: linear-gradient(180deg, rgba(255,222,140,0.4), rgba(214,150,20,0.18) 55%, rgba(255,205,100,0.3)) !important;
+    border-color: rgba(255,220,140,0.8) !important;
+    box-shadow: inset 0 1px 0 rgba(255,246,215,0.7), inset 0 -1px 0 rgba(120,80,0,0.45), 0 10px 22px -6px rgba(255,170,30,0.5), 0 0 22px rgba(255,190,60,0.28) !important; }
+  html[data-ui="work"][data-theme="light"] .w-bar .w-upg:hover { color: #6b4500 !important; }
+}
+@media (prefers-reduced-motion: reduce) { html[data-ui="work"] .w-bar :is(.w-btn, .w-classic-btn, .w-icon, .w-tabs button, .kf-btn):hover { translate: none; scale: none; } }
+/* the narrowest phones (≤360 px): Switch to Classic stays one tap away in the menu (☰), not squeezed under Filter */
+@media (max-width: 360px) { html[data-ui="work"] .w-classic-btn { display: none; } }

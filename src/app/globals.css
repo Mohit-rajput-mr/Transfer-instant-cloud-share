@@ -986,7 +986,6 @@ html.lg-refract :is(.top, .drawer, .send-menu, .up-pill, .up-card, .send-fab).lg
 /* tablets / small laptops: the full desktop header does not fit yet */
 @media (min-width: 721px) and (max-width: 960px) {
   .brand-by, .sub-left span:nth-child(n + 3) { display: none; }
-  .nav { gap: 14px; }
 }
 /* tablets and short laptop screens: a smaller sky, so the spheres shrink to keep their slots apart */
 @media (min-width: 721px) and (max-width: 1100px) and (min-height: 521px) {
@@ -1062,7 +1061,6 @@ html.lg-refract :is(.top, .drawer, .send-menu, .up-pill, .up-card, .send-fab).lg
    HOVER: mouse / trackpad only (touch screens would keep it stuck after a tap)
    ===================================================================== */
 @media (hover: hover) and (pointer: fine) {
-  .nav a:hover, .nav button:hover { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
   .pill:hover { background: #fff; color: #000; }
   .orb-anchor:hover { z-index: 7; }
   .orb:hover { animation-play-state: paused; }
@@ -1105,8 +1103,10 @@ html.lg-refract :is(.top, .drawer, .send-menu, .up-pill, .up-card, .send-fab).lg
 
 /* ---------------- Launch dock: non-blocking, bottom-right (no scrim, no blur over the void) ---------------- */
 .made.docked { opacity: 0; pointer-events: none; }
+/* the dock shares the bottom-right corner with the Bubble button (.bub-fab: bottom 40px + 52px tall): it always
+   starts above it, never on it. Every breakpoint that moves the button moves this with it. */
 .dock {
-  position: fixed; right: max(24px, var(--safe-r)); bottom: calc(24px + var(--safe-b)); z-index: 37;
+  position: fixed; right: max(24px, var(--safe-r)); bottom: calc(104px + var(--safe-b)); z-index: 37;
   width: min(340px, calc(100vw - 32px)); display: flex; flex-direction: column; gap: 8px; pointer-events: none;
 }
 /* landed sends fold into one quiet chip (tap to see them as a list) instead of a tall stack of cards */
@@ -1158,7 +1158,7 @@ html.lg-refract :is(.top, .drawer, .send-menu, .up-pill, .up-card, .send-fab).lg
   .dock { right: max(12px, var(--safe-r)); left: max(12px, var(--safe-l)); width: auto; bottom: calc(112px + var(--safe-b)); }
 }
 @media (max-height: 500px) and (orientation: landscape) {
-  .dock { left: auto; width: min(320px, 46vw); bottom: calc(12px + var(--safe-b)); }
+  .dock { left: auto; width: min(320px, 46vw); bottom: calc(104px + var(--safe-b)); }
 }
 @media (prefers-reduced-motion: reduce) { .dock-item, .dock-more, .dock-dot.live { animation: none; } }
 
@@ -3603,3 +3603,44 @@ html[data-theme="light"] .emoji-btn { color: #444; background: rgba(0,0,0,0.05);
 .bub-name .mono i { font-style: normal; opacity: 0.7; text-transform: none; letter-spacing: 0; }
 .bub-as { margin: 0; } .bub-as b { color: #fff; }
 .bub-name-bad { font-size: 10.5px; color: #ffb066; text-transform: none; letter-spacing: 0; }
+
+/* ---------------- Classic navbar: links are liquid-glass buttons that lift out of the bar on hover ----------------
+   Below the width where every link fits beside the right-hand icons, the links fold into the menu (☰) instead of
+   sliding under the icons. Checked at 360–1920 px wide, portrait and landscape. */
+.nav { gap: 4px; align-items: center; }
+.nav a, .nav button { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid transparent; opacity: 0.88; text-decoration: none;
+  transition: translate 0.28s var(--spring, cubic-bezier(.2,1.4,.4,1)), scale 0.28s var(--spring, cubic-bezier(.2,1.4,.4,1)), background 0.2s, border-color 0.2s, box-shadow 0.25s, opacity 0.2s, color 0.2s; }
+.nav a svg, .nav button svg { width: 13px; height: 13px; flex: none; }
+.nav .nav-up { color: #ffd479; opacity: 1;
+  background: linear-gradient(180deg, rgba(255,214,120,0.22), rgba(201,140,20,0.08) 55%, rgba(255,200,90,0.14));
+  border-color: rgba(255,212,121,0.42);
+  box-shadow: inset 0 1px 0 rgba(255,240,200,0.45), inset 0 -1px 0 rgba(120,80,0,0.35), 0 0 14px rgba(255,190,60,0.12);
+  -webkit-backdrop-filter: blur(8px) saturate(1.6); backdrop-filter: blur(8px) saturate(1.6); }
+.nav .nav-up svg { color: #ffc94d; filter: drop-shadow(0 0 4px rgba(255,190,60,0.6)); }
+@media (hover: hover) and (pointer: fine) {
+  .nav a:hover, .nav button:hover, .nav a:focus-visible, .nav button:focus-visible { opacity: 1; color: #fff; translate: 0 -2px; scale: 1.06;
+    background: linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05) 55%, rgba(255,255,255,0.1));
+    border-color: rgba(255,255,255,0.32);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(0,0,0,0.35), 0 8px 18px -6px rgba(0,0,0,0.85), 0 2px 0 -1px rgba(255,255,255,0.08);
+    -webkit-backdrop-filter: blur(10px) saturate(1.8); backdrop-filter: blur(10px) saturate(1.8); }
+  .nav .nav-up:hover, .nav .nav-up:focus-visible { color: #ffe3a3;
+    background: linear-gradient(180deg, rgba(255,222,140,0.38), rgba(214,150,20,0.16) 55%, rgba(255,205,100,0.28));
+    border-color: rgba(255,220,140,0.75);
+    box-shadow: inset 0 1px 0 rgba(255,246,215,0.7), inset 0 -1px 0 rgba(120,80,0,0.45), 0 10px 22px -6px rgba(255,170,30,0.45), 0 0 22px rgba(255,190,60,0.25); }
+}
+.nav a:active, .nav button:active { scale: 0.97; translate: 0 0; }
+.nav-menu { display: none !important; }
+@media (max-width: 1240px) { .brand-by, .live-txt { display: none; } }
+/* mid widths: the links sit centred in the room between logo and icons (not the page centre, which they'd only reach
+   by sliding under the icons) */
+@media (min-width: 1201px) and (max-width: 1480px) {
+  .top-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .nav { justify-self: center; }
+}
+@media (min-width: 721px) and (max-width: 1200px), (max-height: 520px) and (orientation: landscape) and (min-width: 721px) {
+  .top-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .nav { display: none; }
+  .nav-menu { display: grid !important; }
+}
+@media (prefers-reduced-motion: reduce) { .nav a, .nav button { transition: none; } .nav a:hover, .nav button:hover { translate: none; scale: none; } }

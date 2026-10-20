@@ -20,6 +20,19 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- FIXED 2026-10-20 (M) — Navbar items slid under each other at 721–1480 px (Classic) and 721–1100 px + short landscape
+  (Work): both bars were a `1fr auto 1fr` grid whose side columns overflow into the centre. Classic: links centre in the
+  free room at 1201–1480, fold into ☰ (MobileMenu) at 721–1200 and short landscape. Work: All/Nearby/Mine float under
+  the bar there (as on phones); ≤360 px Switch to Classic lives in ☰. Verified with an overlap checker (every header
+  control vs every other + off-screen + sideways scroll) at 20 sizes 320–1920, portrait/landscape, both looks: 0 overlaps.
+- DONE 2026-10-20 (owner ask) — Nav links are liquid-glass buttons that lift (translate −2px, scale 1.06, shadow) on
+  hover; Upgrade is gold glass with a rocket icon (Classic nav, Work bar, menu card).
+- FIXED 2026-10-20 (M) — "N in orbit" chip sat on the Bubble button (dock bottom 24px vs button 40–92px; Work 18 vs
+  22–66). The dock now starts above the button at every breakpoint. Verified in browser: desktop, 390px, Work.
+- DONE 2026-10-20 (owner ask) — Mid-screen "See what's right around you · Share location · Create your space" strip
+  removed (both live in the navbar). The location popup shows once per browser every 2 days (lib/where.ts askedRecently,
+  unit-tested; marked when shown). NOTE for session 01DHR116: the GPS Nearby void must call shareLocation() when the
+  user opens it without location on (today "Nearby" is the same-network filter and needs no location).
 - DONE 2026-10-19 (owner ask) — HQ globe pins drawn at 50% (globals.css .gdot*, Earth.tsx circle layers); invisible
   hit area (.gdot::before, `<layer>-hit` circle layers) keeps them hoverable/tappable. New HQ tab "Pins" (admin/pins.ts,
   unit-tested): every globe pin by layer, filter chips, map link. Verified in Playwright, desktop + 390px.

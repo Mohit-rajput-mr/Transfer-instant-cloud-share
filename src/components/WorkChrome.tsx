@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { LuCircleHelp, LuFile, LuX, LuFolderUp, LuGlobe, LuLayers, LuListChecks, LuLock, LuMenu, LuMessageSquareText, LuMoon, LuOrbit, LuShare2, LuSparkles, LuStickyNote, LuSun, LuType, LuUpload, LuUser, LuWifi } from "react-icons/lu";
+import { LuCircleHelp, LuFile, LuX, LuFolderUp, LuGlobe, LuLayers, LuListChecks, LuLock, LuMenu, LuMessageSquareText, LuMoon, LuOrbit, LuRocket, LuShare2, LuStickyNote, LuSun, LuType, LuUpload, LuUser, LuWifi } from "react-icons/lu";
 import { BsIncognito } from "react-icons/bs";
 import type { Kind } from "@/lib/skin-list";
 import { useTheme } from "@/lib/theme";
@@ -93,7 +93,7 @@ export function WorkBar(p: {
         {p.pin}
         <ThemeToggle className="w-hide-s" />
         <button className="w-btn" onClick={p.onShare}><LuShare2 aria-hidden /><span>Share</span></button>
-        <Link href="/upgrade" className="w-btn w-upg"><LuSparkles aria-hidden /><span>Upgrade</span></Link>
+        <Link href="/upgrade" className="w-btn w-upg"><LuRocket aria-hidden /><span>Upgrade</span></Link>
         <button className="w-icon w-only-s" onClick={p.onMenu} aria-label="Menu"><LuMenu /></button>
       </div>
     </header>

@@ -93,16 +93,23 @@ export function dropGps() {
   if (cur?.how === "gps") save({ area: cur.area, how: "ip" });
 }
 
+/** the location popup shows at most once every 2 days per browser (owner's rule) */
+export const ASK_EVERY = 2 * 24 * 3600_000;
+/** whether this browser saw the location popup within the last 2 days (an old "1" from before the rule counts as long ago) */
+export const askedRecently = (stored: string | null, now = Date.now()) => {
+  const at = Number(stored);
+  return stored !== "1" && Number.isFinite(at) && at > 0 && now - at < ASK_EVERY;
+};
 export const asked = () => {
   try {
-    return localStorage.getItem(ASKED) === "1";
+    return askedRecently(localStorage.getItem(ASKED));
   } catch {
     return true;
   }
 };
 export const markAsked = () => {
   try {
-    localStorage.setItem(ASKED, "1");
+    localStorage.setItem(ASKED, String(Date.now()));
   } catch {}
 };
 

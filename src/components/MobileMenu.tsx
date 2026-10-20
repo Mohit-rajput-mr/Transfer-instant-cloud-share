@@ -2,7 +2,7 @@
 import { switchView } from "@/lib/view";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { LuArchive, LuArrowUp, LuBriefcase, LuChevronRight, LuCircleHelp, LuFileText, LuImage, LuInfo, LuLayers, LuLayoutGrid, LuLink, LuListChecks, LuMessageSquareText, LuMoon, LuMusic, LuOrbit, LuPalette, LuShieldCheck, LuSparkles, LuSun, LuTimer, LuUser, LuUserX, LuVideo, LuWifi, LuX } from "react-icons/lu";
+import { LuArchive, LuArrowUp, LuBriefcase, LuChevronRight, LuCircleHelp, LuFileText, LuImage, LuInfo, LuLayers, LuLayoutGrid, LuLink, LuListChecks, LuMessageSquareText, LuMoon, LuMusic, LuOrbit, LuPalette, LuRocket, LuShieldCheck, LuSun, LuTimer, LuUser, LuUserX, LuVideo, LuWifi, LuX } from "react-icons/lu";
 import { BsIncognito } from "react-icons/bs";
 import { KINDS, type Kind } from "@/lib/skin-list";
 import { useTheme } from "@/lib/theme";
@@ -96,7 +96,7 @@ export default function MobileMenu(props: {
 
           <div className="sd-list">
             <Link className="sd-row sd-up lg-press" href="/upgrade" onClick={close}>
-              <span className="sd-ic"><LuSparkles /></span>
+              <span className="sd-ic"><LuRocket /></span>
               <span className="sd-txt"><b>Upgrade</b><small>Pro and Business plans</small></span>
               <LuChevronRight className="sd-go" aria-hidden />
             </Link>
