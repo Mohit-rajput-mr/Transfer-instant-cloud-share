@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a nuclear power plant works? Inside, there's no fire at all. And yet it can power a whole city.",
+   "dur": 6.652,
+   "at": 0.35
+  },
+  {
+   "key": "pellet",
+   "text": "It starts with uranium fuel pellets, each about the size of a fingertip. One pellet holds roughly as much energy as a tonne of coal.",
+   "dur": 7.322,
+   "at": 7.4
+  },
+  {
+   "key": "fission",
+   "text": "When a neutron hits a uranium atom, the atom splits in two. That releases heat, plus two or three new neutrons.",
+   "dur": 6.764,
+   "at": 15.02
+  },
+  {
+   "key": "chain",
+   "text": "Those neutrons split more atoms, which release even more neutrons. A chain reaction.",
+   "dur": 5.968,
+   "at": 22.09
+  },
+  {
+   "key": "control",
+   "text": "To keep it steady, control rods sit between the fuel. They soak up neutrons. Push them in, and the reaction slows down.",
+   "dur": 7.363,
+   "at": 28.36
+  },
+  {
+   "key": "steam",
+   "text": "All that heat turns water into high pressure steam.",
+   "dur": 3.59,
+   "at": 36.02
+  },
+  {
+   "key": "turbine",
+   "text": "The steam spins a giant turbine, which turns a generator. And that's your electricity.",
+   "dur": 6.252,
+   "at": 39.91
+  },
+  {
+   "key": "tower",
+   "text": "And those huge towers? They cool the water back down. What rises from the top is water vapor, not smoke.",
+   "dur": 6.776,
+   "at": 46.46
+  },
+  {
+   "key": "boil",
+   "text": "So in the end, nuclear power is a very clever way to boil water.",
+   "dur": 4.891,
+   "at": 53.59
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 58.88
+  }
+ ],
+ "duration": 63.43
+}
