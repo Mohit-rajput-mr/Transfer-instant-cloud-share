@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how video calls work? Your face crosses the planet in a fraction of a second, thirty times every second.",
+   "dur": 7.484,
+   "at": 0.35
+  },
+  {
+   "key": "raw",
+   "text": "Raw video is huge. Just one second of HD would take well over a hundred megabytes. Far too much for most internet connections.",
+   "dur": 8.136,
+   "at": 8.23
+  },
+  {
+   "key": "same",
+   "text": "So the codec only sends what changes. Your wall doesn't move, so it's sent once. Your mouth moves, so that part is updated.",
+   "dur": 7.502,
+   "at": 16.67
+  },
+  {
+   "key": "blocks",
+   "text": "The picture is cut into small blocks. Each frame mostly says, this block moved a little that way. That shrinks the video by a hundred times or more.",
+   "dur": 7.599,
+   "at": 24.47
+  },
+  {
+   "key": "packets",
+   "text": "Then it's chopped into small packets, and sent over the internet. Each one can take its own route.",
+   "dur": 6.159,
+   "at": 32.37
+  },
+  {
+   "key": "late",
+   "text": "Some arrive late. Waiting would freeze the call, so video calls usually skip a lost packet and keep going. That's the glitchy face you sometimes see.",
+   "dur": 8.563,
+   "at": 38.83
+  },
+  {
+   "key": "server",
+   "text": "In a group call, everyone sends one stream to a server, and the server forwards it to the others. Otherwise your phone would have to upload to every person.",
+   "dur": 8.566,
+   "at": 47.69
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer has rooms too. Make a private Space with a name and a code, and everyone who joins sees the same files, wherever they are.",
+   "dur": 7.7,
+   "at": 56.61
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 64.66
+  }
+ ],
+ "duration": 69.21
+}
