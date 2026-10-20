@@ -103,7 +103,7 @@ scene.background = new THREE.Color(0x05060c);
 const GL = set("globe", 0);
 { const n = 2500, g = new THREE.BufferGeometry(), p = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const v = V(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).normalize().multiplyScalar(800); p.set([v.x, v.y, v.z], i * 3); } g.setAttribute("position", new THREE.BufferAttribute(p, 3)); GL.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 1.4, sizeAttenuation: false }))); }
 const sunG = new THREE.DirectionalLight(0xffffff, 3.0); sunG.position.set(-40, 50, 140); GL.add(sunG); GL.add(new THREE.AmbientLight(0xffffff, 0.45));
-const ER = 30; const EARTH = new THREE.Mesh(new THREE.SphereGeometry(ER, 128, 96), new THREE.MeshPhongMaterial({ map: dayT, shininess: 30, specular: 0x557799, emissive: 0x0a1a30 })); GL.add(EARTH); sunG.target = EARTH;
+const ER = 30; const EARTH = new THREE.Mesh(new THREE.SphereGeometry(ER, 128, 96), new THREE.MeshPhongMaterial({ map: dayT, shininess: 8, specular: 0x1a2430, emissive: 0x0a1a30 })); GL.add(EARTH); sunG.target = EARTH;
 { const atm = new THREE.Mesh(new THREE.SphereGeometry(ER * 1.035, 96, 64), new THREE.MeshBasicMaterial({ color: 0x5fa8ff, transparent: true, opacity: 0.18, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false })); GL.add(atm); }
 const onGlobe = (lat, lon, h = 1.006) => { const u = (lon + 180) / 360, v = (90 - lat) / 180; return V(-Math.cos(u * Math.PI * 2) * Math.sin(v * Math.PI), Math.cos(v * Math.PI), Math.sin(u * Math.PI * 2) * Math.sin(v * Math.PI)).multiplyScalar(ER * h); };
 const RIM = [[-45, -73], [-33, -70], [-22, -68], [-15, -72], [-8, -78], [0, -78], [8, -84], [14, -90], [19, -99], [26, -110], [33, -116], [41, -122], [49, -122], [57, -135], [60, -152], [55, -162], [52, -175], [52, 175], [55, 162], [48, 153], [43, 145], [38, 141], [34, 137], [30, 131], [24, 125], [15, 121], [8, 125], [1, 127], [-4, 131], [-8, 121], [-7, 110], [-3, 102], [-6, 147], [-10, 156], [-16, 168], [-21, 170], [-30, -178], [-39, 176]];
@@ -144,7 +144,7 @@ const ARROWS = [-1, 1].map((d) => { const g = new THREE.Group(); const sh = new 
 window.render = async function (t) { cam.up.set(0, 1, 0);
   for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
   const g0 = P("globe"), s0 = P("sec"); mantleMat.uniforms.t.value = t;
-  const lightCam = () => { sunG.position.copy(cam.position).sub(g0).add(V(-40, 40, 0)); };
+  const lightCam = () => { sunG.position.copy(cam.position).sub(g0).add(V(-120, 90, 0)); };
   const globeCam = (k, lat, lon, dist) => { const tgt = onGlobe(lat, lon, 1).applyQuaternion(EARTH.quaternion).add(g0); const out2 = tgt.clone().sub(g0).normalize(); look(tgt.clone().add(out2.multiplyScalar(lerp(dist, dist * 0.7, k))), tgt.clone().lerp(g0, 0.4), 40); lightCam(); };
   const sec = (v) => s0.clone().add(v);
   // defaults for the cutaway
