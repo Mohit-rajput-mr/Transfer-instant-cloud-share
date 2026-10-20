@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how end-to-end encryption works? It's the little padlock in your chat app. And it means even the company can't read your messages.",
+   "dur": 8.21,
+   "at": 0.35
+  },
+  {
+   "key": "plain",
+   "text": "Normally, a message travels through a company's server. Whoever runs that server could read it, or hand it over.",
+   "dur": 5.737,
+   "at": 8.96
+  },
+  {
+   "key": "keys",
+   "text": "With end-to-end encryption, every phone makes two keys. A public key it shares with anyone, and a private key that never leaves the phone.",
+   "dur": 8.975,
+   "at": 15.0
+  },
+  {
+   "key": "lock",
+   "text": "Think of the public key as an open padlock. Anyone can snap it shut. But only the matching private key can open it again.",
+   "dur": 7.3,
+   "at": 24.27
+  },
+  {
+   "key": "send",
+   "text": "So your friend's phone locks the message with your padlock before it leaves. The server only ever sees scrambled noise.",
+   "dur": 7.75,
+   "at": 31.87
+  },
+  {
+   "key": "open",
+   "text": "It arrives on your phone, and your private key opens it. Nobody in between ever held that key.",
+   "dur": 5.69,
+   "at": 39.92
+  },
+  {
+   "key": "guess",
+   "text": "Could someone just guess the key? A two hundred fifty six bit key has a seventy eight digit number of possibilities. Every computer on Earth would need far longer than the age of the universe.",
+   "dur": 10.31,
+   "at": 45.91
+  },
+  {
+   "key": "catch",
+   "text": "The catch: it protects messages on the way. It can't help if someone gets into your unlocked phone.",
+   "dur": 5.405,
+   "at": 56.52
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer locks files right on your device too, with AES two fifty six. Add a passcode, and the key is made from it on your phone. It's never sent.",
+   "dur": 9.355,
+   "at": 62.28
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 71.98
+  }
+ ],
+ "duration": 76.53
+}
