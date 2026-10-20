@@ -1,0 +1,78 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "The chip in your phone has billions of switches, each smaller than a virus. And it all starts with sand.",
+   "dur": 5.997,
+   "at": 0.35
+  },
+  {
+   "key": "sand",
+   "text": "Sand is mostly silicon. It's melted and purified until it's ninety-nine point nine nine nine nine nine nine nine percent pure.",
+   "dur": 9.663,
+   "at": 6.75
+  },
+  {
+   "key": "ingot",
+   "text": "A tiny seed crystal is dipped in, and slowly pulled up, growing one giant perfect crystal, called an ingot.",
+   "dur": 7.009,
+   "at": 16.76
+  },
+  {
+   "key": "wafer",
+   "text": "The ingot is sliced into thin shiny discs called wafers, and polished flatter than almost anything on Earth.",
+   "dur": 6.006,
+   "at": 24.07
+  },
+  {
+   "key": "light",
+   "text": "Then comes the magic: printing with light. The wafer is coated with a material that changes where light hits it.",
+   "dur": 7.85,
+   "at": 30.42
+  },
+  {
+   "key": "euv",
+   "text": "The newest machines use extreme ultraviolet light, made by blasting tiny drops of tin with a laser, tens of thousands of times a second.",
+   "dur": 10.166,
+   "at": 38.57
+  },
+  {
+   "key": "mask",
+   "text": "That light shines through a pattern and shrinks it onto the wafer. Then the exposed parts are etched away.",
+   "dur": 5.734,
+   "at": 49.09
+  },
+  {
+   "key": "layers",
+   "text": "Coat, expose, etch, repeat. Dozens of layers, stacked like a microscopic city, with copper roads connecting everything.",
+   "dur": 8.345,
+   "at": 55.12
+  },
+  {
+   "key": "clean",
+   "text": "All of it happens in cleanrooms, thousands of times cleaner than a hospital. One speck of dust can ruin a chip.",
+   "dur": 6.744,
+   "at": 63.82
+  },
+  {
+   "key": "cut",
+   "text": "Finally, the wafer is tested, cut into hundreds of chips, and each one is sealed in a package.",
+   "dur": 5.409,
+   "at": 70.91
+  },
+  {
+   "key": "orbi",
+   "text": "Billions of switches, working in parallel. That's how Orbi Transfer sends big files too: up to twenty gigabytes, cut into parts, several flying at once.",
+   "dur": 9.458,
+   "at": 76.72
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 86.53
+  }
+ ],
+ "duration": 91.08
+}
