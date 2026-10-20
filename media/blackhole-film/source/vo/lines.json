@@ -1,1 +1,66 @@
-{"lines": [{"key": "hook", "text": "hook", "at": 0.35, "dur": 6}, {"key": "star", "text": "star", "at": 6.6499999999999995, "dur": 8.5}, {"key": "collapse", "text": "collapse", "at": 15.45, "dur": 7}, {"key": "squeeze", "text": "squeeze", "at": 22.75, "dur": 7}, {"key": "horizon", "text": "horizon", "at": 30.05, "dur": 6.5}, {"key": "disk", "text": "disk", "at": 36.85, "dur": 7}, {"key": "bend", "text": "bend", "at": 44.15, "dur": 6.5}, {"key": "center", "text": "center", "at": 50.949999999999996, "dur": 5}, {"key": "close", "text": "close", "at": 56.24999999999999, "dur": 3}, {"key": "end", "text": "end", "at": 59.54999999999999, "dur": 3}], "duration": 63.84999999999999}
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how black holes work? They're places where gravity is so strong that not even light can escape.",
+   "dur": 5.88,
+   "at": 0.35
+  },
+  {
+   "key": "star",
+   "text": "Many form from a giant star, many times heavier than our Sun. For millions of years, the heat of fusion pushes out, and holds it up against its own gravity.",
+   "dur": 9.571,
+   "at": 6.63
+  },
+  {
+   "key": "collapse",
+   "text": "When the fuel runs out, nothing holds it up. The core collapses in under a second, and the outer layers blast away in a supernova.",
+   "dur": 8.76,
+   "at": 16.5
+  },
+  {
+   "key": "squeeze",
+   "text": "The core is crushed so small that escaping it would take more than the speed of light. Nothing can go that fast, so nothing comes back out.",
+   "dur": 8.803,
+   "at": 25.56
+  },
+  {
+   "key": "horizon",
+   "text": "That point of no return is the event horizon. Squeeze Earth that hard, and it would be about the size of a marble.",
+   "dur": 8.849,
+   "at": 34.66
+  },
+  {
+   "key": "disk",
+   "text": "Gas falling in swirls into a disk, and heats up to millions of degrees. So the space around some black holes outshines entire galaxies.",
+   "dur": 8.995,
+   "at": 43.81
+  },
+  {
+   "key": "bend",
+   "text": "Their gravity even bends light. That's the glowing ring in the first real photo of a black hole, taken in twenty nineteen.",
+   "dur": 8.291,
+   "at": 53.11
+  },
+  {
+   "key": "center",
+   "text": "And there's one at the center of our own galaxy, about four million times the mass of the Sun.",
+   "dur": 6.712,
+   "at": 61.7
+  },
+  {
+   "key": "close",
+   "text": "So a black hole is what happens when gravity wins.",
+   "dur": 4.301,
+   "at": 68.76
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. Now you know!",
+   "dur": 2.919,
+   "at": 73.46
+  }
+ ],
+ "duration": 78.18
+}
