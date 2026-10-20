@@ -3,82 +3,82 @@
  "lines": [
   {
    "key": "hook",
-   "text": "A hundred miles out at sea. No towers. No signal. And yet this ship is streaming video. How?",
-   "dur": 6.566,
+   "text": "Do you know how Starlink works? A hundred miles out at sea, no towers, no signal, and this ship is still streaming video.",
+   "dur": 6.255,
    "at": 0.35
   },
   {
    "key": "tower",
    "text": "A cell tower only reaches a few dozen kilometers. Out here, the nearest one is far over the horizon.",
    "dur": 5.311,
-   "at": 7.32
+   "at": 7.0
   },
   {
    "key": "dish",
    "text": "So the ship carries this. A flat white Starlink dish. It doesn't tilt or turn to chase satellites. It doesn't need to.",
    "dur": 7.242,
-   "at": 12.98
+   "at": 12.67
   },
   {
    "key": "array",
    "text": "Inside are hundreds of tiny antennas. Fire them a split second apart, and the waves add up into one beam that bends toward any satellite. No moving parts.",
    "dur": 9.676,
-   "at": 20.57
+   "at": 20.26
   },
   {
    "key": "sats",
    "text": "And up there, over six thousand Starlink satellites. Each about the size of a car, with huge solar wings, just five hundred and fifty kilometers up.",
    "dur": 9.317,
-   "at": 30.59
+   "at": 30.28
   },
   {
    "key": "fast",
    "text": "That low, they race around the Earth in about ninety-five minutes. So the dish keeps handing you from one satellite to the next.",
    "dur": 7.316,
-   "at": 40.26
+   "at": 39.95
   },
   {
    "key": "lag",
    "text": "Old satellite internet sat thirty-six thousand kilometers away. Over half a second there and back. Starlink is usually under fifty milliseconds.",
    "dur": 8.924,
-   "at": 47.93
+   "at": 47.62
   },
   {
    "key": "ground",
    "text": "Near land, the satellite beams your data straight down to a ground station, plugged into the internet.",
    "dur": 6.277,
-   "at": 57.2
+   "at": 56.89
   },
   {
    "key": "laser",
    "text": "But mid-ocean, there's no station below. So the satellites pass your data to each other, with lasers.",
    "dur": 5.978,
-   "at": 63.78
+   "at": 63.47
   },
   {
    "key": "vacuum",
    "text": "And in space, light travels about fifty percent faster than through the glass fibers under the sea.",
    "dur": 5.302,
-   "at": 70.06
+   "at": 69.75
   },
   {
    "key": "hop",
    "text": "Hop, hop, hop, until a satellite is above land. Then down it goes, and you're online.",
    "dur": 4.795,
-   "at": 75.71
+   "at": 75.4
   },
   {
    "key": "orbi",
    "text": "And once you're online, even in the middle of the ocean, Orbi Transfer works too. Your file is locked before it ever leaves the ship.",
    "dur": 7.121,
-   "at": 80.9
+   "at": 80.59
   },
   {
    "key": "end",
-   "text": "orbitransfer.com. Now you know!",
+   "text": "Orbi Transfer dot com. Now you know!",
    "dur": 2.751,
-   "at": 88.38
+   "at": 88.06
   }
  ],
- "duration": 92.93
+ "duration": 92.61
 }
