@@ -1,1 +1,60 @@
-{"lines": [{"key": "hook", "text": "hook", "at": 0.35, "dur": 7}, {"key": "explode", "text": "explode", "at": 7.6499999999999995, "dur": 7.5}, {"key": "guess", "text": "guess", "at": 15.45, "dur": 6.5}, {"key": "improve", "text": "improve", "at": 22.25, "dur": 8}, {"key": "real", "text": "real", "at": 30.55, "dur": 6}, {"key": "left", "text": "left", "at": 36.85, "dur": 7}, {"key": "result", "text": "result", "at": 44.15, "dur": 4.5}, {"key": "orbi", "text": "orbi", "at": 48.949999999999996, "dur": 7}, {"key": "end", "text": "end", "at": 56.24999999999999, "dur": 3}], "duration": 60.54999999999999}
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how delivery companies plan their routes? A driver with a hundred stops has a puzzle no computer can solve perfectly.",
+   "dur": 7.477,
+   "at": 0.35
+  },
+  {
+   "key": "explode",
+   "text": "Every extra stop multiplies the options. Just twenty five stops can be ordered in more ways than there are grains of sand on Earth.",
+   "dur": 7.669,
+   "at": 8.23
+  },
+  {
+   "key": "guess",
+   "text": "So nobody checks every route. The software starts with a quick guess, like always driving to the nearest stop next.",
+   "dur": 6.827,
+   "at": 16.2
+  },
+  {
+   "key": "improve",
+   "text": "Then it keeps swapping and flipping pieces of the route, and keeps every change that makes it shorter. Crossed paths untangle themselves.",
+   "dur": 7.675,
+   "at": 23.32
+  },
+  {
+   "key": "real",
+   "text": "Real systems also juggle traffic, delivery time windows, and how much each van can carry.",
+   "dur": 5.487,
+   "at": 31.3
+  },
+  {
+   "key": "left",
+   "text": "UPS even plans routes to avoid most left turns. Waiting to turn across traffic burns time and fuel, and it's riskier.",
+   "dur": 8.754,
+   "at": 37.08
+  },
+  {
+   "key": "result",
+   "text": "UPS says its routing system saves around a hundred million miles a year.",
+   "dur": 4.594,
+   "at": 46.14
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Work brings that idea to small teams. A task with coloured steps, and the files for each step wired right to it.",
+   "dur": 7.907,
+   "at": 51.08
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 59.39
+  }
+ ],
+ "duration": 63.94
+}
