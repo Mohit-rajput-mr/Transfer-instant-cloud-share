@@ -9,7 +9,7 @@ from faster_whisper import WhisperModel
 
 # (key, subtitle text, emotion 0..1, pause after in s). "Orbi" is spoken "Orbee".
 LINES = [
-    ("hook",    "This is the engine on Boeing's new 777X. Its fan is three point four meters wide, the biggest ever on an airliner. So how does it push a plane?", 1.10, 0.40),
+    ("hook",    "Do you know how a jet engine works? This one, on Boeing's new 777X, has a fan three point four meters wide. The biggest ever on an airliner.", 1.10, 0.40),
     ("fan",     "It starts with the fan. Sixteen carbon fiber blades, swallowing tons of air every second.", 1.00, 0.30),
     ("split",   "But here's the trick. Most of that air never goes inside. About ten times more air flows around the core than through it.", 1.05, 0.30),
     ("squeeze", "The air that does go in hits the compressor. Row after row of spinning blades, each smaller than the last, squeezing it up to sixty times.", 1.00, 0.30),

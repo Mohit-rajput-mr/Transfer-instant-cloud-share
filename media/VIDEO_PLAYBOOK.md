@@ -84,6 +84,7 @@ When the owner says "new version" / "next", make the next film from the story li
 ## Continuous loop (owner 2026-10-19, wins over older notes)
 - Keep making videos until the owner says stop: finish one, research 2–3 minutes (what's trending now: tech news, AI,
   launches like the Tesla Roadster, viral "how does X work" explainers, competitor channels), pick the strongest topic, make it.
+- **First line is always the question** (owner 2026-10-20): "Do you know how X works?" ("Do you know how Wi-Fi works?", "Do you know how Starship works?"). Never open with a scene-setting statement ("A hundred miles out at sea…"); the setup comes after the question.
 - Max length **1:30**. Hook in the first second. Same house look, voice and subtitles. Reuse engines
   (`pw-film`, `candle2-film`, `ob-film`, `nfc-film`, `starlink-film`, `roadster-film`), never rebuild from scratch.
 - **Rotate the Orbi ending** — never the same feature twice in a row. Orbi is not only file sending:
@@ -156,7 +157,7 @@ Use them in every film where a feature is shown.
 - Pick something people use daily but don't understand (sending a photo, Wi-Fi, GPS, QR codes, phone batteries, touch
   screens, passwords, cloud storage…). Explain it with big, simple, low-poly visuals, in layers, with true numbers only.
 - The last ~25%: connect to Orbi Transfer ("That's why Orbi Transfer …") using only the verified facts above.
-- Hook: a surprising true fact about the everyday thing (not the Orbi hook line). Voice: the expressive George voice.
+- Hook: open with "Do you know how X works?", then a surprising true fact (not the Orbi hook line). Voice: the expressive George voice.
 - First one: `packets-film/` ("Where your photos go": bits → packets → labels → Wi-Fi → router hops → sea cable →
   re-sorting → then Orbi locks before it leaves, big parts several at once, rough area, burn).
 - Next ideas: how Wi-Fi works · how GPS finds you · how a QR code holds a link · how passwords are stored (hashing) ·
