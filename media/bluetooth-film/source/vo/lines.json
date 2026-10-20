@@ -1,1 +1,54 @@
-{"lines": [{"key": "hook", "text": "hook", "at": 0.35, "dur": 6}, {"key": "radio", "text": "radio", "at": 6.6499999999999995, "dur": 6}, {"key": "hop", "text": "hop", "at": 12.95, "dur": 9.5}, {"key": "pair", "text": "pair", "at": 22.75, "dur": 8}, {"key": "ble", "text": "ble", "at": 31.05, "dur": 7.5}, {"key": "range", "text": "range", "at": 38.85, "dur": 5.5}, {"key": "orbi", "text": "orbi", "at": 44.65, "dur": 10}, {"key": "end", "text": "end", "at": 54.95, "dur": 3}], "duration": 59.25}
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how Bluetooth works? Your earbuds, your watch and your phone talk all day, without a single wire.",
+   "dur": 6.033,
+   "at": 0.35
+  },
+  {
+   "key": "radio",
+   "text": "Bluetooth is radio, at two point four gigahertz. The same band as Wi-Fi, and even microwave ovens.",
+   "dur": 6.518,
+   "at": 6.78
+  },
+  {
+   "key": "hop",
+   "text": "That band is crowded. So classic Bluetooth hops: it jumps between seventy nine channels, up to sixteen hundred times a second, and both devices hop together.",
+   "dur": 10.401,
+   "at": 13.6
+  },
+  {
+   "key": "pair",
+   "text": "When you pair, the two devices create a shared secret key. Next time they find each other on their own, and everything they send is encrypted.",
+   "dur": 8.107,
+   "at": 24.3
+  },
+  {
+   "key": "ble",
+   "text": "Bluetooth Low Energy, used by watches and trackers, sends tiny bursts, then sleeps. That's how a tracker battery can last a year.",
+   "dur": 9.233,
+   "at": 32.71
+  },
+  {
+   "key": "range",
+   "text": "Range is usually around ten meters. Walls, and even your body, soak up the signal.",
+   "dur": 5.592,
+   "at": 42.24
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi needs no pairing at all. Open orbitransfer.com on phones on the same Wi-Fi, and they show up in Nearby. No login, and every file is locked before it's sent.",
+   "dur": 9.706,
+   "at": 48.18
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 58.29
+  }
+ ],
+ "duration": 62.84
+}
