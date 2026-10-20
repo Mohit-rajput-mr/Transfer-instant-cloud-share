@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how incognito mode works? Most people think it makes them invisible. It doesn't.",
+   "dur": 4.752,
+   "at": 0.35
+  },
+  {
+   "key": "forget",
+   "text": "When you close an incognito window, your browser forgets that session's history, cookies and form data. On your device, it never happened.",
+   "dur": 8.293,
+   "at": 5.5
+  },
+  {
+   "key": "see",
+   "text": "But the websites you visit still see you. And your internet provider, or your school or work network, can still see which sites you reach.",
+   "dur": 8.418,
+   "at": 14.09
+  },
+  {
+   "key": "ip",
+   "text": "Every request carries your IP address. It can point to your provider, and often your city.",
+   "dur": 5.127,
+   "at": 22.81
+  },
+  {
+   "key": "login",
+   "text": "And the moment you log in to an account, that site knows exactly who you are. Incognito or not.",
+   "dur": 6.528,
+   "at": 28.24
+  },
+  {
+   "key": "google",
+   "text": "In twenty twenty four, Google settled a lawsuit over tracking in incognito mode, and agreed to delete billions of records.",
+   "dur": 7.661,
+   "at": 35.07
+  },
+  {
+   "key": "real",
+   "text": "So incognito protects you from the next person who uses your laptop. Not from the internet.",
+   "dur": 5.898,
+   "at": 43.03
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer has an anonymous mode built for sharing. No account, a throwaway ID, and other users can't see your location, your name, or your device.",
+   "dur": 9.546,
+   "at": 49.28
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 59.17
+  }
+ ],
+ "duration": 63.72
+}
