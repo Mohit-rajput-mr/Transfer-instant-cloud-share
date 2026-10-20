@@ -1,0 +1,78 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Zoom into your phone screen, closer, closer. It's millions of tiny lights. And each one is a sandwich.",
+   "dur": 6.625,
+   "at": 0.35
+  },
+  {
+   "key": "pixel",
+   "text": "Every pixel is made of three smaller lights: red, green, and blue. Mix them, and you get every color you see.",
+   "dur": 6.453,
+   "at": 7.38
+  },
+  {
+   "key": "count",
+   "text": "A typical phone screen has around three million pixels. That's about nine million tiny lights.",
+   "dur": 6.822,
+   "at": 14.18
+  },
+  {
+   "key": "organic",
+   "text": "In an OLED screen, each light is a thin layer of special organic material. Push electricity through it, and it glows by itself.",
+   "dur": 8.212,
+   "at": 21.35
+  },
+  {
+   "key": "black",
+   "text": "No backlight needed. So to show black, a pixel just switches off completely. That's why OLED black is truly black.",
+   "dur": 7.245,
+   "at": 29.91
+  },
+  {
+   "key": "stack",
+   "text": "Now the sandwich. At the bottom, a layer of tiny transistors. Each one controls one light, deciding how bright it shines.",
+   "dur": 8.394,
+   "at": 37.56
+  },
+  {
+   "key": "glow",
+   "text": "Above that, the glowing organic layers, thinner than a human hair, sealed tight, because air and water would ruin them.",
+   "dur": 6.962,
+   "at": 46.25
+  },
+  {
+   "key": "touch",
+   "text": "Then a touch layer that feels your finger, a filter to cut glare, and on top, the cover glass.",
+   "dur": 6.805,
+   "at": 53.51
+  },
+  {
+   "key": "fold",
+   "text": "On foldable phones, the base isn't glass at all. It's a flexible plastic, so the whole screen can bend.",
+   "dur": 6.86,
+   "at": 60.67
+  },
+  {
+   "key": "hz",
+   "text": "And the newest screens can slow down to just one refresh a second when nothing moves, to save battery.",
+   "dur": 6.645,
+   "at": 67.88
+  },
+  {
+   "key": "orbi",
+   "text": "So next time you scan an Orbi Transfer QR code off a friend's screen, remember, it's millions of tiny lights. Scan it, and their file is yours.",
+   "dur": 8.592,
+   "at": 74.92
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 83.87
+  }
+ ],
+ "duration": 88.42
+}

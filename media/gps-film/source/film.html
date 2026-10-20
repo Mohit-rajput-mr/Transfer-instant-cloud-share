@@ -1,0 +1,358 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>How GPS works</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+
+const W = 1080, H = 1920;
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, k) => a + (b - a) * k;
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const S = (el, o) => Object.assign(el.style, o);
+let seed = 11; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+
+const LINES = (await (await fetch("vo/lines.json")).json());
+const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l]));
+const at = (k) => L[k].at, end = (k) => L[k].at + L[k].dur;
+window.DURATION = LINES.duration;
+
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true });
+r.setPixelRatio(1); r.setSize(W, H, false);
+r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.15; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(42, W / H, 0.02, 4000);
+function canvasTex(w, h, draw, rep) {
+  const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  if (rep) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...rep); }
+  t.anisotropy = 4; return t;
+}
+const img = (src) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.src = src; });
+const IM = {};
+
+const sh = (m) => { m.castShadow = m.receiveShadow = true; return m; };
+const flat = (col, o = {}) => new THREE.MeshStandardMaterial({ color: col, roughness: 0.6, flatShading: true, ...o });
+const SCREEN_W = 390, SCREEN_H = 844;
+function makePhone() {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.155, 0.009), new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.25, metalness: 0.5 })));
+  const c = document.createElement("canvas"); c.width = SCREEN_W; c.height = SCREEN_H;
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.069, 0.149), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })); scr.position.z = 0.0047; g.add(scr);
+  const glow = new THREE.PointLight(0x9fd8ff, 0.25, 0.6, 2); glow.position.z = 0.06; g.add(glow);
+  return { g, c, ctx: c.getContext("2d"), tex, scr, state: null };
+}
+const people = [];
+const UP = V(0, 1, 0), tmpQ = new THREE.Quaternion();
+const lathe = (prof) => new THREE.LatheGeometry(prof.map(([y, rr]) => new THREE.Vector2(rr, y)), 6);
+const SHAPES = {
+  m: { torso: [[0, 0.125], [0.12, 0.14], [0.3, 0.125], [0.5, 0.165], [0.7, 0.205], [0.84, 0.215], [0.93, 0.19], [1, 0.075]], depth: 0.6, uArm: [[0, 0.062], [0.35, 0.066], [0.7, 0.055], [1, 0.04]], fArm: [[0, 0.048], [0.25, 0.054], [1, 0.032]], thigh: [[0, 0.085], [0.4, 0.08], [1, 0.05]], shX: 0.215, hipX: 0.1, shJ: 0.072, hipJ: 0.085, head: [0.104, 0.126, 0.112] },
+  f: { torso: [[0, 0.15], [0.1, 0.168], [0.22, 0.15], [0.42, 0.105], [0.58, 0.125], [0.68, 0.16], [0.76, 0.162], [0.84, 0.14], [0.93, 0.13], [1, 0.06]], depth: 0.62, uArm: [[0, 0.046], [0.5, 0.042], [1, 0.033]], fArm: [[0, 0.036], [0.3, 0.037], [1, 0.025]], thigh: [[0, 0.098], [0.35, 0.085], [1, 0.048]], shX: 0.165, hipX: 0.115, shJ: 0.052, hipJ: 0.098, head: [0.09, 0.12, 0.105] },
+};
+const shin = lathe([[0, 0.05], [0.3, 0.052], [1, 0.032]]), neckG = lathe([[0, 0.05], [1, 0.045]]), ico = new THREE.IcosahedronGeometry(1, 1);
+function limb(geo, m, depth = 1) { const g = new THREE.Mesh(geo, m); g.castShadow = true; g.receiveShadow = true; g.userData.depth = depth; return g; }
+function place(mesh, a, b) { const d = b.clone().sub(a), L = d.length(); mesh.position.copy(a); mesh.quaternion.copy(tmpQ.setFromUnitVectors(UP, d.normalize())); mesh.scale.set(1, Math.max(0.01, L), mesh.userData.depth); }
+function person(x, z, ry, tint, opt = {}) {
+  const o = new THREE.Group(); o.position.set(x, 0, z); o.rotation.y = ry;
+  const sx = opt.sex || "m", SHp = SHAPES[sx];
+  const m = new THREE.MeshStandardMaterial({ color: tint, roughness: 0.55, flatShading: true });
+  const P = { torso: limb(lathe(SHp.torso), m, SHp.depth), neck: limb(neckG, m) };
+  for (const s2 of ["L", "R"]) { P["uArm" + s2] = limb(lathe(SHp.uArm), m); P["fArm" + s2] = limb(lathe(SHp.fArm), m); P["thigh" + s2] = limb(lathe(SHp.thigh), m); P["shin" + s2] = limb(shin, m); }
+  for (const k in P) o.add(P[k]);
+  const J = {}; for (const n of ["shL", "shR", "elL", "elR", "hipL", "hipR", "knL", "knR"]) { J[n] = limb(ico, m); o.add(J[n]); }
+  const head = limb(ico, m); head.scale.set(...SHp.head); o.add(head);
+  let hair = null; if (sx === "f") { hair = new THREE.Group(); const cap = limb(ico, m); cap.scale.set(0.102, 0.115, 0.112); cap.position.set(0, 0.015, -0.03); const tail = limb(new THREE.CylinderGeometry(0.035, 0.05, 0.26, 6), m); tail.position.set(0, -0.12, -0.12); tail.rotation.x = 0.25; hair.add(cap, tail); o.add(hair); }
+  const hand = new THREE.BoxGeometry(0.06, 0.1, 0.028), lh = limb(hand, m), rh = limb(hand, m); o.add(lh, rh);
+  const foot = new THREE.BoxGeometry(0.09, 0.06, 0.25), lf = limb(foot, m), rf = limb(foot, m); o.add(lf, rf);
+  (opt.parent || cafe).add(o);
+  const nodes = { Head: head, LeftHand: lh, RightHand: rh };
+  const p = { o, P, J, SH: SHp, sex: sx, head, hair, lh, rh, lf, rf, phone: makePhone(), look: opt.look ?? 0.55, off: rnd() * 3, phoneOn: opt.phone !== false, hand: opt.hand || 1.17, B: (n) => nodes[n] };
+  if (p.phoneOn) (opt.parent || cafe).add(p.phone.g);
+  p.screen = opt.screen || "many";
+  people.push(p); return p;
+}
+// what each phone shows: image keys, crossfades and the tap ripple, drawn into its screen texture
+function screen(p, draw) {
+  const c = p.phone.ctx;
+  const key = JSON.stringify(draw);
+  if (p.phone.state === key) return;
+  p.phone.state = key;
+  c.fillStyle = "#000"; c.fillRect(0, 0, SCREEN_W, SCREEN_H);
+  const put = (im, a = 1) => { c.globalAlpha = a; if (im === IM.photo) { c.fillStyle = "#000"; c.fillRect(0, 0, SCREEN_W, SCREEN_H); c.drawImage(im, 0, 0, SCREEN_W, SCREEN_H);  } else c.drawImage(im, 0, 0, SCREEN_W, SCREEN_H); c.globalAlpha = 1; };
+  for (const [k, a] of draw.layers) put(IM[k], a);
+  if (draw.tap) { const [x, y, k] = draw.tap; c.strokeStyle = `rgba(255,255,255,${1 - k})`; c.lineWidth = 8; c.beginPath(); c.arc(x, y, 20 + 50 * k, 0, 6.283); c.stroke(); c.fillStyle = `rgba(255,255,255,${0.35 * (1 - k)})`; c.beginPath(); c.arc(x, y, 26, 0, 6.283); c.fill(); }
+  if (draw.glow) { const g = c.createRadialGradient(195, 370, 10, 195, 370, 260); g.addColorStop(0, `rgba(61,255,140,${0.55 * draw.glow})`); g.addColorStop(1, "rgba(61,255,140,0)"); c.fillStyle = g; c.fillRect(0, 0, SCREEN_W, SCREEN_H); }
+  if (draw.lock) { c.fillStyle = `rgba(4,20,10,${0.75 * draw.lock})`; c.fillRect(0, 0, SCREEN_W, SCREEN_H); c.globalAlpha = draw.lock; c.fillStyle = "#3dff8c"; c.font = "700 20px M"; for (let i = 0; i < 26; i++) c.fillText(Array.from({ length: 24 }, (_, j) => "0123456789abcdef"[(i * 7 + j * 13) % 16]).join(""), 18, 120 + i * 26); c.globalAlpha = 1; }
+  p.phone.tex.needsUpdate = true;
+}
+// ---------- poses: a skeleton from a few key points (local space; the person faces +z) ----------
+function rig(p, R) {
+  const P = p.P, J = p.J, SHp = p.SH;
+  place(P.torso, R.hip.clone().add(V(0, -0.05, 0)), R.chest);
+  place(P.neck, R.chest.clone().add(V(0, -0.03, 0)), R.head.clone().add(V(0, -0.1, -0.01)));
+  p.head.position.copy(R.head); p.head.rotation.set(R.nod || 0, R.turn || 0, R.tilt || 0);
+  if (p.hair) { p.hair.position.copy(R.head); p.hair.rotation.set(R.nod || 0, R.turn || 0, R.tilt || 0); }
+  [-1, 1].forEach((sd, i) => {
+    const S2 = sd < 0 ? "R" : "L", shp = R.chest.clone().add(V(sd * SHp.shX, -0.06, 0));
+    const el = R.el[i], hd = R.hd[i];
+    place(P["uArm" + S2], shp, el); place(P["fArm" + S2], el, hd);
+    J["sh" + S2].position.copy(shp); J["sh" + S2].scale.setScalar(SHp.shJ); J["el" + S2].position.copy(el); J["el" + S2].scale.setScalar(0.044);
+    const hand = sd < 0 ? p.rh : p.lh; hand.position.copy(hd); hand.rotation.set(R.hr ? R.hr[0] : -1.1, 0, sd * 0.3);
+    const hipJ = R.hip.clone().add(V(sd * SHp.hipX, -0.02, 0)), knee = R.kn[i], ank = R.an[i];
+    place(P["thigh" + S2], hipJ, knee); place(P["shin" + S2], knee, ank);
+    J["hip" + S2].position.copy(hipJ); J["hip" + S2].scale.setScalar(SHp.hipJ); J["kn" + S2].position.copy(knee); J["kn" + S2].scale.setScalar(0.052);
+    const f = sd < 0 ? p.rf : p.lf; f.position.copy(ank).add(V(0, -0.05, 0.06));
+  });
+  p.o.updateMatrixWorld(true);
+}
+const shoulder = (p, chest, sd) => chest.clone().add(V(sd * p.SH.shX, -0.06, 0));
+// standing body with knees bent by b (0..1), hips shifted by sx, legs spread by sp
+function body(p, t, b = 0, sx = 0, sp = 0, lean = 0) {
+  const br = Math.sin((t + p.off) * 1.6) * 0.008, hy = 0.95 - 0.13 * b;
+  const hip = V(sx, hy, 0), chest = V(sx * 0.6, hy + 0.52 + br, 0.02 + lean), head = V(sx * 0.4, hy + 0.71 + br, 0.05 + lean * 1.4);
+  const kn = [-1, 1].map((sd) => V(sd * (p.SH.hipX + 0.01 + sp * 0.5) + sx * 0.5, 0.5 - 0.06 * b, 0.03 + 0.24 * b));
+  const an = [-1, 1].map((sd) => V(sd * (p.SH.hipX + 0.02 + sp), 0.08, 0));
+  return { hip, chest, head, kn, an };
+}
+function armsDown(p, B) { return { el: [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.03, -0.29, 0))), hd: [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.02, -0.55, 0.06))) }; }
+function sitPose(p, t, speed = 1) {
+  const br = Math.sin((t + p.off) * 1.6) * 0.008;
+  const hip = V(0, 0.55, 0), chest = V(0, 1.07 + br, 0.04), head = V(0, 1.26 + br, 0.08);
+  const kn = [-1, 1].map((sd) => V(sd * (p.SH.hipX + 0.02), 0.55, 0.45)), an = [-1, 1].map((sd) => V(sd * (p.SH.hipX + 0.03), 0.08, 0.5));
+  const tp = (sd) => speed * 0.015 * Math.max(0, Math.sin((t + p.off) * 14 * speed + sd * 1.7));
+  const el = [-1, 1].map((sd) => shoulder(p, chest, sd).add(V(sd * 0.04, -0.25, 0.16)));
+  const hd = [-1, 1].map((sd) => V(sd * 0.13, 0.84 + tp(sd), 0.5));
+  rig(p, { hip, chest, head, kn, an, el, hd, nod: 0.12 });
+}
+function standPose(p, t, kind = "idle") {
+  const B = body(p, t);
+  let A = armsDown(p, B), extra = {};
+  if (kind === "shrug") { const k = 0.5 + 0.5 * Math.sin(t * 5); A = { el: [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.2, -0.22, 0.1))), hd: [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.42, -0.12 + 0.04 * k, 0.28))) }; extra = { tilt: 0.25, nod: -0.15 }; B.chest.y += 0.03 * k; }
+  if (kind === "hold") { A = { el: [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.02, -0.27, 0.08))), hd: [-1, 1].map((sd) => V(sd * 0.14, 1.0, 0.3)) }; extra = { nod: 0.35 }; }
+  if (kind === "cheer") { const w = Math.sin((t + p.off) * 9) * 0.04; A = { el: [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.13, 0.25, 0))), hd: [-1, 1].map((sd) => shoulder(p, B.chest, sd).add(V(sd * 0.08, 0.54 + w, 0.03))) }; extra = { nod: -0.3 }; }
+  rig(p, { ...B, ...A, ...extra });
+}
+
+// ---------- the grid: a dark neon floor that runs forever ----------
+const cafe = new THREE.Group(); scene.add(cafe); // the shared people code adds to `cafe`
+const gridTex = canvasTex(256, 256, (g, w, h) => { g.fillStyle = "#020604"; g.fillRect(0, 0, w, h); g.strokeStyle = "rgba(61,255,140,0.55)"; g.lineWidth = 2; g.strokeRect(0, 0, w, h); g.strokeStyle = "rgba(61,255,140,0.15)"; g.lineWidth = 1; for (let k = 64; k < w; k += 64) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, h); g.moveTo(0, k); g.lineTo(w, k); g.stroke(); } }, [60, 60]);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), new THREE.MeshStandardMaterial({ map: gridTex, roughness: 0.4, metalness: 0.3, emissive: 0x0a2a18, emissiveMap: gridTex, emissiveIntensity: 1.2 }));
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+scene.background = new THREE.Color(0x010302); scene.fog = new THREE.Fog(0x010302, 10, 60);
+// far-off data towers, for depth
+seed = 5;
+for (let i = 0; i < 70; i++) { const a = rnd() * 6.28, d = 26 + rnd() * 40, hgt = 2 + rnd() * 9; const b = new THREE.Mesh(new THREE.BoxGeometry(1 + rnd() * 2, hgt, 1 + rnd() * 2), new THREE.MeshStandardMaterial({ color: 0x07140d, emissive: [0x0d4f2b, 0x12304f, 0x2c1550][i % 3], emissiveIntensity: 0.35 + rnd() * 0.4, roughness: 0.5 })); b.position.set(Math.cos(a) * d, hgt / 2, Math.sin(a) * d - 10); if (Math.hypot(b.position.x + 40, b.position.z) < 16 || Math.hypot(b.position.x - 40, b.position.z + 10) < 18) continue; scene.add(b); }
+const hemi = new THREE.HemisphereLight(0x8fb8a0, 0x050a08, 0.45); scene.add(hemi);
+const moon = new THREE.DirectionalLight(0x9fc8ff, 0.7); moon.position.set(-4, 9, 6); moon.castShadow = true; moon.shadow.mapSize.set(2048, 2048); Object.assign(moon.shadow.camera, { left: -10, right: 10, top: 10, bottom: -10, near: 1, far: 40 }); scene.add(moon);
+// ---------- station 1: the desk, the laptop, the hooded hacker ----------
+const desk = new THREE.Group(); cafe.add(desk);
+{ const top = sh(new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.06, 0.8), flat(0x1a1d22))); top.position.y = 0.75; desk.add(top); for (const x of [-0.7, 0.7]) { const leg = sh(new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.75, 0.7), flat(0x111316))); leg.position.set(x, 0.375, 0); desk.add(leg); }
+  const chair = new THREE.Group(); const seat = sh(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.5), flat(0x15171b))); seat.position.y = 0.46; const backr = sh(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.07), flat(0x15171b))); backr.position.set(0, 0.82, 0.26); chair.add(seat, backr); chair.position.z = 0.72; desk.add(chair);
+  const can = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.12, 10), flat(0x2fbf5b, { metalness: 0.6 }))); can.position.set(0.5, 0.84, 0.1); desk.add(can); }
+const lapC = document.createElement("canvas"); lapC.width = 512; lapC.height = 320;
+const lapTex = new THREE.CanvasTexture(lapC); lapTex.colorSpace = THREE.SRGBColorSpace;
+function drawLap(t, mode = "code") { const g = lapC.getContext("2d"); g.fillStyle = "#020a05"; g.fillRect(0, 0, 512, 320); g.font = "600 17px M";
+  if (mode === "code") { for (let i = 0; i < 15; i++) { g.fillStyle = i === 14 ? "#fff" : `rgba(61,255,140,${0.4 + (i % 3) * 0.2})`; const s = Array.from({ length: 34 }, (_, j) => "0123456789abcdef{}();=>$#"[(i * 13 + j * 7 + Math.floor(t * 6)) % 25]).join(""); g.fillText(s.slice(0, 12 + ((i * 5 + Math.floor(t * 3)) % 22)), 16, 24 + i * 20); } }
+  else { g.fillStyle = "#ff5a5a"; g.font = "800 44px D"; g.textAlign = "center"; g.fillText("TRACED", 256, 150); g.font = "600 20px M"; g.fillText("82.14.203.77", 256, 190); g.textAlign = "left"; }
+  lapTex.needsUpdate = true; }
+const laptop = new THREE.Group(); { const base = sh(new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.03, 0.4), flat(0x2a2e35, { metalness: 0.6 }))); laptop.add(base); const lidG = new THREE.Group(); lidG.position.set(0, 0.015, -0.19); lidG.rotation.x = -0.25; const lid = sh(new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.38, 0.02), flat(0x2a2e35, { metalness: 0.6 }))); lid.position.y = 0.19; const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.35), new THREE.MeshBasicMaterial({ map: lapTex, toneMapped: false })); scr.position.set(0, 0.19, 0.011); lidG.add(lid, scr); laptop.add(lidG); }
+laptop.position.set(0, 0.78, 0.05); cafe.add(laptop); drawLap(0);
+const glow = new THREE.PointLight(0x3dff8c, 3, 3, 1.6); glow.position.set(0, 1.1, 0.35); cafe.add(glow);
+const spot = new THREE.SpotLight(0xffffff, 0, 14, 0.32, 0.4, 1); spot.position.set(0, 7, 1.5); spot.target.position.set(0, 0, 0.6); spot.castShadow = true; cafe.add(spot, spot.target);
+const LAP = V(0, 1.0, -0.05);
+function tower(x, z, hgt, col, text) { const g = new THREE.Group(); const b = sh(new THREE.Mesh(new THREE.BoxGeometry(1.2, hgt, 1.2), new THREE.MeshStandardMaterial({ color: 0x0b1410, emissive: col, emissiveIntensity: 0.25, roughness: 0.4, metalness: 0.3 }))); b.position.y = hgt / 2; g.add(b);
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.12, 1.3), new THREE.MeshBasicMaterial({ color: col, toneMapped: false })); cap.position.y = hgt; g.add(cap);
+  for (let y = 0.6; y < hgt - 0.3; y += 0.5) { const s = new THREE.Mesh(new THREE.BoxGeometry(1.22, 0.04, 1.22), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.35, toneMapped: false })); s.position.y = y; g.add(s); }
+  if (text) { const tx = canvasTex(512, 128, (c) => { c.fillStyle = "rgba(0,0,0,0)"; c.clearRect(0, 0, 512, 128); c.fillStyle = "#fff"; c.font = "800 64px M"; c.textAlign = "center"; c.fillText(text, 256, 84); }); const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx, transparent: true, toneMapped: false, depthTest: false })); sp.scale.set(2.4, 0.6, 1); sp.position.y = hgt + 0.7; g.add(sp); g.userData.sign = sp; }
+  g.position.set(x, 0, z); scene.add(g); g.userData.top = V(x, hgt + 0.1, z); return g; }
+const hexC = document.createElement("canvas"); hexC.width = 512; hexC.height = 512; const hexTex = new THREE.CanvasTexture(hexC); hexTex.colorSpace = THREE.SRGBColorSpace;
+function drawHex(t, nope) { const g = hexC.getContext("2d"); g.fillStyle = "#03080a"; g.fillRect(0, 0, 512, 512); g.font = "600 24px M"; for (let i = 0; i < 16; i++) { g.fillStyle = `rgba(61,255,140,${0.35 + (i % 4) * 0.15})`; g.fillText(Array.from({ length: 8 }, (_, j) => ((i * 7919 + j * 104729 + Math.floor(t * 8) * 31) % 65536).toString(16).padStart(4, "0")).join(" ").slice(0, 34), 18, 34 + i * 30); }
+  if (nope) { g.fillStyle = "rgba(0,0,0,0.65)"; g.fillRect(0, 190, 512, 130); g.fillStyle = "#ff6a6a"; g.font = "800 46px D"; g.textAlign = "center"; g.fillText("CAN'T READ IT", 256, 272); g.textAlign = "left"; }
+  hexTex.needsUpdate = true; }
+// the file: a little glowing box with a padlock
+const fileBox = new THREE.Group(); { const b = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.62, 0.12), new THREE.MeshStandardMaterial({ color: 0x1b2a22, emissive: 0x3dff8c, emissiveIntensity: 0.35, roughness: 0.3 })); fileBox.add(b); const shk = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.025, 8, 16, Math.PI), new THREE.MeshStandardMaterial({ color: 0xd8dde3, metalness: 0.9, roughness: 0.2 })); shk.position.set(0, 0.36, 0.0); const lk = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.2, 0.1), new THREE.MeshStandardMaterial({ color: 0xd8dde3, metalness: 0.9, roughness: 0.2 })); lk.position.set(0, 0.22, 0.04); fileBox.add(shk, lk); fileBox.userData.lock = [shk, lk]; }
+fileBox.position.set(-40, 1.4, 0); scene.add(fileBox);
+const embers = Array.from({ length: 80 }, (_, i) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.04), new THREE.MeshBasicMaterial({ color: i % 3 ? 0xff7a3c : 0xffd23d, toneMapped: false, transparent: true })); m.visible = false; scene.add(m); m.userData.v = V(Math.sin(i * 1.7) * 0.6, 1.2 + (i % 7) * 0.25, Math.cos(i * 1.3) * 0.6); return m; });
+function hood(p, col) { const g = new THREE.Group(); const m = flat(col, { roughness: 0.9 }); const cap = limb(ico, m); cap.scale.set(0.135, 0.15, 0.145); cap.position.set(0, 0.02, -0.025); const peak = limb(new THREE.ConeGeometry(0.07, 0.12, 6), m); peak.position.set(0, 0.13, -0.07); peak.rotation.x = -0.6; const face = new THREE.Mesh(new THREE.CircleGeometry(0.075, 12), new THREE.MeshBasicMaterial({ color: 0x050505 })); face.position.set(0, -0.005, 0.118); g.add(cap, peak, face); p.o.add(g); p.hair = g; }
+function look(px, py, pz, tx, ty, tz, fov = 42) { cam.position.set(px, py, pz); cam.lookAt(tx, ty, tz); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } }
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (id, t, a, b, x = 540, y = 250) => { const k = win(t, a, b, 0.3, 0.3); S($(id), { opacity: k, left: `${x}px`, top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const pop = (id, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const k = clamp((t - a) / 0.3); S($(id), { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+let phState = "";
+function phone(t, a, b, k1, k2 = null, mix = 0, hl = null) {
+  if (t < a - 0.01 || t > b + 0.01) return;
+  const s = k1 + (k2 || "") + mix.toFixed(2);
+  if (s !== phState) { phState = s; const c = $("pcv"), g = c.getContext("2d"); g.globalAlpha = 1; g.drawImage(IM[k1], 0, 0, c.width, c.height); if (k2 && mix > 0) { g.globalAlpha = mix; g.drawImage(IM[k2], 0, 0, c.width, c.height); g.globalAlpha = 1; } }
+  const kin = out(clamp((t - a) / 0.45)), kout = clamp((t - (b - 0.35)) / 0.35);
+  S($("ph"), { opacity: Math.min(kin * 1.2, 1) * (1 - kout), transform: `translateY(${(1 - kin) * 300 + kout * 400}px) scale(${lerp(0.9, 1, kin)})` });
+  if (hl) { const [x, y, w, h, k] = hl; S($("phl"), { left: `${x}px`, top: `${y}px`, width: `${w}px`, height: `${h}px`, opacity: k }); } else S($("phl"), { opacity: 0 });
+}
+
+const MIS = ["m0", "m1", "m2"];
+desk.visible = laptop.visible = fileBox.visible = false; glow.intensity = 0; floor.visible = false; scene.fog = null;
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; $(id).innerHTML = html; pop(id, t, a, b, x, y, rot); };
+const say = (id, html, t, a, b, x = 540, y = 160) => { if (t < a || t > b) return; $(id).innerHTML = html; tag(id, t, a, b, x, y); };
+const big = (txt, t, a, b, col = "#fff", top = "380px", size = "110px") => { if (t < a || t > b) return; $("shout1").textContent = txt; S($("shout1"), { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+scene.background = new THREE.Color(0x02040a);
+scene.children.slice().forEach((o) => { if (o.isMesh) o.visible = false; });
+// stars
+{ const g = new THREE.BufferGeometry(); const P = []; seed = 3; for (let i = 0; i < 1500; i++) { const a = rnd() * 6.283, b = Math.acos(2 * rnd() - 1), r = 300; P.push(r * Math.sin(b) * Math.cos(a), r * Math.cos(b), r * Math.sin(b) * Math.sin(a)); } g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3)); scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 0.6 }))); }
+// ---------- the earth: low-poly globe, R = 10 (1 unit ≈ 640 km) ----------
+const R = 10, EARTH = new THREE.Group(); scene.add(EARTH);
+const eg = new THREE.IcosahedronGeometry(R, 5); { const col = []; const pos = eg.attributes.position; seed = 21; for (let i = 0; i < pos.count; i += 3) { const v = V(pos.getX(i), pos.getY(i), pos.getZ(i)).normalize(); const ang = (la, lo) => v.angleTo(V(Math.cos(la * Math.PI / 180) * Math.cos(lo * Math.PI / 180), Math.sin(la * Math.PI / 180), Math.cos(la * Math.PI / 180) * Math.sin(lo * Math.PI / 180))) * 180 / Math.PI; const land = ang(28, 18) < 24 || ang(14, 30) < 9 || ang(-30, 120) < 20 || ang(45, 150) < 18; const c = new THREE.Color(land ? 0x3f8f4f : 0x1d4f8f); for (let k = 0; k < 3; k++) col.push(c.r, c.g, c.b); } eg.setAttribute("color", new THREE.Float32BufferAttribute(col, 3)); }
+const earth = new THREE.Mesh(eg, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.8 })); EARTH.add(earth);
+const atmo = new THREE.Mesh(new THREE.SphereGeometry(R * 1.03, 48, 32), new THREE.MeshBasicMaterial({ color: 0x5aa8ff, transparent: true, opacity: 0.12, side: THREE.BackSide })); EARTH.add(atmo);
+const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(30, 20, 30); scene.add(sun); scene.add(new THREE.AmbientLight(0x406080, 0.6));
+const onSurf = (lat, lon, h = 0) => { const la = lat * Math.PI / 180, lo = lon * Math.PI / 180; return V(Math.cos(la) * Math.cos(lo), Math.sin(la), Math.cos(la) * Math.sin(lo)).multiplyScalar(R + h); };
+// key places: the ship mid-ocean, a ground station on land, a phone tower on the coast
+const SHIP = onSurf(8, 70), GS = onSurf(28, 18), TOWER = onSurf(12, 38);
+const shipM = new THREE.Group(); { const hull = sh(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.16), flat(0xdddddd))); const cab = sh(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.12), flat(0xffffff))); cab.position.set(-0.08, 0.12, 0); const dish = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.01, 0.06), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })); dish.position.set(-0.08, 0.19, 0); shipM.add(hull, cab, dish); }
+const putOn = (obj, p) => { obj.position.copy(p); obj.lookAt(p.clone().multiplyScalar(2)); obj.rotateX(Math.PI / 2); EARTH.add(obj); };
+putOn(shipM, SHIP.clone().multiplyScalar(1.002));
+const gsM = new THREE.Group(); for (let i = 0; i < 3; i++) { const d = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6, 0, 6.283, 0, 1.4), flat(0xeeeeee)); d.position.set(i * 0.2 - 0.2, 0.05, 0); d.rotation.x = Math.PI; gsM.add(d); } putOn(gsM, GS);
+const towerM = new THREE.Group(); { const m = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.05, 0.5, 4), flat(0xcccccc))); m.position.y = 0.25; towerM.add(m); } putOn(towerM, TOWER);
+const towerRing = new THREE.Mesh(new THREE.RingGeometry(0.75, 0.95, 48), new THREE.MeshBasicMaterial({ color: 0xffd23d, transparent: true, opacity: 0.6, side: THREE.DoubleSide, toneMapped: false })); putOn(towerRing, TOWER.clone().multiplyScalar(1.003)); towerRing.rotateX(-Math.PI / 2);
+// satellites: a low shell (550 km ≈ 0.86 units) and one far geostationary bird (36,000 km ≈ 56 units)
+const satM = new THREE.MeshBasicMaterial({ color: 0xdfe8ff, toneMapped: false }), panM = new THREE.MeshBasicMaterial({ color: 0x3a6fd8, toneMapped: false });
+const mkSat = (s = 0.12) => { const g = new THREE.Group(); g.add(new THREE.Mesh(new THREE.BoxGeometry(s, s * 0.3, s * 0.6), satM)); const p = new THREE.Mesh(new THREE.BoxGeometry(s * 3, s * 0.05, s * 0.8), panM); p.position.x = s * 2; g.add(p); return g; };
+const SH = 0.86, NP = 12, NS = 16, SATS = [];
+for (let p = 0; p < NP; p++) for (let s = 0; s < NS; s++) { const m = mkSat(); scene.add(m); SATS.push({ m, inc: 53 * Math.PI / 180, raan: p / NP * 6.283, ph: s / NS * 6.283 + p * 0.37 }); }
+const satPos = (o, t) => { const a = o.ph + t * 0.12; const v = V(Math.cos(a), 0, Math.sin(a)).multiplyScalar(R + SH); v.applyAxisAngle(V(1, 0, 0), o.inc); v.applyAxisAngle(V(0, 1, 0), o.raan); return v; };
+const GEO = mkSat(0.6); scene.add(GEO); const GEOP = onSurf(0, 60, 56);
+// beams
+const beamM = (c) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.9, toneMapped: false });
+const beams = Array.from({ length: 8 }, (_, i) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1, 6), beamM(i < 2 ? 0x3dff8c : 0xff3b5c)); m.visible = false; scene.add(m); return m; });
+const beam = (i, a, b) => { const m = beams[i], d = b.clone().sub(a); m.visible = true; m.position.copy(a).add(b).multiplyScalar(0.5); m.scale.set(1, d.length(), 1); m.quaternion.setFromUnitVectors(V(0, 1, 0), d.normalize()); };
+const pkt = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })); scene.add(pkt);
+
+const along = (pts, k) => { const n = pts.length - 1, f = clamp(k) * n, i = Math.min(n - 1, Math.floor(f)); return pts[i].clone().lerp(pts[i + 1], f - i); };
+// the nearest satellites to a point at time t
+const nearest = (p, t, n = 1, skip = []) => SATS.map((o) => ({ o, d: satPos(o, t).distanceTo(p) })).filter((x) => !skip.includes(x.o)).sort((a, b) => a.d - b.d).slice(0, n).map((x) => x.o);
+// the hop chain from the ship to the ground station: greedy walk toward GS
+function chain(t) { const out = [nearest(SHIP, t)[0]]; for (let k = 0; k < 12; k++) { const last = satPos(out[out.length - 1], t); if (last.distanceTo(GS) < 2.2) break; const cand = SATS.filter((o) => !out.includes(o)).map((o) => ({ o, p: satPos(o, t) })).filter((x) => x.p.distanceTo(last) < 4.2).sort((a, b) => a.p.distanceTo(GS) - b.p.distanceTo(GS))[0]; if (!cand) break; out.push(cand.o); } return out; }
+const camAt = (pos, tgt, fov = 40) => { cam.position.copy(pos); cam.lookAt(tgt); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const shipView = (d = 4, up = 2.2, side = 0) => { const n = SHIP.clone().normalize(); const east = V(0, 1, 0).cross(n).normalize(); const north = n.clone().cross(east); return [SHIP.clone().add(n.clone().multiplyScalar(up)).add(north.clone().multiplyScalar(-d)).add(east.clone().multiplyScalar(side)), SHIP.clone().add(n.clone().multiplyScalar(0.6))]; };
+// the flat dish close-up: a grid of tiny antennas
+const panel = new THREE.Group(); const cells = []; for (let i = 0; i < 12; i++) for (let j = 0; j < 8; j++) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.02, 0.11), new THREE.MeshBasicMaterial({ color: 0x334455, toneMapped: false })); c.position.set((i - 5.5) * 0.13, 0, (j - 3.5) * 0.13); panel.add(c); cells.push([c, i, j]); }
+panel.position.set(60, 0, 0); scene.add(panel);
+const panelBeam = new THREE.Mesh(new THREE.ConeGeometry(0.4, 4, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0x3dff8c, transparent: true, opacity: 0.25, toneMapped: false, depthWrite: false })); scene.add(panelBeam);
+
+
+const glowM = (c) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, transparent: true });
+// ---------- GPS: 24 satellites far out, the phone on the ground ----------
+SATS.forEach((o) => (o.m.visible = false)); shipM.visible = gsM.visible = towerM.visible = towerRing.visible = false; GEO.visible = false;
+const GR = R + 31.5, GPS = [];
+for (let p = 0; p < 6; p++) for (let s = 0; s < 4; s++) { const m = mkSat(0.9); scene.add(m); GPS.push({ m, raan: p / 6 * 6.283, ph: s / 4 * 6.283 + p * 0.5, inc: 55 * Math.PI / 180 }); }
+const gpsPos = (o, t) => { const a = o.ph + t * 0.02; const v = V(Math.cos(a), 0, Math.sin(a)).multiplyScalar(GR); v.applyAxisAngle(V(1, 0, 0), o.inc); v.applyAxisAngle(V(0, 1, 0), o.raan); return v; };
+const ME = onSurf(28, 30, 0.05);
+const meDot = new THREE.Mesh(new THREE.SphereGeometry(0.25, 12, 8), glowM(0x4fc3bd)); meDot.position.copy(ME); scene.add(meDot);
+const pulses = Array.from({ length: 4 }, () => { const m = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), new THREE.MeshBasicMaterial({ color: 0x3dff8c, transparent: true, opacity: 0.12, wireframe: true, toneMapped: false })); m.visible = false; scene.add(m); return m; });
+const ringM = Array.from({ length: 4 }, () => { const m = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 24), new THREE.MeshBasicMaterial({ color: 0xffd23d, transparent: true, opacity: 0.3, wireframe: true, toneMapped: false })); m.visible = false; scene.add(m); return m; });
+const errRing = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 48), new THREE.MeshBasicMaterial({ color: 0xff4d5a, side: THREE.DoubleSide, toneMapped: false })); scene.add(errRing);
+const four = (t) => GPS.map((o) => ({ o, p: gpsPos(o, t) })).filter((x) => x.p.clone().normalize().dot(ME.clone().normalize()) > 0.25).sort((a, b) => a.p.distanceTo(ME) - b.p.distanceTo(ME)).slice(0, 4);
+
+window.render = async function (t) {
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "ph", "tA", "tB", "tC", "tD", "tE", "tF", "tG", "shout1", "shout2", "tries", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  const A = at; GPS.forEach((o) => { o.m.position.copy(gpsPos(o, t)); o.m.lookAt(0, 0, 0); }); beams.forEach((m) => (m.visible = false)); pkt.visible = false; panelBeam.visible = false;
+  pulses.forEach((m) => (m.visible = false)); ringM.forEach((m) => (m.visible = false)); errRing.visible = false;
+  const F = four(t);
+  const wide = (d = 95, h = 30) => camAt(V(d * 0.55, h, d * 0.8), V(0, 4, 0), 44);
+  const nearMe = (d = 9) => { const n = ME.clone().normalize(); camAt(ME.clone().add(n.multiplyScalar(d)).add(V(0, 3, 4)), ME, 44); };
+  if (t < A("sats")) { nearMe(lerp(4, 12, ease(clamp(t / A("sats"))))); big("ONLY LISTENING", t, 2.6, A("sats"), "#3dff8c", "300px", "92px"); }
+  else if (t < A("delay")) { wide(lerp(110, 90, clamp((t - A("sats")) / 6))); if (t >= A("shout")) F.forEach((x, i) => { const m = pulses[i]; m.visible = true; const k = ((t - A("shout")) * 0.35 + i * 0.25) % 1; m.position.copy(x.p); m.scale.setScalar(2 + k * 30); m.material.opacity = 0.18 * (1 - k); });
+    say("tA", t < A("shout") ? "~30 satellites · <b>20,000 km up</b>" : "“I'm here · it's exactly <b>this time</b>”", t, A("sats") + 0.5, A("delay")); }
+  else if (t < A("rings")) { wide(80, 24); F.forEach((x, i) => beam(i, x.p, ME)); const ms = Math.round(67 + 10 * Math.sin(t)); $("timer").textContent = ms + " ms"; S($("timer"), { opacity: win(t, A("delay") + 0.6, A("rings"), 0.2, 0.2), color: "#3dff8c", top: "330px" });
+    say("tA", t < A("dist") ? "Light · <b>~1/15 of a second</b>" : "Delay → <b>distance</b>", t, A("delay") + 0.4, A("rings")); }
+  else if (t < A("einstein")) { const sp = A("einstein") - A("rings"); nearMe(22); const n = t < A("four") ? Math.min(3, 1 + Math.floor((t - A("rings")) / ((A("four") - A("rings")) / 3))) : 4;
+    F.slice(0, n).forEach((x, i) => { const m = ringM[i]; m.visible = true; m.position.copy(x.p); m.scale.setScalar(x.p.distanceTo(ME)); m.material.color.setHex([0xffd23d, 0x4f9cff, 0xff6f91, 0x3dff8c][i]); });
+    meDot.scale.setScalar(n >= 3 ? 1.6 + 0.4 * Math.sin(t * 6) : 1); say("tA", n < 4 ? `${n} satellite${n > 1 ? "s" : ""} → ${["a sphere", "a circle", "2 points"][n - 1]}` : "4th → fixes <b>your clock</b> · found", t, A("rings") + 0.4, A("einstein")); }
+  else if (t < A("orbi")) { nearMe(14); if (t < A("drift")) { card("c0", `<h5>clock on the ground</h5><b>12:00:00.000000</b>`, t, A("einstein") + 0.6, A("drift"), 160, 230, -2); card("c1", `<h5>clock in orbit</h5><b>12:00:00.000038</b> <span style="font-size:26px">per day</span>`, t, A("einstein") + 2.2, A("drift"), 120, 420, 2); }
+    else { errRing.visible = true; const k = clamp((t - A("drift") - 0.4) / 2.5); const n = ME.clone().normalize(); errRing.position.copy(ME.clone().add(n.clone().multiplyScalar(0.02))); errRing.lookAt(ME.clone().add(n)); errRing.scale.setScalar(0.3 + k * 2.2);
+      $("timer").textContent = "+" + (k * 10).toFixed(1) + " km"; S($("timer"), { opacity: win(t, A("drift") + 0.3, A("orbi"), 0.2, 0.2), color: "#ff4d5a", top: "330px" }); } }
+  else { nearMe(10); card("c0", `<h5>private space</h5>🔒 passcode · <b>members only</b>`, t, A("orbi") + 1.0, A("end"), 160, 230, -2); card("c1", `no location · <b>shared with anyone</b>`, t, A("orbi") + (A("end") - A("orbi")) * 0.4, A("end"), 120, 420, 2); }
+
+  let sub = "";
+  for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
