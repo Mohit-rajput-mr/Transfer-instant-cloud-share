@@ -11,7 +11,7 @@ from faster_whisper import WhisperModel
 LINES = [
     ("hook",    "Do you know how black holes work? They're places where gravity is so strong that not even light can escape.", 1.10, 0.40),
     ("star",    "Many form from a giant star, many times heavier than our Sun. For millions of years, the heat of fusion pushes out, and holds it up against its own gravity.", 1.00, 0.30),
-    ("collapse","When the fuel runs out, nothing holds it up. The core collapses in under a second, and the outer layers blast away in a supernova.", 1.10, 0.30),
+    ("collapse", "When the fuel runs out, nothing holds it up. The core collapses in under a second, and the outer layers blast away in a supernova.", 1.10, 0.30),
     ("squeeze", "The core is crushed so small that escaping it would take more than the speed of light. Nothing can go that fast, so nothing comes back out.", 1.05, 0.30),
     ("horizon", "That point of no return is the event horizon. Squeeze Earth that hard, and it would be about the size of a marble.", 1.05, 0.30),
     ("disk",    "Gas falling in swirls into a disk, and heats up to millions of degrees. So the space around some black holes outshines entire galaxies.", 1.05, 0.30),
