@@ -1,0 +1,204 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>How the internet crosses oceans</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+// =============== helpers ===============
+const img = (src) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.src = src; });
+const DESK = await img("shots/home.png");
+const SETS = {}; const set = (k, x) => { const g = new THREE.Group(); g.position.set(x, 0, 0); scene.add(g); SETS[k] = g; return g; };
+const show = (k) => { for (const n in SETS) SETS[n].visible = n === k; };
+const P = (k) => SETS[k].position;
+scene.add(new THREE.HemisphereLight(0xcfe6ff, 0x0a1a2a, 0.9)); const sunL = new THREE.DirectionalLight(0xffffff, 1.8); sunL.position.set(30, 80, 40); scene.add(sunL);
+const fogDeep = new THREE.FogExp2(0x062a40, 0.03);
+// =============== SEA FLOOR: sand, rocks, the cable, light rays, marine snow ===============
+const SF = set("sea", 0);
+const sandT = canvasTex(1024, 1024, (g, w, h) => { g.fillStyle = "#8a7a5c"; g.fillRect(0, 0, w, h); for (let i = 0; i < 6000; i++) { g.fillStyle = `rgba(${90 + rnd() * 80},${80 + rnd() * 60},${50 + rnd() * 40},0.35)`; g.fillRect(rnd() * w, rnd() * h, 2, 2); } for (let i = 0; i < 40; i++) { g.strokeStyle = "rgba(60,50,35,0.25)"; g.lineWidth = 3; g.beginPath(); const y = rnd() * h; g.moveTo(0, y); for (let x = 0; x <= w; x += 32) g.lineTo(x, y + Math.sin(x * 0.03 + i) * 8); g.stroke(); } }); sandT.wrapS = sandT.wrapT = THREE.RepeatWrapping; sandT.repeat.set(30, 30);
+const bed = new THREE.Mesh(new THREE.PlaneGeometry(600, 600, 120, 120), new THREE.MeshStandardMaterial({ map: sandT, roughness: 1 })); { const p = bed.geometry.attributes.position; for (let i = 0; i < p.count; i++) p.setZ(i, Math.sin(p.getX(i) * 0.05) * Math.cos(p.getY(i) * 0.04) * 1.5 + Math.sin(p.getX(i) * 0.21 + p.getY(i) * 0.13) * 0.3); bed.geometry.computeVertexNormals(); } bed.rotation.x = -Math.PI / 2; SF.add(bed);
+for (let i = 0; i < 40; i++) { const r = new THREE.Mesh(new THREE.DodecahedronGeometry(0.6 + rnd() * 2.2), new THREE.MeshStandardMaterial({ color: 0x4a4a42, roughness: 1, flatShading: true })); r.position.set((rnd() - 0.5) * 160, 0.2, (rnd() - 0.5) * 160); r.rotation.set(rnd() * 3, rnd() * 3, 0); SF.add(r); }
+const RAYS = []; for (let i = 0; i < 12; i++) { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 5, 90, 12, 1, true), new THREE.MeshBasicMaterial({ color: 0x8fd8ff, transparent: true, opacity: 0.05, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false, fog: false })); m.position.set((rnd() - 0.5) * 80, 40, (rnd() - 0.5) * 60); m.rotation.z = 0.2; SF.add(m); RAYS.push(m); }
+{ const n = 1500, g = new THREE.BufferGeometry(), p = new Float32Array(n * 3); for (let i = 0; i < n; i++) { p[i * 3] = (rnd() - 0.5) * 120; p[i * 3 + 1] = rnd() * 60; p[i * 3 + 2] = (rnd() - 0.5) * 120; } g.setAttribute("position", new THREE.BufferAttribute(p, 3)); SF.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xbfe8ff, size: 0.1, transparent: true, opacity: 0.6 }))); }
+const CPATH = new THREE.CatmullRomCurve3(Array.from({ length: 12 }, (_, i) => V(-120 + i * 22, 0.25 + 0.15 * Math.sin(i), Math.sin(i * 0.9) * 6)));
+const cableM = new THREE.MeshStandardMaterial({ color: 0x1a1c20, roughness: 0.5, metalness: 0.2 });
+const CABLE = new THREE.Mesh(new THREE.TubeGeometry(CPATH, 400, 0.25, 16), cableM); SF.add(CABLE);
+const PULSE = Array.from({ length: 30 }, () => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), glow(0x6ae4ff, { transparent: true, opacity: 0.9, fog: false })); m.scale.set(3, 1, 1); SF.add(m); return m; });
+const REP = new THREE.Group(); { const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.9, 3.4, 8, 24), new THREE.MeshStandardMaterial({ color: 0x8a8f96, metalness: 0.7, roughness: 0.35 })); body.rotation.z = Math.PI / 2; REP.add(body); for (const x of [-1.2, 0, 1.2]) { const band = new THREE.Mesh(new THREE.TorusGeometry(0.92, 0.06, 8, 32), glow(0x3dff8c)); band.rotation.y = Math.PI / 2; band.position.x = x; REP.add(band); } } SF.add(REP);
+{ const tp = CPATH.getPointAt(0.55); REP.position.copy(tp).add(V(0, 0.55, 0)); REP.rotation.y = -Math.atan2(CPATH.getTangentAt(0.55).z, CPATH.getTangentAt(0.55).x); }
+const FISH = Array.from({ length: 18 }, (_, i) => { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.SphereGeometry(0.4, 12, 8), new THREE.MeshStandardMaterial({ color: 0xc9d6e6, metalness: 0.6, roughness: 0.3 })); b.scale.set(1.8, 0.7, 0.4); const tl = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.6, 3), b.material); tl.rotation.z = Math.PI / 2; tl.position.x = -0.9; g.add(b, tl); g.userData = { o: rnd(), y: 4 + rnd() * 6, z: (rnd() - 0.5) * 8 }; SF.add(g); return g; });
+// =============== CUTAWAY: stepped layers of a deep-sea cable ===============
+const CUT = set("cut", 400);
+CUT.add(new THREE.AmbientLight(0xffffff, 0.7)); { const cl = new THREE.PointLight(0xffffff, 120, 60, 1.5); cl.position.set(12, 8, 10); CUT.add(cl); }
+{ const layers = [[1.6, 0x2e333c, 6, "polyethylene"], [1.3, 0xb8bec6, 7.6, "steel wires"], [0.95, 0xc77a3a, 9.2, "copper · power"], [0.7, 0xd8d0b8, 10.8, "gel tube"]]; layers.forEach(([r, c, L, n], i) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, L, 48), new THREE.MeshStandardMaterial({ color: c, metalness: i == 1 || i == 2 ? 0.8 : 0.1, roughness: 0.4 })); m.rotation.z = Math.PI / 2; m.position.x = -5 + L / 2; CUT.add(m); m.userData.name = n; m.userData.end = -5 + L - 0.4; });
+  if (true) { for (let k = 0; k < 18; k++) { const an = k / 18 * Math.PI * 2; const w = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 7.6, 10), new THREE.MeshStandardMaterial({ color: 0xd2d8de, metalness: 0.9, roughness: 0.25 })); w.rotation.z = Math.PI / 2; w.position.set(-5 + 3.8, Math.cos(an) * 1.14, Math.sin(an) * 1.14); CUT.add(w); } } }
+const FIB = Array.from({ length: 8 }, (_, k) => { const an = k / 8 * Math.PI * 2; const f = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 12, 8), new THREE.MeshStandardMaterial({ color: [0x3dff8c, 0x4f9cff, 0xff6a6a, 0xffd84a, 0xffffff, 0xbf6aff, 0xff9a3a, 0x6ae4ff][k], emissive: [0x3dff8c, 0x4f9cff, 0xff6a6a, 0xffd84a, 0xffffff, 0xbf6aff, 0xff9a3a, 0x6ae4ff][k], emissiveIntensity: 0.4 })); f.rotation.z = Math.PI / 2; f.position.set(-5 + 6, Math.cos(an) * 0.32, Math.sin(an) * 0.32); CUT.add(f); return f; });
+const FPULSE = Array.from({ length: 24 }, (_, i) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), glow(0xffffff)); m.scale.set(4, 1, 1); m.userData = { k: i % 8, o: rnd() }; CUT.add(m); return m; });
+const HAIR = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([V(3, 2.6, 0.5), V(5, 2.2, 0.8), V(7, 2.9, 0.4), V(9, 2.5, 0.6)]), 40, 0.09, 8), new THREE.MeshStandardMaterial({ color: 0x3a2a1c })); CUT.add(HAIR);
+// =============== SHORE: shallow water, armored cable in a trench, anchor, shark, repair ship ===============
+const SH = set("shore", 800);
+const bed2 = bed.clone(); bed2.material = bed.material.clone(); SH.add(bed2);
+const armT = canvasTex(256, 64, (g, w, h) => { g.fillStyle = "#3a3d42"; g.fillRect(0, 0, w, h); g.strokeStyle = "#8a9099"; g.lineWidth = 6; for (let x = -64; x < w + 64; x += 14) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 32, h); g.stroke(); } }); armT.wrapS = armT.wrapT = THREE.RepeatWrapping; armT.repeat.set(80, 1);
+const SPATH = new THREE.CatmullRomCurve3([V(-80, -0.4, 0), V(-20, -0.35, 1), V(0, -0.3, 0), V(30, -0.35, -1), V(90, -0.4, 0)]);
+const ARM = new THREE.Mesh(new THREE.TubeGeometry(SPATH, 300, 0.55, 16), new THREE.MeshStandardMaterial({ map: armT, metalness: 0.6, roughness: 0.4 })); SH.add(ARM);
+const trench = new THREE.Mesh(new THREE.BoxGeometry(170, 0.05, 2.4), new THREE.MeshStandardMaterial({ color: 0x5a4e38, roughness: 1 })); trench.position.y = 0.06; SH.add(trench);
+const HALF = [-1, 1].map((s) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 20, 20), new THREE.MeshStandardMaterial({ map: armT, metalness: 0.6, roughness: 0.4 })); m.rotation.z = Math.PI / 2; m.visible = false; SH.add(m); m.userData.s = s; return m; });
+const ANCHOR = new THREE.Group(); { const m = new THREE.MeshStandardMaterial({ color: 0x2c2f34, metalness: 0.6, roughness: 0.5 }); const shank = new THREE.Mesh(new THREE.BoxGeometry(0.6, 7, 0.6), m); shank.position.y = 3.5; ANCHOR.add(shank); const arm = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.3, 10, 24, Math.PI), m); arm.rotation.z = Math.PI; arm.position.y = 0.9; ANCHOR.add(arm); for (const x of [-2.4, 2.4]) { const fl = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.4, 4), m); fl.position.set(x, 1.4, 0); ANCHOR.add(fl); } const ring = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.15, 8, 20), m); ring.position.y = 7.4; ANCHOR.add(ring); const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 40, 6), m); chain.position.set(0, 27, 0); chain.rotation.z = 0.5; chain.position.x = -10; ANCHOR.add(chain); } SH.add(ANCHOR);
+const SHARK = new THREE.Group(); { const m = new THREE.MeshStandardMaterial({ color: 0x6a7a8a, roughness: 0.6 }); const b = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), m); b.scale.set(3.6, 0.9, 0.9); SHARK.add(b); const df = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.4, 3), m); df.position.set(0.2, 1.1, 0); SHARK.add(df); const tl = new THREE.Mesh(new THREE.ConeGeometry(0.8, 1.6, 3), m); tl.rotation.z = Math.PI / 2; tl.position.x = -3.9; SHARK.add(tl); for (const s of [-1, 1]) { const pf = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.08, 1.4), m); pf.position.set(0.8, -0.4, s * 1.0); pf.rotation.x = s * 0.4; SHARK.add(pf); } } SH.add(SHARK);
+const SURF = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), new THREE.MeshStandardMaterial({ color: 0x1a6f93, transparent: true, opacity: 0.85, side: THREE.DoubleSide, roughness: 0.15 })); SURF.rotation.x = -Math.PI / 2; SURF.position.y = 26; SH.add(SURF);
+const SHIP = new THREE.Group(); { const hull = new THREE.Mesh(new THREE.BoxGeometry(40, 6, 10), new THREE.MeshStandardMaterial({ color: 0x1d3a6a })); hull.position.y = -1.5; SHIP.add(hull); const red = new THREE.Mesh(new THREE.BoxGeometry(40.2, 1.6, 10.2), new THREE.MeshStandardMaterial({ color: 0x9a2a2a })); red.position.y = -4; SHIP.add(red); const br = new THREE.Mesh(new THREE.BoxGeometry(9, 7, 8), new THREE.MeshStandardMaterial({ color: 0xf2f2f0 })); br.position.set(-10, 5, 0); SHIP.add(br); const win = new THREE.Mesh(new THREE.BoxGeometry(9.1, 1, 8.1), new THREE.MeshStandardMaterial({ color: 0x14202e })); win.position.set(-10, 7.2, 0); SHIP.add(win); const sheave = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.4, 10, 24), new THREE.MeshStandardMaterial({ color: 0xe0b23a, metalness: 0.6 })); sheave.position.set(21, 2.5, 0); SHIP.add(sheave); const crane = new THREE.Mesh(new THREE.BoxGeometry(0.8, 9, 0.8), new THREE.MeshStandardMaterial({ color: 0xe0b23a })); crane.position.set(14, 5.5, 0); crane.rotation.z = -0.5; SHIP.add(crane); } SHIP.position.set(0, 27.5, 0); SH.add(SHIP);
+const LINE = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1, 6), new THREE.MeshStandardMaterial({ color: 0xd8d0b8 })); SH.add(LINE); const GRAP = new THREE.Group(); { const m = new THREE.MeshStandardMaterial({ color: 0x5a5e66, metalness: 0.7 }); for (let k = 0; k < 4; k++) { const h = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.12, 8, 16, Math.PI), m); h.rotation.y = k * Math.PI / 2; h.rotation.z = Math.PI; GRAP.add(h); } } SH.add(GRAP);
+const SPARK = Array.from({ length: 20 }, () => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 4), glow(0xffd84a)); m.visible = false; m.userData = { d: V(rnd() - 0.5, rnd(), rnd() - 0.5).normalize() }; SH.add(m); return m; });
+// =============== GLOBE: the real Earth with cable routes ===============
+const GL = set("globe", 1200);
+const earthT = new THREE.Texture(await img("tex/earth_atmos_2048.jpg")); earthT.needsUpdate = true; earthT.colorSpace = THREE.SRGBColorSpace;
+const ER = 10; const EARTH = new THREE.Mesh(new THREE.SphereGeometry(ER, 96, 64), new THREE.MeshPhongMaterial({ map: earthT, shininess: 8 })); GL.add(EARTH);
+GL.add(new THREE.Mesh(new THREE.SphereGeometry(ER * 1.03, 64, 48), new THREE.MeshBasicMaterial({ color: 0x4f9cff, transparent: true, opacity: 0.12, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false })));
+const geoP = (lat, lon, h = 0) => { const ph = (lon + 180) / 360 * Math.PI * 2, th = (90 - lat) / 180 * Math.PI, rr = ER + h; return V(-rr * Math.cos(ph) * Math.sin(th), rr * Math.cos(th), rr * Math.sin(ph) * Math.sin(th)); };
+const ROUTES = [[[40.5, -74], [50.4, -5]], [[40.5, -74], [43.3, -2.9]], [[36.8, -76], [43.3, -2.9]], [[25.8, -80], [-3.7, -38.5]], [[-23, -43], [38.7, -9.1]], [[34, -118.4], [35.3, 139.7]], [[45.5, -124], [34.2, 135]], [[21.3, -157.8], [-33.8, 151.2]], [[1.3, 103.8], [19.1, 72.8]], [[19.1, 72.8], [25.3, 55.3]], [[31.2, 29.9], [43.3, 5.4]], [[1.3, 103.8], [22.3, 114.2]], [[22.3, 114.2], [35.3, 139.7]], [[-33.9, 18.4], [38.7, -9.1]], [[-33.9, 18.4], [19.1, 72.8]], [[6.4, 3.4], [38.7, -9.1]], [[-1.3, 36.8], [25.3, 55.3]], [[55.7, 12.6], [59.9, 10.7]], [[64.1, -21.9], [50.4, -5]], [[-31.9, 115.8], [1.3, 103.8]], [[37.8, -122.4], [21.3, -157.8]], [[-12, -77], [33.5, -117.7]], [[13.4, 144.8], [1.3, 103.8]], [[13.4, 144.8], [-33.8, 151.2]]];
+const RLINES = ROUTES.map(([a, b]) => { const A0 = geoP(...a), B0 = geoP(...b); const pts = []; for (let i = 0; i <= 64; i++) { const k = i / 64; pts.push(A0.clone().lerp(B0, k).normalize().multiplyScalar(ER * 1.004)); } const c = new THREE.CatmullRomCurve3(pts); const m = new THREE.Mesh(new THREE.TubeGeometry(c, 64, 0.03, 6), glow(0x6ae4ff, { transparent: true, opacity: 0.9 })); GL.add(m); m.userData.c = c; return m; });
+const GPULSE = RLINES.map((r) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), glow(0xffffff)); GL.add(m); m.userData.c = r.userData.c; m.userData.o = rnd(); return m; });
+GL.add(new THREE.AmbientLight(0xffffff, 0.35)); { const d = new THREE.DirectionalLight(0xffffff, 1.4); d.position.set(30, 20, 40); GL.add(d); }
+{ const n = 2000, g = new THREE.BufferGeometry(), p = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const v = V(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).normalize().multiplyScalar(300); p.set([v.x, v.y, v.z], i * 3); } g.setAttribute("position", new THREE.BufferAttribute(p, 3)); GL.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, sizeAttenuation: false }))); }
+// =============== ORBI: laptop, file card with its QR code and passcode ===============
+const OB = set("orbi", 280);
+const LAPW = 2880 / 2, LAPH = 1800 / 2; const lapC = document.createElement("canvas"); lapC.width = LAPW; lapC.height = LAPH; const lapT = new THREE.CanvasTexture(lapC); lapT.colorSpace = THREE.SRGBColorSpace; lapT.anisotropy = 8;
+function drawLap(k) { const g = lapC.getContext("2d"), w = LAPW, h = LAPH; g.drawImage(DESK, 0, 0, w, h); g.fillStyle = "#000"; g.fillRect(w * 0.33, h * 0.42, w * 0.34, h * 0.06);
+  const cx = w / 2, cy = h * 0.3, cw = 560, ch = 260; g.fillStyle = "#1c1e22"; g.beginPath(); g.roundRect(cx - cw / 2, cy, cw, ch, 22); g.fill(); g.strokeStyle = "rgba(61,255,140,0.6)"; g.lineWidth = 2; g.stroke();
+  g.fillStyle = "#fff"; g.font = "700 28px Inter, sans-serif"; g.textAlign = "left"; g.fillText("Wedding_photos.zip", cx - cw / 2 + 24, cy + 50); g.fillStyle = "#9aa0aa"; g.font = "500 22px Inter, sans-serif"; g.fillText("1.2 GB · to Sydney", cx - cw / 2 + 24, cy + 84);
+  const q = 150, qx = cx + cw / 2 - q - 24, qy = cy + 24; g.fillStyle = "#fff"; g.fillRect(qx, qy, q, q); g.fillStyle = "#000"; for (let i = 0; i < 25; i++) for (let j = 0; j < 25; j++) { const fin = (a, b) => a < 7 && b < 7; const isF = fin(i, j) || fin(24 - i, j) || fin(i, 24 - j); const on = isF ? (Math.max(Math.abs((i % 18 < 7 ? i % 18 : 24 - i) - 3), Math.abs((j % 18 < 7 ? j % 18 : 24 - j) - 3)) % 2 == 1 ? 0 : 1) : (Math.sin(i * 12.9898 + j * 78.233) * 43758.5453 % 1 + 1) % 1 > 0.5; if (on && k > 0.15) g.fillRect(qx + 6 + i * 5.5, qy + 6 + j * 5.5, 5.5, 5.5); }
+  const digits = Math.min(6, Math.floor(k * 9)); for (let i = 0; i < 6; i++) { g.fillStyle = i < digits ? "#3dff8c" : "#2a2d33"; g.beginPath(); g.roundRect(cx - cw / 2 + 24 + i * 54, cy + 120, 44, 56, 10); g.fill(); if (i < digits) { g.fillStyle = "#0b0d12"; g.font = "700 30px monospace"; g.fillText(String((i * 7 + 3) % 10), cx - cw / 2 + 36 + i * 54, cy + 158); } }
+  g.fillStyle = "#9aa0aa"; g.font = "500 20px Inter, sans-serif"; g.fillText("passcode", cx - cw / 2 + 24, cy + 210); lapT.needsUpdate = true; }
+const desk = new THREE.Mesh(new THREE.BoxGeometry(6, 0.08, 3), new THREE.MeshStandardMaterial({ color: 0x3a2c22, roughness: 0.7 })); desk.position.y = -0.04; OB.add(desk);
+{ const LAP = new THREE.Group(); OB.add(LAP); const alu = new THREE.MeshStandardMaterial({ color: 0x9aa0a8, metalness: 0.8, roughness: 0.3 }); const base = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.035, 1.1), alu); base.position.set(0, 0.018, 0.2); LAP.add(base); const kb = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.004, 0.5), new THREE.MeshStandardMaterial({ color: 0x15161a })); kb.position.set(0, 0.037, 0.05); LAP.add(kb);
+  const lid = new THREE.Group(); lid.position.set(0, 0.035, -0.35); lid.rotation.x = -0.18; LAP.add(lid); const lb = new THREE.Mesh(new THREE.BoxGeometry(1.62, 1.04, 0.02), alu); lb.position.y = 0.52; lid.add(lb); const sc = new THREE.Mesh(new THREE.PlaneGeometry(1.54, 0.9625), new THREE.MeshBasicMaterial({ map: lapT, toneMapped: false })); sc.position.set(0, 0.53, 0.011); lid.add(sc); }
+{ const lampL = new THREE.PointLight(0xffd9a8, 6, 6, 1.6); lampL.position.set(-1.6, 1.6, 0.8); OB.add(lampL); }
+
+window.render = async function (t) {
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  scene.fog = fogDeep; fogDeep.density = 0.03; scene.background = new THREE.Color(0x062a40); RAYS.forEach((m, i) => (m.material.opacity = 0.035 + 0.02 * Math.sin(t * 0.8 + i)));
+  PULSE.forEach((m, i) => { const f = (t * 0.06 + i / PULSE.length) % 1; m.position.copy(CPATH.getPointAt(f)).add(V(0, 0.05, 0)); const tg = CPATH.getTangentAt(f); m.rotation.y = -Math.atan2(tg.z, tg.x); m.material.opacity = f > 0.55 ? 1 : 0.35 + 0.65 * (1 - f / 0.55) * 0; });
+  FISH.forEach((g, i) => { const u = g.userData, f = (t * 0.05 + u.o) % 1; g.position.set(lerp(-60, 60, f), u.y + Math.sin(t * 2 + i) * 0.3, u.z); });
+  HALF.forEach((m) => (m.visible = false)); ARM.visible = true; SPARK.forEach((m) => (m.visible = false));
+  if (t < A("scale")) { show("sea"); const k = clamp(t / A("scale")); look(V(lerp(-6, 2, k), lerp(2.5, 6, k), lerp(9, 16, k)), V(lerp(-10, 0, k), 0.6, 0), 42); big("NOT SATELLITE", t, A("hook") + 2.4, A("hook") + 5.0, "#ffffff", "300px", "100px"); }
+  else if (t < A("inside")) { show("globe"); scene.fog = null; scene.background = new THREE.Color(0x02040a); const k = clamp((t - A("scale")) / (A("inside") - A("scale"))); EARTH.rotation.y = 2.2 + t * 0.04; RLINES.forEach((m) => (m.rotation.y = EARTH.rotation.y)); GPULSE.forEach((m) => (m.rotation.y = 0)); look(P("globe").clone().add(V(0, 8, lerp(36, 30, k))), P("globe"), 42);
+    GPULSE.forEach((m) => { const f = (t * 0.3 + m.userData.o) % 1; m.position.copy(m.userData.c.getPoint(f)).applyAxisAngle(V(0, 1, 0), EARTH.rotation.y); });
+    card("c0", `<b>99%+</b> of data between continents`, t, A("scale") + 1.2, A("inside"), 200, 230, -2); card("c1", `<b>1.4 million km</b> of cable`, t, A("scale") + (A("inside") - A("scale")) * 0.5, A("inside"), 260, 380, 2); }
+  else if (t < A("repeat")) { show("cut"); scene.fog = null; scene.background = new THREE.Color(0x07121a); const c = P("cut"); const k = clamp((t - A("inside")) / (A("repeat") - A("inside"))); look(c.clone().add(V(lerp(13, 15, k), lerp(6, 5, k), lerp(16, 13, k))), c.clone().add(V(3.6, 0.3, 0)), 40);
+    FPULSE.forEach((m) => { const u = m.userData, f = (t * 0.5 + u.o) % 1; m.position.copy(FIB[u.k].position).setX(lerp(-3, 7, f)).add(V(0, 0, 0)); });
+    HAIR.visible = k > 0.55; CUT.children.forEach((ch, i) => { if (ch.userData.name) lbl("l" + ["polyethylene", "steel wires", "copper · power", "gel tube"].indexOf(ch.userData.name), c.clone().add(V(ch.userData.end, 1.7 - 0.25 * ["polyethylene", "steel wires", "copper · power", "gel tube"].indexOf(ch.userData.name), 0)), t, A("inside") + 0.5, A("inside") + (A("repeat") - A("inside")) * 0.55, ch.userData.name, "#cfd4da"); });
+    if (k > 0.55) lbl("l4", c.clone().add(V(4.5, 3.2, 0.6)), t, A("inside") + (A("repeat") - A("inside")) * 0.55, A("repeat"), "a human hair · <b>thicker</b> than a fiber", "#ffd84a"); }
+  else if (t < A("shore")) { show("sea"); const k = clamp((t - A("repeat")) / (A("shore") - A("repeat"))); const rp = REP.position; look(rp.clone().add(V(lerp(-8, 5, k), lerp(3, 4.5, k), 9)), rp.clone().add(V(0, 0.4, 0)), 42);
+    PULSE.forEach((m) => { const along = m.position.x - rp.x; m.material.opacity = along > 0 ? 1 : clamp(0.25 + (40 + along) / 60, 0.2, 0.7); m.scale.set(3, along > 0 ? 1.3 : 0.7, along > 0 ? 1.3 : 0.7); });
+    lbl("l0", rp.clone().add(V(0, 2.2, 0)), t, A("repeat") + 0.8, A("shore"), "repeater · <b>boosts the light</b>", "#3dff8c"); lbl("l1", rp.clone().add(V(-8, 1.2, 0)), t, A("repeat") + (A("shore") - A("repeat")) * 0.45, A("shore"), "power runs down the cable", "#ffb27a"); }
+  else if (t < A("repair")) { show("shore"); fogDeep.density = 0.018; scene.background = new THREE.Color(0x0e4a68); const c = P("shore");
+    if (t < A("break")) { const k = clamp((t - A("shore")) / (A("break") - A("shore"))); ANCHOR.position.set(-60, 30, 0); SHARK.position.set(-60, 8, 0); look(c.clone().add(V(lerp(-10, -4, k), lerp(4, 2.4, k), 9)), c.clone().add(V(0, -0.2, 0)), 42); lbl("l0", c.clone().add(V(0, 0.6, 0.6)), t, A("shore") + 0.8, A("break"), "steel armor · <b>buried</b>", "#ffd84a"); }
+    else { const k = clamp((t - A("break")) / (A("repair") - A("break"))); const ka = ease(clamp(k / 0.5)); ANCHOR.position.set(c.x * 0 + lerp(-14, 3, ka), lerp(8, 0.9, clamp(k / 0.3)), 0).add(V(0, 0, 0)); ANCHOR.rotation.z = -0.4;
+      if (k > 0.45) { ARM.visible = false; HALF.forEach((m) => { m.visible = true; const sp = ease(clamp((k - 0.45) / 0.2)); m.position.set(m.userData.s * (10 + sp * 0.8), -0.2 + (m.userData.s > 0 ? 0 : sp * 0.6), 0); m.rotation.y = m.userData.s * sp * 0.15; }); SPARK.forEach((m, i) => { const f = clamp((k - 0.45) / 0.3); m.visible = f > 0 && f < 1; m.position.copy(m.userData.d).multiplyScalar(f * 3).add(V(0, 0.3, 0)); }); }
+      SHARK.position.set(lerp(30, -10, k), 5, 6); SHARK.rotation.y = Math.PI; look(c.clone().add(V(4, 4, 15)), c.clone().add(V(0, 1.5, 0)), 44);
+      lbl("l0", c.clone().add(V(0, 3, 0)), t, A("break") + (A("repair") - A("break")) * 0.5, A("repair"), "anchors · fishing gear", "#ff6a6a"); lbl("l1", SHARK.position.clone().add(V(0, 2, 0)), t, A("break") + (A("repair") - A("break")) * 0.75, A("repair"), "not sharks", "#9fb4ff"); } }
+  else if (t < A("orbi")) { show("shore"); fogDeep.density = 0.012; scene.background = new THREE.Color(0x0e4a68); const c = P("shore"); const k = clamp((t - A("repair")) / (A("orbi") - A("repair"))); ARM.visible = false; ANCHOR.position.set(-80, 40, 0); SHARK.position.set(-80, 5, 0);
+    const lift = ease(clamp((k - 0.25) / 0.45)); const gy = lerp(26, 0.6, ease(clamp(k / 0.25))) + lift * 25; GRAP.position.set(20, gy, 0); LINE.position.set(20, (gy + 27) / 2, 0); LINE.scale.y = Math.max(0.1, 27 - gy);
+    HALF.forEach((m) => { m.visible = true; m.position.set(m.userData.s * 10.8 + 9, -0.2 + lift * 24 * (m.userData.s > 0 ? 1 : 0.92), 0); m.rotation.z = Math.PI / 2 + m.userData.s * lift * 0.5; m.rotation.y = 0; });
+    SURF.visible = true; look(c.clone().add(V(lerp(30, 40, k), lerp(12, 34, k), lerp(40, 46, k))), c.clone().add(V(10, lerp(8, 24, k), 0)), 44); if (k > 0.85) card("c0", `spliced on deck · <b>back down</b>`, t, A("repair") + (A("orbi") - A("repair")) * 0.85, A("orbi"), 260, 230, -2); }
+  else { show("orbi"); scene.fog = null; scene.background = new THREE.Color(0x07080c); const c = P("orbi"); const k = clamp((t - A("orbi")) / (A("end") - A("orbi"))); look(c.clone().add(V(lerp(1.2, 0.0, ease(k)), lerp(1.6, 0.75, ease(k)), lerp(4.6, 3.0, ease(k)))), c.clone().add(V(0, lerp(0.35, 0.55, ease(k)), -0.3)), 42); drawLap(clamp((k - 0.2) / 0.6));
+    card("c0", `every file · <b>own QR + passcode</b>`, t, A("orbi") + (A("end") - A("orbi")) * 0.35, A("end"), 230, 230, -2); }
+
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
