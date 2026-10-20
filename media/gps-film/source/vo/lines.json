@@ -1,0 +1,72 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Your phone knows where you are within a few meters. But it never tells the satellites anything. It only listens.",
+   "dur": 6.669,
+   "at": 0.35
+  },
+  {
+   "key": "sats",
+   "text": "About thirty GPS satellites circle the Earth, twenty thousand kilometers up. Each one carries atomic clocks.",
+   "dur": 6.319,
+   "at": 7.42
+  },
+  {
+   "key": "shout",
+   "text": "Every satellite keeps shouting the same thing: who it is, where it is, and the exact time, down to billionths of a second.",
+   "dur": 7.125,
+   "at": 14.09
+  },
+  {
+   "key": "delay",
+   "text": "Those signals travel at the speed of light, but even light takes a moment to get here. About a fifteenth of a second.",
+   "dur": 5.892,
+   "at": 21.56
+  },
+  {
+   "key": "dist",
+   "text": "So your phone checks how late each message arrives. The delay tells it how far away that satellite is.",
+   "dur": 5.658,
+   "at": 27.8
+  },
+  {
+   "key": "rings",
+   "text": "One satellite puts you somewhere on a giant sphere. Two narrow it to a circle. Three, to just a couple of points.",
+   "dur": 7.158,
+   "at": 33.76
+  },
+  {
+   "key": "four",
+   "text": "And a fourth fixes your phone's own clock, because your phone doesn't have an atomic clock. Now it knows exactly where you are.",
+   "dur": 6.805,
+   "at": 41.22
+  },
+  {
+   "key": "einstein",
+   "text": "Here's the wild part. Up there, clocks tick slightly faster, thanks to Einstein's relativity. About thirty-eight millionths of a second a day.",
+   "dur": 8.254,
+   "at": 48.38
+  },
+  {
+   "key": "drift",
+   "text": "Sounds tiny. But if nobody corrected it, GPS would drift by about ten kilometers every single day.",
+   "dur": 7.479,
+   "at": 56.98
+  },
+  {
+   "key": "orbi",
+   "text": "GPS finds you. Orbi Transfer lets your team find each other's files, without sharing anyone's location. A private Space, locked with a passcode.",
+   "dur": 8.884,
+   "at": 64.86
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 74.09
+  }
+ ],
+ "duration": 78.64
+}
