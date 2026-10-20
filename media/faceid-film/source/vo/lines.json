@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "You glance at your phone, and it unlocks. In the dark. With glasses on. How does it know it's you, and not a photo of you?",
+   "dur": 8.473,
+   "at": 0.35
+  },
+  {
+   "key": "dots",
+   "text": "At the top of the screen, a tiny projector fires about thirty thousand invisible dots of infrared light onto your face.",
+   "dur": 7.668,
+   "at": 9.22
+  },
+  {
+   "key": "ir",
+   "text": "Your eyes can't see them. But an infrared camera can. It photographs how the dots land on your nose, cheeks and eyes.",
+   "dur": 7.352,
+   "at": 17.24
+  },
+  {
+   "key": "dark",
+   "text": "In the dark, an invisible flood light lights you up too. So it works with the lights off.",
+   "dur": 5.693,
+   "at": 24.89
+  },
+  {
+   "key": "depth",
+   "text": "Dots on your nose land closer than dots on your cheeks. From that, the phone builds a 3D map of your face.",
+   "dur": 6.603,
+   "at": 30.94
+  },
+  {
+   "key": "photo",
+   "text": "That's why a photo fails. A photo is flat. No nose sticking out, no depth.",
+   "dur": 5.684,
+   "at": 37.89
+  },
+  {
+   "key": "vault",
+   "text": "The map is turned into math and kept in a sealed chip inside the phone. It never goes to the cloud.",
+   "dur": 6.078,
+   "at": 43.97
+  },
+  {
+   "key": "odds",
+   "text": "Apple says the chance a random stranger unlocks your phone is about one in a million.",
+   "dur": 5.149,
+   "at": 50.35
+  },
+  {
+   "key": "orbi",
+   "text": "Same idea in Orbi Transfer. Your passcode never leaves your phone. And 30 minutes later, the file burns. Gone.",
+   "dur": 8.172,
+   "at": 55.9
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 64.42
+  }
+ ],
+ "duration": 68.97
+}
