@@ -1,0 +1,72 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a submarine works? It weighs thousands of tonnes, yet it can sink, hang perfectly still, and come back up.",
+   "dur": 6.3,
+   "at": 0.35
+  },
+  {
+   "key": "float",
+   "text": "Water pushes up on anything in it, with a force equal to the weight of the water it moves aside. On the surface, the sub is lighter than that water. So it floats.",
+   "dur": 8.552,
+   "at": 7.05
+  },
+  {
+   "key": "ballast",
+   "text": "Between its inner and outer hull are ballast tanks. To dive, vents on top open, air escapes, and seawater floods in. Heavier now, the sub sinks.",
+   "dur": 10.362,
+   "at": 15.9
+  },
+  {
+   "key": "trim",
+   "text": "Smaller trim tanks pump water forward and back, until the sub weighs exactly as much as the water around it. Now it hovers.",
+   "dur": 7.685,
+   "at": 26.56
+  },
+  {
+   "key": "planes",
+   "text": "To go up or down while moving, it tilts small wings called diving planes. Like a plane, but in water.",
+   "dur": 6.604,
+   "at": 34.55
+  },
+  {
+   "key": "deep",
+   "text": "Every ten meters deeper adds about one more atmosphere. At three hundred meters, the water squeezes the hull about thirty times harder than air at the surface.",
+   "dur": 9.635,
+   "at": 41.45
+  },
+  {
+   "key": "rise",
+   "text": "To come up, compressed air blasts into the ballast tanks and pushes the water out. Lighter again, it rises.",
+   "dur": 6.642,
+   "at": 51.39
+  },
+  {
+   "key": "oxygen",
+   "text": "Nuclear subs even make their own oxygen, by splitting seawater with electricity. They can stay down for months.",
+   "dur": 7.308,
+   "at": 58.33
+  },
+  {
+   "key": "quiet",
+   "text": "And down there, the best defense is silence. A sub mostly listens. It doesn't give away where it is.",
+   "dur": 5.72,
+   "at": 65.94
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer has a mode like that. Go anonymous, and other users can't see your location, your name, or your device.",
+   "dur": 7.482,
+   "at": 72.01
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 79.84
+  }
+ ],
+ "duration": 84.39
+}
