@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>How video calls work</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+const img = (src) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.src = src; });
+const DESK = await img("shots/home.png");
+scene.background = new THREE.Color(0x07090f);
+scene.add(new THREE.HemisphereLight(0xdfe6ff, 0x14101a, 0.9)); { const k1 = new THREE.DirectionalLight(0xffffff, 1.4); k1.position.set(6, 12, 10); scene.add(k1); }
+// a face drawn on canvas, mouth animated
+const FW = 320, FH = 240; const drawFace = (g, t, x0 = 0, y0 = 0, s = 1, bg = "#5a7a9a") => { g.save(); g.translate(x0, y0); g.scale(s, s); g.fillStyle = bg; g.fillRect(0, 0, FW, FH); g.fillStyle = "#3a5a7a"; g.fillRect(0, 150, FW, 90); g.fillStyle = "#8aa4c0"; g.fillRect(230, 30, 60, 80); g.fillStyle = "#2a2e3a"; g.beginPath(); g.ellipse(160, 230, 90, 60, 0, Math.PI, 0); g.fill(); g.fillStyle = "#d9a07a"; g.beginPath(); g.ellipse(160, 120, 52, 64, 0, 0, 7); g.fill(); g.fillStyle = "#3a2a1c"; g.beginPath(); g.ellipse(160, 74, 56, 30, 0, Math.PI, 0); g.fill();
+  g.fillStyle = "#1a1a1a"; g.beginPath(); g.arc(141, 115, 5, 0, 7); g.arc(179, 115, 5, 0, 7); g.fill(); const mo = 4 + 8 * Math.abs(Math.sin(t * 9)); g.fillStyle = "#7a2a2a"; g.beginPath(); g.ellipse(160, 152, 14, mo, 0, 0, 7); g.fill(); g.restore(); };
+const mkScreen = (w, h, cw = 640, ch = 480) => { const c = document.createElement("canvas"); c.width = cw; c.height = ch; const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.magFilter = THREE.NearestFilter; const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })); scene.add(m); m.userData = { c, tex }; return m; };
+const MAIN = mkScreen(6.4, 4.8); MAIN.position.set(0, 4, 0);
+const draw = (S2, f) => { f(S2.userData.c.getContext("2d")); S2.userData.tex.needsUpdate = true; };
+// block grid overlay
+const blockView = (g, t, mode, k) => { const W2 = 640, H2 = 480; const bw = 40; drawFace(g, t, 0, 0, 2); for (let y = 0; y < H2; y += bw) for (let x = 0; x < W2; x += bw) { const inMouth = x >= 280 && x < 360 && y >= 260 && y < 340; const inFace = x >= 200 && x < 440 && y >= 100 && y < 360; if (mode == "same") { if (!inMouth) { g.fillStyle = "rgba(10,14,22,0.72)"; g.fillRect(x, y, bw, bw); } else { g.strokeStyle = "#3dff8c"; g.lineWidth = 3; g.strokeRect(x + 1, y + 1, bw - 2, bw - 2); } }
+  else if (mode == "blocks") { g.strokeStyle = "rgba(255,255,255,0.2)"; g.lineWidth = 1; g.strokeRect(x, y, bw, bw); if (inFace && ((x + y) / bw) % 3 == 0) { g.strokeStyle = "#ffd84a"; g.lineWidth = 3; g.beginPath(); g.moveTo(x + 20, y + 20); g.lineTo(x + 20 + 10 * Math.cos(t + x), y + 20 + 10 * Math.sin(t + y)); g.stroke(); } } } };
+// size bars
+const BAR1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1, 1.2), glow(0xff6a6a)), BAR2 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1, 1.2), glow(0x3dff8c)); scene.add(BAR1, BAR2);
+// globe network: nodes + packets
+const NODES = Array.from({ length: 14 }, (_, i) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 12), new THREE.MeshStandardMaterial({ color: 0x4a5a7a, emissive: 0x1a2a4a })); m.position.set(-3.6 + (i % 4) * 2.4 + (Math.floor(i / 4) % 2) * 1.0, -1 + Math.floor(i / 4) * 2.6 + (rnd() - 0.5), -2); scene.add(m); return m; });
+const LINKS = []; NODES.forEach((a, i) => NODES.forEach((b, j) => { if (j > i && a.position.distanceTo(b.position) < 3.2) { const d = b.position.clone().sub(a.position); const m = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1, 6), glow(0x2a3a5a)); m.position.copy(a.position).add(b.position).multiplyScalar(0.5); m.scale.y = d.length(); m.quaternion.setFromUnitVectors(V(0, 1, 0), d.normalize()); scene.add(m); LINKS.push(m); } }));
+const PHONE_A = mkScreen(2.6, 4.6, 320, 560), PHONE_B = mkScreen(2.6, 4.6, 320, 560); PHONE_A.position.set(-3.4, 12.2, 0); PHONE_B.position.set(3.4, -4.6, 0);
+const ROUTES = Array.from({ length: 4 }, (_, r) => { const pts = [PHONE_A.position.clone().setZ(-1)]; let cur = 0; const order = [12 + (r % 2), 9 - (r % 3), 5 + (r % 2), 2 + (r % 2)]; order.forEach((i) => pts.push(NODES[Math.min(13, i)].position.clone())); pts.push(PHONE_B.position.clone().setZ(-1)); return new THREE.CatmullRomCurve3(pts); });
+const PKTS = Array.from({ length: 24 }, (_, i) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.36, 0.1), glow([0x3dff8c, 0x6ab8ff, 0xffd84a][i % 3], { transparent: true })); m.userData = { r: i % 4, o: i / 24, late: i % 7 == 3 }; scene.add(m); return m; });
+// SFU: center server + 5 participants
+const SFU = new THREE.Group(); { const r = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3, 1.6), new THREE.MeshStandardMaterial({ color: 0x1b1f27, metalness: 0.6 })); SFU.add(r); for (let i = 0; i < 6; i++) { const l = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.06, 0.02), glow(i % 2 ? 0x3dff8c : 0x4f9cff)); l.position.set(0, -1.1 + i * 0.42, 0.81); SFU.add(l); } } SFU.position.set(0, 4, 0); scene.add(SFU);
+const PEERS = Array.from({ length: 5 }, (_, i) => { const a = i / 5 * Math.PI * 2 + Math.PI / 2; const s2 = mkScreen(2.4, 1.8, 320, 240); s2.position.set(Math.cos(a) * 3.8, 4 + Math.sin(a) * 6.0, 0); s2.userData.bg = ["#5a7a9a", "#7a5a9a", "#5a9a7a", "#9a7a5a", "#9a5a6a"][i]; return s2; });
+const UP = PEERS.map(() => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), glow(0xffd84a)); scene.add(m); return m; });
+const DOWN = Array.from({ length: 20 }, () => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), glow(0x6ab8ff)); scene.add(m); return m; });
+// Orbi laptop
+const LW = 1440, LH = 900; const lapC = document.createElement("canvas"); lapC.width = LW; lapC.height = LH; const lapT = new THREE.CanvasTexture(lapC); lapT.colorSpace = THREE.SRGBColorSpace;
+function drawLap(k) { const g = lapC.getContext("2d"); g.drawImage(DESK, 0, 0, LW, LH); g.fillStyle = "#000"; g.fillRect(LW * 0.33, LH * 0.42, LW * 0.34, LH * 0.06); g.fillStyle = "rgba(10,12,16,0.92)"; g.beginPath(); g.roundRect(LW / 2 - 300, 200, 600, 330, 26); g.fill(); g.strokeStyle = "rgba(61,255,140,0.6)"; g.lineWidth = 2; g.stroke();
+  g.fillStyle = "#3dff8c"; g.font = "700 22px monospace"; g.fillText("PRIVATE SPACE", LW / 2 - 270, 250); g.fillStyle = "#fff"; g.font = "800 44px sans-serif"; g.fillText("family-trip", LW / 2 - 270, 310); const code = "4  8  1  9  2  7"; g.font = "700 40px monospace"; g.fillStyle = "#9aa0aa"; g.fillText("code", LW / 2 - 270, 380); g.fillStyle = "#3dff8c"; g.fillText(code.slice(0, Math.floor(k * code.length)), LW / 2 - 160, 380);
+  if (k > 0.6) { ["Mum · Delhi", "Sam · London", "Ana · Toronto"].forEach((n, i) => { g.fillStyle = "#2a2d33"; g.beginPath(); g.roundRect(LW / 2 - 270 + i * 190, 420, 170, 80, 14); g.fill(); g.fillStyle = "#fff"; g.font = "600 20px sans-serif"; g.fillText(n, LW / 2 - 256 + i * 190, 466); }); } lapT.needsUpdate = true; }
+const LAP = new THREE.Group(); { const alu = new THREE.MeshStandardMaterial({ color: 0x9aa0a8, metalness: 0.8, roughness: 0.3 }); const base = new THREE.Mesh(new THREE.BoxGeometry(6.5, 0.14, 4.4), alu); base.position.set(0, 0.07, 0.8); LAP.add(base); const kb = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.02, 2.0), new THREE.MeshStandardMaterial({ color: 0x15161a })); kb.position.set(0, 0.15, 0.2); LAP.add(kb); const lid = new THREE.Group(); lid.position.set(0, 0.14, -1.4); lid.rotation.x = -0.18; LAP.add(lid); const lb = new THREE.Mesh(new THREE.BoxGeometry(6.5, 4.16, 0.08), alu); lb.position.y = 2.08; lid.add(lb); const sc = new THREE.Mesh(new THREE.PlaneGeometry(6.16, 3.85), new THREE.MeshBasicMaterial({ map: lapT, toneMapped: false })); sc.position.set(0, 2.12, 0.045); lid.add(sc); } LAP.position.set(0, 1.2, 0); scene.add(LAP);
+
+window.render = async function (t) {
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  [MAIN, BAR1, BAR2, SFU, LAP, PHONE_A, PHONE_B, ...NODES, ...LINKS, ...PKTS, ...PEERS, ...UP, ...DOWN].forEach((m) => (m.visible = false));
+  const cam0 = (z = 14) => look(V(0, 4, z), V(0, 4, 0), 42);
+  if (t < A("raw")) { MAIN.visible = true; draw(MAIN, (g) => drawFace(g, t, 0, 0, 2)); cam0(lerp(16, 12, clamp(t / A("raw")))); big("30× A SECOND", t, A("hook") + 4.0, A("raw"), "#ffffff", "300px", "100px"); }
+  else if (t < A("same")) { const k = clamp((t - A("raw")) / (A("same") - A("raw"))); BAR1.visible = true; const h = 8 * ease(clamp(k / 0.6)); BAR1.scale.y = h + 0.01; BAR1.position.set(0, h / 2 - 1, 0); look(V(0, 4, 16), V(0, 3, 0), 42); card("c0", `1 s of raw HD ≈ <b>150+ MB</b>`, t, A("raw") + 1.2, A("same"), 230, 260, -2); }
+  else if (t < A("packets")) { MAIN.visible = true; const mode = t < A("blocks") ? "same" : "blocks"; draw(MAIN, (g) => blockView(g, t, mode, 0)); cam0(12);
+    if (mode == "same") { lbl("l0", V(0, 2.2, 0), t, A("same") + 1.5, A("blocks"), "only the <b>mouth</b> changed", "#3dff8c"); }
+    else { const k = clamp((t - A("blocks")) / (A("packets") - A("blocks"))); BAR1.visible = BAR2.visible = k > 0.55; BAR1.scale.y = 6; BAR1.position.set(-5.4, 2, 1); BAR2.scale.y = 0.06; BAR2.position.set(-3.8, -0.97, 1); if (k > 0.55) { lbl("l0", V(-5.4, 5.4, 1), t, A("blocks") + (A("packets") - A("blocks")) * 0.55, A("packets"), "raw", "#ff6a6a"); lbl("l1", V(-3.8, -0.4, 1), t, A("blocks") + (A("packets") - A("blocks")) * 0.6, A("packets"), "<b>100×</b> smaller", "#3dff8c"); } } }
+  else if (t < A("server")) { NODES.forEach((m) => (m.visible = true)); LINKS.forEach((m) => (m.visible = true)); PHONE_A.visible = PHONE_B.visible = true; const late = t >= A("late"); draw(PHONE_A, (g) => { g.fillStyle = "#000"; g.fillRect(0, 0, 320, 560); drawFace(g, t, 0, 160, 1); });
+    draw(PHONE_B, (g) => { g.fillStyle = "#000"; g.fillRect(0, 0, 320, 560); drawFace(g, t, 0, 160, 1, "#7a5a9a"); if (late && (t * 2) % 1 < 0.3) { for (let i = 0; i < 6; i++) { const x = (i * 53) % 280, y = 180 + (i * 37) % 200; g.drawImage(g.canvas, x, y, 40, 40, x + 8, y + 4, 40, 40); g.fillStyle = "rgba(60,255,140,0.25)"; g.fillRect(x, y, 40, 40); } } });
+    PKTS.forEach((m) => { const u = m.userData, f = (t * 0.22 + u.o) % 1; m.visible = true; m.position.copy(ROUTES[u.r].getPoint(f)); m.lookAt(cam.position); const lost = late && u.late && f > 0.5; m.material.opacity = lost ? 0.25 : 1; m.material.color.setHex(lost ? 0xff4d5a : [0x3dff8c, 0x6ab8ff, 0xffd84a][PKTS.indexOf(m) % 3]); }); look(V(0, 4, 30), V(0, 4, 0), 44);
+    if (late) card("c0", `late packet → <b>skip it</b>, keep talking`, t, A("late") + 1.0, A("server"), 230, 230, -2); }
+  else if (t < A("orbi")) { SFU.visible = true; PEERS.forEach((p, i) => { p.visible = true; draw(p, (g) => drawFace(g, t + i * 0.7, 0, 0, 1, p.userData.bg)); p.lookAt(cam.position); }); const k = clamp((t - A("server")) / (A("orbi") - A("server")));
+    UP.forEach((m, i) => { const f = (t * 0.6 + i * 0.13) % 1; m.visible = true; m.position.copy(PEERS[i].position).lerp(SFU.position, f); }); DOWN.forEach((m, j) => { const i = j % 5, f = (t * 0.6 + j * 0.07) % 1; const to = PEERS[(i + 1 + Math.floor(j / 5)) % 5]; m.visible = true; m.position.copy(SFU.position).lerp(to.position, f); }); look(V(0, 4, 27), V(0, 4, 0), 42);
+    lbl("l0", V(0, 2.2, 0), t, A("server") + 0.8, A("orbi"), "server · <b>forwards</b> to everyone", "#3dff8c"); card("c0", `you upload <b>once</b>`, t, A("server") + (A("orbi") - A("server")) * 0.5, A("orbi"), 260, 230, -2); }
+  else { LAP.visible = true; const k = clamp((t - A("orbi")) / (A("end") - A("orbi"))); drawLap(clamp(k * 1.4)); look(V(0, lerp(7, 5.5, ease(k)), lerp(20, 15, ease(k))), V(0, 3.2, -1), 42); card("c0", `private <b>Space</b> · name + code`, t, A("orbi") + 1.0, A("end"), 230, 230, -2); card("c1", `same files · <b>wherever they are</b>`, t, A("orbi") + (A("end") - A("orbi")) * 0.55, A("end"), 230, 380, 2); }
+
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
