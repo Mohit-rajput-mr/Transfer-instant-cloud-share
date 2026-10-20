@@ -1,0 +1,72 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "You put on headphones, press one button, and the airplane engine just disappears. How do you delete a sound?",
+   "dur": 5.869,
+   "at": 0.35
+  },
+  {
+   "key": "wave",
+   "text": "Sound is a wave. Air squeezed and stretched, squeezed and stretched, hundreds of times a second.",
+   "dur": 6.275,
+   "at": 6.62
+  },
+  {
+   "key": "mic",
+   "text": "Tiny microphones on the outside of the headphones listen to that noise, all the time.",
+   "dur": 5.167,
+   "at": 13.24
+  },
+  {
+   "key": "flip",
+   "text": "Then a chip builds the exact opposite wave. Where the noise squeezes, it stretches. Where it stretches, it squeezes.",
+   "dur": 6.942,
+   "at": 18.71
+  },
+  {
+   "key": "cancel",
+   "text": "Play both at once, and they cancel out. Squeeze plus stretch equals, nothing. Silence.",
+   "dur": 6.466,
+   "at": 26.0
+  },
+  {
+   "key": "fast",
+   "text": "And it has to keep up, adjusting thousands of times every second, because the noise never stops changing.",
+   "dur": 6.094,
+   "at": 32.87
+  },
+  {
+   "key": "best",
+   "text": "It works best on steady rumbles, like engines and air conditioners. Sudden sounds, like a voice or a clap, are harder.",
+   "dur": 6.679,
+   "at": 39.31
+  },
+  {
+   "key": "seal",
+   "text": "That's why the ear cushions matter too. They physically block the high-pitched sounds the chip can't catch.",
+   "dur": 5.903,
+   "at": 46.29
+  },
+  {
+   "key": "trans",
+   "text": "And transparency mode? It flips the trick around, and plays the outside world back into your ears.",
+   "dur": 6.344,
+   "at": 52.55
+  },
+  {
+   "key": "orbi",
+   "text": "Want to cancel the noise in your team's files? Orbi Work: every file wired to a task, every task with clear steps. No endless chat.",
+   "dur": 9.003,
+   "at": 59.29
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com, slash work. Now you know!",
+   "dur": 3.367,
+   "at": 68.64
+  }
+ ],
+ "duration": 73.81
+}
