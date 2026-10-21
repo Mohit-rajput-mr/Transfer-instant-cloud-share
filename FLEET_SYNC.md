@@ -20,6 +20,11 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- OPEN 2026-10-21 (H) — Production stuck on r-2026-10-21-world-void: Vercel refused 209d25a ("Deployment rate limited —
+  retry in 24 hours", seen via `gh api .../commits/209d25a/statuses`). Cause: every agent branch + notes commit built
+  (Hobby ≈100 builds/day). Fix: vercel.json ignoreCommand → scripts/vercel-ignore.sh (live branch + site code only;
+  checked locally for: other branch → skip, code change → build, notes-only → skip). Pending: a push after the limit
+  resets (~2026-10-22 10:15 UTC) or the owner starting the Pro trial, then Redeploy.
 - DONE 2026-10-21 — Spaces: "Flexible / Workspace only" when creating (SpaceMeta.work, sealed meta, no migration). A
   Workspace-only space always opens in Work; switching to Classic steps out of it (parked) and the bar shows "Switch to
   <space> ▾"; the same control lists every space this browser is still in ("Your spaces"), one tap to enter; a space's
