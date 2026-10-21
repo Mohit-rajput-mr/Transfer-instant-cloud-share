@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a cat lands on its feet? It flips itself over in mid-air, with nothing to push against.",
+   "dur": 6.787,
+   "at": 0.35
+  },
+  {
+   "key": "twist",
+   "text": "Falling upside down, the cat bends in the middle, so its front half and back half can turn separately.",
+   "dur": 6.034,
+   "at": 7.54
+  },
+  {
+   "key": "front",
+   "text": "First it tucks its front legs in, and stretches its back legs out. The front spins round fast. The back barely moves.",
+   "dur": 7.503,
+   "at": 13.87
+  },
+  {
+   "key": "back",
+   "text": "Then it swaps. Front legs out, back legs in, and the back half catches up.",
+   "dur": 4.073,
+   "at": 21.67
+  },
+  {
+   "key": "physics",
+   "text": "Tucking in makes things spin faster, like a figure skater pulling in their arms. The cat uses that trick on each half in turn.",
+   "dur": 7.221,
+   "at": 26.05
+  },
+  {
+   "key": "spine",
+   "text": "A super flexible spine, and loose collarbones, make the twist possible. Kittens start doing it at around three to four weeks old.",
+   "dur": 7.146,
+   "at": 33.57
+  },
+  {
+   "key": "land",
+   "text": "Then it spreads out like a little parachute, and lands on bent legs to soak up the hit.",
+   "dur": 4.58,
+   "at": 41.01
+  },
+  {
+   "key": "close",
+   "text": "So a cat doesn't cheat physics. It just turns in two halves.",
+   "dur": 4.092,
+   "at": 45.99
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 50.49
+  }
+ ],
+ "duration": 55.04
+}
