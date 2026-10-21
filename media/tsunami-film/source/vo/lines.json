@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a tsunami works? It isn't a giant surfing wave. It's the whole ocean moving.",
+   "dur": 5.612,
+   "at": 0.35
+  },
+  {
+   "key": "quake",
+   "text": "It usually starts with an earthquake under the sea. The seafloor jumps up, and lifts all the water above it.",
+   "dur": 5.386,
+   "at": 6.36
+  },
+  {
+   "key": "deep",
+   "text": "In deep water, the wave races out as fast as a jet plane, up to eight hundred kilometres an hour. But it's often less than a metre tall, so ships barely notice.",
+   "dur": 8.796,
+   "at": 12.05
+  },
+  {
+   "key": "shore",
+   "text": "Near the coast, the water gets shallow. The wave slows down, and all that water piles up, into a wall many metres high.",
+   "dur": 6.755,
+   "at": 21.14
+  },
+  {
+   "key": "drawback",
+   "text": "Sometimes the sea pulls back first, emptying the beach. That's the warning sign. Run for high ground.",
+   "dur": 5.809,
+   "at": 28.2
+  },
+  {
+   "key": "warn",
+   "text": "Today, sensors on the ocean floor watch for these waves, and send alerts to coasts hours away.",
+   "dur": 5.164,
+   "at": 34.31
+  },
+  {
+   "key": "close",
+   "text": "So a tsunami is a whole ocean, shoved by the ground beneath it.",
+   "dur": 3.966,
+   "at": 39.87
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 44.24
+  }
+ ],
+ "duration": 48.79
+}
