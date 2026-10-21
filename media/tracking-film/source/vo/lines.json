@@ -1,1 +1,54 @@
-{"lines": [{"key": "hook", "text": "hook", "at": 0.35, "dur": 6.5}, {"key": "cookie", "text": "cookie", "at": 7.1499999999999995, "dur": 6}, {"key": "across", "text": "across", "at": 13.45, "dur": 7}, {"key": "finger", "text": "finger", "at": 20.75, "dur": 8}, {"key": "auction", "text": "auction", "at": 29.05, "dur": 7}, {"key": "block", "text": "block", "at": 36.35, "dur": 5}, {"key": "orbi", "text": "orbi", "at": 41.65, "dur": 8.5}, {"key": "end", "text": "end", "at": 50.45, "dur": 3}], "duration": 54.75}
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how ads seem to follow you from site to site? Most websites quietly load code from tracking companies.",
+   "dur": 7.106,
+   "at": 0.35
+  },
+  {
+   "key": "cookie",
+   "text": "When you visit, that tracker saves a cookie in your browser: a small random ID. Think of it as a name tag.",
+   "dur": 6.1,
+   "at": 7.86
+  },
+  {
+   "key": "across",
+   "text": "The same tracker sits on thousands of other sites. Each visit, it reads the same name tag, and adds that page to your profile.",
+   "dur": 6.716,
+   "at": 14.26
+  },
+  {
+   "key": "finger",
+   "text": "Even without cookies, your browser gives away clues. Screen size, fonts, time zone, graphics card. Together, they're often unique, like a fingerprint.",
+   "dur": 8.389,
+   "at": 21.27
+  },
+  {
+   "key": "auction",
+   "text": "That profile feeds ad auctions. When a page loads, advertisers bid for your eyes, and the winner is picked in a fraction of a second.",
+   "dur": 7.919,
+   "at": 29.96
+  },
+  {
+   "key": "block",
+   "text": "Many browsers now block third-party cookies by default, and tracker blockers cut much of the rest.",
+   "dur": 5.712,
+   "at": 38.18
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi has no accounts and no profiles. Your device just gets a random ID, and anonymous mode uses a throwaway one, so there's nothing to follow.",
+   "dur": 8.392,
+   "at": 44.24
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 53.03
+  }
+ ],
+ "duration": 57.58
+}
