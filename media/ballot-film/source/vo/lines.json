@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a secret ballot works? It's built so nobody can ever prove how you voted. Not even you.",
+   "dur": 6.619,
+   "at": 0.35
+  },
+  {
+   "key": "before",
+   "text": "For centuries, votes were often called out loud, or cast on coloured party tickets everyone could see. Bosses and bribers watched.",
+   "dur": 7.627,
+   "at": 7.37
+  },
+  {
+   "key": "aus",
+   "text": "In 1856, the colony of Victoria in Australia tried something new. One official paper, listing every candidate, printed by the government.",
+   "dur": 9.425,
+   "at": 15.3
+  },
+  {
+   "key": "booth",
+   "text": "You mark it alone behind a screen, fold it, and drop it in a sealed box. Your name is never written on it.",
+   "dur": 7.632,
+   "at": 25.02
+  },
+  {
+   "key": "count",
+   "text": "When polls close, the box is opened in front of watchers from every side, and the papers are counted.",
+   "dur": 7.241,
+   "at": 32.95
+  },
+  {
+   "key": "proof",
+   "text": "Since no one can check your vote, buying it is pointless. That's the whole trick.",
+   "dur": 5.616,
+   "at": 40.49
+  },
+  {
+   "key": "spread",
+   "text": "Britain adopted it in 1872, and today almost every democracy uses it.",
+   "dur": 5.935,
+   "at": 46.41
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi's Anonymous mode keeps the same spirit. No profile, no name, no GPS. Just a throwaway ID that's gone when you leave.",
+   "dur": 8.236,
+   "at": 52.74
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 61.33
+  }
+ ],
+ "duration": 65.88
+}
