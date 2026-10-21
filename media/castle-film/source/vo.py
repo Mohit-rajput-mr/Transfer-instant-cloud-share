@@ -13,7 +13,7 @@ LINES = [
     ("moat",    "First, a moat. A wide ditch, often full of water, so attackers couldn't roll siege towers right up to the walls.", 1.05, 0.30),
     ("bridge",  "The only way across was a drawbridge, pulled up by chains when danger came.", 1.05, 0.30),
     ("gate",    "Behind it, an iron grid called a portcullis dropped down, and the gatehouse often had a second one, to trap attackers in between.", 1.05, 0.30),
-    ("walls",   "Thick stone walls, towers that stuck out so archers could shoot along the wall, and narrow arrow slits that were hard to hit from outside.", 1.05, 0.30),
+    ("walls",   "Huge stone walls, towers that stuck out so archers could shoot along the wall, and narrow arrow slits that were hard to hit from outside.", 1.05, 0.30),
     ("word",    "And the guards only opened up for people who knew the watchword, the secret password of the day.", 1.05, 0.40),
     ("orbi",    "Orbi Spaces work like a private castle for your files. A Space needs a passcode to join, its files never show up in public, and only members can open them.", 1.05, 0.35),
     ("end",     "Orbi Transfer dot com. Now you know!",                                                                                  1.05, 0.00),
