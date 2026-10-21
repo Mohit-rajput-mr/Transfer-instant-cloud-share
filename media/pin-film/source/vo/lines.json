@@ -1,1 +1,54 @@
-{"lines": [{"key": "hook", "text": "hook", "at": 0.35, "dur": 6}, {"key": "brute", "text": "brute", "at": 6.6499999999999995, "dur": 4.5}, {"key": "chip", "text": "chip", "at": 11.45, "dur": 6.5}, {"key": "delay", "text": "delay", "at": 18.25, "dur": 6.5}, {"key": "wipe", "text": "wipe", "at": 25.05, "dur": 4}, {"key": "key", "text": "key", "at": 29.35, "dur": 7}, {"key": "orbi", "text": "orbi", "at": 36.65, "dur": 9}, {"key": "end", "text": "end", "at": 45.95, "dur": 3}], "duration": 50.25}
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a four digit PIN protects your phone? There are only ten thousand possible codes.",
+   "dur": 5.811,
+   "at": 0.35
+  },
+  {
+   "key": "brute",
+   "text": "A computer could try all ten thousand in about a second, if it were allowed to.",
+   "dur": 4.994,
+   "at": 6.56
+  },
+  {
+   "key": "chip",
+   "text": "So your phone doesn't allow it. The check happens inside a separate security chip, which counts every wrong attempt.",
+   "dur": 5.896,
+   "at": 11.86
+  },
+  {
+   "key": "delay",
+   "text": "After a few misses, it makes you wait. A minute, then five, then an hour. Trying every code would take years.",
+   "dur": 6.797,
+   "at": 18.05
+  },
+  {
+   "key": "wipe",
+   "text": "Many phones can even erase themselves after ten wrong tries.",
+   "dur": 4.714,
+   "at": 25.15
+  },
+  {
+   "key": "key",
+   "text": "And your PIN is mixed with a secret key built into that chip, so the data can't be copied off and cracked somewhere else.",
+   "dur": 7.527,
+   "at": 30.16
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi uses the same idea for files. A locked file needs its passcode, the server only keeps a fingerprint of it, and twelve wrong tries lock the file.",
+   "dur": 8.353,
+   "at": 38.04
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 46.79
+  }
+ ],
+ "duration": 51.34
+}
