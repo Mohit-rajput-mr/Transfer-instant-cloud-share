@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>HowCatsLandOnTheirFeet</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+scene.background = new THREE.Color(0x10131c);
+scene.add(new THREE.HemisphereLight(0xfff2e6, 0x1c2030, 1.1)); { const l = new THREE.DirectionalLight(0xffffff, 1.5); l.position.set(4, 10, 12); scene.add(l); }
+const FUR = new THREE.MeshStandardMaterial({ color: 0xf0a04a, roughness: 0.8 }), FUR2 = new THREE.MeshStandardMaterial({ color: 0xfff1e0, roughness: 0.8 }), DARK = new THREE.MeshStandardMaterial({ color: 0x2a1a10 });
+// cat built in two halves joined at the waist; each half rolls about the body axis (x)
+const CAT = new THREE.Group(); scene.add(CAT); CAT.scale.setScalar(0.68);
+const mkHalf = (dir) => { const bend = new THREE.Group(); CAT.add(bend); const roll = new THREE.Group(); bend.add(roll);
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.62, 1.3, 8, 18), FUR); body.rotation.z = Math.PI / 2; body.position.x = dir * 0.95; roll.add(body);
+  const belly = new THREE.Mesh(new THREE.CapsuleGeometry(0.5, 1.0, 6, 14), FUR2); belly.rotation.z = Math.PI / 2; belly.position.set(dir * 0.95, -0.2, 0); roll.add(belly);
+  const legs = [-1, 1].map((s) => { const hip = new THREE.Group(); hip.position.set(dir * 1.5, -0.35, s * 0.38); roll.add(hip); const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.17, 1.0, 6, 10), FUR); leg.position.y = -0.62; hip.add(leg); const paw = new THREE.Mesh(new THREE.SphereGeometry(0.21, 12, 8), FUR2); paw.position.y = -1.2; hip.add(paw); hip.userData.leg = leg; hip.userData.paw = paw; return hip; });
+  return { bend, roll, legs }; };
+const F = mkHalf(1), B = mkHalf(-1);
+{ const head = new THREE.Mesh(new THREE.SphereGeometry(0.62, 24, 18), FUR); head.position.set(2.55, 0.35, 0); F.roll.add(head); const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 12), FUR2); muzzle.position.set(3.05, 0.2, 0); F.roll.add(muzzle);
+  for (const s of [-1, 1]) { const ear = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.5, 4), FUR); ear.position.set(2.45, 0.95, s * 0.32); F.roll.add(ear); const eye = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), DARK); eye.position.set(3.0, 0.5, s * 0.25); F.roll.add(eye); }
+  const tail = new THREE.Group(); tail.position.set(-1.9, 0.2, 0); B.roll.add(tail); for (let i = 0; i < 8; i++) { const seg = new THREE.Mesh(new THREE.SphereGeometry(0.17 - i * 0.006, 10, 8), FUR); seg.position.set(-i * 0.28, Math.sin(i * 0.5) * 0.4 + i * 0.12, 0); tail.add(seg); } }
+const SPINE = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 3.8, 8), glow(0x3dff8c)); SPINE.rotation.z = Math.PI / 2; SPINE.position.set(0, 0.66, 0); CAT.add(SPINE);
+const WAIST = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.06, 8, 40), glow(0xffd04a)); WAIST.rotation.y = Math.PI / 2; CAT.add(WAIST);
+const ARR = [1, -1].map((d) => { const m = new THREE.Mesh(new THREE.TorusGeometry(1.25, 0.06, 8, 40, Math.PI * 1.4), glow(d > 0 ? 0x3dff8c : 0x7aa8ff)); m.rotation.y = Math.PI / 2; m.position.x = d * 1.0; CAT.add(m); return m; });
+// speed lines (falling)
+const SPEED = Array.from({ length: 40 }, (_, i) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.6, 0.04), new THREE.MeshBasicMaterial({ color: 0xaab4cc, transparent: true, opacity: 0.35 })); m.userData = { x: (Math.random() - 0.5) * 16, z: -2 - Math.random() * 6, o: Math.random() }; scene.add(m); return m; });
+const FLOOR = new THREE.Mesh(new THREE.PlaneGeometry(40, 30), new THREE.MeshStandardMaterial({ color: 0x3a3048, roughness: 0.9 })); FLOOR.rotation.x = -Math.PI / 2; FLOOR.position.y = -2.0; scene.add(FLOOR);
+// figure skater
+const SK = new THREE.Group(); SK.position.set(40, 0, 0); scene.add(SK);
+const SKB = new THREE.Group(); SK.add(SKB); { const m = new THREE.MeshStandardMaterial({ color: 0x7aa8ff }); const b = new THREE.Mesh(new THREE.CapsuleGeometry(0.45, 2.2, 8, 16), m); b.position.y = 1.6; SKB.add(b); const h = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 12), new THREE.MeshStandardMaterial({ color: 0xe0b090 })); h.position.y = 3.4; SKB.add(h); const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 1.6, 6, 10), m); leg.position.y = -0.3; SKB.add(leg); }
+const SKA = [-1, 1].map((s) => { const g = new THREE.Group(); g.position.set(0, 2.5, 0); SKB.add(g); const a = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 1.6, 6, 10), new THREE.MeshStandardMaterial({ color: 0xe0b090 })); a.rotation.z = Math.PI / 2; a.position.x = s * 1.0; g.add(a); g.userData = { a, s }; return g; });
+const ICE = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 0.1, 48), new THREE.MeshStandardMaterial({ color: 0xcfe8ff, roughness: 0.15, metalness: 0.2 })); ICE.position.y = -1.2; SK.add(ICE);
+// pose helpers: tuck = legs folded along the body, out = legs stretched out from the belly
+const pose = (h, tuck, dir) => h.legs.forEach((hip, i) => { hip.rotation.set((i ? 1 : -1) * lerp(0.35, 0.05, tuck), 0, dir * lerp(0, 1.45, tuck)); });
+let ang = 0;
+
+window.render = async function (t) { cam.up.set(0, 1, 0);
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  CAT.visible = true; SPINE.visible = false; WAIST.visible = false; ARR.forEach((a) => (a.visible = false)); FLOOR.visible = false; SK.visible = false; SPEED.forEach((m) => (m.visible = true));
+  let rf = Math.PI, rb = Math.PI, bend = 0, tf = 0, tb = 0, cy = 0, spread = 0, squash = 0;
+  const flip = (k) => { const a = ease(clamp(k * 2)), b = ease(clamp(k * 2 - 1)); rf = Math.PI * (1 - a) - 0.15 * b; rb = Math.PI + 0.35 * a - (Math.PI + 0.35) * b; bend = Math.sin(Math.PI * clamp(k)); tf = a < 1 ? Math.sin(Math.PI * a) : 0; tb = b > 0 ? Math.sin(Math.PI * b) : 0; };
+  if (t < A("twist")) { const k = clamp((t - A("hook") - 3.2) / 1.6); flip(k); cy = 0; look(V(1.5, 1.2, lerp(16, 11, ease(clamp(t / 3)))), V(0.3, 0, 0), 46); big("SLOW IT DOWN", t, A("hook") + 5.2, A("twist"), "#ffffff", "250px", "110px"); }
+  else if (t < A("front")) { bend = ease(clamp((t - A("twist") - 1.0) / 1.5)); WAIST.visible = t > A("twist") + 1.0; look(V(0.8, 2.6, 9.5), V(0.2, 0, 0), 46); card("c0", `bends at the waist · <b>two halves</b>`, t, A("twist") + 1.2, A("front"), 220, 230, -2); }
+  else if (t < A("physics")) { const kf = ease(clamp((t - A("front") - 1.2) / 4.5)), kb = ease(clamp((t - A("back") - 0.8) / 3.0)); bend = 1 - kb * 0.6; rf = Math.PI * (1 - kf) - 0.15 * kb; rb = Math.PI + 0.35 * kf - (Math.PI + 0.35) * kb; tf = t < A("back") ? clamp((t - A("front") - 0.6) / 0.6) : 1 - clamp((t - A("back") - 0.2) / 0.6); tb = t < A("back") ? 0 : clamp((t - A("back") - 0.2) / 0.6);
+    ARR[0].visible = t < A("back"); ARR[1].visible = t >= A("back") + 0.6; ARR.forEach((a, i) => (a.rotation.x = t * (i ? -3 : 3))); look(V(1.5, 1.6, 10.5), V(0.2, 0, 0), 46);
+    card("c0", `front: legs <b>in</b> → spins fast`, t, A("front") + 0.6, A("back"), 240, 230, -2); card("c1", `back: legs <b>out</b> → barely moves`, t, A("front") + 2.6, A("back"), 220, 1720, 2); card("c0", `swap · back half <b>catches up</b>`, t, A("back") + 0.6, A("physics"), 250, 230, -2); }
+  else if (t < A("spine")) { CAT.visible = false; SK.visible = true; SPEED.forEach((m) => (m.visible = false)); const tuck = ease(clamp((t - A("physics") - 2.0) / 0.8)); SKA.forEach((g) => { g.userData.a.position.x = g.userData.s * lerp(1.0, 0.35, tuck); g.rotation.z = g.userData.s * lerp(0, -1.1, tuck); });
+    const w = lerp(1.2, 6.5, tuck); ang += 0; SKB.rotation.y = (t - A("physics")) * 1.2 + Math.max(0, t - A("physics") - 2.0) * (w - 1.2) * 0.7; look(V(40, 3.2, 11), V(40, 1.4, 0), 46);
+    card("c0", `arms out → <b>slow</b>`, t, A("physics") + 0.6, A("physics") + 2.4, 320, 230, -2); card("c0", `arms in → <b>fast</b>`, t, A("physics") + 2.6, A("spine"), 330, 230, -2); }
+  else if (t < A("land")) { rf = rb = 0; SPINE.visible = true; look(V(2, 3.6, 9.5), V(0.2, 0.3, 0), 46); card("c0", `flexible spine · <b>loose collarbones</b>`, t, A("spine") + 0.8, A("spine") + 5.0, 210, 230, -2); card("c0", `kittens: <b>3–4 weeks</b>`, t, A("spine") + 5.2, A("land"), 300, 230, -2); }
+  else { rf = rb = 0; const k = clamp((t - A("land")) / 3.6); spread = t < A("land") + 3.4 ? ease(clamp((t - A("land") - 0.4) / 1.0)) : 1 - ease(clamp((t - A("land") - 3.4) / 0.4)); cy = lerp(4, -0.92, ease(k)); FLOOR.visible = true; SPEED.forEach((m) => (m.visible = k < 1)); squash = t > A("land") + 3.6 ? Math.sin(clamp((t - A("land") - 3.6) / 0.5) * Math.PI) : 0;
+    look(V(2.5, cy + 2.2, 12), V(0.3, cy - 0.6, 0), 48); card("c0", `spread out · <b>like a parachute</b>`, t, A("land") + 0.8, A("land") + 3.5, 230, 230, -2); card("c0", `bent legs · <b>soft landing</b>`, t, A("land") + 3.7, A("close"), 260, 230, -2); if (t >= A("close")) { look(V(3 + Math.sin(t * 0.3) * 2, 3.2, 11), V(0.3, 0.4, 0), 48); big("TWO HALVES", t, A("close") + 0.8, A("end"), "#ffd04a", "250px", "120px"); } }
+  F.bend.rotation.z = -0.35 * bend; B.bend.rotation.z = 0.35 * bend; F.roll.rotation.x = rf; B.roll.rotation.x = rb; pose(F, tf, 1); pose(B, tb, -1);
+  if (spread > 0) [F, B].forEach((h, j) => h.legs.forEach((hip, i) => hip.rotation.set((i ? 1 : -1) * lerp(0.35, 1.0, spread), 0, (j ? -1 : 1) * 0.5 * spread)));
+  [F, B].forEach((h) => h.legs.forEach((hip) => hip.scale.y = 1 - squash * 0.3)); CAT.position.y = cy; WAIST.position.set(0, 0, 0);
+  SPEED.forEach((m) => { const f = (t * 1.6 + m.userData.o) % 1; m.position.set(m.userData.x, cy - 8 + f * 16, m.userData.z); });
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
