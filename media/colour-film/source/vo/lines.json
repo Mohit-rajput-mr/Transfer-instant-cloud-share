@@ -1,1 +1,60 @@
-{"lines": [{"key": "hook", "text": "hook", "at": 0.35, "dur": 6}, {"key": "spectrum", "text": "spectrum", "at": 6.6499999999999995, "dur": 5.5}, {"key": "cones", "text": "cones", "at": 12.45, "dur": 7}, {"key": "mix", "text": "mix", "at": 19.75, "dur": 7}, {"key": "screens", "text": "screens", "at": 27.05, "dur": 6.5}, {"key": "blind", "text": "blind", "at": 33.85, "dur": 7}, {"key": "birds", "text": "birds", "at": 41.15, "dur": 5}, {"key": "close", "text": "close", "at": 46.449999999999996, "dur": 3.5}, {"key": "end", "text": "end", "at": 50.24999999999999, "dur": 3}], "duration": 54.54999999999999}
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how your eyes see colour? There's no colour in light itself, only waves of different lengths.",
+   "dur": 5.052,
+   "at": 0.35
+  },
+  {
+   "key": "spectrum",
+   "text": "The light we can see runs from about four hundred nanometers, violet, to about seven hundred, red.",
+   "dur": 5.452,
+   "at": 5.8
+  },
+  {
+   "key": "cones",
+   "text": "At the back of your eye, millions of cone cells catch it. There are three kinds, most sensitive to red, green, and blue light.",
+   "dur": 7.809,
+   "at": 11.55
+  },
+  {
+   "key": "mix",
+   "text": "Every colour you see is just a mix of how strongly those three fire. Red and green cones firing together? Your brain says yellow.",
+   "dur": 8.091,
+   "at": 19.66
+  },
+  {
+   "key": "screens",
+   "text": "That's why screens only need red, green, and blue pixels. Mix them, and they trick your cones into seeing millions of colours.",
+   "dur": 7.969,
+   "at": 28.05
+  },
+  {
+   "key": "blind",
+   "text": "If one type of cone is missing or shifted, some colours look the same. That's colour blindness, in about one in twelve men.",
+   "dur": 6.877,
+   "at": 36.32
+  },
+  {
+   "key": "birds",
+   "text": "Many birds have a fourth kind of cone, for ultraviolet light we can't see at all.",
+   "dur": 4.211,
+   "at": 43.5
+  },
+  {
+   "key": "close",
+   "text": "So colour isn't really out there. It's made inside your head.",
+   "dur": 4.436,
+   "at": 48.06
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 52.9
+  }
+ ],
+ "duration": 57.45
+}
