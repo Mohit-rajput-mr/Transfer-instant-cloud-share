@@ -9,7 +9,7 @@ from faster_whisper import WhisperModel
 
 # (key, subtitle text, emotion 0..1, pause after in s). "Orbi" is spoken "Orbee".
 LINES = [
-    ("hook",    "Do you know what stops an elevator from falling? It's not one trick. It's several, stacked on top of each other.", 1.10, 0.40),
+    ("hook",    "Do you know how elevator safety works? It's not one trick. It's several, stacked on top of each other.", 1.10, 0.40),
     ("cables",  "First, it hangs from several steel cables, usually four or more. Any one of them can hold the car on its own.", 1.05, 0.30),
     ("counter", "On the other end is a heavy counterweight, about the weight of the car plus half a full load. So the motor barely lifts anything. It just tips the balance.", 1.05, 0.30),
     ("governor", "At the top sits a speed limiter called a governor. If the car ever goes too fast, it trips the safety brakes.", 1.05, 0.30),
