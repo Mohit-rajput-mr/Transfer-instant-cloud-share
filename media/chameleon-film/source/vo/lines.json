@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a chameleon changes colour? It doesn't use paint. It uses tiny crystals that bend light.",
+   "dur": 6.322,
+   "at": 0.35
+  },
+  {
+   "key": "myth",
+   "text": "Most people think it's about hiding. Mostly, it's about mood, like showing off to a rival, or cooling down.",
+   "dur": 7.151,
+   "at": 7.07
+  },
+  {
+   "key": "cells",
+   "text": "Under the skin are cells packed with tiny crystals, lined up in a neat grid, far thinner than a hair.",
+   "dur": 6.775,
+   "at": 14.52
+  },
+  {
+   "key": "calm",
+   "text": "When the chameleon is calm, the crystals sit close together and reflect blue light. Mixed with yellow pigment on top, the skin looks green.",
+   "dur": 8.127,
+   "at": 21.6
+  },
+  {
+   "key": "excited",
+   "text": "When it gets excited, the cells swell, and the grid spreads out. Now the crystals reflect longer waves. Yellow, orange and red.",
+   "dur": 8.09,
+   "at": 30.02
+  },
+  {
+   "key": "fast",
+   "text": "No new pigment needed, so the whole change can happen in a couple of minutes.",
+   "dur": 4.145,
+   "at": 38.41
+  },
+  {
+   "key": "close",
+   "text": "So a chameleon's colour is really just the space between crystals.",
+   "dur": 3.841,
+   "at": 42.96
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 47.2
+  }
+ ],
+ "duration": 51.75
+}
