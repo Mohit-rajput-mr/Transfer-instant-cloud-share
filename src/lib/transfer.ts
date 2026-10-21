@@ -82,7 +82,8 @@ export async function launch(opts: {
   const { id } = (await res.json()) as { id: string };
   setOwnerKey(id, owner);
   if (preview)
-    await fetch(`/api/transfers/${id}/thumb`, { method: "POST", headers: { "x-owner": owner, "Content-Type": "image/jpeg" }, body: preview, signal }).catch(() => null);
+    // never in the way of the launch: on a weak line this upload could hang for minutes with the ball stuck at "Locking"
+    void fetch(`/api/transfers/${id}/thumb`, { method: "POST", headers: { "x-owner": owner, "Content-Type": "image/jpeg" }, body: preview, signal: AbortSignal.timeout(15_000) }).catch(() => null);
 
   if (anon) {
     // never device to device: the encrypted cloud copy must be complete before anyone sees the object

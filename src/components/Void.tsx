@@ -623,12 +623,11 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     }
     const run = (async () => {
       const sp = spaceRef.current;
-      const a = areaRef.current;
       // the public void also carries what was sent from this network (same Wi-Fi), even when it was pinned to another area
       const sameNet = !sp && !isAnon() ? fetch("/api/transfers/net").then((x) => (x.ok ? x.json() : null)).then((x) => (x?.items ?? []) as Orb[]).catch(() => [] as Orb[]) : Promise.resolve([] as Orb[]);
-      const q = [a && `a=${around(a).join(",")}`, fresh && `v=${Math.floor((Date.now() + skewRef.current) / 2000)}`].filter(Boolean).join("&");
+      // the public void is worldwide (owner 2026-10-21): one list for everyone, newest first; the area only feeds the Nearby filter
+      const q = [fresh && `v=${Math.floor((Date.now() + skewRef.current) / 2000)}`].filter(Boolean).join("&");
       const r = await fetch(sp ? `/api/spaces/${sp.slug}/transfers` : `/api/transfers${q ? `?${q}` : ""}`, sp ? { headers: spaceHeaders(), cache: "no-store" } : undefined).catch(() => null);
-      if (!sp && areaRef.current !== a) return; // moved to another area while this was in flight
       if (spaceRef.current !== sp) return; // switched while this was in flight
       if (sp && r?.status === 403) return removedRef.current(sp);
       if (!r?.ok) {
@@ -1366,8 +1365,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
 
   // live updates: a space's own channel, or the channels of this area and the eight around it (sent on this area's)
   const chanNames = liveOn
-    ? roomsFor(space?.chan ?? null, area).join(" ")
-    : space ? `orbit-s-${space.chan}` : area ? [area, ...around(area).filter((c) => c !== area)].map((c) => `orbit-a-${c}`).join(" ") : "orbit-void";
+    ? roomsFor(space?.chan ?? null, "").join(" ")
+    : space ? `orbit-s-${space.chan}` : "orbit-void";
   const myIdRef = useRef<string | null>(null);
   useEffect(() => {
     myIdRef.current = myId;
@@ -1477,7 +1476,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     // Orbit's own Cloudflare rooms (lib/live.ts, live/): thousands online at once on the free plan
     if (liveOn) {
       let opened = false;
-      const l = joinLive(chanNames.split(" "), spaceRef.current ? "" : areaRef.current, {
+      const l = joinLive(chanNames.split(" "), "", {
         on: (e, p, a) => void heard(e, p, a),
         status: (up) => {
           setRtDown(!up);
@@ -1546,7 +1545,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // the area moved (a walk, a flight over the Earth, a new IP guess): the same rooms stay open (only their filter and
   // tag move), new regions open and ones left behind close; nothing said meanwhile is lost
   useEffect(() => {
-    liveRef.current?.update(chanNames.split(" "), spaceRef.current ? "" : area);
+    liveRef.current?.update(chanNames.split(" "), "");
   }, [chanNames, area]);
   // the network's own live room (public void, not anonymous): devices on one Wi-Fi hear each other's launches even
   // when they are pinned to different areas (one by GPS, the other by IP)

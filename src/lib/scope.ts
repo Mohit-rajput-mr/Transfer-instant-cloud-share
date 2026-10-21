@@ -1,5 +1,5 @@
 // What the public void shows, chosen with the buttons in the navbar:
-//   Open void: everything public around you (your area and the eight around it, lib/area.ts)
+//   Open void: everything public, worldwide (one list and one live room for everyone)
 //   Nearby:    only your own area (~20-40 km); needs your location, so picking it asks for it
 //   Wi-Fi:     only what was sent from the same network as you (same Wi-Fi / same public IP)
 //   Mine:      only what you sent
@@ -7,7 +7,7 @@ export type Scope = "all" | "area" | "near" | "mine";
 
 export const SCOPE_NAME: Record<Scope, string> = { all: "Open void", area: "Nearby", near: "Wi-Fi", mine: "Mine" };
 export const SCOPE_HINT: Record<Scope, string> = {
-  all: "Everything public around you",
+  all: "Everything public, worldwide",
   area: "Only your area · uses your location",
   near: "Only people on your Wi-Fi",
   mine: "Only what you sent",

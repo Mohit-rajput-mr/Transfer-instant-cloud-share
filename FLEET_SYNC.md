@@ -20,6 +20,12 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- FIXED 2026-10-21 (H) — Uploads invisible on the owner's other device: (1) the public void was local, and the devices sat
+  in different IP areas (Barcelona vs Hillsboro US, a VPN/company network) → "Open void" is now worldwide (no ?a= list,
+  one live room r/void / orbit-void; the area stays on items for the Nearby filter + HQ). (2) a launch could hang at
+  "Locking" forever: the preview-picture POST had no timeout and blocked finalize → now fire-and-forget with 15 s timeout.
+  Verified: npm run check; production list without ?a= returns items from all areas (curl). RISK: one global room's
+  load (Cloudflare DO) as traffic grows; the stashed full design (git stash "WIP world void step1") adds server-sent beams.
 - FIXED 2026-10-20 (M) — Anonymous frame (AnonSeal) shrank while scrolling and never came back: its top was the fixed
   navbar's bottom + scrollY, re-measured on every navbar resize (it turns compact on scroll), kept with a running max.
   Now: the bar's bottom as measured while full size (not compact) minus the layer's page offset. Verified: frame top

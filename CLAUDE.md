@@ -13,6 +13,6 @@
   production by itself (check `https://orbitransfer.com/api/version`). Merge other branches into it; never deploy another branch.
 - Bump `RELEASE` in `src/app/api/version/route.ts` only when open tabs must reload.
 - Supabase project `orbit` (`ntnfdvmzylxenjqwdsnp`). Save every DB change as a file in `supabase/migrations/`.
-- Public void is local: content carries an `area` (geohash-4, `src/lib/area.ts`); lists and realtime channels are per area + neighbours.
+- Public void ("Open void") is WORLDWIDE (owner 2026-10-21): one list (no ?a=) and one live room (r/void / orbit-void). Items still carry an `area` (geohash-4) for the Nearby filter and HQ.
 - Live updates: Cloudflare Worker in `live/` (Durable Object per region / space). Deployed by Cloudflare Workers Builds
   (Worker `transfer-instant-cloud-share`, root dir `live`, no build command) on push. The site uses it when Vercel env `NEXT_PUBLIC_LIVE_URL` (wss://…) is set, else Supabase Realtime.
