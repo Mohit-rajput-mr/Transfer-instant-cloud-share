@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how walkie-talkies work? They're tiny radio stations that take turns.",
+   "dur": 4.951,
+   "at": 0.35
+  },
+  {
+   "key": "radio",
+   "text": "Press the button, and your voice becomes a radio wave, sent out on one frequency, called a channel.",
+   "dur": 6.684,
+   "at": 5.7
+  },
+  {
+   "key": "listen",
+   "text": "Every walkie-talkie on the same channel picks it up, and turns the wave back into sound.",
+   "dur": 4.91,
+   "at": 12.68
+  },
+  {
+   "key": "turns",
+   "text": "But the button switches yours from listening to sending, and everyone shares that one channel. So only one person can talk at a time. That's why people say, over.",
+   "dur": 7.939,
+   "at": 17.89
+  },
+  {
+   "key": "range",
+   "text": "The signal is weak, so the range is usually just a few kilometres. Hills and buildings cut it even shorter.",
+   "dur": 6.601,
+   "at": 26.13
+  },
+  {
+   "key": "history",
+   "text": "Soldiers carried the first ones during World War Two.",
+   "dur": 2.604,
+   "at": 33.03
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Nearby works on a similar idea, locally. Phones on the same Wi-Fi find each other, with no login and no pairing.",
+   "dur": 7.91,
+   "at": 36.04
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 44.3
+  }
+ ],
+ "duration": 48.85
+}
