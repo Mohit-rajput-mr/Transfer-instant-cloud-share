@@ -1,1 +1,60 @@
-{"lines": [{"key": "hook", "text": "hook", "at": 0.35, "dur": 6}, {"key": "dense", "text": "dense", "at": 6.6499999999999995, "dur": 8}, {"key": "lift", "text": "lift", "at": 14.95, "dur": 5}, {"key": "burner", "text": "burner", "at": 20.25, "dur": 6}, {"key": "down", "text": "down", "at": 26.55, "dur": 5.5}, {"key": "steer", "text": "steer", "at": 32.35, "dur": 8}, {"key": "first", "text": "first", "at": 40.650000000000006, "dur": 6}, {"key": "close", "text": "close", "at": 46.95, "dur": 3.5}, {"key": "end", "text": "end", "at": 50.75, "dur": 3}], "duration": 55.05}
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a hot air balloon flies? There's no engine pushing it up. Just a fire, and physics.",
+   "dur": 6.088,
+   "at": 0.35
+  },
+  {
+   "key": "dense",
+   "text": "When air heats up, its molecules speed up and spread apart. So a balloon full of hot air weighs less than the same space full of cool air.",
+   "dur": 8.665,
+   "at": 6.84
+  },
+  {
+   "key": "lift",
+   "text": "The cooler, heavier air around it pushes it upward, just like water pushes up a cork.",
+   "dur": 4.565,
+   "at": 15.8
+  },
+  {
+   "key": "burner",
+   "text": "To climb, the pilot fires the burner, heating the air inside to around a hundred degrees Celsius.",
+   "dur": 5.808,
+   "at": 20.67
+  },
+  {
+   "key": "down",
+   "text": "To come down, they let it cool, or pull open a vent at the top so hot air escapes.",
+   "dur": 4.491,
+   "at": 26.78
+  },
+  {
+   "key": "steer",
+   "text": "There's no steering wheel. Winds blow different ways at different heights, so pilots steer by climbing or sinking into the wind they want.",
+   "dur": 7.627,
+   "at": 31.57
+  },
+  {
+   "key": "first",
+   "text": "The first people flew in one over Paris in 1783, more than a century before the first airplane.",
+   "dur": 7.063,
+   "at": 39.49
+  },
+  {
+   "key": "close",
+   "text": "So a balloon is just warm air, lifted by the cold air around it.",
+   "dur": 5.45,
+   "at": 46.91
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 52.76
+  }
+ ],
+ "duration": 57.31
+}
