@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>HowPressureCookersWork</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+scene.background = new THREE.Color(0x0e0f14);
+scene.add(new THREE.HemisphereLight(0xfff4ea, 0x1a1c24, 1.0)); { const l = new THREE.DirectionalLight(0xffffff, 1.3); l.position.set(4, 10, 12); scene.add(l); }
+const STEEL = new THREE.MeshStandardMaterial({ color: 0xc8ccd4, metalness: 0.85, roughness: 0.25, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false });
+const mkPot = (x, cooker) => { const g = new THREE.Group(); g.position.x = x; scene.add(g);
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.7, 2.6, 40, 1, true), STEEL); body.position.y = 1.3; g.add(body); const base = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.7, 0.1, 40), new THREE.MeshStandardMaterial({ color: 0x8a8f9a, metalness: 0.8 })); g.add(base);
+  const water = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.65, 1.6, 40), new THREE.MeshStandardMaterial({ color: 0x4a9aff, transparent: true, opacity: 0.6 })); water.position.y = 0.85; g.add(water);
+  const burner = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 0.3, 32), new THREE.MeshStandardMaterial({ color: 0x23262e })); burner.position.y = -0.3; g.add(burner);
+  const flames = Array.from({ length: 12 }, (_, i) => { const f = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.5, 8), glow(0x4a8aff, { transparent: true, opacity: 0.8 })); const a = i * Math.PI / 6; f.position.set(Math.cos(a) * 1.0, -0.05, Math.sin(a) * 1.0); g.add(f); return f; });
+  const beans = Array.from({ length: 14 }, (_, i) => { const b = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), new THREE.MeshStandardMaterial({ color: 0xa83a2a })); b.scale.set(1.4, 0.9, 0.9); b.position.set(((i * 37) % 13) / 13 * 2 - 1, 0.25 + (i % 3) * 0.2, ((i * 53) % 11) / 11 * 1.4 - 0.7); g.add(b); return b; });
+  const bubbles = Array.from({ length: 20 }, () => { const b = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 })); b.userData = { x: (Math.random() - 0.5) * 2.6, z: (Math.random() - 0.5) * 2.6, o: Math.random() }; g.add(b); return b; });
+  const steam = Array.from({ length: 24 }, () => { const s = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, depthWrite: false })); s.userData = { x: (Math.random() - 0.5) * 2.4, z: (Math.random() - 0.5) * 2.4, o: Math.random() }; g.add(s); return s; });
+  let lid = null, valve = null, jet = null; if (cooker) { lid = new THREE.Group(); g.add(lid); const l = new THREE.Mesh(new THREE.CylinderGeometry(1.95, 1.95, 0.3, 40), new THREE.MeshStandardMaterial({ color: 0x8a8f9a, metalness: 0.85, roughness: 0.25 })); lid.add(l); valve = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.5, 16), new THREE.MeshStandardMaterial({ color: 0x23262e })); valve.position.y = 0.4; lid.add(valve); for (const s of [-1, 1]) { const h = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.2, 0.4), new THREE.MeshStandardMaterial({ color: 0x15171c })); h.position.set(s * 2.4, 0, 0); lid.add(h); }
+    jet = Array.from({ length: 16 }, () => { const s = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5, depthWrite: false })); s.userData.o = Math.random(); g.add(s); return s; }); }
+  g.userData = { water, flames, beans, bubbles, steam, lid, valve, jet }; return g; };
+const POT = mkPot(-2.6, false), PC = mkPot(2.6, true);
+// thermometers
+const mkGauge = (x, label) => { const c = document.createElement("canvas"); c.width = 320; c.height = 200; const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; const m = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.5), new THREE.MeshBasicMaterial({ map: t, transparent: true, toneMapped: false })); m.position.set(x, 4.6, 0); scene.add(m); m.userData = { c, t, label }; return m; };
+const G1 = mkGauge(-2.6, "open pot"), G2 = mkGauge(2.6, "pressure cooker");
+const drawG = (m, temp, hot) => { const { c, t, label } = m.userData; const g = c.getContext("2d"); g.clearRect(0, 0, 320, 200); g.fillStyle = "rgba(14,16,22,0.9)"; g.beginPath(); g.roundRect(0, 0, 320, 200, 26); g.fill(); g.fillStyle = "#8b91a3"; g.font = "700 24px JetBrains Mono, monospace"; g.fillText(label, 20, 40); g.fillStyle = hot ? "#ff8a4a" : "#eef0f5"; g.font = "800 84px JetBrains Mono, monospace"; g.fillText(`${Math.round(temp)}°`, 20, 150); t.needsUpdate = true; };
+// Papin card
+const PAP = new THREE.Mesh(new THREE.PlaneGeometry(5.4, 7.2), new THREE.MeshBasicMaterial({ map: canvasTex(600, 800, (g) => { g.fillStyle = "#e9dcc0"; g.fillRect(0, 0, 600, 800); g.fillStyle = "#5a4630"; g.font = "800 52px Archivo, serif"; g.textAlign = "center"; g.fillText("STEAM DIGESTER", 300, 100); g.font = "500 34px Archivo, serif"; g.fillText("Denis Papin · 1679", 300, 160);
+  g.strokeStyle = "#5a4630"; g.lineWidth = 6; g.strokeRect(170, 260, 260, 360); g.beginPath(); g.moveTo(150, 260); g.lineTo(450, 260); g.stroke(); g.fillRect(285, 200, 30, 60); g.beginPath(); g.moveTo(300, 215); g.lineTo(460, 235); g.stroke(); g.beginPath(); g.arc(460, 235, 16, 0, 7); g.fill(); g.font = "italic 28px Archivo, serif"; g.fillText("weighted safety valve", 300, 700); }), toneMapped: false })); PAP.position.set(40, 2, 0); scene.add(PAP);
+
+window.render = async function (t) { cam.up.set(0, 1, 0);
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  const heat = clamp(t / 4); const sealed = t >= A("seal") + 1.0;
+  const T1 = Math.min(100, 20 + heat * 80 + Math.max(0, t - 4) * 10); const T2 = t < A("point") ? Math.min(100, 20 + heat * 80 + Math.max(0, t - 4) * 10) : Math.min(120, 100 + clamp((t - A("point") - 0.5) / 4) * 20); drawG(G1, T1, T1 >= 100); drawG(G2, T2, T2 > 100);
+  [POT, PC].forEach((P, pi) => { const U = P.userData; U.flames.forEach((f, i) => { f.scale.y = 0.7 + 0.4 * Math.sin(t * 12 + i); });
+    const boiling = pi === 0 ? T1 >= 99 : (T2 >= 99 && !sealed) || (sealed && T2 >= 119); U.bubbles.forEach((b) => { const f = (t * 0.7 + b.userData.o) % 1; b.visible = boiling; b.position.set(b.userData.x, 0.2 + f * 1.4, b.userData.z); });
+    const openSteam = pi === 0 || !sealed; U.steam.forEach((s) => { const f = (t * 0.3 + s.userData.o) % 1; s.visible = T1 > 90 || pi === 1; if (openSteam) { s.position.set(s.userData.x * (1 + f), 1.8 + f * 3.5, s.userData.z * (1 + f)); s.material.opacity = 0.3 * (1 - f) * (pi === 0 ? clamp((T1 - 90) / 10) : 1); } else { s.position.set(s.userData.x * 0.7, 1.8 + ((f * 3) % 0.8), s.userData.z * 0.7); s.material.opacity = 0.35; } });
+    U.beans.forEach((b, i) => b.material.color.setHex(pi === 1 && t > A("faster") + 2 ? 0x6a2a1a : 0xa83a2a)); });
+  const lidK = ease(clamp((t - A("seal") - 0.2) / 0.8)); PC.userData.lid.position.y = lerp(5, 2.75, lidK); PC.userData.lid.rotation.y = lidK * 0.5; PC.userData.lid.visible = t >= A("seal");
+  PC.userData.jet.forEach((s) => { const f = (t * 1.6 + s.userData.o) % 1; const on = t > A("safety") + 3.0 && t < A("history"); s.visible = on; s.position.set(0, 3.3 + f * 3, 0); s.scale.setScalar(1 + f * 2); s.material.opacity = 0.6 * (1 - f); });
+  if (t < A("history") || t >= A("close")) { const k = ease(clamp(t / 4)); let cp = V(lerp(4, 0, k), lerp(8, 5.5, k), lerp(22, 19, k)), tg = V(0, 2.2, 0);
+    if (t >= A("seal") && t < A("history")) { cp = V(2.6, 4.6, 10.5); tg = V(2.6, 2.6, 0); } if (t >= A("safety") && t < A("history")) { cp = V(3.6, 5.6, 9.5); tg = V(2.6, 4.2, 0); } if (t >= A("close")) { cp = V(2.6 + Math.sin(t * 0.3) * 2, 4.4, 11); tg = V(2.6, 2.4, 0); }
+    look(cp, tg, 48); big("CHEATING BOILING", t, A("hook") + 4.0, A("boil"), "#ff8a4a", "250px", "100px"); card("c0", `open pot · <b>stuck at 100°</b>`, t, A("boil") + 1.6, A("seal"), 280, 230, -2); card("c0", `lid locked · <b>steam trapped</b>`, t, A("seal") + 0.8, A("point"), 260, 230, -2);
+    card("c0", `more pressure → <b>boils at ~120°</b>`, t, A("point") + 0.8, A("faster"), 220, 230, -2); card("c0", `hotter → <b>much faster</b>`, t, A("faster") + 0.6, A("safety"), 290, 230, -2); card("c1", `beans · hours → <b>under an hour</b>`, t, A("faster") + 2.6, A("safety"), 220, 1720, 2); card("c0", `too much pressure → <b>valve hisses</b>`, t, A("safety") + 1.0, A("history"), 200, 230, -2);
+    if (t >= A("close")) big("TRAPPED STEAM", t, A("close") + 0.8, A("end"), "#ffffff", "250px", "110px"); }
+  else { look(V(40, 2, 12), V(40, 2, 0), 46); }
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
