@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>HowTicketsStopFakes</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+scene.background = new THREE.Color(0x0c0a14);
+scene.add(new THREE.HemisphereLight(0xf2eeff, 0x1a1624, 1.0)); { const l = new THREE.DirectionalLight(0xffffff, 1.3); l.position.set(4, 10, 12); scene.add(l); }
+const QRB = "1111111000101100111100111111110000010101010111011101000001101110100111111010011010111011011101001100111001100101110110111010101010100111001011101100000100101110001110010000011111111010101010101010111111100000000010001101110100000000101010100110101111111000100100101100010010011000000100100100110110110111001100111110111001110011010100101100101100101101001011110000011001100101111100000100011010010101001001000011111110001011000010010111110110011110111011111110101000100011101110101100111001011001110011101001100001110011011010001001000100110010100001101100000110000010110100101010101111110011000001101111100000000000010101101001110001011111111110011010101001101011011100000100000011101101000110111011101011110010010011111001010111010001001110000100010100101110101001000010001001110011000001000110101010010101001011111110100001010101100100011"; const QN = 29;
+function drawQR(g, x, y, s, seed, real) { g.fillStyle = "#fff"; g.fillRect(x, y, s, s); const n = QN, c = s / (n + 4); let r = seed * 9301 + 49297; const rr = () => ((r = (r * 9301 + 49297) % 233280) / 233280); g.fillStyle = "#000";
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const fin = (i < 7 && j < 7) || (i > n - 8 && j < 7) || (i < 7 && j > n - 8); let on; if (real) on = QRB[j * n + i] === "1"; else if (fin) { const a = i > n - 8 ? i - (n - 7) : i, b = j > n - 8 ? j - (n - 7) : j; on = a === 0 || a === 6 || b === 0 || b === 6 || (a > 1 && a < 5 && b > 1 && b < 5); } else on = rr() < 0.5; if (on) g.fillRect(x + (2 + i) * c, y + (2 + j) * c, c + 0.5, c + 0.5); } }
+const mkPhone = (parent) => { const g = new THREE.Group(); const c = document.createElement("canvas"); c.width = 512; c.height = 1040; const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; g.add(new THREE.Mesh(new THREE.BoxGeometry(3.3, 6.8, 0.36), new THREE.MeshStandardMaterial({ color: 0x2a2e36, metalness: 0.8, roughness: 0.25 }))); const s = new THREE.Mesh(new THREE.PlaneGeometry(3.05, 6.5), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })); s.position.z = 0.19; g.add(s); g.userData = { c, tex }; (parent || scene).add(g); return g; };
+function drawTicket(p, seed, opts = {}) { const { c, tex } = p.userData; const g = c.getContext("2d"); const gr = g.createLinearGradient(0, 0, 0, 1040); gr.addColorStop(0, "#3a1a6a"); gr.addColorStop(1, "#12081e"); g.fillStyle = gr; g.fillRect(0, 0, 512, 1040); g.fillStyle = "#ffd04a"; g.font = "900 54px Archivo, sans-serif"; g.fillText("LIVE · 21:00", 40, 110); g.fillStyle = "#eef0f5"; g.font = "600 30px Inter, sans-serif"; g.fillText("Section B · Row 12 · Seat 7", 40, 160);
+  drawQR(g, 56, 220, 400, seed, false); if (opts.ring !== undefined) { g.strokeStyle = "#3dff8c"; g.lineWidth = 10; g.beginPath(); g.arc(256, 700, 50, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * opts.ring); g.stroke(); g.fillStyle = "#8b91a3"; g.font = "600 26px JetBrains Mono, monospace"; g.textAlign = "center"; g.fillText("code refreshes", 256, 800); g.textAlign = "left"; }
+  if (opts.shot) { g.fillStyle = "rgba(255,59,74,0.25)"; g.fillRect(0, 0, 512, 1040); g.fillStyle = "#ff6a6a"; g.font = "800 34px JetBrains Mono, monospace"; g.fillText("SCREENSHOT", 120, 700); } tex.needsUpdate = true; }
+const GATE = new THREE.Group(); scene.add(GATE);
+const POST = new THREE.Mesh(new THREE.BoxGeometry(1.4, 4.6, 1.2), new THREE.MeshStandardMaterial({ color: 0x2a2e36, metalness: 0.6 })); POST.position.set(2.6, 2.3, 0); GATE.add(POST);
+const LIGHT = new THREE.Mesh(new THREE.CircleGeometry(0.45, 32), new THREE.MeshBasicMaterial({ color: 0x303030 })); LIGHT.position.set(2.6, 3.9, 0.61); GATE.add(LIGHT);
+const READER = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.7), new THREE.MeshBasicMaterial({ color: 0x1a3a5a })); READER.position.set(2.6, 2.7, 0.61); GATE.add(READER);
+const ARM = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.18, 0.18), new THREE.MeshStandardMaterial({ color: 0xc8ccd4, metalness: 0.8 })); ARM.geometry.translate(-1.3, 0, 0); ARM.position.set(1.9, 2.0, 0.4); GATE.add(ARM);
+const PH = mkPhone(GATE); PH.scale.setScalar(0.42); PH.position.set(0.6, 2.8, 1.4);
+const DBC = document.createElement("canvas"); DBC.width = 700; DBC.height = 560; const DBT = new THREE.CanvasTexture(DBC); DBT.colorSpace = THREE.SRGBColorSpace; const DB = new THREE.Mesh(new THREE.PlaneGeometry(5.0, 4.0), new THREE.MeshBasicMaterial({ map: DBT, transparent: true, toneMapped: false })); DB.position.set(0, 7.4, 0); GATE.add(DB);
+function drawDB(state) { const g = DBC.getContext("2d"); g.clearRect(0, 0, 700, 560); g.fillStyle = "rgba(14,16,22,0.94)"; g.beginPath(); g.roundRect(0, 0, 700, 560, 30); g.fill(); g.fillStyle = "#8b91a3"; g.font = "700 30px JetBrains Mono, monospace"; g.fillText("ticket list", 30, 50);
+  [["8F2K…Q71", "unused"], ["3XA9…P04", state >= 1 ? "USED 21:04" : "unused"], ["J7M1…C88", "unused"], ["Q0ZD…E52", "unused"]].forEach(([id, st], i) => { const y = 120 + i * 110; g.fillStyle = i === 1 && state >= 1 ? "rgba(61,255,140,0.12)" : "rgba(255,255,255,0.04)"; g.fillRect(20, y - 50, 660, 90); g.fillStyle = "#eef0f5"; g.font = "700 38px JetBrains Mono, monospace"; g.fillText(id, 40, y + 8); g.fillStyle = st.startsWith("USED") ? (state >= 2 ? "#ff6a6a" : "#3dff8c") : "#8b91a3"; g.font = "700 30px JetBrains Mono, monospace"; g.fillText(st, 430, y + 8); }); DBT.needsUpdate = true; }
+const CROWD = new THREE.Group(); CROWD.position.set(40, 0, 0); scene.add(CROWD); const PEOPLE = Array.from({ length: 60 }, (_, i) => { const m = new THREE.Mesh(new THREE.CapsuleGeometry(0.25, 0.8, 4, 8), new THREE.MeshStandardMaterial({ color: [0xff6a8a, 0x6ab8ff, 0xffd04a, 0x8aff9a, 0xc8a0ff][i % 5] })); m.userData = { lane: i % 6, o: i / 60 }; CROWD.add(m); return m; });
+for (let l = 0; l < 7; l++) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.6, 1.2), new THREE.MeshStandardMaterial({ color: 0x2a2e36 })); p.position.set(-4.5 + l * 1.5, 0.8, 0); CROWD.add(p); }
+const GRD = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshStandardMaterial({ color: 0x1a1824 })); GRD.rotation.x = -Math.PI / 2; CROWD.add(GRD);
+const OP = mkPhone(); OP.position.set(0, 40, 0);
+function drawOrbi(k) { const { c, tex } = OP.userData; const g = c.getContext("2d"); g.fillStyle = "#07080c"; g.fillRect(0, 0, 512, 1040); g.fillStyle = "#3dff8c"; g.font = "800 44px Inter, sans-serif"; g.fillText("ORBI", 36, 96); g.fillStyle = "#eef0f5"; g.font = "700 38px Inter, sans-serif"; g.fillText("setlist-photos.zip", 36, 190); drawQR(g, 56, 250, 400, 0, true);
+  g.globalAlpha = clamp(k); g.fillStyle = "#12141b"; g.beginPath(); g.roundRect(36, 700, 440, 110, 24); g.fill(); g.fillStyle = "#8b91a3"; g.font = "500 26px Inter, sans-serif"; g.fillText("code", 64, 744); g.fillStyle = "#3dff8c"; g.font = "800 44px JetBrains Mono, monospace"; g.fillText("• • • •", 64, 792); g.globalAlpha = 1; tex.needsUpdate = true; }
+
+window.render = async function (t) { cam.up.set(0, 1, 0);
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  const green = (t > A("scan") + 4.3 && t < A("used")), red = t > A("used") + 4.8 && t < A("rotate"); LIGHT.material.color.setHex(green ? 0x3dff8c : red ? 0xff3b4a : 0x303030); ARM.rotation.y = green ? -1.3 * clamp((t - A("scan") - 4.3) / 0.5) : 0;
+  const shot = t >= A("used") + 3.2 && t < A("rotate"); const rot = t >= A("rotate") && t < A("gate"); drawTicket(PH, rot ? 7 + Math.floor((t - A("rotate")) / 2) : 7, { shot, ring: rot ? ((t - A("rotate")) % 2) / 2 : undefined });
+  drawDB(t >= A("used") + 0.6 ? (red ? 2 : 1) : 0); DB.visible = t >= A("scan") && t < A("rotate");
+  const sc = t >= A("scan") + 1.0 && t < A("rotate") && !rot; PH.position.set(sc ? 1.4 : 0.6, 2.8, sc ? 1.0 : 1.4);
+  PEOPLE.forEach((m) => { const f = ((t - A("gate")) * 0.25 + m.userData.o) % 1; m.position.set(-3.75 + m.userData.lane * 1.5, 0.7, lerp(8, -10, f)); });
+  if (t < A("scan")) { const k = ease(clamp(t / 4)); const ph = t >= A("id"); look(ph ? V(0.6, 2.8, 6.5) : V(lerp(5, 1.5, k), lerp(5, 3.2, k), lerp(16, 11, k)), ph ? V(0.6, 2.8, 0) : V(1.2, 2.6, 0), 46); big("THE LITTLE SQUARE", t, A("hook") + 4.0, A("id"), "#ffd04a", "250px", "100px"); card("c0", `one code per ticket · <b>random, unguessable</b>`, t, A("id") + 0.8, A("scan"), 160, 230, -2); }
+  else if (t < A("rotate")) { look(V(0.5, 5.2, 15.5), V(0.5, 4.6, 0), 48); card("c0", `scan → <b>check the list</b>`, t, A("scan") + 0.6, A("used"), 270, 1720, 2); card("c0", `marked used · <b>copies bounce</b>`, t, A("used") + 0.6, A("rotate"), 250, 1720, 2); }
+  else if (t < A("gate")) { look(V(0.6, 2.8, 6.2), V(0.6, 2.8, 0), 46); card("c0", `code changes · <b>screenshots useless</b>`, t, A("rotate") + 1.0, A("gate"), 200, 230, -2); }
+  else if (t < A("orbi")) { look(V(40, 9, 16), V(40, 0, -2), 48); card("c0", `thousands in · <b>minutes</b>`, t, A("gate") + 0.8, A("orbi"), 280, 230, -2); }
+  else { drawOrbi(clamp((t - A("orbi") - 5.0) / 0.6)); OP.rotation.y = Math.sin(t * 0.4) * 0.1; look(V(0, 40.2, 10.5), V(0, 40.2, 0), 46); card("c0", `every Orbi file · <b>its own QR</b>`, t, A("orbi") + 1.0, A("end"), 260, 230, -2); card("c1", `+ code → <b>only people who know it</b>`, t, A("orbi") + 5.2, A("end"), 190, 1720, 2); }
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
