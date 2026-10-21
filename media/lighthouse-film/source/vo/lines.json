@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a lighthouse throws its light so far? The secret isn't the lamp. It's the giant glass around it.",
+   "dur": 6.279,
+   "at": 0.35
+  },
+  {
+   "key": "old",
+   "text": "Early lighthouses burned fires or oil lamps, and most of that light just spilled into the sky, or down into the ground.",
+   "dur": 6.545,
+   "at": 7.03
+  },
+  {
+   "key": "fresnel",
+   "text": "In 1822, a French physicist called Augustin Fresnel designed a new kind of lens. Rings of glass prisms, stacked around the light.",
+   "dur": 9.088,
+   "at": 13.87
+  },
+  {
+   "key": "bend",
+   "text": "Each ring bends the light a little, so rays heading up or down all turn, and leave in one flat, bright beam.",
+   "dur": 7.078,
+   "at": 23.26
+  },
+  {
+   "key": "thin",
+   "text": "It works like a huge, thick lens, cut into slices. Far thinner and lighter, but just as strong.",
+   "dur": 6.339,
+   "at": 30.64
+  },
+  {
+   "key": "pattern",
+   "text": "The lens turns, so ships see flashes. And every lighthouse has its own pattern, like two flashes every ten seconds, printed on sea charts.",
+   "dur": 8.636,
+   "at": 37.28
+  },
+  {
+   "key": "close",
+   "text": "So sailors can read a dark coastline like a map.",
+   "dur": 3.761,
+   "at": 46.27
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 50.43
+  }
+ ],
+ "duration": 54.98
+}
