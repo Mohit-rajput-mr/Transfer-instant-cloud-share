@@ -1,1 +1,60 @@
-{"lines": [{"key": "hook", "text": "hook", "at": 0.35, "dur": 5.5}, {"key": "pull", "text": "pull", "at": 6.1499999999999995, "dur": 6.5}, {"key": "bulge", "text": "bulge", "at": 12.95, "dur": 6}, {"key": "spin", "text": "spin", "at": 19.25, "dur": 8.5}, {"key": "sun", "text": "sun", "at": 28.05, "dur": 8.5}, {"key": "neap", "text": "neap", "at": 36.85, "dur": 5}, {"key": "fundy", "text": "fundy", "at": 42.15, "dur": 6}, {"key": "close", "text": "close", "at": 48.449999999999996, "dur": 3.5}, {"key": "end", "text": "end", "at": 52.24999999999999, "dur": 3}], "duration": 56.54999999999999}
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how tides work? Twice a day, whole oceans rise and fall, pulled by the Moon.",
+   "dur": 6.387,
+   "at": 0.35
+  },
+  {
+   "key": "pull",
+   "text": "The Moon's gravity pulls on all of Earth, but hardest on the side facing it, and weakest on the far side.",
+   "dur": 5.749,
+   "at": 7.14
+  },
+  {
+   "key": "bulge",
+   "text": "That difference stretches the oceans into two bulges. One faces the Moon, and one points the opposite way.",
+   "dur": 7.078,
+   "at": 13.19
+  },
+  {
+   "key": "spin",
+   "text": "Earth spins through both bulges every day. So most coasts get two high tides and two low tides, about every twelve hours and twenty five minutes.",
+   "dur": 8.571,
+   "at": 20.56
+  },
+  {
+   "key": "sun",
+   "text": "The Sun pulls too, about half as strongly. At new and full moon, the Sun and Moon line up, and the tides are biggest. Those are spring tides.",
+   "dur": 8.777,
+   "at": 29.44
+  },
+  {
+   "key": "neap",
+   "text": "When they pull at right angles, they partly cancel out, and you get smaller neap tides.",
+   "dur": 4.923,
+   "at": 38.51
+  },
+  {
+   "key": "fundy",
+   "text": "Coastlines can amplify it. In Canada's Bay of Fundy, the tide can rise more than sixteen meters.",
+   "dur": 6.505,
+   "at": 43.73
+  },
+  {
+   "key": "close",
+   "text": "So every high tide is the Moon, reaching down to Earth.",
+   "dur": 3.899,
+   "at": 50.59
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 54.89
+  }
+ ],
+ "duration": 59.44
+}
