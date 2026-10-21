@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how elevator safety works? It's not one trick. It's several, stacked on top of each other.",
+   "dur": 6.655,
+   "at": 0.35
+  },
+  {
+   "key": "cables",
+   "text": "First, it hangs from several steel cables, usually four or more. Any one of them can hold the car on its own.",
+   "dur": 7.667,
+   "at": 7.41
+  },
+  {
+   "key": "counter",
+   "text": "On the other end is a heavy counterweight, about the weight of the car plus half a full load. So the motor barely lifts anything. It just tips the balance.",
+   "dur": 9.337,
+   "at": 15.37
+  },
+  {
+   "key": "governor",
+   "text": "At the top sits a speed limiter called a governor. If the car ever goes too fast, it trips the safety brakes.",
+   "dur": 6.888,
+   "at": 25.01
+  },
+  {
+   "key": "brakes",
+   "text": "Steel wedges grab the guide rails, and squeeze the car to a stop.",
+   "dur": 3.563,
+   "at": 32.2
+  },
+  {
+   "key": "history",
+   "text": "In 1854, Elisha Otis stood on a raised platform in New York, and had the rope cut. The brake caught him. That's what made tall buildings practical.",
+   "dur": 9.475,
+   "at": 36.06
+  },
+  {
+   "key": "buffers",
+   "text": "And at the very bottom of the shaft, big springs or oil buffers wait, just in case.",
+   "dur": 5.872,
+   "at": 45.84
+  },
+  {
+   "key": "close",
+   "text": "So an elevator never trusts one cable. It trusts a whole stack of backups.",
+   "dur": 6.001,
+   "at": 52.11
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 58.51
+  }
+ ],
+ "duration": 63.06
+}
