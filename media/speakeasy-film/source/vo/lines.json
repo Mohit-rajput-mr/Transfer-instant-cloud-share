@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how speakeasies worked? Secret bars, hidden in plain sight, behind a door with no sign.",
+   "dur": 6.279,
+   "at": 0.35
+  },
+  {
+   "key": "law",
+   "text": "From 1920 to 1933, selling alcohol was banned across the United States. So drinking moved underground.",
+   "dur": 7.932,
+   "at": 7.03
+  },
+  {
+   "key": "door",
+   "text": "You'd knock on a plain door. A little slot slid open, and a pair of eyes looked you over.",
+   "dur": 4.869,
+   "at": 15.26
+  },
+  {
+   "key": "password",
+   "text": "No password? No entry. Even the name is a warning. Speak easy. Keep your voice down.",
+   "dur": 5.228,
+   "at": 20.43
+  },
+  {
+   "key": "hidden",
+   "text": "Inside, there were tricks everywhere. Buzzers to warn of a raid, and shelves that hid whole rooms. New York's 21 Club kept its wine behind a secret door in a brick wall.",
+   "dur": 11.272,
+   "at": 25.96
+  },
+  {
+   "key": "count",
+   "text": "In New York alone, there were thousands of them.",
+   "dur": 2.558,
+   "at": 37.53
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Spaces work a bit like that. A Space needs a passcode to join, its files never show up in public, and only members can open them.",
+   "dur": 8.298,
+   "at": 40.49
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 49.14
+  }
+ ],
+ "duration": 53.69
+}
