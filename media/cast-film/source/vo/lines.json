@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how your phone finds the TV to cast to? It basically shouts across your Wi-Fi.",
+   "dur": 6.262,
+   "at": 0.35
+  },
+  {
+   "key": "shout",
+   "text": "When you tap cast, your phone sends one small message to every device on the network at once, asking who can play video.",
+   "dur": 7.403,
+   "at": 7.01
+  },
+  {
+   "key": "answer",
+   "text": "The TV answers with its name and address. Speakers and printers answer too, each saying what they can do.",
+   "dur": 5.45,
+   "at": 14.71
+  },
+  {
+   "key": "stream",
+   "text": "Then your phone talks to the TV directly. Usually it doesn't send the video itself. It tells the TV which video to fetch from the internet.",
+   "dur": 9.215,
+   "at": 20.46
+  },
+  {
+   "key": "local",
+   "text": "That shout only travels inside your own network. Your neighbour's TV, behind their router, never hears it.",
+   "dur": 6.881,
+   "at": 29.98
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi uses the same idea. Phones on the same Wi-Fi show up in Nearby, with no login, no pairing, and no app to install.",
+   "dur": 7.832,
+   "at": 37.21
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 45.44
+  }
+ ],
+ "duration": 49.99
+}
