@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a snowflake gets its shape? It starts as a tiny speck of dust, high up in a cloud.",
+   "dur": 6.292,
+   "at": 0.35
+  },
+  {
+   "key": "seed",
+   "text": "In a freezing cloud, water vapour sticks to that speck and turns straight into ice, skipping the liquid step.",
+   "dur": 6.491,
+   "at": 7.04
+  },
+  {
+   "key": "hex",
+   "text": "Water molecules lock together in a pattern with six sides. That's why every snowflake has six arms.",
+   "dur": 6.969,
+   "at": 13.83
+  },
+  {
+   "key": "temp",
+   "text": "The shape depends on the air. Near minus two degrees, it grows flat plates. Near minus five, thin needles. Near minus fifteen, big branching stars.",
+   "dur": 8.817,
+   "at": 21.1
+  },
+  {
+   "key": "fall",
+   "text": "As it falls through different layers, each change adds a new pattern. All six arms feel the same air at the same moment, so they grow alike.",
+   "dur": 7.364,
+   "at": 30.22
+  },
+  {
+   "key": "unique",
+   "text": "But no two flakes take the same path down, so no two end up exactly the same. One flake holds about a billion billion water molecules.",
+   "dur": 9.107,
+   "at": 37.88
+  },
+  {
+   "key": "close",
+   "text": "So every snowflake is a tiny record of its trip through the sky.",
+   "dur": 4.01,
+   "at": 47.34
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 51.75
+  }
+ ],
+ "duration": 56.3
+}
