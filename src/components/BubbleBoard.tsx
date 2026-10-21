@@ -6,6 +6,7 @@ import { Pop } from "./Spaces";
 import EmojiPicker from "./EmojiPicker";
 import { BUBBLE_MAX, bubbleName, hueFor, isMine, looksLikeName, senderOf, splitLinks, type Bubble } from "@/lib/bubbles";
 import { formatClock } from "@/lib/client";
+import { BUBBLE_LIFE as LIFE_MIN, BUBBLE_LIVES } from "@/lib/limits";
 
 const ago = (iso: string, now: number) => {
   const s = Math.max(0, Math.round((now - Date.parse(iso)) / 1000));
@@ -120,8 +121,8 @@ function Text({ b, now }: { b: Bubble; now: number }) {
   );
 }
 
-/** Every bubble burns 15 minutes after it was posted: a ring drains down to it, red in the last 5. */
-const BUBBLE_LIFE = 15 * 60_000;
+/** A bubble burns when its life (30 min by default, up to 8 h) runs out: a ring drains down to it, red in the last 5 min. */
+const BUBBLE_LIFE = LIFE_MIN * 60_000;
 function BurnTimer({ b, now }: { b: Bubble; now: number }) {
   const left = Math.max(0, Date.parse(b.expiresAt) - now);
   const life = Math.max(60_000, Date.parse(b.expiresAt) - Date.parse(b.createdAt)) || BUBBLE_LIFE;
@@ -478,7 +479,7 @@ export function BubbleCompose(props: {
   edit?: { bubble: Bubble; mode: "append" | "edit" } | null;
   /** your newest live bubble, so a new note can go onto it instead */
   latest?: Bubble | null;
-  onPost: (text: string, by: string) => Promise<void>;
+  onPost: (text: string, by: string, life: number) => Promise<void>;
   onChange: (id: string, text: string, mode: "append" | "edit") => Promise<void>;
   onClose: () => void;
 }) {
@@ -489,11 +490,14 @@ export function BubbleCompose(props: {
   const spaceName = props.inSpace && !props.anon ? props.defaultName : "";
   const [name, setName] = useState(() => spaceName || bubbleName() || props.defaultName);
   const [busy, setBusy] = useState(false);
+  const [life, setLife] = useState(LIFE_MIN);
+  // in a named space a bubble stays until the space closes, so there is nothing to pick
+  const pickLife = !(props.inSpace && !props.anon);
   const post = async () => {
     if (!text.trim() || busy) return;
     setBusy(true);
     try {
-      if (mode === "new") await props.onPost(text, props.anon ? "" : spaceName || name.trim());
+      if (mode === "new") await props.onPost(text, props.anon ? "" : spaceName || name.trim(), life);
       else if (target) await props.onChange(target.id, text, mode);
       props.onClose();
     } catch {
@@ -524,7 +528,15 @@ export function BubbleCompose(props: {
       )}
       {mode === "new" ? (
         <>
-          <p className="dim bub-note">{props.inSpace ? `Only people in ${props.inSpace} see it.` : "Anyone in the public void sees it, as is: no password, nothing to unlock."} {props.inSpace && !props.anon ? "It stays until the space closes." : "It burns in 15 minutes."}{props.anon ? " You post as your space alias. Notes aren't end-to-end encrypted." : ""}</p>
+          <p className="dim bub-note">{props.inSpace ? `Only people in ${props.inSpace} see it.` : "Anyone in the public void sees it, as is: no password, nothing to unlock."} {props.inSpace && !props.anon ? "It stays until the space closes." : `It burns in ${BUBBLE_LIVES.find(([m]) => m === life)?.[1] ?? "30 min"}.`}{props.anon ? " You post as your space alias. Notes aren't end-to-end encrypted." : ""}</p>
+          {pickLife && (
+            <div className="tb-keep bub-keep" role="radiogroup" aria-label="Bubble stays for">
+              <span className="mono">Stays for</span>
+              {BUBBLE_LIVES.map(([m, l]) => (
+                <button type="button" key={m} role="radio" aria-checked={life === m} className={life === m ? "on" : ""} onClick={() => setLife(m)}>{l}</button>
+              ))}
+            </div>
+          )}
           {!props.anon && (spaceName ? (
             <p className="mono dim bub-as">Posting as <b>{spaceName}</b></p>
           ) : (

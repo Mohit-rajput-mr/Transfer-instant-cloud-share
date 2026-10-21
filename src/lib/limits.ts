@@ -2,6 +2,9 @@
 export const MAX_FILE_BYTES = 20 * 1024 ** 3; // 20 GB per file
 export const MAX_LABEL = "20 GB";
 export const UPLOADS_PER_HOUR = 300; // per network, enforced in orbit_create
+/** how long a bubble may float, in minutes: 30 min by default, up to 8 h */
+export const BUBBLE_LIVES: [number, string][] = [[30, "30 min"], [60, "1 h"], [120, "2 h"], [240, "4 h"], [480, "8 h"]];
+export const BUBBLE_LIFE = 30;
 export const REPORTS_TO_REMOVE = 3; // distinct devices, enforced in orbit_report
 
 // Stored copy layout (R2): the same ciphertext as the direct transfer, 8 MB chunks + 16-byte tag each,

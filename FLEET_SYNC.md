@@ -20,6 +20,7 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- **2026-10-21 Bubble life 30 min default, up to 8 h (owner ask).** Was fixed at 15 min (server fallback 15, allowed 5–30). Now `BUBBLE_LIVES` in `src/lib/limits.ts` (30 min, 1/2/4/8 h) is the one list for the composer picker ("Stays for"), `postBubble`, the API check and the ring. Hidden in a named space (bubble lives with the space). Copy updated (About, Upgrade). Verified: prod build + Playwright 1440/390, picker shows, note text follows the pick, POST sends life=480. DB `orbit_bubble_add` takes any int life (no migration).
 - FIXED 2026-10-21 (QA pass, not deployed yet) — (H) /fr /ar /ru SEO said 2 GB → 20 (lib/seo.test.ts checks every
   language against limits.ts). (H) About/privacy/toasts/LocationAsk/AnonCard/WorkBar said the void is local ("the
   eight around it", "around you", geohash chip "⊕ DPHG") → worldwide Open void + Nearby (own area) + Wi-Fi (network);

@@ -1,4 +1,5 @@
 "use client";
+import { BUBBLE_LIFE } from "./limits";
 import { isAnon } from "./anon";
 import { senderKey } from "./client";
 import { toHex } from "./crypto";
@@ -68,7 +69,7 @@ export const bubbleName = () => {
   }
 };
 
-export async function postBubble(text: string, by: string, life = 15) {
+export async function postBubble(text: string, by: string, life = BUBBLE_LIFE) {
   const owner = toHex(crypto.getRandomValues(new Uint8Array(32)));
   // the name you typed is kept for next time; inside a space you post as your member name, which is not kept as yours
   if (!isAnon() && !spaceBody().space && looksLikeName(by))

@@ -3698,3 +3698,4 @@ html[data-theme="light"] .emoji-btn { color: #444; background: rgba(0,0,0,0.05);
 @media (max-width: 720px) and (pointer: coarse) {
   .map-tools button[aria-label^="Zoom"] { display: none !important; }
 }
+html .bub-keep { margin: 2px 0 10px; flex-wrap: wrap; row-gap: 6px; }

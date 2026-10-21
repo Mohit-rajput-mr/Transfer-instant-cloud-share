@@ -636,7 +636,7 @@ export default function About() {
               <span className="ln">burns.</span>
             </h2>
             <p className="sx-body ab-big ab-life-b" data-reveal>
-              Nothing in Orbi is meant to last. The sender picks a file&apos;s life: 5, 10, 15, 20, 25 or 30 minutes. Everyone sees the clock, and when it hits zero the object is erased: the stored copy is deleted and it leaves every screen. Tasks can run up to 8 hours, and a named space closes 8 hours after it opens, with everything in it. There is no trash bin on our side.
+              Nothing in Orbi is meant to last. The sender picks a file&apos;s life: 5, 10, 15, 20, 25 or 30 minutes. Everyone sees the clock, and when it hits zero the object is erased: the stored copy is deleted and it leaves every screen. Bubble notes (30 min by default) and tasks can run up to 8 hours, and a named space closes 8 hours after it opens, with everything in it. There is no trash bin on our side.
             </p>
           </div>
 

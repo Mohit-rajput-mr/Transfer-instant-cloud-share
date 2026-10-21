@@ -3293,13 +3293,13 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             }
           }}
           onClose={() => setPanel(null)}
-          onPost={async (text, by) => {
+          onPost={async (text, by, life) => {
             try {
-              const r = await postBubble(text, by);
+              const r = await postBubble(text, by, life);
               toast("Bubble posted");
               setFitAll((n) => n + 1);
               const at = Date.now() + skew;
-              sync({ b: { id: r.id, text: text.trim(), by: by.trim() || room?.handle || null, from: r.from, hue: r.hue, createdAt: iso(at), expiresAt: iso(at + 15 * 60_000), added: null, editedAt: null, updatedAt: null } });
+              sync({ b: { id: r.id, text: text.trim(), by: by.trim() || room?.handle || null, from: r.from, hue: r.hue, createdAt: iso(at), expiresAt: iso(at + life * 60_000), added: null, editedAt: null, updatedAt: null } });
               refresh();
             } catch (e) {
               toast((e as Error).message);

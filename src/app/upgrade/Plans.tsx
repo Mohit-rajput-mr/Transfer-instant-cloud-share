@@ -51,7 +51,7 @@ const PLANS: Plan[] = [
       "Lives 5 to 30 minutes, then burns",
       "Download limit: 1 to 10, or unlimited",
       "Live log: every open and download, with device and time",
-      "Notes for 5 to 30 min; tasks and wiring up to 8 h (in testing)",
+      "Bubble notes, tasks and wiring up to 8 h (in testing)",
       "Spaces, public or locked with a code",
       "Nearby, live viewers, previews",
       "Archive on this device",
