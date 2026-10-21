@@ -1,1 +1,54 @@
-{"lines": [{"key": "hook", "text": "hook", "at": 0.35, "dur": 6.5}, {"key": "poll", "text": "poll", "at": 7.1499999999999995, "dur": 6.5}, {"key": "line", "text": "line", "at": 13.95, "dur": 6}, {"key": "send", "text": "send", "at": 20.25, "dur": 6.5}, {"key": "wake", "text": "wake", "at": 27.05, "dur": 4.5}, {"key": "fast", "text": "fast", "at": 31.85, "dur": 4.5}, {"key": "orbi", "text": "orbi", "at": 36.65, "dur": 10}, {"key": "end", "text": "end", "at": 46.95, "dur": 3}], "duration": 51.25}
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a message pops up on your phone the instant it's sent? Your phone isn't constantly asking for news.",
+   "dur": 6.14,
+   "at": 0.35
+  },
+  {
+   "key": "poll",
+   "text": "Checking every few seconds would drain your battery. So instead, your phone keeps one quiet connection open, all the time.",
+   "dur": 7.32,
+   "at": 6.89
+  },
+  {
+   "key": "line",
+   "text": "On an iPhone it goes to Apple's push servers, on Android to Google's. Every app shares that one line.",
+   "dur": 6.45,
+   "at": 14.51
+  },
+  {
+   "key": "send",
+   "text": "When someone messages you, their app's server sends a tiny note to Apple or Google, who pass it down that open line.",
+   "dur": 6.551,
+   "at": 21.26
+  },
+  {
+   "key": "wake",
+   "text": "The note wakes the app, which shows it, or fetches the rest of the message.",
+   "dur": 3.822,
+   "at": 28.11
+  },
+  {
+   "key": "fast",
+   "text": "The whole trip usually takes about a second, even from the other side of the world.",
+   "dur": 4.162,
+   "at": 32.23
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi works the same way for files. Every open Orbi screen joins a live room for its area. A new file sends only a tiny note, and nearby screens show it within about a second.",
+   "dur": 9.444,
+   "at": 36.74
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 46.59
+  }
+ ],
+ "duration": 51.14
+}
