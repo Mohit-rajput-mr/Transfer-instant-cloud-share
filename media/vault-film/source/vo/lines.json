@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a bank vault keeps thieves out? It's not just a thick door. It's time.",
+   "dur": 5.053,
+   "at": 0.35
+  },
+  {
+   "key": "door",
+   "text": "A vault door can be over half a metre of steel and concrete, and weigh tens of tonnes, yet it swings on a hinge so balanced one person can push it.",
+   "dur": 9.04,
+   "at": 5.8
+  },
+  {
+   "key": "bolts",
+   "text": "When it closes, thick steel bolts slide out on every side, into the frame.",
+   "dur": 5.532,
+   "at": 15.14
+  },
+  {
+   "key": "timer",
+   "text": "Then the time lock. Once set, the door can't open until a chosen time, like nine the next morning. Not even the manager can open it early.",
+   "dur": 8.691,
+   "at": 20.98
+  },
+  {
+   "key": "relock",
+   "text": "If someone drills or tries to force it, a hidden relocker snaps more bolts into place.",
+   "dur": 5.616,
+   "at": 29.97
+  },
+  {
+   "key": "slow",
+   "text": "Every layer just buys time, so alarms ring and help arrives before anyone gets through.",
+   "dur": 5.539,
+   "at": 35.88
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi locks files too. A locked file needs its passcode, and after twelve wrong tries, it locks for good.",
+   "dur": 6.782,
+   "at": 41.82
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 48.95
+  }
+ ],
+ "duration": 53.5
+}
