@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a smoke alarm smells smoke? Many of them use a tiny bit of radiation to do it.",
+   "dur": 6.538,
+   "at": 0.35
+  },
+  {
+   "key": "chamber",
+   "text": "Inside is a small chamber with a speck of a material called americium. It gives off tiny particles that knock electrons off the air.",
+   "dur": 8.128,
+   "at": 7.29
+  },
+  {
+   "key": "current",
+   "text": "Those charged bits of air let a small electric current flow across the chamber, all day, every day.",
+   "dur": 7.375,
+   "at": 15.72
+  },
+  {
+   "key": "smoke",
+   "text": "When smoke drifts in, the particles stick to the smoke instead. The current drops, and the alarm goes off.",
+   "dur": 6.358,
+   "at": 23.39
+  },
+  {
+   "key": "optical",
+   "text": "Other alarms use light. A beam shines across a dark chamber, and smoke scatters it onto a sensor.",
+   "dur": 6.29,
+   "at": 30.05
+  },
+  {
+   "key": "safe",
+   "text": "The radiation is tiny and stays inside the case. You get more from the natural world around you.",
+   "dur": 6.035,
+   "at": 36.64
+  },
+  {
+   "key": "test",
+   "text": "Test it every month, and change it about every ten years.",
+   "dur": 3.972,
+   "at": 42.97
+  },
+  {
+   "key": "close",
+   "text": "So a smoke alarm is a tiny circuit, waiting for the air to change.",
+   "dur": 4.639,
+   "at": 47.35
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 52.38
+  }
+ ],
+ "duration": 56.94
+}
