@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how hiccups work? It's your breathing muscle twitching, and your throat slamming shut.",
+   "dur": 4.529,
+   "at": 0.35
+  },
+  {
+   "key": "diaph",
+   "text": "Under your lungs is a dome-shaped muscle called the diaphragm. Normally it pulls down smoothly, and you breathe in.",
+   "dur": 7.562,
+   "at": 5.28
+  },
+  {
+   "key": "spasm",
+   "text": "In a hiccup, it suddenly jerks down on its own, and air rushes in.",
+   "dur": 3.733,
+   "at": 13.14
+  },
+  {
+   "key": "snap",
+   "text": "A split second later, your vocal cords snap shut and stop the air. That snap is the hic.",
+   "dur": 6.304,
+   "at": 17.17
+  },
+  {
+   "key": "cause",
+   "text": "It's often set off by eating too fast, fizzy drinks, or swallowed air, which bother the nerves that run the diaphragm.",
+   "dur": 6.258,
+   "at": 23.78
+  },
+  {
+   "key": "reflex",
+   "text": "Scientists think it's an ancient reflex. Babies even hiccup in the womb, long before they ever breathe air.",
+   "dur": 6.554,
+   "at": 30.34
+  },
+  {
+   "key": "record",
+   "text": "Most bouts stop within minutes. But one man, Charles Osborne, hiccuped on and off for sixty-eight years.",
+   "dur": 7.042,
+   "at": 37.19
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 44.63
+  }
+ ],
+ "duration": 49.18
+}
