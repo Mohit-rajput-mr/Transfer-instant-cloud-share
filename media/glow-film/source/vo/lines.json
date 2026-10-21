@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a glow stick glows? There's no battery. It's a chemical reaction you start with a snap.",
+   "dur": 5.983,
+   "at": 0.35
+  },
+  {
+   "key": "inside",
+   "text": "Inside the plastic tube is a thin glass vial. One liquid sits inside the vial, and a different one sits around it.",
+   "dur": 7.6,
+   "at": 6.73
+  },
+  {
+   "key": "snap",
+   "text": "Bend the stick, the glass cracks, and the two liquids mix.",
+   "dur": 3.161,
+   "at": 14.63
+  },
+  {
+   "key": "react",
+   "text": "Hydrogen peroxide reacts with a chemical called an oxalate. That reaction gives off energy, but not as heat.",
+   "dur": 7.653,
+   "at": 18.09
+  },
+  {
+   "key": "dye",
+   "text": "The energy goes into dye molecules. They get excited, then let it go as light. The dye decides the colour.",
+   "dur": 7.082,
+   "at": 26.05
+  },
+  {
+   "key": "cold",
+   "text": "It's called cold light. And cold slows the reaction down, so a glow stick in the freezer lasts longer, but glows dimmer.",
+   "dur": 7.314,
+   "at": 33.43
+  },
+  {
+   "key": "close",
+   "text": "So a glow stick is a tiny reaction, burning through its fuel one flash of light at a time.",
+   "dur": 6.118,
+   "at": 41.14
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 47.66
+  }
+ ],
+ "duration": 52.21
+}
