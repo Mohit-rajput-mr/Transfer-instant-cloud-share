@@ -20,7 +20,8 @@ import { tryAcquire } from "./net";
 const MB = 1024 * 1024;
 const low = () => isLow();
 // guessed as soon as the ball shows up / on hover
-const WARM_MAX = 8 * MB;
+// the void is worldwide: every open file would be pulled by every visible tab on Earth; only small ones are warmed
+const WARM_MAX = 1 * MB;
 const hoverMax = () => (low() ? 25 : 100) * MB;
 const HOVER_MAX = 400 * MB; // fetched when the card opens
 // memory kept for ready previews (oldest dropped first)

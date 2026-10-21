@@ -20,6 +20,12 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- FIXED 2026-10-21 (H, scale) — worldwide void load: card views no longer pulse every tab into a full list reload;
+  /api/transfers/net asked at most every 30 s; list GET no longer waits on reap(); list s-maxage 2 / swr 20; thumbs
+  CDN-cached (s-maxage); previews pre-warm only files ≤ 1 MB; heartbeat every 120 s and only from visible tabs; Worker
+  passes on only launch/landed/gone/sync/pulse/invite; HQ Void beamed deletes to the old region rooms → now r/void.
+  Verified: npm run check. OPEN (from the perf review): Worker sharding + per-IP socket caps, Supabase Realtime for P2P
+  signalling (~200 connections free), Cloudflare Workers Paid before launch, list SQL counters, bundle (supabase-js 184 KB).
 - FIXED 2026-10-21 (H) — deployed d60d56d after the owner started the Vercel Pro trial (/api/version = r-2026-10-21-workspace-only-spaces); owner set Vercel Ignored Build Step = "Only build production" for every branch. Was: production stuck on r-2026-10-21-world-void: Vercel refused 209d25a ("Deployment rate limited —
   retry in 24 hours", seen via `gh api .../commits/209d25a/statuses`). Cause: every agent branch + notes commit built
   (Hobby ≈100 builds/day). Fix: vercel.json ignoreCommand → scripts/vercel-ignore.sh (live branch + site code only;

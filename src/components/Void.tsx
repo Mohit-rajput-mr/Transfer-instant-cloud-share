@@ -133,6 +133,15 @@ function incomingOrb(i: Incoming): Orb {
   };
 }
 
+// what was sent from this device's own network (same Wi-Fi): one uncached request, so at most every 30 s
+let netAt = 0;
+let netLast: Promise<Orb[]> = Promise.resolve([]);
+function netList() {
+  if (Date.now() - netAt < 30_000) return netLast;
+  netAt = Date.now();
+  return (netLast = fetch("/api/transfers/net").then((x) => (x.ok ? x.json() : null)).then((x) => (x?.items ?? []) as Orb[]).catch(() => [] as Orb[]));
+}
+
 // ---- the live line, kept at module level: a launch outlives the Void that started it (About and back), and still
 // announces itself and lands through whichever Void is up by then ----
 type Line = { chan: Chan | RealtimeChannel; place: string };
@@ -625,7 +634,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     const run = (async () => {
       const sp = spaceRef.current;
       // the public void also carries what was sent from this network (same Wi-Fi), even when it was pinned to another area
-      const sameNet = !sp && !isAnon() ? fetch("/api/transfers/net").then((x) => (x.ok ? x.json() : null)).then((x) => (x?.items ?? []) as Orb[]).catch(() => [] as Orb[]) : Promise.resolve([] as Orb[]);
+      // (uncached: asked at most every 30 s; what lands from this network meanwhile comes through its live room)
+      const sameNet = !sp && !isAnon() ? netList() : Promise.resolve([] as Orb[]);
       // the public void is worldwide (owner 2026-10-21): one list for everyone, newest first; the area only feeds the Nearby filter
       const q = [fresh && `v=${Math.floor((Date.now() + skewRef.current) / 2000)}`].filter(Boolean).join("&");
       const r = await fetch(sp ? `/api/spaces/${sp.slug}/transfers` : `/api/transfers${q ? `?${q}` : ""}`, sp ? { headers: spaceHeaders(), cache: "no-store" } : undefined).catch(() => null);
@@ -1082,7 +1092,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   useEffect(() => {
     sendPulse();
     // within the server's 120 s "online" window (migration 016): few requests, well inside the free plan
-    const t = setInterval(sendPulse, 90_000);
+    const t = setInterval(() => document.visibilityState === "visible" && sendPulse(), 120_000);
     const onVis = () => document.visibilityState === "visible" && sendPulse();
     document.addEventListener("visibilitychange", onVis);
     return () => {
@@ -1746,12 +1756,10 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       viewT.current = undefined;
       viewAt.current = Date.now();
       // anonymous: what this device opens is never reported (sendPulse sends no viewing then)
-      void sendPulse().then(() => {
-        refresh();
-        broadcast();
-      });
+      // (the viewer count reaches others on their next list; a "pulse" here made every tab worldwide reload it)
+      void sendPulse();
     }, Math.max(1000, viewAt.current + 10_000 - Date.now()));
-  }, [sendPulse, refresh, broadcast]);
+  }, [sendPulse]);
   useEffect(() => () => clearTimeout(viewT.current), []);
   const firstView = useRef(true);
   useEffect(() => {

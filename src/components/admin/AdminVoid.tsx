@@ -15,11 +15,11 @@ type Data = { now: string; files: VFile[]; tasks: VTask[]; notes: VNote[] };
 type Kind = "file" | "task" | "note";
 
 /** tell the area's open screens that something is gone (public void only; a space's screens catch up on refresh) */
-function beam(area: string | null, msg: SyncMsg) {
-  if (!area) return;
+// the public void is one worldwide room (r/void · orbit-void): every open screen hears it there
+function beam(msg: SyncMsg) {
   if (liveOn) {
     let done = false;
-    const l = joinLive(roomsFor(null, area), area, {
+    const l = joinLive(roomsFor(null, ""), "", {
       on() {},
       status(up) {
         if (!up || done) return;
@@ -31,7 +31,7 @@ function beam(area: string | null, msg: SyncMsg) {
     setTimeout(() => l.close(), 8000);
     return;
   }
-  const ch = supabase.channel(`orbit-a-${area}`, { config: { broadcast: { self: false } } });
+  const ch = supabase.channel("orbit-void", { config: { broadcast: { self: false } } });
   ch.subscribe((s) => {
     if (s !== "SUBSCRIBED") return;
     ch.send({ type: "broadcast", event: "sync", payload: msg });
@@ -85,7 +85,7 @@ export default function AdminVoid({ onClose }: { onClose: () => void }) {
     const r = await fetch("/api/admin/void", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, id: x.id }) }).catch(() => null);
     setBusy((s) => ((s = new Set(s)), s.delete(x.id), s));
     if (!r?.ok) return setErr(`Couldn't burn that ${kind}`), false;
-    if (!x.space) beam(x.area, kind === "file" ? { og: [x.id] } : kind === "task" ? { tg: [x.id] } : { bg: [x.id] });
+    if (!x.space) beam(kind === "file" ? { og: [x.id] } : kind === "task" ? { tg: [x.id] } : { bg: [x.id] });
     setData((d) => d && { ...d, files: d.files.filter((f) => f.id !== x.id), tasks: d.tasks.filter((t) => t.id !== x.id), notes: d.notes.filter((n) => n.id !== x.id) });
     return true;
   };

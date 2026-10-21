@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 // Same answer for everyone in an area (?a= is the area and the eight around it, lib/area.ts), so the CDN serves
 // it: database load stays ~1 query/second per area no matter how many people are watching.
 export async function GET(req: NextRequest) {
-  await reap();
+  // (expired rows are already filtered out by the list; the reaper runs on its own schedule, never in front of a list)
+  void reap().catch(() => {});
   const areas = areasParam(req.nextUrl.searchParams.get("a"));
   const [r, bubbles, tasks] = await Promise.all([
     rpc<{ items: { name?: unknown; expiresAt?: unknown }[]; online: number }>("orbit_list3", { p_areas: areas }),
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
   const items = (r.items ?? []).map(untag).filter((o) => !o.space && !burnedUp(o));
   return NextResponse.json(
     { ...r, items, bubbles: bubbles ?? [], tasks: tasks ?? [], now: Date.now() },
-    { headers: { "Cache-Control": "public, max-age=0, s-maxage=1, stale-while-revalidate=5" } },
+    { headers: { "Cache-Control": "public, max-age=0, s-maxage=2, stale-while-revalidate=20" } },
   );
 }
 

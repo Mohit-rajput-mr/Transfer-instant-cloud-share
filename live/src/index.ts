@@ -19,6 +19,8 @@ const ROOM = /^\/(r|s)\/([0-9b-hjkmnp-z]{3}|void|[a-z0-9-]{1,64})$/;
 const BURST = 120, MUST_CAP = 300, WINDOW = 10_000;
 const MUST = /^(landed|gone|sync|pulse|invite|hello)$/;
 const MAX_MSG = 16_000;
+// what a page may say to the others (slow and presence are said only by the room itself)
+const SAID = /^(launch|landed|gone|sync|pulse|invite)$/;
 const MAX_SOCKETS = 30_000;
 
 // k (must count) and s (told to slow down this window) came later: sockets attached before carry only n, t, id
@@ -86,7 +88,8 @@ export class Room extends DurableObject<Env> {
     }
     ws.serializeAttachment(tag);
     // (slow and presence are said only by the room itself: a page can't pass them off to the others)
-    if (typeof m.e !== "string" || !/^[a-z]{1,16}$/.test(m.e) || m.e === "slow" || m.e === "presence") return;
+    // only what pages really say: one room now carries the whole worldwide void, so nothing else is passed on to everyone
+    if (typeof m.e !== "string" || !SAID.test(m.e)) return;
     const out = JSON.stringify({ e: m.e, p: m.p ?? null, a: typeof m.a === "string" ? m.a.slice(0, 8) : null });
     for (const c of this.ctx.getWebSockets()) {
       if (c === ws) continue;

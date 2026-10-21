@@ -32,6 +32,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const body = await getObject(previewKey(id));
   if (!body) return new NextResponse(null, { status: 404, headers: { "Cache-Control": "no-store" } });
   return new NextResponse(body, {
-    headers: { "Content-Type": "image/jpeg", "Cache-Control": "public, max-age=1800, immutable", "X-Content-Type-Options": "nosniff" },
+    headers: { "Content-Type": "image/jpeg", "Cache-Control": "public, max-age=1800, s-maxage=1800, immutable", "X-Content-Type-Options": "nosniff" },
   });
 }
