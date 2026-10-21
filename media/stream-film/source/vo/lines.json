@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how streaming works? The film isn't sent as one file. It's chopped into thousands of tiny pieces.",
+   "dur": 6.542,
+   "at": 0.35
+  },
+  {
+   "key": "chunks",
+   "text": "Each piece is just a few seconds of video, and every piece is stored at several qualities, from blurry to 4K.",
+   "dur": 7.184,
+   "at": 7.29
+  },
+  {
+   "key": "measure",
+   "text": "Your player keeps measuring your internet speed, and picks the best quality it can download in time.",
+   "dur": 5.991,
+   "at": 14.78
+  },
+  {
+   "key": "switch",
+   "text": "If your Wi-Fi slows down, the next piece arrives in lower quality. That's the blur you sometimes see, instead of a pause.",
+   "dur": 7.119,
+   "at": 21.07
+  },
+  {
+   "key": "buffer",
+   "text": "It also stays a few pieces ahead. That's the buffer, so a short hiccup never stops the show.",
+   "dur": 4.941,
+   "at": 28.49
+  },
+  {
+   "key": "cdn",
+   "text": "And the pieces come from servers close to you, copies of the film spread around the world.",
+   "dur": 4.814,
+   "at": 33.73
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi moves big files in pieces too. Files up to twenty gigabytes go in parts of about thirty two megabytes, three at a time. If your connection drops, only the missing parts are sent again.",
+   "dur": 10.539,
+   "at": 38.94
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 49.83
+  }
+ ],
+ "duration": 54.38
+}
