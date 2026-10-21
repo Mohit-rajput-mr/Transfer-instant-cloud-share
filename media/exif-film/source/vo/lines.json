@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a photo can give away where you live? It's not the picture. It's hidden notes inside the file.",
+   "dur": 6.321,
+   "at": 0.35
+  },
+  {
+   "key": "exif",
+   "text": "Every time you take a photo, your phone writes extra data into the file, called metadata. The time, the phone model, the camera settings.",
+   "dur": 8.212,
+   "at": 7.07
+  },
+  {
+   "key": "gps",
+   "text": "And if location is on, the exact GPS coordinates, often accurate to a few metres.",
+   "dur": 5.694,
+   "at": 15.58
+  },
+  {
+   "key": "open",
+   "text": "Anyone with the original file can read it in seconds. Drop the numbers into a map, and there's your front door.",
+   "dur": 6.079,
+   "at": 21.58
+  },
+  {
+   "key": "strip",
+   "text": "Many social apps remove this data when you post. But send the original file, and the notes usually go with it.",
+   "dur": 6.396,
+   "at": 27.96
+  },
+  {
+   "key": "fix",
+   "text": "You can turn off location for your camera, or remove it before you share.",
+   "dur": 3.754,
+   "at": 34.65
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi is just as careful with where you are. Other people only ever see a rough area, about forty kilometres wide. And in Anonymous mode, it doesn't use GPS at all.",
+   "dur": 8.352,
+   "at": 38.81
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 47.51
+  }
+ ],
+ "duration": 52.06
+}
