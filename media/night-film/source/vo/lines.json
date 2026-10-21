@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how your phone takes bright photos in the dark? It doesn't take one photo. It takes a burst.",
+   "dur": 7.087,
+   "at": 0.35
+  },
+  {
+   "key": "dark",
+   "text": "In dim light, each pixel catches only a few particles of light. Too few, so the picture fills with random grain, called noise.",
+   "dur": 8.752,
+   "at": 7.84
+  },
+  {
+   "key": "long",
+   "text": "Keeping the shutter open longer collects more light. But your hand shakes, and everything blurs.",
+   "dur": 5.073,
+   "at": 16.89
+  },
+  {
+   "key": "burst",
+   "text": "So night mode grabs many short shots instead, sometimes more than a dozen in a few seconds.",
+   "dur": 6.703,
+   "at": 22.26
+  },
+  {
+   "key": "align",
+   "text": "Software lines them all up, shifting each frame to cancel out the shake.",
+   "dur": 4.185,
+   "at": 29.27
+  },
+  {
+   "key": "average",
+   "text": "Then it averages them. Real detail is the same in every frame, so it stays. Noise is random, so it cancels out. Sixteen frames cut the noise by four.",
+   "dur": 9.441,
+   "at": 33.75
+  },
+  {
+   "key": "tone",
+   "text": "Finally, it lifts the shadows, tames the bright lights, and fixes the colours.",
+   "dur": 4.687,
+   "at": 43.49
+  },
+  {
+   "key": "close",
+   "text": "So one night photo is really a stack of dark ones, added together.",
+   "dur": 4.806,
+   "at": 48.53
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 53.73
+  }
+ ],
+ "duration": 58.28
+}
