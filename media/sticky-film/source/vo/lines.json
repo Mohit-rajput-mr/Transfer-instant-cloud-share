@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a sticky note sticks? Its glue was supposed to be a failure.",
+   "dur": 4.927,
+   "at": 0.35
+  },
+  {
+   "key": "silver",
+   "text": "In 1968, a 3M scientist called Spencer Silver was trying to make a super strong glue. He made the opposite.",
+   "dur": 7.525,
+   "at": 5.68
+  },
+  {
+   "key": "spheres",
+   "text": "His glue was made of tiny sticky spheres. They only touch a surface at little points, so they hold lightly, and let go cleanly.",
+   "dur": 7.888,
+   "at": 13.5
+  },
+  {
+   "key": "fry",
+   "text": "For years, nobody knew what to do with it. Then his colleague Art Fry wanted a bookmark that wouldn't fall out of his church hymn book.",
+   "dur": 7.706,
+   "at": 21.69
+  },
+  {
+   "key": "launch",
+   "text": "A strip of that glue along one edge of a little paper square. They went on sale in 1980, and now they're everywhere.",
+   "dur": 7.714,
+   "at": 29.7
+  },
+  {
+   "key": "reuse",
+   "text": "Because the spheres don't flatten out, the same note can stick and peel again and again.",
+   "dur": 5.463,
+   "at": 37.71
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi has quick notes too. Post a bubble, everyone gets their own colour, and it's gone within 30 minutes.",
+   "dur": 5.858,
+   "at": 43.57
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 49.78
+  }
+ ],
+ "duration": 54.33
+}
