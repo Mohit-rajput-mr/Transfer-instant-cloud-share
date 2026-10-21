@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a paper shredder works? It's not one blade chopping paper. It's two rows of spinning steel discs.",
+   "dur": 6.601,
+   "at": 0.35
+  },
+  {
+   "key": "discs",
+   "text": "Inside, two shafts of sharp discs turn towards each other. They grab the paper and pull it through, like a mangle with teeth.",
+   "dur": 7.368,
+   "at": 7.35
+  },
+  {
+   "key": "strip",
+   "text": "Simple shredders cut long strips. Fast, but strips can be put back together.",
+   "dur": 4.797,
+   "at": 15.02
+  },
+  {
+   "key": "iran",
+   "text": "In 1979, after the US embassy in Tehran was taken over, students spent years gluing shredded strips back into readable documents.",
+   "dur": 8.439,
+   "at": 20.12
+  },
+  {
+   "key": "cross",
+   "text": "So better shredders cut both ways. Cross cut and micro cut machines turn a page into confetti, thousands of tiny pieces.",
+   "dur": 7.955,
+   "at": 28.86
+  },
+  {
+   "key": "levels",
+   "text": "There's even a standard for it, from P one to P seven. At the top level, each piece is smaller than a grain of rice.",
+   "dur": 7.107,
+   "at": 37.11
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi gives files a shredder too. By default, 30 minutes after you send, the locked pieces on the server are deleted. You can pick anything from five to 30 minutes.",
+   "dur": 9.314,
+   "at": 44.62
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 54.28
+  }
+ ],
+ "duration": 58.83
+}
