@@ -3662,3 +3662,13 @@ html[data-theme="light"] .emoji-btn { color: #444; background: rgba(0,0,0,0.05);
 }
 @media (max-width: 480px) { .m-scope { overflow-x: auto; scrollbar-width: none; } .m-scope button { padding: 0 9px; gap: 5px; letter-spacing: 0.06em; font-size: 10px; } .m-scope button svg { display: none; } }
 @media (max-width: 360px) { .m-scope button { padding: 0 7px; letter-spacing: 0.03em; } }
+
+/* Classic navbar: the spaces this browser is still in (Void.tsx "Your spaces"), and the way back into a Workspace-only one */
+.nav-spaces .nav-space { color: #3dff8c; border-color: rgba(61,255,140,.45); }
+.nav-spaces { position: relative; display: inline-flex; }
+.nav-spaces-pop { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; min-width: 240px; display: grid; gap: 2px; padding: 6px;
+  border-radius: 14px; background: rgba(10,10,10,.96); border: 1px solid #2a2a2a; box-shadow: 0 20px 50px rgba(0,0,0,.6); }
+.nav-spaces-pop button { display: grid; gap: 3px; text-align: left; padding: 9px 11px; border-radius: 10px; white-space: nowrap; }
+.nav-spaces-pop button:hover, .nav-spaces-pop button.on { background: rgba(255,255,255,.07); }
+.nav-spaces-pop b { font-size: 13px; color: #f2f2f2; }
+.nav-spaces-pop i { font-style: normal; font-size: 10px; color: #8a8a8a; letter-spacing: .06em; text-transform: uppercase; }

@@ -14,7 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const { members } = await roster(slug);
   return NextResponse.json(
     {
-      slug, title: meta.title, priv: meta.priv, handle: me.handle, chan: chanFor(slug), owner,
+      slug, title: meta.title, priv: meta.priv, work: !!meta.work, handle: me.handle, chan: chanFor(slug), owner,
       // anonymous spaces and their member lists go 7 days after they were made (migration 020 orbit_reap_anon)
       // a private space closes 8 hours after it was made (lib/spaces.ts closesAt)
       anon: !!meta.anon, ends: meta.anon ? meta.at + 7 * 864e5 : closesAt(meta),

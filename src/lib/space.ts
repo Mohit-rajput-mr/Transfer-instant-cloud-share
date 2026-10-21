@@ -9,6 +9,10 @@ export interface SpaceSession {
   slug: string;
   title: string;
   priv: boolean;
+  /** Workspace only (set by its creator): always shown in the Work view */
+  work?: boolean;
+  /** when it closes (ms), learned from the room: past it, it leaves the list by itself */
+  ends?: number | null;
   handle: string;
   token: string;
   chan: string;
@@ -110,12 +114,12 @@ async function post<T>(url: string, body: unknown): Promise<T> {
 export type SpaceHit = { slug: string; title: string; priv: boolean };
 export const searchSpaces = async (q: string) =>
   ((await (await fetch(`/api/spaces?q=${encodeURIComponent(q)}`)).json().catch(() => ({ items: [] }))) as { items: SpaceHit[] }).items ?? [];
-export const createSpace = (title: string, handle: string, priv: boolean, pass: string) =>
-  post<SpaceSession>("/api/spaces", { title, handle, priv, pass, deviceId: persistentId() });
+export const createSpace = (title: string, handle: string, priv: boolean, pass: string, work = false) =>
+  post<SpaceSession>("/api/spaces", { title, handle, priv, pass, work, deviceId: persistentId() });
 export const joinSpace = (slug: string, handle: string, pass?: string) =>
   post<SpaceSession>(`/api/spaces/${slug}/join`, { handle, pass, deviceId: persistentId() });
 export type SpaceInfo = {
-  title: string; priv: boolean; handle: string; chan: string; owner: boolean; members: { id: string; handle: string; you: boolean }[];
+  title: string; priv: boolean; work?: boolean; handle: string; chan: string; owner: boolean; members: { id: string; handle: string; you: boolean }[];
   anon?: boolean;
   /** anonymous spaces: when it and its member list are deleted (ms) */
   ends?: number | null;

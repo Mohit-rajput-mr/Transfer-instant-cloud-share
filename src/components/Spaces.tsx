@@ -328,6 +328,7 @@ function CreateForm(props: { title0: string; handle0: string; onDone: (s: SpaceS
   const [title, setTitle] = useState(props.title0);
   const [handle, setHandle] = useState(props.handle0);
   const [priv, setPriv] = useState(false);
+  const [work, setWork] = useState(false);
   const [pass, setPass] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -338,7 +339,7 @@ function CreateForm(props: { title0: string; handle0: string; onDone: (s: SpaceS
     setBusy(true);
     setErr("");
     try {
-      props.onDone(await createSpace(title.trim(), handle.trim(), priv, pass));
+      props.onDone(await createSpace(title.trim(), handle.trim(), priv, pass, work));
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -361,6 +362,11 @@ function CreateForm(props: { title0: string; handle0: string; onDone: (s: SpaceS
           <input className="line-input" value={pass} maxLength={64} onChange={(e) => setPass(e.target.value)} placeholder="4+ characters" autoComplete="off" />
         </div>
       )}
+      <div className="seg" role="radiogroup" aria-label="How people see it">
+        <button role="radio" aria-checked={!work} className={!work ? "on" : ""} onClick={() => setWork(false)}>Flexible · any view</button>
+        <button role="radio" aria-checked={work} className={work ? "on" : ""} onClick={() => setWork(true)}>Workspace only</button>
+      </div>
+      {work && <p className="note">Everyone who joins sees it in the Work view. In Classic they step out of it, with a button to come back.</p>}
       <p className="note">A space closes 8 hours after it is made: its people, files, notes and tasks go with it. What you send in it stays until then.</p>
       <div className="field">
         <label><span className="mono">Your name in it</span></label>

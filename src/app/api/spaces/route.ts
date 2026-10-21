@@ -50,10 +50,10 @@ export async function POST(req: NextRequest) {
   const pass = typeof b?.pass === "string" ? b.pass.slice(0, 64) : "";
   if (!validSlug(slugify(title)) || !handle || !deviceId) return NextResponse.json({ error: "Give the space a name and yourself a name" }, { status: 400 });
   if (priv && pass.length < 4) return NextResponse.json({ error: "Private spaces need a passcode of 4+ characters" }, { status: 400 });
-  const made = await createSpace(title, priv, priv ? pass : null);
+  const made = await createSpace(title, priv, priv ? pass : null, { work: b?.work === true });
   if (!made) return NextResponse.json({ error: "That name is taken. Search for it to join, or pick another" }, { status: 409 });
   const { meta, owner } = made;
   const dh = devHash(deviceId);
   await addMember(meta.slug, dh, handle);
-  return NextResponse.json({ slug: meta.slug, title: meta.title, priv: meta.priv, handle, token: tokenFor(meta.slug, dh), chan: chanFor(meta.slug), owner });
+  return NextResponse.json({ slug: meta.slug, title: meta.title, priv: meta.priv, work: !!meta.work, handle, token: tokenFor(meta.slug, dh), chan: chanFor(meta.slug), owner });
 }

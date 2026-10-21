@@ -319,6 +319,7 @@ function groupOrbs(list: Orb[]) {
  *  (VoidShell, lib/view.ts), which also owns html[data-ui] / [data-theme] and the work wording. */
 export default function Void({ ui }: { ui?: "work" } = {}) {
   const work = ui === "work";
+  const workRef = useRef(work);
   const [orbs, setOrbs] = useState<Orb[]>([]);
   const orbsRef = useRef(orbs);
   orbsRef.current = orbs;
@@ -924,6 +925,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         setActiveSpace(s);
         spaceRef.current = s;
         setSpace(s);
+        // a Workspace-only space is only ever shown in the Work view
+        if (s.work && !workRef.current) switchView("/work");
       }
       setSpaceReady(true);
       if (anonInv) {
@@ -955,10 +958,69 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   }, [refresh]);
   const enterSpace = useCallback((s: SpaceSession) => {
     remember(s);
+    // a Workspace-only space opens the Work view first, so the step-out below never sees it in Classic
+    if (s.work && !workRef.current) {
+      workRef.current = true;
+      switchView("/work");
+    }
     switchSpace(s);
     setPanel(null);
     toast(`You are in ${s.title}`);
   }, [switchSpace, toast]);
+  // Workspace-only spaces (set by their creator): in Classic you step out of it (its things stay out of sight), the
+  // navbar offers "Switch to <space>", and the Work view walks you straight back in
+  const [parked, setParked] = useState<SpaceSession | null>(null);
+  // the spaces this browser is still in (never left), for the Classic navbar's "Your spaces": expired ones leave by
+  // themselves (a closed space would refuse the pass anyway)
+  const [mySpaces, setMySpaces] = useState<SpaceSession[]>([]);
+  const [spacesOpen, setSpacesOpen] = useState(false);
+  const minute = Math.floor(now / 60_000);
+  useEffect(() => {
+    let off = false;
+    savedSpaces().then(async (list) => {
+      const t = Date.now();
+      const gone = list.filter((x) => x.ends && x.ends <= t);
+      for (const g of gone) await forget(g.slug);
+      if (!off) setMySpaces(list.filter((x) => !gone.includes(x) && !(isAnon() && !x.anon)));
+    }).catch(() => {});
+    return () => void (off = true);
+  }, [space, parked, minute]);
+  // the parked space closed meanwhile: nothing to come back to
+  useEffect(() => {
+    if (parked?.ends && parked.ends <= now) setParked(null);
+  }, [parked, now]);
+  const goSpace = (s: SpaceSession) => {
+    setSpacesOpen(false);
+    if (parked?.slug === s.slug) setParked(null);
+    if (spaceRef.current?.slug !== s.slug) enterSpace(s);
+    else if (s.work && !work) switchView("/work");
+  };
+  const wasWork = useRef(work);
+  useEffect(() => {
+    const was = wasWork.current;
+    wasWork.current = work;
+    workRef.current = work;
+    const forced = !!(space?.work || (room?.work && space));
+    if (!work && was && space && forced) {
+      setParked(space);
+      switchSpace(null);
+    } else if (work && parked) {
+      const p = parked;
+      setParked(null);
+      if (!spaceRef.current) switchSpace(p);
+    }
+    // switchSpace is stable enough (refresh); room/space are read at the flip
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [work]);
+  // the room says it is Workspace only (a space saved before this setting, or set on another device): keep it on the pass
+  useEffect(() => {
+    if (!space || !room?.work || space.work) return;
+    const s = { ...space, work: true };
+    remember(s);
+    spaceRef.current = s;
+    setSpace(s);
+    if (!workRef.current) switchView("/work");
+  }, [room?.work, space]);
   removedRef.current = (sp) => {
     // anonymous (maybe switched on in another tab): a named space refuses the throwaway id. Only step out of it here;
     // it stays saved for when the switch is off again
@@ -1379,6 +1441,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     try {
       const info = await fetchRoom(sp);
       if (spaceRef.current === sp) setRoom(info);
+      // its close time rides on the saved pass, so the "Your spaces" list can drop it on time without asking
+      if (info.ends !== undefined && info.ends !== sp.ends) remember({ ...sp, ends: info.ends, work: sp.work || info.work });
     } catch (e) {
       if ((e as { status?: number }).status === 403 && spaceRef.current === sp) removedRef.current(sp);
     }
@@ -2568,6 +2632,24 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           )}
           </div>
           <div className="top-right">
+            {(parked || mySpaces.length > 0) && (
+              <span className="nav-spaces">
+                <button className={`pill lg-press${parked ? " nav-space" : ""}`} onClick={() => setSpacesOpen((o) => !o)} aria-expanded={spacesOpen} title={parked ? `${parked.title} is a Workspace-only space` : "Spaces you are in"}>
+                  {parked ? <>Switch to {parked.title}</> : <>Your spaces {mySpaces.length}</>} ▾
+                </button>
+                {spacesOpen && (
+                  <span className="nav-spaces-pop" role="menu">
+                    {mySpaces.map((s) => (
+                      <button key={s.slug} role="menuitem" className={space?.slug === s.slug ? "on" : ""} onClick={() => goSpace(s)}>
+                        <b>{s.title}</b>
+                        <i className="mono">{s.work ? "workspace" : s.priv ? "private" : "open"}{s.ends ? ` · closes ${new Date(s.ends).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}</i>
+                      </button>
+                    ))}
+                    {space && <button role="menuitem" onClick={() => (setSpacesOpen(false), switchSpace(null))}><b>Public void</b><i className="mono">everyone, worldwide</i></button>}
+                  </span>
+                )}
+              </span>
+            )}
             <KindFilter kind={kind} onKind={setKind} />
             <span className="live" aria-label={`${online} ${online > 1 ? "devices" : "device"} in orbit`}><span className="dot" /><b>{online}</b><span className="live-txt">{space ? "in this space" : online > 1 ? "devices in orbit" : "device in orbit"}</span></span>
             {anonNow ? <>{anonOnButton("pill lg-press anon-badge", true)}{anonOn && <button className="pill lg-press anon-exit" onClick={() => toggleAnon(false)} title="Turn off Anonymous">Exit</button>}</> : <>{anonOffButton("hd-ic lg-press")}{pinButton("hd-ic lg-press geo-chip")}</>}

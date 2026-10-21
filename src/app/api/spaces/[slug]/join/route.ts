@@ -37,5 +37,5 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   if (r.members.some((m) => m.dh !== dh && m.handle.toLowerCase() === handle.toLowerCase()))
     return NextResponse.json({ error: `"${handle}" is taken in this space. Pick another name` }, { status: 409 });
   await addMember(slug, dh, handle);
-  return NextResponse.json({ slug, title: meta.title, priv: meta.priv, handle, token: tokenFor(slug, dh), chan: chanFor(slug) });
+  return NextResponse.json({ slug, title: meta.title, priv: meta.priv, work: !!meta.work, handle, token: tokenFor(slug, dh), chan: chanFor(slug) });
 }

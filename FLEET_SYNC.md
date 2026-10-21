@@ -20,6 +20,12 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- DONE 2026-10-21 — Spaces: "Flexible / Workspace only" when creating (SpaceMeta.work, sealed meta, no migration). A
+  Workspace-only space always opens in Work; switching to Classic steps out of it (parked) and the bar shows "Switch to
+  <space> ▾"; the same control lists every space this browser is still in ("Your spaces"), one tap to enter; a space's
+  close time (room.ends) rides on the saved pass and it leaves the list by itself when it closes. Verified: Playwright on a
+  prod build (open in Work, step out to Classic, menu lists both, enter a flexible one in Classic, pick the Work-only one →
+  Work + inside it). RISK: the parked space isn't remembered across a reload (it shows in "Your spaces" instead).
 - FIXED 2026-10-21 (H) — Uploads invisible on the owner's other device: (1) the public void was local, and the devices sat
   in different IP areas (Barcelona vs Hillsboro US, a VPN/company network) → "Open void" is now worldwide (no ?a= list,
   one live room r/void / orbit-void; the area stays on items for the Nearby filter + HQ). (2) a launch could hang at
