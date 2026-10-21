@@ -1,1 +1,60 @@
-{"lines": [{"key": "hook", "text": "hook", "at": 0.35, "dur": 5.5}, {"key": "loop", "text": "loop", "at": 6.1499999999999995, "dur": 5}, {"key": "evap", "text": "evap", "at": 11.45, "dur": 7}, {"key": "squeeze", "text": "squeeze", "at": 18.75, "dur": 6}, {"key": "coils", "text": "coils", "at": 25.05, "dur": 6.5}, {"key": "valve", "text": "valve", "at": 31.85, "dur": 6.5}, {"key": "door", "text": "door", "at": 38.65, "dur": 9}, {"key": "close", "text": "close", "at": 47.95, "dur": 3.5}, {"key": "end", "text": "end", "at": 51.75, "dur": 3}], "duration": 56.05}
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a fridge makes things cold? It doesn't add cold at all. It moves heat out.",
+   "dur": 5.653,
+   "at": 0.35
+  },
+  {
+   "key": "loop",
+   "text": "A special fluid, called the refrigerant, flows around a closed loop of pipes, again and again.",
+   "dur": 5.427,
+   "at": 6.4
+  },
+  {
+   "key": "evap",
+   "text": "Inside the fridge it's kept at low pressure, so it boils well below freezing. As it boils, it soaks up heat from your food.",
+   "dur": 6.972,
+   "at": 12.13
+  },
+  {
+   "key": "squeeze",
+   "text": "Then a compressor squeezes that gas. Squeezing a gas heats it up, until it's hotter than your kitchen.",
+   "dur": 6.519,
+   "at": 19.4
+  },
+  {
+   "key": "coils",
+   "text": "The hot gas flows through the coils on the back. It gives its heat to the room, and turns back into a liquid.",
+   "dur": 5.791,
+   "at": 26.22
+  },
+  {
+   "key": "valve",
+   "text": "Then it squeezes through a tiny valve. The pressure drops, it gets icy cold again, and the loop starts over.",
+   "dur": 6.894,
+   "at": 32.31
+  },
+  {
+   "key": "door",
+   "text": "That's why the back of a fridge feels warm, and why an open fridge can't cool your kitchen. The heat just goes in a circle, and the motor adds more.",
+   "dur": 8.514,
+   "at": 39.51
+  },
+  {
+   "key": "close",
+   "text": "So a fridge is a heat pump, carrying warmth out of the box.",
+   "dur": 3.683,
+   "at": 48.37
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 52.45
+  }
+ ],
+ "duration": 57.0
+}
