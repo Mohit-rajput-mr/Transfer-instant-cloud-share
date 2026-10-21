@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a pressure cooker cooks so fast? It cheats the boiling point of water.",
+   "dur": 4.44,
+   "at": 0.35
+  },
+  {
+   "key": "boil",
+   "text": "In a normal pot, water can't get hotter than a hundred degrees. Once it boils, the extra heat just turns it into steam.",
+   "dur": 7.045,
+   "at": 5.19
+  },
+  {
+   "key": "seal",
+   "text": "A pressure cooker locks its lid. The steam can't escape, so the pressure inside builds up.",
+   "dur": 5.468,
+   "at": 12.54
+  },
+  {
+   "key": "point",
+   "text": "Under that pressure, water has to get hotter before it boils, up to about a hundred and twenty degrees.",
+   "dur": 5.879,
+   "at": 18.3
+  },
+  {
+   "key": "faster",
+   "text": "Hotter water cooks food much faster. Beans that take hours in a pot can be done in under an hour.",
+   "dur": 5.966,
+   "at": 24.48
+  },
+  {
+   "key": "safety",
+   "text": "A valve on the lid lets steam out if the pressure gets too high. That's the hiss you hear.",
+   "dur": 5.08,
+   "at": 30.75
+  },
+  {
+   "key": "history",
+   "text": "The idea goes back to 1679, when a French scientist, Denis Papin, built a steam digester.",
+   "dur": 6.985,
+   "at": 36.13
+  },
+  {
+   "key": "close",
+   "text": "So a pressure cooker turns up the heat, just by trapping the steam.",
+   "dur": 3.678,
+   "at": 43.51
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 47.59
+  }
+ ],
+ "duration": 52.14
+}
