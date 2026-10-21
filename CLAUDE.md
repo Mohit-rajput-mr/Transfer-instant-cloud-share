@@ -14,6 +14,9 @@
 - **Vercel free plan = ~100 builds/day for the whole team** (hit on 2026-10-21: "Deployment rate limited — retry in 24 h").
   `scripts/vercel-ignore.sh` (vercel.json ignoreCommand) builds only the live branch and only when site code changed.
   Batch your work: push to the live branch a few times a day, not after every small edit.
+  **Vercel project setting (owner, 2026-10-21): Ignored Build Step = "Only build production".** Pushes to any other branch
+  (films, experiments, agent branches) never build on Vercel: they cost nothing and give no preview URL. To test a change,
+  run it locally (`npm run check`, a local `next build` + Playwright); to ship it, merge it into the live branch.
 - Bump `RELEASE` in `src/app/api/version/route.ts` only when open tabs must reload.
 - Supabase project `orbit` (`ntnfdvmzylxenjqwdsnp`). Save every DB change as a file in `supabase/migrations/`.
 - Public void ("Open void") is WORLDWIDE (owner 2026-10-21): one list (no ?a=) and one live room (r/void / orbit-void). Items still carry an `area` (geohash-4) for the Nearby filter and HQ.

@@ -20,7 +20,7 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
-- OPEN→deploying 2026-10-21 (H, owner started Vercel Pro trial) — Production stuck on r-2026-10-21-world-void: Vercel refused 209d25a ("Deployment rate limited —
+- FIXED 2026-10-21 (H) — deployed d60d56d after the owner started the Vercel Pro trial (/api/version = r-2026-10-21-workspace-only-spaces); owner set Vercel Ignored Build Step = "Only build production" for every branch. Was: production stuck on r-2026-10-21-world-void: Vercel refused 209d25a ("Deployment rate limited —
   retry in 24 hours", seen via `gh api .../commits/209d25a/statuses`). Cause: every agent branch + notes commit built
   (Hobby ≈100 builds/day). Fix: vercel.json ignoreCommand → scripts/vercel-ignore.sh (live branch + site code only;
   checked locally for: other branch → skip, code change → build, notes-only → skip). Pending: a push after the limit

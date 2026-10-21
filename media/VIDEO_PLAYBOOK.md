@@ -122,6 +122,11 @@ Structure that works:
 8. The burn.
 9. End card.
 
+## Commits and Vercel (owner, 2026-10-21)
+Film branches never build on Vercel (project setting: Ignored Build Step = "Only build production"). Before that, every
+render commit built a Preview: 81 in one day used up the free plan's 100 builds and blocked the live site for a day.
+Still: commit a film when it is finished (source + MP4 together), not after every frame batch or re-render.
+
 ## How to build one — USE THE KIT (media/kit/README.md): script.json + story.js only, one preview round
 
 ## How to build one (older, per-film way)
