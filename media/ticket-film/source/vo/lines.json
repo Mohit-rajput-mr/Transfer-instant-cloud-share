@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a concert ticket stops fakes? The secret is in that little square code.",
+   "dur": 6.216,
+   "at": 0.35
+  },
+  {
+   "key": "id",
+   "text": "Every ticket gets its own code, a long random number that nobody could guess.",
+   "dur": 4.334,
+   "at": 6.97
+  },
+  {
+   "key": "scan",
+   "text": "At the gate, the scanner reads it and checks a central list. Valid? The light turns green.",
+   "dur": 5.991,
+   "at": 11.6
+  },
+  {
+   "key": "used",
+   "text": "In that instant, the ticket is marked as used. So if someone copied it, the copy gets a red light.",
+   "dur": 6.72,
+   "at": 17.89
+  },
+  {
+   "key": "rotate",
+   "text": "Some ticket apps go further. The code changes every few seconds, so a screenshot is useless.",
+   "dur": 6.067,
+   "at": 24.91
+  },
+  {
+   "key": "gate",
+   "text": "That's how thousands of people get through the gates in minutes, and the fakes don't.",
+   "dur": 4.624,
+   "at": 31.28
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi gives every file its own QR code too. Scan it to land right on the file, and add a code, so only people who know it can open it.",
+   "dur": 8.555,
+   "at": 36.3
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 45.21
+  }
+ ],
+ "duration": 49.76
+}
