@@ -20,6 +20,13 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- VERIFIED 2026-10-21 — two-device E2E on production (Playwright, 2–3 contexts, 0 reloads): public file 1.2 s, note 2 s,
+  task 1.6 s, deletes 0.7–2.4 s; open + private spaces join from another area (Tokyo GPS vs Ohio IP), live 1–3 s, no leak
+  to the public void; Work↔Classic across devices; offline 10 s → appears 30–500 ms after reconnect. Membership code has no
+  IP/area/country check (spaces.ts member/search, join route).
+- FIXED 2026-10-21 (M) — a new space wasn't findable for up to 60 s (per-instance search cache) → search looks again on a
+  miss; a "no such space" is cached 3 s, not 60. (L) wrong-passcode lockout was per network (one VPN exit / office locked
+  everyone) → 8 per device + 40 per network.
 - FIXED 2026-10-21 (H, scale) — worldwide void load: card views no longer pulse every tab into a full list reload;
   /api/transfers/net asked at most every 30 s; list GET no longer waits on reap(); list s-maxage 2 / swr 20; thumbs
   CDN-cached (s-maxage); previews pre-warm only files ≤ 1 MB; heartbeat every 120 s and only from visible tabs; Worker

@@ -80,7 +80,8 @@ const isClosed = (m: SpaceMeta) => {
 const metaCache = new Map<string, { at: number; meta: SpaceMeta | null }>();
 async function rawMeta(slug: string): Promise<SpaceMeta | null> {
   const c = metaCache.get(slug);
-  if (c && Date.now() - c.at < META_TTL) return c.meta;
+  // a miss is only trusted for 3 s: a space made a moment ago on another server instance must be joinable at once
+  if (c && Date.now() - c.at < (c.meta ? META_TTL : 3_000)) return c.meta;
   const sealed = await rpc<string | null>("orbit_space_get", { p_slug: slug }).catch(() => null);
   const meta = unseal(sealed);
   metaCache.set(slug, { at: Date.now(), meta });
@@ -175,8 +176,8 @@ const lastFresh = new Map<string, number>();
 
 type IndexRow = { slug: string; meta: string; members: string[]; kicked: number };
 let slugCache: { at: number; rows: IndexRow[] } | null = null;
-async function index() {
-  if (!slugCache || Date.now() - slugCache.at > INDEX_TTL)
+async function index(fresh = false) {
+  if (fresh || !slugCache || Date.now() - slugCache.at > INDEX_TTL)
     slugCache = { at: Date.now(), rows: (await rpc<IndexRow[]>("orbit_space_index", {}).catch(() => null)) ?? [] };
   return slugCache.rows;
 }
@@ -184,7 +185,10 @@ export async function search(q: string) {
   const s = slugify(q);
   // anonymity is read from the sealed meta only (a named space made before the anon- prefix was reserved can use it)
   const out: { slug: string; title: string; priv: boolean }[] = [];
-  const rows = (await index())
+  // a name this instance doesn't know yet may have just been made on another one: look again before saying "none"
+  let all = await index();
+  if (s && !all.some((x) => x.slug.includes(s)) && Date.now() - (slugCache?.at ?? 0) > 2_000) all = await index(true);
+  const rows = all
     .filter((x) => !s || x.slug.includes(s))
     .sort((a, b) => Number(b.slug.startsWith(s)) - Number(a.slug.startsWith(s)) || a.slug.length - b.slug.length);
   for (const h of rows) {

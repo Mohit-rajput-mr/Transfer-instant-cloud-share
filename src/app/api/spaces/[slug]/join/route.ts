@@ -21,12 +21,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const r = await roster(slug, true);
   if (r.kicked.has(dh)) return NextResponse.json({ error: "You were removed from this space" }, { status: 403 });
 
-  const net = netHash(req);
+  // wrong passcodes: 8 per device, and 40 for a whole network (a VPN exit or an office shares one: one person's
+  // typos must not lock out everyone behind it, while guessing with fresh device ids still hits the network cap)
+  const net = netHash(req), mine = `${net}:${dh}`;
   const now = Date.now();
-  const recent = (fails.get(net) ?? []).filter((t) => now - t < 10 * 60_000);
-  if (meta.priv && recent.length >= 8) return NextResponse.json({ error: "Too many wrong passcodes. Try again in 10 minutes" }, { status: 429 });
+  const fresh = (k: string) => (fails.get(k) ?? []).filter((t) => now - t < 10 * 60_000);
+  const recent = fresh(mine), all = fresh(net);
+  if (meta.priv && (recent.length >= 8 || all.length >= 40)) return NextResponse.json({ error: "Too many wrong passcodes. Try again in 10 minutes" }, { status: 429 });
   if (!checkPass(meta, b?.pass)) {
-    fails.set(net, [...recent, now]);
+    fails.set(mine, [...recent, now]);
+    fails.set(net, [...all, now]);
     return NextResponse.json({ error: "Wrong passcode", needPass: true }, { status: 401 });
   }
   if (meta.anon) {
