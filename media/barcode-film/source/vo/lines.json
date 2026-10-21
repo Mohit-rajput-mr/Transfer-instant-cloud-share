@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a barcode works? Those black stripes are just a number, written in light and dark.",
+   "dur": 5.311,
+   "at": 0.35
+  },
+  {
+   "key": "read",
+   "text": "The scanner shines red light across it. White gaps bounce it back, black bars swallow it, so the sensor sees a rhythm of flashes.",
+   "dur": 7.533,
+   "at": 6.06
+  },
+  {
+   "key": "digits",
+   "text": "Each digit takes seven thin slots, made of two bars and two gaps. Their widths spell out zero to nine.",
+   "dur": 7.321,
+   "at": 13.89
+  },
+  {
+   "key": "number",
+   "text": "The stripes hold no price and no name. Just a number. The shop's computer looks it up, and finds what you're buying.",
+   "dur": 6.836,
+   "at": 21.52
+  },
+  {
+   "key": "check",
+   "text": "The last digit is a check. It's worked out from all the others, so if one stripe is misread, the sum fails, and the scanner won't beep.",
+   "dur": 7.525,
+   "at": 28.65
+  },
+  {
+   "key": "flip",
+   "text": "It even reads upside down. The left and right halves use different patterns, so the scanner knows which end is which.",
+   "dur": 7.238,
+   "at": 36.48
+  },
+  {
+   "key": "first",
+   "text": "The first thing ever scanned at a checkout was a pack of chewing gum, in Ohio, in 1974.",
+   "dur": 7.127,
+   "at": 44.01
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi puts the barcode's square cousin on every file you send. Your friend scans the QR code and lands right on the file. Add a code, and only people who know it can open it.",
+   "dur": 9.281,
+   "at": 51.54
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 61.17
+  }
+ ],
+ "duration": 65.72
+}
