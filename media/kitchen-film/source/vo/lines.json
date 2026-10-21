@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a busy kitchen gets your order right? It runs on little slips called tickets.",
+   "dur": 4.727,
+   "at": 0.35
+  },
+  {
+   "key": "order",
+   "text": "When you order, the server sends it to the kitchen, and it splits up. The grill gets your burger. The fry station gets your chips.",
+   "dur": 7.164,
+   "at": 5.48
+  },
+  {
+   "key": "station",
+   "text": "Each cook only sees their part, so nobody wastes time reading the whole order.",
+   "dur": 5.054,
+   "at": 12.94
+  },
+  {
+   "key": "timer",
+   "text": "Many kitchens use screens now. Each ticket shows a timer, and turns yellow, then red, if it waits too long.",
+   "dur": 7.184,
+   "at": 18.29
+  },
+  {
+   "key": "expo",
+   "text": "At the pass, one person called the expo checks every plate, and only sends the order out when it's all there.",
+   "dur": 6.435,
+   "at": 25.78
+  },
+  {
+   "key": "brigade",
+   "text": "The idea goes back to the eighteen hundreds, when chef Auguste Escoffier organised kitchens like an army, with a station for everything.",
+   "dur": 8.266,
+   "at": 32.51
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Work runs on the same idea. Type a task, tag a teammate, and it moves step by step. Doing, review, done. And everyone sees it live.",
+   "dur": 9.517,
+   "at": 41.18
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 51.05
+  }
+ ],
+ "duration": 55.6
+}
