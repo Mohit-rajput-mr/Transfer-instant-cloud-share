@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a smartwatch measures your heartbeat? It shines light into your wrist, and watches what comes back.",
+   "dur": 6.192,
+   "at": 0.35
+  },
+  {
+   "key": "green",
+   "text": "Those green lights on the back flash hundreds of times a second.",
+   "dur": 3.97,
+   "at": 6.94
+  },
+  {
+   "key": "blood",
+   "text": "Blood looks red because it bounces red light back, and soaks up green.",
+   "dur": 4.275,
+   "at": 11.21
+  },
+  {
+   "key": "beat",
+   "text": "Every time your heart beats, a little extra blood rushes through your wrist. More blood swallows more green light, so less bounces back to the sensor.",
+   "dur": 8.569,
+   "at": 15.79
+  },
+  {
+   "key": "count",
+   "text": "The watch sees that dip, again and again. Count the dips in a minute, and that's your heart rate.",
+   "dur": 5.501,
+   "at": 24.66
+  },
+  {
+   "key": "motion",
+   "text": "Moving your arm confuses it, so a motion sensor helps filter out the swing.",
+   "dur": 4.294,
+   "at": 30.46
+  },
+  {
+   "key": "oxygen",
+   "text": "Some watches add red and infrared light, because blood full of oxygen absorbs them differently. That's how they estimate blood oxygen.",
+   "dur": 7.373,
+   "at": 35.05
+  },
+  {
+   "key": "close",
+   "text": "So your watch is really reading the colour of your pulse.",
+   "dur": 4.144,
+   "at": 42.77
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 47.32
+  }
+ ],
+ "duration": 51.87
+}
