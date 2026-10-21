@@ -1,0 +1,182 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>HowSnowflakesForm</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+scene.background = new THREE.Color(0x070b18);
+scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x101828, 1.0)); { const l = new THREE.DirectionalLight(0xffffff, 1.6); l.position.set(5, 8, 10); scene.add(l); }
+const ICE = new THREE.MeshStandardMaterial({ color: 0xe6f6ff, emissive: 0x3d7cc0, emissiveIntensity: 0.6, metalness: 0.2, roughness: 0.15 });
+// A flake: hex core + 6 identical arms; side branches appear as the arm tip passes them.
+function flake(spec) { const g = new THREE.Group(); const parts = [];
+  const core = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.08, 6), ICE); core.rotation.set(Math.PI / 2, Math.PI / 6, 0); g.add(core); parts.push({ m: core, kind: "core" });
+  for (let a = 0; a < 6; a++) { const arm = new THREE.Group(); arm.rotation.z = a * Math.PI / 3; g.add(arm);
+    const stem = new THREE.Mesh(new THREE.BoxGeometry(1, spec.w || 0.14, 0.06), ICE); stem.geometry.translate(0.5, 0, 0); arm.add(stem); parts.push({ m: stem, kind: "stem" });
+    spec.hist.forEach(([at, len, pl]) => { for (const s of [-1, 1]) { const b = new THREE.Mesh(new THREE.BoxGeometry(1, 0.1, 0.05), ICE); b.geometry.translate(0.5, 0, 0); b.position.x = at * spec.L; b.rotation.z = s * Math.PI / 3; arm.add(b); parts.push({ m: b, kind: "br", at, len }); }
+      if (pl) { const p = new THREE.Mesh(new THREE.CylinderGeometry(pl, pl, 0.06, 6), ICE); p.rotation.set(Math.PI / 2, Math.PI / 6, 0); p.position.x = at * spec.L; arm.add(p); parts.push({ m: p, kind: "pl", at, r: pl }); } }); }
+  g.userData = { parts, spec }; return g; }
+function grow(f, k) { const { parts, spec } = f.userData; const L = spec.L * k;
+  for (const p of parts) { if (p.kind === "core") { const r = spec.core * clamp(k * 5 + 0.02); p.m.scale.set(r, 1, r); }
+    else if (p.kind === "stem") { p.m.visible = L > 0.02; p.m.scale.x = Math.max(0.001, L); }
+    else { const ext = clamp((L - spec.L * p.at) / (spec.L * 0.2)); p.m.visible = ext > 0.01; if (p.kind === "br") p.m.scale.x = Math.max(0.001, ext * p.len * spec.L); else p.m.scale.set(ext, 1, ext); } } }
+const rndf = (() => { let s = 7; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
+const mkSpec = (L, n, core) => ({ L, core, hist: Array.from({ length: n }, (_, i) => [0.2 + (i + rndf() * 0.6) * 0.75 / n, 0.15 + rndf() * 0.3, rndf() < 0.25 ? 0.12 + rndf() * 0.12 : 0]) });
+// falling snow everywhere
+const SNN = 900, snp = new Float32Array(SNN * 3), sn0 = []; for (let i = 0; i < SNN; i++) sn0.push([(rndf() - 0.5) * 60, rndf() * 80, (rndf() - 0.5) * 50 - 10, 0.5 + rndf()]);
+const SNOW = new THREE.Points(new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(snp, 3)), new THREE.PointsMaterial({ color: 0xffffff, size: 0.22, transparent: true, opacity: 0.85, map: canvasTex(64, 64, (g) => { const r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, "#fff"); r.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = r; g.fillRect(0, 0, 64, 64); }), depthWrite: false })); SNOW.frustumCulled = false; scene.add(SNOW);
+// cloud fog puffs
+const PUFF = canvasTex(256, 256, (g) => { const r = g.createRadialGradient(128, 128, 0, 128, 128, 128); r.addColorStop(0, "rgba(170,190,220,0.35)"); r.addColorStop(1, "rgba(170,190,220,0)"); g.fillStyle = r; g.fillRect(0, 0, 256, 256); });
+const FOG = Array.from({ length: 26 }, () => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: PUFF, transparent: true, depthWrite: false, opacity: 0.7 })); s.position.set((rndf() - 0.5) * 30, (rndf() - 0.5) * 20, -6 - rndf() * 20); s.scale.setScalar(8 + rndf() * 10); scene.add(s); return s; });
+const DUST = new THREE.Mesh(new THREE.IcosahedronGeometry(0.12, 0), new THREE.MeshStandardMaterial({ color: 0x8a6a4a, roughness: 1 })); scene.add(DUST);
+const HALO = new THREE.Mesh(new THREE.SphereGeometry(0.4, 20, 12), glow(0xffd27a, { transparent: true, opacity: 0.25 })); scene.add(HALO);
+const VN = 220, vp = new Float32Array(VN * 3), v0 = []; for (let i = 0; i < VN; i++) { const d = V(rndf() - 0.5, rndf() - 0.5, rndf() - 0.5).normalize(); v0.push([d, 2 + rndf() * 4, rndf()]); }
+const VAP = new THREE.Points(new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(vp, 3)), new THREE.PointsMaterial({ color: 0x9fd8ff, size: 0.12, transparent: true, depthWrite: false, map: SNOW.material.map })); VAP.frustumCulled = false; scene.add(VAP);
+// the main flake
+const MAIN = flake(mkSpec(3.2, 6, 0.55)); scene.add(MAIN);
+// hex lattice of water molecules
+const LAT = new THREE.Group(); scene.add(LAT); { const O = new THREE.MeshStandardMaterial({ color: 0xff5a5a, roughness: 0.4 }), H = new THREE.MeshStandardMaterial({ color: 0xf2f4f8, roughness: 0.4 }), bond = new THREE.MeshStandardMaterial({ color: 0x7cc8ff, emissive: 0x2a5a90 });
+  const cells = [[0, 0]]; for (let a = 0; a < 6; a++) cells.push([Math.cos(a * Math.PI / 3 + Math.PI / 6) * 1.732, Math.sin(a * Math.PI / 3 + Math.PI / 6) * 1.732]);
+  const seen = new Set(); cells.forEach(([cx, cy], ci) => { for (let a = 0; a < 6; a++) { const x = cx + Math.cos(a * Math.PI / 3), y = cy + Math.sin(a * Math.PI / 3); const key = `${x.toFixed(2)},${y.toFixed(2)}`; if (seen.has(key)) continue; seen.add(key);
+    const m = new THREE.Group(); m.position.set(x, y, 0); const o = new THREE.Mesh(new THREE.SphereGeometry(0.22, 18, 12), O); m.add(o); for (const s of [-1, 1]) { const h = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), H); h.position.set(Math.cos(a + s) * 0.28, Math.sin(a + s) * 0.28, 0.12); m.add(h); } m.userData.d = Math.hypot(x, y); LAT.add(m); }
+    for (let a = 0; a < 6; a++) { const p1 = V(cx + Math.cos(a * Math.PI / 3), cy + Math.sin(a * Math.PI / 3), 0), p2 = V(cx + Math.cos((a + 1) * Math.PI / 3), cy + Math.sin((a + 1) * Math.PI / 3), 0); const b = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1, 6), bond); b.position.copy(p1).add(p2).multiplyScalar(0.5); b.quaternion.setFromUnitVectors(V(0, 1, 0), p2.clone().sub(p1).normalize()); b.userData.d = b.position.length(); LAT.add(b); } }); }
+LAT.position.set(0, 0, 40);
+// three shapes by temperature, stacked for the vertical frame
+const TY = [6.2, 0, -6.2], TX = 50;
+const PLATE = flake({ L: 1.6, core: 1.5, w: 0.5, hist: [[0.5, 0.12, 0.35]] }); PLATE.position.set(TX, TY[0], 0); scene.add(PLATE);
+const NEEDLE = new THREE.Group(); NEEDLE.position.set(TX, TY[1], 0); scene.add(NEEDLE); for (const [x, y, r] of [[0, 0, 0.5], [0.5, 0.3, -0.3], [-0.6, -0.2, 0.2]]) { const n = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 3.6, 6), ICE); n.position.set(x, y, 0); n.rotation.z = r + 1.2; NEEDLE.add(n); }
+const STAR = flake(mkSpec(2.4, 7, 0.4)); STAR.position.set(TX, TY[2], 0); scene.add(STAR);
+// fall: coloured air layers sliding past
+const LAYC = [0x2a4a8a, 0x3a2a7a, 0x1a5a6a, 0x2a3a6a, 0x4a2a5a]; const LAYERS = LAYC.map((c, i) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(80, 9), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.35, depthWrite: false })); m.position.set(0, 0, -8); scene.add(m); return m; });
+// unique: a grid of different flakes
+const UX = -50; const UNI = Array.from({ length: 6 }, (_, i) => { const f = flake(mkSpec(1.3 + rndf() * 0.4, 3 + Math.floor(rndf() * 5), 0.25 + rndf() * 0.35)); f.position.set(UX + (i % 2 ? 2.3 : -2.3), 5.2 - Math.floor(i / 2) * 5.2, 0); f.userData.r = rndf() * 6; scene.add(f); return f; });
+
+window.render = async function (t) { cam.up.set(0, 1, 0);
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  // snow drifts across every shot (centred on the shot's x)
+  const sx = t < A("temp") ? 0 : t < A("fall") ? TX : t < A("unique") ? 0 : t < A("close") ? UX : 0; const fallOn = t >= A("fall") && t < A("unique");
+  sn0.forEach(([x, y, z, s], i) => { snp[i * 3] = sx + x + Math.sin(t * 0.6 + i) * 0.6; snp[i * 3 + 1] = ((y - t * (fallOn ? -2.2 : 1.2) * s) % 80 + 80) % 80 - 40; snp[i * 3 + 2] = z; }); SNOW.geometry.attributes.position.needsUpdate = true;
+  SNOW.material.opacity = t < A("seed") ? 0.85 : t < A("temp") ? 0.25 : 0.6;
+  FOG.forEach((s, i) => { s.visible = t < A("temp") || t >= A("close"); s.position.x += 0; s.material.opacity = 0.55 + 0.15 * Math.sin(t * 0.3 + i); });
+  [MAIN, PLATE, NEEDLE, STAR, LAT, ...UNI].forEach((o) => (o.visible = false)); LAYERS.forEach((m) => (m.visible = false)); DUST.visible = HALO.visible = VAP.visible = false;
+  if (t < A("hex")) { // dust speck, vapour freezing onto it
+    DUST.visible = true; DUST.rotation.set(t, t * 0.7, 0); const sp = clamp((t - A("hook") - 3.2) / 1); HALO.visible = sp > 0; HALO.scale.setScalar(0.6 + 0.2 * Math.sin(t * 4)); HALO.material.opacity = 0.3 * sp * (t < A("seed") + 2 ? 1 : 0.4);
+    const kv = clamp((t - A("seed")) / 6); VAP.visible = t >= A("seed"); v0.forEach(([d, r, o], i) => { const f = ((t - A("seed")) * 0.35 + o) % 1; const rr = r * (1 - f); snp; vp[i * 3] = d.x * rr; vp[i * 3 + 1] = d.y * rr; vp[i * 3 + 2] = d.z * rr; }); VAP.geometry.attributes.position.needsUpdate = true;
+    MAIN.visible = t >= A("seed") + 1.2; MAIN.position.set(0, 0, 0); MAIN.rotation.set(0.35, -0.3, t * 0.1); grow(MAIN, clamp((t - A("seed") - 1.2) / 30) * 0.4);
+    const k = ease(clamp(t / A("seed"))); look(V(0, 0.2, lerp(22, 3.2, k)), V(0, 0, 0), 46);
+    lbl("l0", V(0, -0.5, 0), t, A("hook") + 3.2, A("seed") + 1, "speck of dust", "#ffd27a");
+    card("c0", `vapour → <b>ice</b> · no liquid step`, t, A("seed") + 1.5, A("hex"), 250, 230, -2); }
+  else if (t < A("temp")) { LAT.visible = true; const k = clamp((t - A("hex")) / 3.2); LAT.children.forEach((m) => { const v = clamp(k * 4 - m.userData.d * 0.8); m.scale.setScalar(Math.max(0.001, v)); }); LAT.rotation.set(0.25, -0.2, t * 0.05);
+    const k2 = clamp((t - A("hex") - 4.0) / 2.0); MAIN.visible = k2 > 0; MAIN.position.copy(LAT.position); MAIN.rotation.set(0.25, -0.2, t * 0.05); grow(MAIN, 0.3 + 0.3 * k2); LAT.children.forEach((m) => { if (k2 > 0) m.scale.multiplyScalar(1 - k2 * 0.7); });
+    look(LAT.position.clone().add(V(0, 0, lerp(11, 13, k2))), LAT.position, 46); big("6 SIDES", t, A("hex") + 4.2, A("temp") - 0.2, "#7cc8ff", "300px", "120px"); card("c0", `water molecules · <b>hexagon lattice</b>`, t, A("hex") + 0.8, A("hex") + 4.2, 220, 230, -2); card("c0", `6 sides → <b>6 arms</b>`, t, A("hex") + 4.4, A("temp"), 290, 1640, 2); }
+  else if (t < A("fall")) { const r = [2.8, 5.2, 7.6].map((d) => clamp((t - A("temp") - d + 0.6) / 1.0));
+    PLATE.visible = r[0] > 0; grow(PLATE, 1); PLATE.scale.setScalar(ease(r[0])); PLATE.rotation.set(0.5, -0.3, t * 0.2); NEEDLE.visible = r[1] > 0; NEEDLE.scale.setScalar(ease(r[1])); NEEDLE.rotation.set(0.3, t * 0.4, 0);
+    STAR.visible = r[2] > 0; grow(STAR, ease(r[2])); STAR.rotation.set(0.5, -0.3, -t * 0.2);
+    look(V(TX, 0, 22), V(TX, 0, 0), 48); card("c0", `the air decides <b>the shape</b>`, t, A("temp") + 0.4, A("temp") + 2.6, 260, 230, -2);
+    lbl("l0", V(TX, TY[0] - 2.6, 0), t, A("temp") + 2.4, A("fall"), "−2 °C · plates", "#7cc8ff"); lbl("l1", V(TX, TY[1] - 2.6, 0), t, A("temp") + 4.8, A("fall"), "−5 °C · needles", "#b7a6ff"); lbl("l2", V(TX, TY[2] - 3.4, 0), t, A("temp") + 7.2, A("fall"), "−15 °C · stars", "#ffffff"); }
+  else if (t < A("unique")) { const k = clamp((t - A("fall")) / (A("unique") - A("fall"))); MAIN.visible = true; MAIN.position.set(0, 0, 0); MAIN.rotation.set(0.35, -0.25, t * 0.25); grow(MAIN, lerp(0.35, 1, k));
+    LAYERS.forEach((m, i) => { m.visible = true; m.position.y = ((i * 9 + (t - A("fall")) * 3.2) % 45) - 22; });
+    look(V(0, 0.4, 13), V(0, 0, 0), 48); const temps = ["−12 °C", "−15 °C", "−14 °C", "−16 °C", "−13 °C"]; const li = Math.floor((t - A("fall")) * 3.2 / 9) % 5;
+    card("c0", `new layer · <b>${temps[li]}</b>`, t, A("fall") + 0.6, A("fall") + 6.0, 300, 230, -2); card("c0", `same air · <b>all 6 arms at once</b>`, t, A("fall") + 6.2, A("unique"), 210, 1640, 2); }
+  else if (t < A("close")) { const k = clamp((t - A("unique")) / 1.5); UNI.forEach((f, i) => { f.visible = true; grow(f, ease(clamp(k * 1.5 - i * 0.1))); f.rotation.set(0.3, -0.2, t * 0.15 + f.userData.r); });
+    look(V(UX, 0, 21), V(UX, 0, 0), 48); card("c0", `different path · <b>different flake</b>`, t, A("unique") + 1.0, A("unique") + 5.4, 220, 230, -2); card("c0", `≈ 1,000,000,000,000,000,000 <b>molecules</b>`, t, A("unique") + 5.6, A("close"), 130, 230, -2); }
+  else { MAIN.visible = true; MAIN.position.set(0, 0, 0); grow(MAIN, 1); MAIN.rotation.set(0.3, -0.2, t * 0.12); const k = ease(clamp((t - A("close")) / 5)); look(V(0, 0, lerp(11, 14, k)), V(0, 0, 0), 46);
+    card("c0", `a record of <b>its trip through the sky</b>`, t, A("close") + 0.8, A("end"), 200, 1640, 2); }
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
