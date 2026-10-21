@@ -135,7 +135,7 @@ window.render = async function (t) { cam.up.set(0, 1, 0);
   const tlOn = t >= A("timer"); TL.visible = tlOn && t < A("slow"); const mins = Math.floor(clamp((t - A("timer") - 1) / 6) * 60 * 3); drawTL((18 + Math.floor(mins / 60)) % 24, mins % 60, true);
   const dr = t >= A("relock") && t < A("slow"); DRILL.visible = dr; DRILL.position.set(1.2, 1.0, 1.5 + Math.sin(t * 40) * 0.02); SPARKS.forEach((m) => { const f = (t * 2 * m.userData.s + m.userData.o) % 1; m.visible = dr && t < A("relock") + 2.4; m.position.set(1.2 + Math.cos(m.userData.a) * f * 1.6, 1.0 + Math.sin(m.userData.a) * f * 1.6 - f * f, 1.0); });
   const rl = ease(clamp((t - A("relock") - 2.4) / 0.3)); RELOCK.visible = dr; RELOCK.position.set(lerp(0.4, 1.5, rl), lerp(0.2, 0.8, rl), 0.4);
-  if (t < A("slow")) { const k = ease(clamp(t / 5)); let cp = V(lerp(6, 1, k), lerp(4, 1.4, k), lerp(30, 24, k)), tg = V(-1, 0.4, 0);
+  WALL.visible = FRAME.visible = t < A("slow"); if (t < A("slow")) { const k = ease(clamp(t / 5)); let cp = V(lerp(6, 1, k), lerp(4, 1.4, k), lerp(30, 24, k)), tg = V(-1, 0.4, 0);
     if (t >= A("bolts")) { cp = V(3.5, 2.5, 18); tg = V(0.5, 0.4, 0); } if (tlOn) { cp = V(0.5, 2.6, 19); tg = V(0.2, 2.0, 0); } if (dr) { cp = V(3.5, 2.2, 16); tg = V(0.6, 0.8, 0); }
     look(cp, tg, 48); big("IT'S TIME", t, A("hook") + 4.4, A("door"), "#ffffff", "250px", "120px"); card("c0", `tens of tonnes · <b>one person can push it</b>`, t, A("door") + 1.0, A("bolts"), 170, 230, -2); card("c0", `bolts lock <b>all round</b>`, t, A("bolts") + 0.8, A("timer"), 290, 230, -2);
     card("c0", `time lock · <b>not even the manager</b>`, t, A("timer") + 3.6, A("relock"), 200, 1720, 2); card("c0", `drilled? → <b>relocker snaps shut</b>`, t, A("relock") + 2.4, A("slow"), 200, 230, -2); }
