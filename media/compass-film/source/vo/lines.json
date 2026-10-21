@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a compass finds north? The needle isn't pointing at a place. It's lining up with the whole planet.",
+   "dur": 5.742,
+   "at": 0.35
+  },
+  {
+   "key": "core",
+   "text": "Deep inside the Earth, molten iron swirls around the core. That moving metal makes the planet into a giant magnet.",
+   "dur": 7.728,
+   "at": 6.49
+  },
+  {
+   "key": "lines",
+   "text": "Invisible magnetic field lines loop out of one end of the Earth, and back into the other.",
+   "dur": 5.418,
+   "at": 14.52
+  },
+  {
+   "key": "needle",
+   "text": "A compass needle is a tiny magnet, balanced so it can spin freely. It swings until it lines up with those field lines.",
+   "dur": 6.843,
+   "at": 20.24
+  },
+  {
+   "key": "pole",
+   "text": "Here's the twist. The magnetic north pole isn't the same as the true North Pole. It's hundreds of kilometres away, and it wanders every year.",
+   "dur": 7.778,
+   "at": 27.38
+  },
+  {
+   "key": "history",
+   "text": "Chinese inventors were using magnetic compasses about a thousand years ago, and they changed sea travel forever.",
+   "dur": 6.817,
+   "at": 35.46
+  },
+  {
+   "key": "close",
+   "text": "So every compass is a tiny magnet, holding hands with the planet.",
+   "dur": 3.891,
+   "at": 42.68
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 46.97
+  }
+ ],
+ "duration": 51.52
+}
