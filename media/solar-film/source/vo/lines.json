@@ -1,1 +1,66 @@
-{"lines": [{"key": "hook", "text": "hook", "at": 0.35, "dur": 5.5}, {"key": "cells", "text": "cells", "at": 6.1499999999999995, "dur": 5.5}, {"key": "layers", "text": "layers", "at": 11.95, "dur": 9}, {"key": "photon", "text": "photon", "at": 21.25, "dur": 7}, {"key": "current", "text": "current", "at": 28.55, "dur": 7.5}, {"key": "inverter", "text": "inverter", "at": 36.35, "dur": 5}, {"key": "eff", "text": "eff", "at": 41.65, "dur": 5.5}, {"key": "hour", "text": "hour", "at": 47.449999999999996, "dur": 6.5}, {"key": "close", "text": "close", "at": 54.24999999999999, "dur": 3.5}, {"key": "end", "text": "end", "at": 58.04999999999999, "dur": 3}], "duration": 62.34999999999999}
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how solar panels work? They turn sunlight into electricity, with no moving parts at all.",
+   "dur": 6.881,
+   "at": 0.35
+  },
+  {
+   "key": "cells",
+   "text": "A panel is made of dozens of cells: thin slices of silicon, the same element inside computer chips.",
+   "dur": 5.861,
+   "at": 7.63
+  },
+  {
+   "key": "layers",
+   "text": "Each cell has two layers. One is treated to have extra electrons, the other to have gaps where electrons are missing. Where they meet, an electric field forms.",
+   "dur": 9.857,
+   "at": 13.79
+  },
+  {
+   "key": "photon",
+   "text": "When sunlight hits, a photon knocks an electron loose. The field pushes it one way, and the only way back is through a wire.",
+   "dur": 6.826,
+   "at": 23.95
+  },
+  {
+   "key": "current",
+   "text": "Billions of electrons flowing through that wire make an electric current. Each cell gives about half a volt, so the cells are wired together.",
+   "dur": 8.07,
+   "at": 31.07
+  },
+  {
+   "key": "inverter",
+   "text": "That's direct current. An inverter flips it into the alternating current your home uses.",
+   "dur": 5.517,
+   "at": 39.44
+  },
+  {
+   "key": "eff",
+   "text": "Today's panels turn about twenty percent of the sunlight into electricity. Most of the rest becomes heat.",
+   "dur": 5.779,
+   "at": 45.26
+  },
+  {
+   "key": "hour",
+   "text": "And the sunlight reaching Earth in just one hour carries roughly as much energy as humanity uses in a whole year.",
+   "dur": 7.39,
+   "at": 51.34
+  },
+  {
+   "key": "close",
+   "text": "So a solar panel is sunlight, setting electrons in motion.",
+   "dur": 4.439,
+   "at": 59.08
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 63.92
+  }
+ ],
+ "duration": 68.47
+}
