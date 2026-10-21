@@ -1,1 +1,54 @@
-{"lines": [{"key": "hook", "text": "hook", "at": 0.35, "dur": 6}, {"key": "gps", "text": "gps", "at": 6.6499999999999995, "dur": 7}, {"key": "wifi", "text": "wifi", "at": 13.95, "dur": 6.5}, {"key": "map", "text": "map", "at": 20.75, "dur": 8}, {"key": "cell", "text": "cell", "at": 29.05, "dur": 6.5}, {"key": "ip", "text": "ip", "at": 35.85, "dur": 5.5}, {"key": "orbi", "text": "orbi", "at": 41.65, "dur": 8}, {"key": "end", "text": "end", "at": 49.95, "dur": 3}], "duration": 54.25}
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how your phone finds you indoors, where GPS can't reach? It listens to the Wi-Fi around you.",
+   "dur": 6.328,
+   "at": 0.35
+  },
+  {
+   "key": "gps",
+   "text": "GPS needs a clear view of satellites. Inside buildings their faint signals fade out, so your phone looks for other clues.",
+   "dur": 6.933,
+   "at": 7.08
+  },
+  {
+   "key": "wifi",
+   "text": "Every Wi-Fi router broadcasts a unique ID, even if you never connect to it. Your phone can hear dozens of them.",
+   "dur": 6.932,
+   "at": 14.31
+  },
+  {
+   "key": "map",
+   "text": "Apple and Google keep huge maps of where those routers are. Match the ones your phone hears, and it can place you within tens of meters.",
+   "dur": 7.408,
+   "at": 21.54
+  },
+  {
+   "key": "cell",
+   "text": "Cell towers help too. How strongly you hear each tower narrows down where you are, though less precisely.",
+   "dur": 6.54,
+   "at": 29.25
+  },
+  {
+   "key": "ip",
+   "text": "And even a website, with no permission at all, can often guess your city from your internet address.",
+   "dur": 5.951,
+   "at": 36.09
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi only works with a rough area, a cell about forty kilometers wide. People nearby never see your exact spot, just the area.",
+   "dur": 7.566,
+   "at": 42.39
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 50.36
+  }
+ ],
+ "duration": 54.91
+}
