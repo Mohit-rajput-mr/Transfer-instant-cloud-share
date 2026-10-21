@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a giant warehouse finds your order in minutes? The shelves come to the people.",
+   "dur": 6.017,
+   "at": 0.35
+  },
+  {
+   "key": "random",
+   "text": "Items aren't sorted neatly. A phone case might sit next to dog food, wherever there's space. The computer remembers every spot.",
+   "dur": 7.061,
+   "at": 6.77
+  },
+  {
+   "key": "robots",
+   "text": "When you order, a small robot slides under the right shelf, lifts it, and drives it to a worker.",
+   "dur": 4.99,
+   "at": 14.13
+  },
+  {
+   "key": "pick",
+   "text": "A light shows the exact bin. The worker grabs the item, scans it, and drops it in a tub.",
+   "dur": 5.564,
+   "at": 19.42
+  },
+  {
+   "key": "belt",
+   "text": "Conveyor belts carry the tub to packing, where the screen even picks the right box size.",
+   "dur": 5.251,
+   "at": 25.28
+  },
+  {
+   "key": "track",
+   "text": "Every scan updates the system, so it always knows who's doing what, and what's done.",
+   "dur": 6.182,
+   "at": 30.83
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Work keeps a team in sync the same way. Type a task, tag a teammate, and watch it move from doing, to review, to done, live for everyone.",
+   "dur": 9.49,
+   "at": 37.41
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 47.25
+  }
+ ],
+ "duration": 51.81
+}
