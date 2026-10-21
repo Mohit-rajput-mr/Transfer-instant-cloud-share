@@ -27,7 +27,7 @@ export default function KindFilter({ kind, onKind, scope, className = "" }: { ki
   const scopes: { id: Scope; name: string; icon: typeof LuLayers; n?: number | null }[] = scope
     ? [
         { id: "all", name: "Open void", icon: LuLayers },
-        ...(scope.near !== null ? [{ id: "near" as const, name: "Nearby", icon: LuWifi, n: scope.near }] : []),
+        ...(scope.near !== null ? [{ id: "near" as const, name: "Wi-Fi", icon: LuWifi, n: scope.near }] : []),
         ...(scope.mine ? [{ id: "mine" as const, name: "Mine", icon: LuUser, n: scope.mine }] : []),
       ]
     : [];
@@ -35,7 +35,7 @@ export default function KindFilter({ kind, onKind, scope, className = "" }: { ki
     <div className={`kf ${className}`} ref={box} data-no-pan>
       <button className={`kf-btn${active ? " set" : ""}`} onClick={() => setOpen((o) => !o)} aria-haspopup="listbox" aria-expanded={open} title="Filter">
         {kind === "all" ? <LuListFilter aria-hidden /> : <I aria-hidden />}
-        <span>{kind === "all" ? (scope && scope.value !== "all" ? (scope.value === "near" ? "Nearby" : "Mine") : "Filter") : cur?.name}</span>
+        <span>{kind === "all" ? (scope && scope.value !== "all" ? (scope.value === "near" ? "Wi-Fi" : "Mine") : "Filter") : cur?.name}</span>
         {active > 1 && <em className="kf-n">{active}</em>}
         <LuChevronDown className={`kf-chev${open ? " up" : ""}`} aria-hidden />
       </button>

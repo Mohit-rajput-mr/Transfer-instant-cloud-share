@@ -73,14 +73,14 @@ export const SEO: Record<string, SeoCopy> = {
   fr: {
     lang: "fr", label: "Français",
     title: "Orbi Transfer — Transfert de fichiers gratuit, sans inscription, instantané",
-    description: "Envoyez fichiers, dossiers, photos, vidéos et liens instantanément entre deux appareils. Gratuit, sans compte, jusqu'à 2 Go, chiffré de bout en bout, supprimé après 5–30 minutes.",
+    description: "Envoyez fichiers, dossiers, photos, vidéos et liens instantanément entre deux appareils. Gratuit, sans compte, jusqu'à 20 Go, chiffré de bout en bout, supprimé après 5–30 minutes.",
     h1: "Transfert de fichiers gratuit. Sans inscription. Instantané.",
     intro: "Orbi Transfer déplace vos fichiers entre téléphone, ordinateur et n'importe quel navigateur en quelques secondes. Déposez un fichier, il apparaît sur l'autre appareil, vous le téléchargez. Sans compte, sans appli, sans e-mail.",
-    points: ["Sans inscription ni compte, entièrement gratuit", "Fichiers, dossiers, photos, vidéos, texte et liens, jusqu'à 2 Go", "Chiffrement de bout en bout dans le navigateur ; code optionnel", "Supprimé automatiquement après 5 à 30 minutes"],
+    points: ["Sans inscription ni compte, entièrement gratuit", "Fichiers, dossiers, photos, vidéos, texte et liens, jusqu'à 20 Go", "Chiffrement de bout en bout dans le navigateur ; code optionnel", "Supprimé automatiquement après 5 à 30 minutes"],
     faq: [
       { q: "Comment envoyer un fichier sans compte ?", a: "Ouvrez orbitransfer.com, touchez Send, choisissez un fichier ou un dossier puis Launch. Il apparaît aussitôt sur l'autre appareil ; touchez-le pour le télécharger." },
       { q: "Est-ce gratuit ?", a: "Oui, Orbi Transfer est entièrement gratuit et sans inscription." },
-      { q: "Quelle taille maximale ?", a: "Jusqu'à 2 Go par envoi, dossiers complets et fichiers multiples compris." },
+      { q: "Quelle taille maximale ?", a: "Jusqu'à 20 Go par envoi, dossiers complets et fichiers multiples compris." },
       { q: "Est-ce sécurisé ?", a: "Les fichiers sont chiffrés dans votre navigateur (AES-256-GCM) avant l'envoi et supprimés automatiquement." },
     ],
     keywords: ["transfert de fichiers gratuit", "envoyer fichier sans inscription", "envoyer gros fichiers gratuit", "partager fichiers en ligne", "transférer fichiers téléphone pc"],
@@ -133,14 +133,14 @@ export const SEO: Record<string, SeoCopy> = {
   ar: {
     lang: "ar", label: "العربية",
     title: "Orbi Transfer — نقل ملفات مجاني فوري بدون تسجيل دخول",
-    description: "أرسل الملفات والمجلدات والصور والفيديو والروابط فوراً بين أي جهازين. مجاني، بدون تسجيل أو حساب، حتى 2 غيغابايت، تشفير من طرف إلى طرف، يُحذف تلقائياً بعد 5–30 دقيقة.",
+    description: "أرسل الملفات والمجلدات والصور والفيديو والروابط فوراً بين أي جهازين. مجاني، بدون تسجيل أو حساب، حتى 20 غيغابايت، تشفير من طرف إلى طرف، يُحذف تلقائياً بعد 5–30 دقيقة.",
     h1: "نقل ملفات مجاني عبر الإنترنت. بدون تسجيل. فوري.",
     intro: "ينقل Orbi Transfer الملفات بين هاتفك وحاسوبك وأي متصفح خلال ثوانٍ. ضع الملف فيظهر على الجهاز الآخر ثم نزّله. بدون حساب أو تطبيق أو بريد.",
-    points: ["بدون تسجيل أو حساب، مجاني بالكامل", "ملفات ومجلدات وصور وفيديو ونصوص وروابط حتى 2 غيغابايت", "تشفير من طرف إلى طرف داخل المتصفح؛ رمز مرور اختياري", "يُحذف تلقائياً بعد 5 إلى 30 دقيقة"],
+    points: ["بدون تسجيل أو حساب، مجاني بالكامل", "ملفات ومجلدات وصور وفيديو ونصوص وروابط حتى 20 غيغابايت", "تشفير من طرف إلى طرف داخل المتصفح؛ رمز مرور اختياري", "يُحذف تلقائياً بعد 5 إلى 30 دقيقة"],
     faq: [
       { q: "كيف أرسل ملفاً بدون تسجيل دخول؟", a: "افتح orbitransfer.com واضغط Send واختر ملفاً أو مجلداً ثم Launch. يظهر فوراً على الجهاز الآخر، اضغط عليه لتنزيله." },
       { q: "هل الخدمة مجانية؟", a: "نعم، Orbi Transfer مجاني بالكامل ولا يحتاج إلى حساب." },
-      { q: "ما الحد الأقصى للحجم؟", a: "حتى 2 غيغابايت في كل إرسال، بما في ذلك المجلدات الكاملة وعدة ملفات معاً." },
+      { q: "ما الحد الأقصى للحجم؟", a: "حتى 20 غيغابايت في كل إرسال، بما في ذلك المجلدات الكاملة وعدة ملفات معاً." },
       { q: "هل هو آمن؟", a: "تُشفَّر الملفات في متصفحك بـ AES-256-GCM قبل الرفع وتُحذف تلقائياً." },
     ],
     keywords: ["نقل ملفات مجاني", "ارسال ملفات بدون تسجيل", "ارسال ملفات كبيرة", "مشاركة الملفات اونلاين", "نقل الملفات من الهاتف للكمبيوتر"],
@@ -178,14 +178,14 @@ export const SEO: Record<string, SeoCopy> = {
   ru: {
     lang: "ru", label: "Русский",
     title: "Orbi Transfer — Бесплатная передача файлов без регистрации, мгновенно",
-    description: "Отправляйте файлы, папки, фото, видео и ссылки мгновенно между любыми устройствами. Бесплатно, без входа и регистрации, до 2 ГБ, сквозное шифрование, удаление через 5–30 минут.",
+    description: "Отправляйте файлы, папки, фото, видео и ссылки мгновенно между любыми устройствами. Бесплатно, без входа и регистрации, до 20 ГБ, сквозное шифрование, удаление через 5–30 минут.",
     h1: "Бесплатная передача файлов онлайн. Без регистрации. Мгновенно.",
     intro: "Orbi Transfer переносит файлы между телефоном, ноутбуком и любым браузером за секунды. Положите файл, он появится на другом устройстве, скачайте его. Без аккаунта, приложения и почты.",
-    points: ["Без входа и регистрации, полностью бесплатно", "Файлы, папки, фото, видео, текст и ссылки до 2 ГБ", "Сквозное шифрование в браузере; пароль по желанию", "Удаляется автоматически через 5–30 минут"],
+    points: ["Без входа и регистрации, полностью бесплатно", "Файлы, папки, фото, видео, текст и ссылки до 20 ГБ", "Сквозное шифрование в браузере; пароль по желанию", "Удаляется автоматически через 5–30 минут"],
     faq: [
       { q: "Как отправить файл без регистрации?", a: "Откройте orbitransfer.com, нажмите Send, выберите файл или папку и нажмите Launch. Он сразу появится на другом устройстве; нажмите, чтобы скачать." },
       { q: "Это бесплатно?", a: "Да, Orbi Transfer полностью бесплатен и не требует аккаунта." },
-      { q: "Какой максимальный размер?", a: "До 2 ГБ за отправку, включая целые папки и много файлов сразу." },
+      { q: "Какой максимальный размер?", a: "До 20 ГБ за отправку, включая целые папки и много файлов сразу." },
       { q: "Это безопасно?", a: "Файлы шифруются в браузере (AES-256-GCM) до загрузки и удаляются автоматически." },
     ],
     keywords: ["передача файлов бесплатно", "отправить файл без регистрации", "отправить большой файл", "обмен файлами онлайн", "перекинуть файлы с телефона на компьютер"],
@@ -240,6 +240,11 @@ export const SEO: Record<string, SeoCopy> = {
 export const LANGS = Object.keys(SEO);
 export const OTHER_LANGS = LANGS.filter((l) => l !== "en");
 export const pathFor = (lang: string) => (lang === "en" ? "/" : `/${lang}`);
+/** the language a void address is in (/fr → fr, /work and / → en): html[lang] follows it (VoidShell + root boot) */
+export const langOf = (path: string) => {
+  const l = path.split("/")[1] ?? "";
+  return OTHER_LANGS.includes(l) ? l : "en";
+};
 
 /** Structured data: the app itself + its FAQ, in the page's language. */
 export function jsonLd(c: SeoCopy) {

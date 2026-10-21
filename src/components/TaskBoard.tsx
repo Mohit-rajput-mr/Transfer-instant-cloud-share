@@ -6,6 +6,7 @@ import { PRO_FOR_ALL, STAGES, STEP_COLORS, TASK_LIVES, TASK_MAX, dropPro, forMe,
 import { hueFor } from "@/lib/bubbles";
 import { formatBytes, type Orb } from "@/lib/client";
 import { isLow } from "@/lib/perf";
+import { dialogOpen } from "@/lib/dialog";
 
 export type TaskActs = {
   onAdd: (line: string, life: number) => Promise<void>;
@@ -306,13 +307,24 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
               );
               };
 
+  // Escape closes the New task box like its × (unless a card on top takes it first: lib/dialog.ts)
+  const composeShown = !!props.composing || !total;
+  const shutCompose = useRef(() => {});
+  shutCompose.current = () => (setJustAdded(false), total ? props.onComposed?.() : props.onClose());
+  useEffect(() => {
+    if (!composeShown) return;
+    const k = (e: KeyboardEvent) => e.key === "Escape" && !e.defaultPrevented && !dialogOpen() && shutCompose.current();
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, [composeShown]);
+
   return (
     <div className={`task-boards${props.laneH ? " lanes" : ""}${props.wiring ? " wiring" : ""}${mapped ? " mapped" : ""}`} style={props.laneH ? ({ "--lane-h": `${props.laneH}px` } as CSSProperties) : undefined}>
       {(props.composing || !total) && portalIf(mapped, (
         <form className={`task-board lg tb-compose${mapped ? " floating" : ""}`} onSubmit={(e) => { e.preventDefault(); add(); }}>
           <div className="tb-compose-head">
             <b>New task</b>
-            <button type="button" className="tr-close" onClick={() => (setJustAdded(false), total ? props.onComposed?.() : props.onClose())} aria-label="Close"><LuX /></button>
+            <button type="button" className="tr-close" onClick={() => shutCompose.current()} aria-label="Close"><LuX /></button>
           </div>
           <input className="tb-name" value={label} onChange={(e) => setLabel(e.target.value.slice(0, 40))} placeholder={parsed.assignee ? `${parsed.assignee}'s task` : "Task name (optional) · e.g. Richard's task"} aria-label="Task name" />
           <div className="tb-add">

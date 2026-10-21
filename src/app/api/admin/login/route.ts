@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ADMIN_COOKIE, issueSession, verifyPassword } from "@/lib/admin";
+import { ADMIN_COOKIE, isAdmin, issueSession, verifyPassword } from "@/lib/admin";
 import { netHash, rpc } from "@/lib/server";
 
 const MAX_TRIES = 5; // per network per 15 minutes
+
+export const dynamic = "force-dynamic";
+
+/** is this browser signed in? Always 200, so HQ asks for its data only once it is (no 401 in the console first) */
+export function GET(req: NextRequest) {
+  return NextResponse.json({ in: isAdmin(req) }, { headers: { "Cache-Control": "no-store" } });
+}
 
 export async function POST(req: NextRequest) {
   const net = netHash(req);

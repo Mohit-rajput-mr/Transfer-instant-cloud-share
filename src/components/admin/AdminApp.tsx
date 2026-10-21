@@ -90,8 +90,12 @@ export default function AdminApp() {
     }
   }, []);
 
+  // signed in? (the cookie is httpOnly) Only then the overview, which answers 401 to anyone else
   useEffect(() => {
-    load();
+    fetch("/api/admin/login", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { in?: boolean } | null) => (d?.in ? load() : setAuth("locked")))
+      .catch(() => setAuth("locked"));
   }, [load]);
 
   // a new deploy reloads HQ by itself, so it never shows an old build
@@ -142,7 +146,7 @@ function Login({ onIn }: { onIn: () => void }) {
       <div className="drawer hq-card" role="dialog" aria-label="Admin login">
         <div className="drawer-head">
           <span className="mono dim">Mission HQ · restricted</span>
-          <Link href="/" className="x" aria-label="Back">×</Link>
+          <Link href="/" className="x" aria-label="Close: back to the void">×</Link>
         </div>
         <div className="drawer-body" style={{ gridTemplateColumns: "1fr" }}>
           <div className="col">
@@ -150,8 +154,8 @@ function Login({ onIn }: { onIn: () => void }) {
             <img className="hq-emblem" src="/brand/emblem.svg" alt="" width={606} height={561} />
             <div className="wide d-title">Identify.</div>
             <div className="field">
-              <label><span className="mono">Password</span></label>
-              <input className="line-input code-input" type="password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} />
+              <label htmlFor="hq-pw"><span className="mono">Password</span></label>
+              <input id="hq-pw" className="line-input code-input" type="password" autoComplete="current-password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} />
             </div>
             {err && <p className="err">{err}</p>}
             <div className="grow" />

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Chakra_Petch, Geist, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { SEO, SITE } from "@/lib/seo";
+import { OTHER_LANGS, SEO, SITE } from "@/lib/seo";
 import { languageAlternates } from "@/lib/seo-meta";
 
 const display = Archivo({ subsets: ["latin"], axes: ["wdth"], variable: "--font-display", display: "swap" });
@@ -14,9 +14,9 @@ const chip = Chakra_Petch({ subsets: ["latin"], weight: ["400", "500", "600", "7
 const workSans = Geist({ subsets: ["latin"], variable: "--font-work", display: "swap", preload: false });
 const workMono = Geist_Mono({ subsets: ["latin"], variable: "--font-work-mono", display: "swap", preload: false });
 
-// a direct load of /work: the work look and the theme this browser picked (dark unless it chose light) before the
+// a language page (/fr): html[lang] before the first paint (VoidShell keeps it after). A direct load of /work: the work look and the theme this browser picked (dark unless it chose light) before the
 // first paint. After that VoidShell owns html[data-ui] / [data-theme] and the theme-color (the switch never reloads).
-const boot = `(function(){if(!/^\\/work(\\/|$)/.test(location.pathname))return;var d=document.documentElement;d.dataset.ui="work";var t="dark";try{if(localStorage.getItem("orbit:work-theme")==="light")t="light"}catch(e){}d.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="light"?"#f7f7f6":"#1b1b1c")})()`;
+const boot = `(function(){var L=${JSON.stringify(OTHER_LANGS)},l=location.pathname.split("/")[1];if(L.indexOf(l)>=0)document.documentElement.lang=l;if(!/^\\/work(\\/|$)/.test(location.pathname))return;var d=document.documentElement;d.dataset.ui="work";var t="dark";try{if(localStorage.getItem("orbit:work-theme")==="light")t="light"}catch(e){}d.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="light"?"#f7f7f6":"#1b1b1c")})()`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),

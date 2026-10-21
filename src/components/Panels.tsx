@@ -9,6 +9,7 @@ import { previewUrl } from "@/lib/preview";
 import { release } from "@/lib/p2p";
 import { setUpSpeed, upSpeed, type UpSpeed } from "@/lib/cloud";
 import { newContainer } from "@/lib/client";
+import { useDialog } from "@/lib/dialog";
 import { enqueue } from "@/lib/downloads";
 import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, filesBundle, isFolder, isLoose, isLinkText, itemName, itemSize, mergeItems, packFolder, pickFolderTarget, textToFile, type DirHandle, type Item } from "@/lib/bundle";
 import { needsSavePicker, pickSaveTarget, receive, unlockOrb, UnlockError, type Unlocked, type Received, type Stage } from "@/lib/transfer";
@@ -116,11 +117,8 @@ export function Drawer({ label, onClose, children, locked = false }: { label: st
     if (e.animationName === "unpop" || e.animationName === "sheet-out") finish(gen.current);
   };
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [close]);
+  // focus in, Tab kept inside, Escape (top card only), focus back to the trigger (lib/dialog.ts)
+  useDialog(sheet, close);
 
   // Page behind: scroll-locked + receding. Keyboard: the sheet follows the visual viewport.
   useEffect(() => {
@@ -318,7 +316,7 @@ export function Drawer({ label, onClose, children, locked = false }: { label: st
   return (
     <CloseCtx.Provider value={close}>
       <div className={`scrim${closing ? " out" : ""}`} onClick={() => !lockedRef.current && close()} />
-      <aside ref={sheet} className={`drawer lg${closing ? " out" : ""}`} style={vars} role="dialog" aria-modal="true" aria-label={label} onAnimationEnd={onAnimEnd}>
+      <aside ref={sheet} tabIndex={-1} className={`drawer lg${closing ? " out" : ""}`} style={vars} role="dialog" aria-modal="true" aria-label={label} onAnimationEnd={onAnimEnd}>
         <div className="drawer-head">
           <span className="mono dim">{label}</span>
           <button className="x" onClick={close} aria-label="Close">×</button>
@@ -619,7 +617,7 @@ export function SendPanel(props: {
         )}
         {!props.anon && (
           <div className="field">
-            <label><span className="mono">Container</span><span className="mono dim">{fresh ? "starts a new one" : "joins your last one"}</span></label>
+            <label><span className="mono">Container</span><span className="mono dim">{fresh ? "starts a new group" : "groups with what you send"}</span></label>
             <div className="seg" role="radiogroup" aria-label="Container">
               <button role="radio" aria-checked={!fresh} className={`lg-press${!fresh ? " on" : ""}`} onClick={() => setFresh(false)}>Current</button>
               <button role="radio" aria-checked={fresh} className={`lg-press${fresh ? " on" : ""}`} onClick={() => setFresh(true)}>+ New container</button>
@@ -771,10 +769,10 @@ export function ComposePanel(props: { onClose: () => void; onReady: (file: File)
   const link = isLinkText(text);
   const ok = text.trim().length > 0 && text.length <= 200_000;
   return (
-    <Drawer label="Beam text or a link" onClose={props.onClose}>
+    <Drawer label="Send text or a link" onClose={props.onClose}>
       <div className="col">
         <span className="mono dim">{link ? "link detected" : text ? `${text.length.toLocaleString()} characters` : "anything you'd copy-paste"}</span>
-        <div className="wide d-title">{link ? "Link" : "Note"}</div>
+        <div className="wide d-title">{link ? "Link" : "Text"}</div>
         <p className="note">Paste a URL, a code, an address, a message. It is encrypted like any file; the receiver can open or copy it instantly. Nothing is downloaded.</p>
       </div>
       <div className="col">

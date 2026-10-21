@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { formatBytes } from "@/lib/client";
+import { useDialog } from "@/lib/dialog";
 
 // Full-screen look inside a received file, like a chat app: every PDF page with real, selectable text
 // (copy a line or the whole report), photos you can zoom, video/audio that plays, text you can select.
@@ -29,21 +30,14 @@ export default function Viewer({ file, name, failed, thumb, onClose, onDownload 
   const [copied, setCopied] = useState<string | null>(null);
   const pdfText = useRef<(() => Promise<string>) | null>(null);
 
+  // on top of the card that opened it: Escape closes only the preview, Tab stays in it (lib/dialog.ts)
+  const box = useRef<HTMLDivElement>(null);
+  useDialog(box, onClose);
   useEffect(() => {
-    const k = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", k, true);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", k, true);
-      document.body.style.overflow = prev;
-    };
-  }, [onClose]);
+    return () => void (document.body.style.overflow = prev);
+  }, []);
 
   const flash = (s: string) => {
     setCopied(s);
@@ -62,7 +56,7 @@ export default function Viewer({ file, name, failed, thumb, onClose, onDownload 
 
   if (!file)
     return createPortal(
-      <div className="viewer" role="dialog" aria-modal="true" aria-label={`Preview of ${name ?? "file"}`}>
+      <div ref={box} tabIndex={-1} className="viewer" role="dialog" aria-modal="true" aria-label={`Preview of ${name ?? "file"}`}>
         <header className="viewer-top">
           <div className="viewer-name"><b className="ellip">{name}</b></div>
           <div className="viewer-acts">
@@ -85,7 +79,7 @@ export default function Viewer({ file, name, failed, thumb, onClose, onDownload 
     );
 
   return createPortal(
-    <div className="viewer" role="dialog" aria-modal="true" aria-label={`Preview of ${file.name}`}>
+    <div ref={box} tabIndex={-1} className="viewer" role="dialog" aria-modal="true" aria-label={`Preview of ${file.name}`}>
       <header className="viewer-top">
         <div className="viewer-name">
           <b className="ellip">{file.name}</b>

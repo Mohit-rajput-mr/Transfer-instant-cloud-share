@@ -78,7 +78,8 @@ export default function AnonCard(props: {
   // how long this anonymous identity lives: when it's up, the session and its spaces burn everywhere
   const picker = (
     <div className="anon-time" role="radiogroup" aria-label="How long to stay anonymous">
-      <span className="mono">Burns after</span>
+      {/* the identity burns (not a file expiring): the same words in Work, whose office words would say "expires" */}
+      <span className="mono" data-keep-words>Burns after</span>
       <div>
         {ANON_MINUTES.map((m) => (
           <button key={m} type="button" role="radio" aria-checked={min === m} className={`pill lg-press${min === m ? " on" : ""}`} onClick={() => setMin(m)}>{m} min</button>
@@ -170,7 +171,7 @@ export default function AnonCard(props: {
     return card("Send anonymously", (
       <>
         <h3 className="wide">Send anonymously</h3>
-        <p>The public void shows what you post to people around your area, so anonymous sends go into an anonymous space instead. Only people with its link see what&apos;s in it.</p>
+        <p>Everything in the public void is seen worldwide and carries your rough area and network, so anonymous sends go into an anonymous space instead. Only people with its link see what&apos;s in it.</p>
         {savedList("Into")}
         <button className="cta lg-press" disabled={busy} onClick={run(props.onCreate)}>{busy ? "Creating…" : "Create anonymous space and continue"}</button>
         <button className="geo-later mono" onClick={props.onClose}>Cancel</button>

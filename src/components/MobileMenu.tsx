@@ -1,6 +1,7 @@
 "use client";
 import { switchView } from "@/lib/view";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useDialog } from "@/lib/dialog";
 import Link from "next/link";
 import { LuArchive, LuArrowUp, LuBriefcase, LuChevronRight, LuCircleHelp, LuFileText, LuGlobe, LuImage, LuInfo, LuMapPin, LuLayoutGrid, LuLink, LuListChecks, LuMessageSquareText, LuMoon, LuMusic, LuOrbit, LuPalette, LuRocket, LuShieldCheck, LuSun, LuTimer, LuUser, LuUserX, LuVideo, LuWifi, LuX } from "react-icons/lu";
 import { BsIncognito } from "react-icons/bs";
@@ -38,14 +39,12 @@ export default function MobileMenu(props: {
     setTimeout(onClose, 220);
   }, [onClose]);
   useEffect(() => {
-    const k = (e: KeyboardEvent) => e.key === "Escape" && close();
-    window.addEventListener("keydown", k);
     document.documentElement.classList.add("card-open");
-    return () => {
-      window.removeEventListener("keydown", k);
-      document.documentElement.classList.remove("card-open");
-    };
-  }, [close]);
+    return () => document.documentElement.classList.remove("card-open");
+  }, []);
+  // focus in, Tab kept inside, Escape (top card only), focus back to the ☰ button (lib/dialog.ts)
+  const box = useRef<HTMLElement>(null);
+  useDialog(box, close);
   const go = (f: () => void) => () => {
     close();
     setTimeout(f, 240);
@@ -63,7 +62,7 @@ export default function MobileMenu(props: {
   return (
     <>
       <div className={`scrim sd-scrim${out ? " out" : ""}`} onClick={close} />
-      <aside className={`side-menu${out ? " out" : ""}`} role="dialog" aria-modal="true" aria-label="Menu">
+      <aside ref={box} tabIndex={-1} className={`side-menu${out ? " out" : ""}`} role="dialog" aria-modal="true" aria-label="Menu">
         <div className="sd-head">
           <span className="sd-where"><i aria-hidden />{props.space ? `In ${props.space}` : a?.now ? "Anonymous · public void" : props.work ? "Public workspace" : "You're in the public void"}</span>
           <button className="sd-x" onClick={close} aria-label="Close menu"><LuX /></button>

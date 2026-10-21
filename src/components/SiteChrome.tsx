@@ -400,7 +400,7 @@ export default function SiteChrome({ page, children }: { page: SitePage; childre
             <li className="d">No login</li>
             <li className="d">End-to-end encrypted</li>
             <li className="d">Up to 20 GB</li>
-            <li className="d">Burns in 30 min</li>
+            <li className="d">Files burn in 30 min</li>
             <li className="m">No login · Encrypted</li>
           </ul>
           <Where page={page} />
@@ -441,7 +441,7 @@ export default function SiteChrome({ page, children }: { page: SitePage; childre
           ))}
         </ul>
         <div className="sx-menu-foot sx-mi" style={vars({ "--i": BIG.length + SMALL.length })}>
-          <span className="sx-chipf">No login · End-to-end encrypted · Up to 20 GB · Burns in 30 min</span>
+          <span className="sx-chipf">No login · End-to-end encrypted · Up to 20 GB · Files burn in 30 min</span>
           <span className="sx-label">Made anonymously, for fun.</span>
         </div>
       </div>

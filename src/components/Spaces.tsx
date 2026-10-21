@@ -3,6 +3,7 @@ import { homePath } from "@/lib/client";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { BsIncognito } from "react-icons/bs";
 import { ANON_MINUTES, lastMinutes } from "@/lib/anon";
+import { useDialog } from "@/lib/dialog";
 import {
   createSpace, joinSpace, knock, knockState, savedHandle, savedSpaces, searchSpaces,
   type Knock, type SpaceHit, type SpaceInfo, type SpaceSession,
@@ -35,18 +36,16 @@ export function Pop(props: { label: string; onClose: () => void; children: React
     setTimeout(onClose, 220);
   }, [onClose]);
   useEffect(() => {
-    const k = (e: KeyboardEvent) => e.key === "Escape" && close();
-    window.addEventListener("keydown", k);
     document.documentElement.classList.add("card-open");
-    return () => {
-      window.removeEventListener("keydown", k);
-      document.documentElement.classList.remove("card-open");
-    };
-  }, [close]);
+    return () => document.documentElement.classList.remove("card-open");
+  }, []);
+  // focus in, Tab kept inside, Escape (top card only), focus back to the trigger (lib/dialog.ts)
+  const box = useRef<HTMLDivElement>(null);
+  useDialog(box, close);
   return (
     <>
       <div className={`scrim pop-scrim${out ? " out" : ""}`} onClick={close} />
-      <div className={`pop lg${props.small ? " small" : ""}${out ? " out" : ""} ${props.className ?? ""}`} role="dialog" aria-modal="true" aria-label={props.label}>
+      <div ref={box} tabIndex={-1} className={`pop lg${props.small ? " small" : ""}${out ? " out" : ""} ${props.className ?? ""}`} role="dialog" aria-modal="true" aria-label={props.label}>
         <div className="pop-head">
           <span className="mono dim">{props.label}</span>
           <button className="x" onClick={close} aria-label="Close">×</button>

@@ -183,7 +183,7 @@ function Glyph({ name, className }: { name: string; className?: string }) {
   );
 }
 
-/** Fig. 4: the public void is one ~39 × 20 km cell plus its eight neighbours. Illustration. */
+/** Fig. 4: one worldwide sky; Nearby keeps your ~39 × 20 km cell, Wi-Fi your network (the ring). Illustration. */
 const ORBS: [number, number, number, number, number][] = [
   [190, 115, 9, 55, 7],
   [455, 165, 11, 30, 9], // spec had (300,105); moved so the "≈ 39 km" label never sits on it
@@ -208,12 +208,13 @@ function AreaMap() {
           <path key={`h${y}`} d={`M20 ${y}H620`} />
         ))}
       </g>
+      {/* the open void is worldwide: every orb, near or far, is in everyone's sky */}
       {FAR.map(([cx, cy, r]) => (
-        <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={r} fill="#2a2a2a" />
+        <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={r} fill="#000" stroke="#8a8a8a" />
       ))}
-      <rect x="140" y="80" width="360" height="180" fill="none" stroke="#f2f2f2" />
-      <path d={[corner(140, 80, -1, -1), corner(500, 80, 1, -1), corner(140, 260, -1, 1), corner(500, 260, 1, 1)].join("")} stroke="#f2f2f2" />
       <rect x="260" y="140" width="120" height="60" fill="#0b0b0b" stroke="#f2f2f2" />
+      <path d={[corner(260, 140, -1, -1), corner(380, 140, 1, -1), corner(260, 200, -1, 1), corner(380, 200, 1, 1)].join("")} stroke="#f2f2f2" />
+      <circle cx="320" cy="170" r="24" fill="none" stroke="#3dff8c" strokeDasharray="3 4" opacity=".7" />
       {ORBS.map(([cx, cy, r, life, t]) => (
         <g key={`${cx}-${cy}`} className="ab-drift" style={v({ "--t": `${t}s` })}>
           <circle cx={cx} cy={cy} r={r + 4} fill="none" stroke="#8a8a8a" pathLength={100} strokeDasharray={`${life} 100`} transform={`rotate(-90 ${cx} ${cy})`} />
@@ -230,9 +231,9 @@ function AreaMap() {
       <circle className="ab-halo" cx="320" cy="170" r="14" fill="none" stroke="#3dff8c" opacity=".35" />
       <circle cx="320" cy="170" r="5" fill="#3dff8c" />
       {[
-        [1, 260, 200],
-        [2, 140, 80],
-        [3, 560, 40],
+        [1, 560, 40],
+        [2, 260, 200],
+        [3, 344, 194],
       ].map(([n, x, y]) => (
         <g key={n} className="ab-mk">
           <circle cx={x} cy={y} r="12" fill="#000" stroke="#f2f2f2" />
@@ -372,9 +373,9 @@ const SPEC: [string, string][] = [
 ];
 
 const LEGEND: [string, string][] = [
-  ["Your cell", "About 39 × 20 km. Found from your shared location, roughly from your connection, or picked by you on the map. The green dot is you."],
-  ["The eight around it", "Together they make your public void. A border never splits a town."],
-  ["Everywhere else", "It exists, just not in your sky. Spaces work differently: everyone with the name and code sees the same room, wherever they are."],
+  ["Open void", "Everything sent in the open, from anyone, in any country. One sky for everyone."],
+  ["Nearby", "Only your own cell, about 39 × 20 km. Found from your shared location, or picked by you on the map. The green dot is you."],
+  ["Wi-Fi", "Only what was sent from the network you're on: the same Wi-Fi, the same office."],
 ];
 
 const FEATURES: [string, string, string][] = [
@@ -383,7 +384,7 @@ const FEATURES: [string, string, string][] = [
   ["Burn", "The sender picks 5 to 30 minutes, a download limit, or destroys it any time.", "burn"],
   ["Lock", "Open for anyone in one tap, or a passcode only the two of you know.", "lock"],
   ["Live", "See who is viewing and downloading your object as it happens, and destroy it from the same place.", "live"],
-  ["Nearby", "One switch shows only what's close: things sent from your network and your area. Location is optional.", "nearby"],
+  ["Nearby", "The void is worldwide. Nearby narrows it to your own area (uses your location); Wi-Fi to the network you're on.", "nearby"],
   ["Spaces", "Rooms with a name, public or locked with a code. Everyone inside sees the same things, wherever they are.", "spaces"],
   ["Bubbles", "Notes that float next to the files, grouped by who sent them. Links, emails and codes become tappable.", "bubbles"],
   ["Tasks", "Numbered tasks with a route: who it's for. Wire a file to a task as you send it, and it travels with it.", "tasks"],
@@ -394,7 +395,7 @@ const FEATURES: [string, string, string][] = [
 
 const NUMS: [string, string, string][] = [
   ["0", "accounts", "Nobody has ever signed up. Nobody can."],
-  ["30", "minutes, max", "Then it burns. No trash bin on our side."],
+  ["30", "minutes per file, max", "Then it burns. Tasks and spaces: 8 hours at most."],
   ["20", "GB per file", "Dropped Wi-Fi? It picks up where it stopped."],
   ["256", "bit keys", "AES-256-GCM, sealed in your browser."],
   ["8", "MB chunks", "Each one sealed and checked on its own."],
@@ -407,14 +408,14 @@ const NEVER = ["Your name", "Your email", "Your phone number", "A password (ther
 const KEEP: [string, string][] = [
   ["The object name, file name, size and type. Visible to anyone while it floats.", "while it floats"],
   ["Encrypted bytes (Cloudflare R2), nothing readable.", "until it burns"],
-  ["A one-way hash of your network, for Nearby and the upload limit. Never your IP.", "hash only"],
+  ["A one-way hash of your network, for the Wi-Fi filter and the upload limit. Never your IP.", "hash only"],
   ["A random device ID and a label like “Chrome · Android”, so senders see opens.", "for opens"],
   ["Anonymous usage stats: approximate location, browser, OS, device type, visit times. Never sold.", "30 days in detail"],
   ["Your exact position, only if you share it: kept as your latest location on Orbi's own internal map, never shown to other people.", "latest only"],
 ];
 
 const RULES: [string, string, string][] = [
-  ["R.01", "Everything burns.", "Thirty minutes at most. Sooner if the sender says so. No archive on our side."],
+  ["R.01", "Everything burns.", "Thirty minutes at most for a file, eight hours for a task or a space. Sooner if the sender says so. No archive on our side."],
   ["R.02", "Locked means locked.", "With a passcode, the key is made on your device and never sent. Not even we can open it."],
   ["R.03", "Nobody signs up.", "There is nothing to sign up for. No accounts, no login, no profile."],
   ["R.04", "Sending stays free.", "Instant, encrypted, no account, no card. Paid plans, when they come, add time and team tools on top."],
@@ -509,7 +510,7 @@ export default function About() {
         </div>
       </section>
 
-      <Ticker items={["Made by a developer", "No login", "End-to-end encrypted", "Up to 20 GB", "Burns in 30 min", "For fun"]} />
+      <Ticker items={["Made by a developer", "No login", "End-to-end encrypted", "Up to 20 GB", "Files burn in 30 min", "For fun"]} />
 
       {/* 01 — why */}
       <section id="why" className="sx-sec ab-why" data-chapter="01|Why">
@@ -635,7 +636,7 @@ export default function About() {
               <span className="ln">burns.</span>
             </h2>
             <p className="sx-body ab-big ab-life-b" data-reveal>
-              Nothing in Orbi is meant to last. The sender picks a life of 5, 10, 15, 20, 25 or 30 minutes. Everyone sees the clock, and when it hits zero the object is erased: the stored copy is deleted and it leaves every screen. There is no trash bin on our side.
+              Nothing in Orbi is meant to last. The sender picks a file&apos;s life: 5, 10, 15, 20, 25 or 30 minutes. Everyone sees the clock, and when it hits zero the object is erased: the stored copy is deleted and it leaves every screen. Tasks can run up to 8 hours, and a named space closes 8 hours after it opens, with everything in it. There is no trash bin on our side.
             </p>
           </div>
 
@@ -785,24 +786,24 @@ export default function About() {
         </div>
       </section>
 
-      {/* 05 — the void is local */}
-      <section id="local" className="sx-sec ab-local" data-chapter="05|Local">
-        <Ghost text="LOCAL" className="ab-g-local" />
+      {/* 05 — the void is worldwide (owner 2026-10-21); Nearby and Wi-Fi narrow it */}
+      <section id="world" className="sx-sec ab-local" data-chapter="05|Worldwide">
+        <Ghost text="WORLD" className="ab-g-local" />
         <div className="sx-in">
-          <SecHead n="05" label="The void is local" kicker="Area" total={T} />
+          <SecHead n="05" label="The void is worldwide" kicker="Reach" total={T} />
           <div className="sx-grid">
             <h2 className="sx-h2 ab-local-h" data-reveal>
-              <span className="ln">The void</span>
-              <span className="ln">is local.</span>
+              <span className="ln">One sky,</span>
+              <span className="ln">worldwide.</span>
             </h2>
             <p className="sx-lead ab-local-l" data-reveal>
-              The public void isn&apos;t the whole internet. Everything belongs to the rough area of whoever sent it, a cell about 39 × 20 km. You see your cell and the eight around it, so a border never splits a town. Share your location for the right cell, or Orbi uses your connection&apos;s rough guess, or you pick your area on the map.
+              The public void is the same for everyone: what you send in the open shows on every screen with Orbi open, in any country. Two buttons narrow it. Nearby keeps only what was sent from your own area, a cell about 39 × 20 km, and uses your shared location (or your area picked on the map). Wi-Fi keeps only what came from the network you&apos;re on. Spaces are rooms of their own and work from any country.
             </p>
           </div>
           <div className="sx-grid ab-maprow">
             <figure className="sx-figure ab-mapfig">
               <AreaMap />
-              <figcaption className="sx-cap">Fig. 4 — Your sky. One cell ≈ 39 × 20 km. Illustration.</figcaption>
+              <figcaption className="sx-cap">Fig. 4 — One sky for everyone. Nearby: your cell ≈ 39 × 20 km. Wi-Fi: your network (the ring). Illustration.</figcaption>
             </figure>
             <div className="ab-legend">
               <ol>

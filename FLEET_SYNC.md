@@ -20,6 +20,24 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- FIXED 2026-10-21 (QA pass, not deployed yet) — (H) /fr /ar /ru SEO said 2 GB → 20 (lib/seo.test.ts checks every
+  language against limits.ts). (H) About/privacy/toasts/LocationAsk/AnonCard/WorkBar said the void is local ("the
+  eight around it", "around you", geohash chip "⊕ DPHG") → worldwide Open void + Nearby (own area) + Wi-Fi (network);
+  About §05 + Fig. 4 redrawn; "another area" pill and the look-elsewhere Earth path removed (meaningless worldwide);
+  NEARBY tag on same-network orbs → WI-FI. (H) dialogs: lib/dialog.ts (one stack: focus in, Tab trap, Escape for
+  the top card only, focus back to the trigger) used by Pop, Drawer, phone menu, Viewer; Escape closes the New task box
+  and the Send menu; the New task box hides under any card (html.card-open). (M) html[lang] follows /fr… (boot script
+  + VoidShell); dir=rtl stays on the Arabic guide only (the English app chrome must not mirror). (M) app/not-found.tsx.
+  (M) anonymous message lifted above the orbs (slim plate when things float); Classic EXIT pill white. (M) Work phone:
+  tabs no wrap, title fits, no stray Bubble FAB, Switch to Classic in ☰ ≤480; touch phones show only the fit button
+  (pinch zooms) so the +/− row no longer covers labels. (M) Work light --w-text-3 #6b6b72 (≥4.5:1), k-other file glyph
+  grey (was white on white); ghost captions #8a8a8a 10.5px, "30 MIN" caption above the Bubble button. (M) Share
+  aria-label, /admin password label, orb :focus-visible ring. (L) lifetime copy true (files 30 min, tasks/spaces 8 h);
+  Nearby count only once placed (GPS or picked; lib/scope countArea, tested); "Burns after" kept in Work; Text dialog
+  "Send text or a link"/"Text"; Container "groups with what you send"; /admin asks GET /api/admin/login before the
+  overview (no 401). Verified: npm run check (56 tests), next build, Playwright on next start with mocked /api at
+  1440×900 + 390×844, Classic + Work dark/light (screens in /tmp/claude-0/qa-fix/). RISK: on phones orbs can still sit
+  under the top bar at the opening view (OPEN_K zoom floor beats the band); real screen-reader pass not done.
 - VERIFIED 2026-10-21 — two-device E2E on production (Playwright, 2–3 contexts, 0 reloads): public file 1.2 s, note 2 s,
   task 1.6 s, deletes 0.7–2.4 s; open + private spaces join from another area (Tokyo GPS vs Ohio IP), live 1–3 s, no leak
   to the public void; Work↔Classic across devices; offline 10 s → appears 30–500 ms after reconnect. Membership code has no

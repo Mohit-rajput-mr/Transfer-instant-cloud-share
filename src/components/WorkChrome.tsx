@@ -49,7 +49,6 @@ export function WorkBar(p: {
   onSpaces: () => void;
   onShare: () => void;
   onMenu: () => void;
-  area: string;
 }) {
   return (
     <header className="w-bar">
@@ -67,7 +66,7 @@ export function WorkBar(p: {
           </>
         ) : (
           <span className={`w-tag${p.isPrivate ? " lock" : ""}`}>
-            {p.space ? (p.isPrivate ? <><LuLock aria-hidden />private</> : "space") : p.area ? <><LuGlobe aria-hidden />{p.area}</> : "public"}
+            {p.space ? (p.isPrivate ? <><LuLock aria-hidden />private</> : "space") : <><LuGlobe aria-hidden />worldwide</>}
           </span>
         )}
         {/* back to the orbit look, in the page (no reload: uploads and the live connection keep going) */}
@@ -93,13 +92,13 @@ export function WorkBar(p: {
 
       <div className="w-right">
         <KindFilter kind={p.kind} onKind={p.onKind} className="w-filter" />
-        <span className="w-live" title={`${p.online} ${p.online > 1 ? "devices" : "device"} online${p.space ? " in this space" : " around you"}`}>
+        <span className="w-live" title={`${p.online} ${p.online > 1 ? "devices" : "device"} online${p.space ? " in this space" : " worldwide"}`}>
           <i />{p.online}<span> online</span>
         </span>
         {p.anonChip}
         {p.pin}
         <ThemeToggle className="w-hide-s" />
-        <button className="w-btn" onClick={p.onShare}><LuShare2 aria-hidden /><span>Share</span></button>
+        <button className="w-btn w-share" onClick={p.onShare} aria-label="Share this workspace" title="Share this workspace"><LuShare2 aria-hidden /><span>Share</span></button>
         <Link href="/upgrade" className="w-btn w-upg"><LuRocket aria-hidden /><span>Upgrade</span></Link>
         <button className="w-icon w-only-s" onClick={p.onMenu} aria-label="Menu"><LuMenu /></button>
       </div>

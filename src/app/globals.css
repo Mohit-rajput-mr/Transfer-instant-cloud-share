@@ -116,10 +116,10 @@ button:focus-visible, a:focus-visible { outline: 2px solid rgba(255,255,255,0.8)
 .void { position: relative; z-index: 1; height: 100vh; height: 100svh; min-height: 620px; overflow: hidden; }
 .ghost-type { position: absolute; left: max(20px, var(--safe-l)); top: calc(112px + var(--safe-t) + var(--scope-h, 0px)); pointer-events: none; user-select: none; -webkit-user-select: none; }
 .ghost-type .wide { color: var(--ghost); font-size: clamp(64px, min(12.4vw, 16.5vh), 220px); display: block; }
-.ghost-type .mono { color: #6a6a6a; margin-top: 14px; max-width: 280px; line-height: 1.5; font-size: 9.5px; }
-.ghost-big { position: absolute; right: max(20px, var(--safe-r)); bottom: 54px; text-align: right; pointer-events: none; user-select: none; -webkit-user-select: none; }
+.ghost-type .mono { color: #8a8a8a; margin-top: 14px; max-width: 280px; line-height: 1.5; font-size: 10.5px; } /* 6:1 on #000 (was #6a6a6a, 3.9:1) */
+.ghost-big { position: absolute; right: max(20px, var(--safe-r)); bottom: calc(112px + var(--safe-b)); /* above the Bubble button (40–92 px), never behind it */ text-align: right; pointer-events: none; user-select: none; -webkit-user-select: none; }
 .ghost-big .wide { color: var(--ghost); font-size: clamp(56px, 9vw, 160px); white-space: nowrap; }
-.ghost-big .mono { color: #6a6a6a; margin-top: 12px; font-size: 9.5px; line-height: 1.5; }
+.ghost-big .mono { color: #8a8a8a; margin-top: 12px; font-size: 10.5px; line-height: 1.5; }
 .empty {
   position: absolute; left: 50%; top: 56%; transform: translate(-50%, -50%); text-align: center; pointer-events: auto;
   width: min(600px, calc(100vw - 32px));
@@ -168,6 +168,9 @@ button:focus-visible, a:focus-visible { outline: 2px solid rgba(255,255,255,0.8)
 .orb { --k: 1; }
 .orb-body { position: relative; width: calc(var(--s) * var(--k)); height: calc(var(--s) * var(--k)); transition: transform 0.45s var(--spring-soft), rotate 0.25s var(--ease-out), width var(--dur-4) var(--ease-out), height var(--dur-4) var(--ease-out); }
 .orb:focus-visible .orb-body { transform: scale(1.08); }
+/* keyboard: a visible ring round the ball / node itself (the button outline is off: it would box the whole label) */
+.orb:focus-visible .orb-body { outline: 2px solid #fff; outline-offset: 4px; }
+html[data-ui="work"] .orb:focus-visible .orb-body { outline-color: var(--w-text); }
 /* Metallic sphere: specular hotspot, a mid-tone body in the orb's own hue and a reflected-light
    rim on the shadow side. No outer glow: the colour itself separates it from the black. */
 .sphere {
@@ -482,7 +485,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid rgba(255,255,255,0.8)
 .report { position: relative; align-self: flex-start; color: #777; font-size: 9.5px; padding: 2px 0; transition: color 0.2s; }
 .report.arm { color: var(--danger); }
 .report:disabled { color: #555; cursor: default; }
-.legal { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 40px; color: #6a6a6a; font-size: 11px; }
+.legal { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 40px; color: #8a8a8a; font-size: 11px; }
 .legal a { position: relative; color: #bbb; text-underline-offset: 3px; }
 .doc { position: relative; z-index: 2; max-width: 720px; margin: 0 auto; padding: calc(120px + var(--safe-t)) max(20px, var(--safe-r)) calc(140px + var(--safe-b)) max(20px, var(--safe-l)); color: #ccc; font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
 .doc h1 { font-size: clamp(48px, 10vw, 96px); color: #fff; margin-bottom: 28px; }
@@ -1547,6 +1550,10 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
 .how-wordmark { display: block; width: min(70%, 760px); height: auto; margin: 6px 0 4px; }
 .doc-logo { display: inline-block; margin-bottom: 26px; }
 .doc-logo img { height: 30px; width: auto; display: block; }
+/* 404 (app/not-found.tsx): a ghost number behind the chalk title, one way home */
+.nf .nf-code { color: var(--ghost); font-size: clamp(120px, 28vw, 260px); line-height: 0.9; margin: 12px 0 -0.32em; user-select: none; }
+.nf h1 { position: relative; }
+.nf .nf-home { text-decoration: none; width: auto; display: inline-flex; padding: 0 28px; margin-top: 22px; height: 52px; font-size: 14px; }
 .hq-emblem { width: 54px; height: auto; margin-bottom: 4px; }
 @media (max-width: 720px) and (min-height: 521px) { .brand-logo { height: 21px; } .how-wordmark { width: 72%; } }
 @media (max-width: 380px) and (min-height: 521px) { .brand-logo { height: 18px; } }
@@ -2886,6 +2893,8 @@ em.hq-tag { font-style: normal; }
 .bub-stack.on-map { position: absolute; z-index: 6; width: 300px; translate: -50% -50%; transition: left 0.7s var(--ease-out), top 0.7s var(--ease-out); }
 /* the new-task box floats over the map, where the board used to start */
 .tb-compose.floating { position: fixed; z-index: 40; left: max(22px, var(--safe-l)); top: calc(118px + var(--safe-t) + var(--scope-h, 0px)); width: 344px; }
+/* a card on top (Pop, Drawer, menu) owns the screen: the New task box never shows through behind it */
+html.card-open .tb-compose { visibility: hidden; }
 .void.map .ghost-type, .void.map .ghost-big { opacity: 0.35; }
 .map-tools { position: absolute; z-index: 20; right: max(18px, var(--safe-r)); top: 50%; translate: 0 -50%; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px;
   border-radius: 18px; background: rgba(20,20,22,0.72); border: 1px solid rgba(255,255,255,0.16); }
@@ -3373,6 +3382,16 @@ html[data-anon] body { background: #050505; }
 /* incognito feel: the void turns the flat charcoal of a private window, the hat and glasses centred with one line */
 .ghost-layer { background-color: rgba(32,33,36,0.62); }
 .ghost-mid { position: absolute; left: 50%; top: 50%; translate: -50% -50%; width: min(520px, calc(100% - 48px)); display: grid; justify-items: center; gap: 12px; text-align: center; }
+/* out of the ghost layer (z 0, under the map): above the orbs (map z 2), taps still go through. With things floating it
+   becomes a slim plate at the top of the sealed frame, so it never sits on (or under) a ball in the middle */
+.ghost-mid { z-index: 3; pointer-events: none; animation: ghost-in 900ms ease-out both; }
+.ghost-mid.over { top: calc(112px + var(--safe-t)); translate: -50% 0; width: auto; max-width: calc(100% - 48px); display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 12px; border-radius: 999px;
+  background: rgba(20,20,22,0.82); border: 1px dashed rgba(232,234,237,0.3); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.ghost-mid.over .ghost-mask { width: 18px; opacity: 0.7; }
+.ghost-mid.over .ghost-title { font-size: 13px; color: rgba(255,255,255,0.86); white-space: nowrap; }
+.ghost-mid.over .ghost-sub { display: none; }
+html[data-anon] .ghost-mid.over { top: calc(112px + var(--safe-t)); }
+@media (max-width: 720px) { html[data-anon] .ghost-mid.over { top: auto; bottom: calc(150px + var(--safe-b)); } }
 .ghost-mid .ghost-mask { position: static; translate: none; width: clamp(84px, 14vmin, 132px); height: auto; opacity: 0.2; }
 .ghost-title { font: 600 clamp(20px, 2.2vw, 28px)/1.15 var(--sans); letter-spacing: -0.01em; color: rgba(255,255,255,0.62); }
 .ghost-sub { font: 400 13.5px/1.5 var(--sans); color: rgba(255,255,255,0.38); max-width: 420px; }
@@ -3417,7 +3436,8 @@ html[data-anon] body { background: #050505; }
 .tb-up svg { width: 12px; height: 12px; }
 .tb-num-in { width: 120px; flex: none; }
 .tb-row { grid-template-columns: auto 1fr auto auto; }
-.anon-exit { margin-left: 4px; background: #fff; color: #000; font-weight: 700; }
+/* white with black type: `.top-right .pill` (glass) used to win and left black text on a dark pill */
+.anon-exit, .top-right .pill.anon-exit { margin-left: 4px; background: #fff; color: #000; border-color: #fff; font-weight: 700; }
 .tr-save { white-space: nowrap; flex: none; display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 10px; border-radius: 8px; background: #27c463; color: #062b14; font-weight: 800; font-size: 11.5px; cursor: pointer; }
 .tr-save svg { width: 12px; height: 12px; stroke-width: 3; }
 .tr-up { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -3672,3 +3692,9 @@ html[data-theme="light"] .emoji-btn { color: #444; background: rgba(0,0,0,0.05);
 .nav-spaces-pop button:hover, .nav-spaces-pop button.on { background: rgba(255,255,255,.07); }
 .nav-spaces-pop b { font-size: 13px; color: #f2f2f2; }
 .nav-spaces-pop i { font-style: normal; font-size: 10px; color: #8a8a8a; letter-spacing: .06em; text-transform: uppercase; }
+
+/* touch phones: fingers pinch to zoom, so the map keeps only its fit button; the +/− row covered the labels of
+   whatever floated in the bottom corner (Classic and Work) */
+@media (max-width: 720px) and (pointer: coarse) {
+  .map-tools button[aria-label^="Zoom"] { display: none !important; }
+}

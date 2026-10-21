@@ -27,3 +27,9 @@ export function inScope(o: { area?: string | null; netHash: string | null }, sco
   if (scope === "near") return !!me.net && o.netHash === me.net;
   return false;
 }
+
+/** Nearby knows where you are only from your location or an area picked on the map (never the IP's rough guess) */
+export const placed = (gps: boolean, how?: string) => gps || how === "pick";
+/** the count on the Nearby button: nothing until the device is placed, so it never promises what a tap won't show */
+export const countArea = (items: { area?: string | null }[], area: string, isPlaced: boolean) =>
+  isPlaced && area ? items.filter((o) => o.area === area).length : 0;

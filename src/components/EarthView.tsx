@@ -179,7 +179,7 @@ export default function EarthView(props: { home: string; from: string; gps: bool
         </div>
       ) : !props.gps && (
         <div className="earth-ask lg" data-no-pan>
-          <span>See what&apos;s right around you</span>
+          <span>Share your location for Nearby</span>
           <button className="pill solid lg-press" onClick={props.onLocate}><LuMapPin aria-hidden /> Share location</button>
           <button className="pill lg-press" onClick={props.onSpace}><LuLock aria-hidden /> Create your space</button>
         </div>

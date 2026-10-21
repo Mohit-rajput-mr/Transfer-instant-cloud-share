@@ -19,19 +19,19 @@ export default function Privacy() {
       <ul>
         <li>Files are encrypted in your browser (AES-256-GCM) before upload. With a passcode, the key comes from it and never leaves your device.</li>
         <li><b>Open objects</b> (sent without a passcode) are still encrypted in transit and at rest, but anyone who can see them can open them. Only send something open if you are happy for anyone to take it.</li>
-        <li>We store only the encrypted bytes (with Cloudflare R2), and remove them when the lifetime the sender picked runs out (5 to 30 minutes), after the download limit, or when the sender destroys them.</li>
+        <li>We store only the encrypted bytes (with Cloudflare R2), and remove them when the lifetime the sender picked runs out (5 to 30 minutes; inside a named space, when the space closes, 8 hours at most), after the download limit, or when the sender destroys them.</li>
         <li>While the sender&apos;s page is open, receivers may also get the encrypted bytes straight from the sender&apos;s device (peer to peer, WebRTC). Public STUN servers (Google, Cloudflare) help the two devices find each other; no file data passes through them.</li>
       </ul>
       <h2>What we keep, briefly</h2>
       <ul>
         <li>The name you give an object, its file name, size and type. These are visible to anyone on the site while it floats.</li>
-        <li>A one-way hash of your network address, used for the Nearby tag and upload limits. Your IP address itself is not stored, except in anonymous mode (below).</li>
+        <li>A one-way hash of your network address, used for the Wi-Fi filter and upload limits. Your IP address itself is not stored, except in anonymous mode (below).</li>
         <li>A random device ID and a browser/OS label (e.g. &quot;Chrome · Android&quot;) in your browser, so senders can see opens and downloads.</li>
         <li>Object data is deleted together with the object.</li>
         <li><b>Spaces</b>: a space&apos;s name, whether it is private, a keyed hash of its passcode, the names members chose and a keyed hash of each member&apos;s device ID, kept encrypted until the space is removed. Your saved spaces live in your own browser (IndexedDB).</li>
       </ul>
       <h2>Usage statistics</h2>
-      <p>To keep the service running we keep anonymous usage stats: your approximate location (country, city, coordinates rounded to about 1 km, derived by our host from your connection; if you share your location in the browser, your exact position instead, kept as your most recent location and shown only on Orbit&apos;s own internal live map, never to other people), browser, OS, device type, and when you visit, upload or download. Detailed events are kept for 30 days; daily totals per country, city, device type and route (city to city) are kept longer. This is never linked to your name, never sold and never shared.</p>
+      <p>To keep the service running we keep anonymous usage stats: your approximate location (country, city, coordinates rounded to about 1 km, derived by our host from your connection; if you share your location in the browser, your exact position instead, kept as your most recent location and shown only on Orbi&apos;s own internal live map, never to other people), browser, OS, device type, and when you visit, upload or download. Detailed events are kept for 30 days; daily totals per country, city, device type and route (city to city) are kept longer. This is never linked to your name, never sold and never shared.</p>
       <h2>Anonymous mode</h2>
       <p>Turn on <b>Stay anonymous</b> (the mask at the top) to become a ghost: no location and no identity shown to other users. Orbi has no account, no name, no phone and no email, ever. While anonymous, Orbi keeps your IP address and its rough area (city), for abuse and legal requests; other users never see it. Anonymous sends go into an anonymous space: a private space with a random title, shared with one link. Its code and its key ride after the # in that link, which browsers never send to a server.</p>
       <AnonFacts />

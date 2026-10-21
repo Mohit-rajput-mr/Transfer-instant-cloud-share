@@ -809,7 +809,7 @@ export default function OrbView(props: {
           {incoming && <span className="tag in">INCOMING</span>}
           {orb.open && !incoming && <span className="tag open ic-tag" title="No password" aria-label="No password"><LuLockOpen /></span>}
           {!orb.open && !incoming && !up && <span className="tag ic-tag" title="Password needed" aria-label="Password needed"><LuLock /></span>}
-          {nearby && !mine && !incoming && <span className="tag near">NEARBY</span>}
+          {nearby && !mine && !incoming && <span className="tag near">WI-FI</span>}
           {sealed && <span className="tag dead">SEALED</span>}
           {got && !up && <span className="tag got ic-tag" title="Downloaded" aria-label="Downloaded"><LuCheck /></span>}
           {group && <span className="tag grp">{group.length} ITEMS</span>}

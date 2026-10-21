@@ -33,7 +33,7 @@ import { anonLink, anonTitle, createAnonSpace, createSpace, joinAnonSpace, joinS
 import { BsIncognito } from "react-icons/bs";
 import AnonSeal from "./AnonSeal";
 import KnockBell from "./KnockBell";
-import { LuFlag, LuMessageCircle, LuMapPin, LuMapPinOff, LuMenu, LuPalette, LuSearch, LuPlus, LuX, LuArrowUpDown, LuRocket } from "react-icons/lu";
+import { LuFlag, LuMessageCircle, LuMapPin, LuMapPinOff, LuMenu, LuPalette, LuSearch, LuPlus, LuArrowUpDown, LuRocket } from "react-icons/lu";
 import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange } from "./BubbleBoard";
 import TaskBoard, { TaskWires, taskGroups } from "./TaskBoard";
@@ -56,9 +56,10 @@ import { bubbleName, burnBubble, editBubble, hueFor, isMine as isMyBubble, postB
 import StylePicker from "./StylePicker";
 import { autoRemember, findDeviceSkin, forgetDeviceLook, pickedPalette, pickedSkin, skinName, toneOf, useLook } from "@/lib/skins";
 import { fileKind, type Kind } from "@/lib/skin-list";
-import { inScope, SCOPE_EMPTY, type Scope } from "@/lib/scope";
+import { countArea, inScope, placed, SCOPE_EMPTY, type Scope } from "@/lib/scope";
 import { pickFold, rowFits, setFold } from "@/lib/fold";
 import { WorkBar, WorkDock, WorkRail } from "./WorkChrome";
+import { dialogOpen } from "@/lib/dialog";
 import KindFilter from "./KindFilter";
 import ScopeTabs from "./ScopeTabs";
 
@@ -338,8 +339,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // this network's private invite key (lib/tasks.ts sealInvite): never sent to anyone
   const inviteKeyRef = useRef("");
   netRef.current = net;
-  // the area this device is in (lib/area.ts; what it posts goes there) and the area being looked at (the public
-  // void shows it and the eight around it). They are the same until you fly somewhere else on the Earth.
+  // the area this device is in (lib/area.ts; what it posts goes there) and the one the Nearby filter keeps. The open
+  // void is worldwide (owner 2026-10-21), so they are always the same; the area only feeds Nearby, HQ and live rooms.
   const [home, setHome] = useState("");
   const homeRef = useRef(home);
   homeRef.current = home;
@@ -354,19 +355,6 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const [geoAsk, setGeoAsk] = useState(false);
   // location refused or failed: how to fix it, or pick the area on the map (null: not shown)
   const [geoFail, setGeoFail] = useState<"denied" | "failed" | null>(null);
-  // the "share location / create your space" strip, closed for this visit
-  const [pillOff, setPillOffS] = useState(false);
-  useEffect(() => {
-    try {
-      if (sessionStorage.getItem("orbit:pill-off") === "1") setPillOffS(true);
-    } catch {}
-  }, []);
-  const setPillOff = (v: boolean) => {
-    setPillOffS(v);
-    try {
-      sessionStorage.setItem("orbit:pill-off", v ? "1" : "0");
-    } catch {}
-  };
   // the Earth was opened to pick this device's area by hand
   const [picking, setPicking] = useState(false);
   const [skew, setSkew] = useState(0);
@@ -542,6 +530,17 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   useEffect(() => () => {
     if (menuTimer.current) clearTimeout(menuTimer.current);
   }, []);
+  // Escape folds the Send menu back into its button (a card on top takes Escape first: lib/dialog.ts)
+  useEffect(() => {
+    if (!menu || menuOut) return;
+    const k = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented || dialogOpen()) return;
+      closeMenu();
+      document.querySelector<HTMLElement>(".send-fab")?.focus({ preventScroll: true });
+    };
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, [menu, menuOut, closeMenu]);
   // the look flipped in place (lib/view.ts): close what belongs to one look only (the send menu, the phone menu, the
   // style picker) before it paints in the other; launches, uploads, open cards, the map and drafts carry on
   const [shownUi, setShownUi] = useState(work);
@@ -1707,7 +1706,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       const w = await locate();
       setGps(true);
       setHome(w.area);
-      toast("Location on: you see what's around you");
+      toast("Location on: Nearby now shows what was sent from your area");
       return true;
     } catch (e) {
       markAsked();
@@ -1718,7 +1717,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   }, [toast]);
   // the navbar's Open void / Nearby / Wi-Fi buttons: Nearby needs the device's location, so it asks first
   const pickScope = useCallback(async (s: Scope) => {
-    if (s === "area" && !gps && !(await shareLocation())) return;
+    if (s === "area" && !placed(gps, where()?.how) && !(await shareLocation())) return;
     setScope(s);
   }, [gps, shareLocation]);
   // location blocked: this device's area is the one picked on the map (lib/where.ts), not its connection's guess
@@ -1726,7 +1725,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     pickArea(cell);
     setHome(cell);
     setArea(cell);
-    toast("Your area is set: what you send goes here, and you see what's around it");
+    toast("Your area is set: Nearby shows what was sent from it");
   }, [toast]);
   // a new area: its void (the first load waits for areaReady and asks with the area by then)
   useEffect(() => {
@@ -2281,7 +2280,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   );
   const watchers = useCallback((id: string) => orbs.find((o) => o.id === id)?.watchers ?? 0, [orbs]);
   const nearbyCount = alive.filter((o) => o.netHash === net).length;
-  const areaCount = alive.filter((o) => !!area && o.area === area).length;
+  // Nearby counts only once this device's own place is known (GPS or picked): an IP guess would count a city away
+  const areaCount = countArea(alive, area, placed(gps, where()?.how));
   // the Classic bar folds only as far as it must (lib/fold.ts): measured again when its width or contents change
   const topBar = useRef<HTMLElement>(null);
   const foldKey = `${areaCount}|${nearbyCount}|${badges.size}|${online}|${tasks.length}|${anonNow}|${anonOn}|${!!space}|${inArchive}|${kind}|${work}`;
@@ -2451,8 +2451,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const pinButton = (cls: string) => anonNow ? anonOnButton(`${cls} anon-chip on`) : (
     <button
       className={`${cls} geo-pin${gps ? " on" : " off"}`}
-      onClick={() => (gps ? toast("Location on: you see what's within your area (about 20 to 40 km) and the areas around it") : shareLocation())}
-      aria-label={gps ? "Location on" : "Location off: tap to share it and see what's around you"}
+      onClick={() => (gps ? toast("Location on: Nearby shows only your area (about 20 to 40 km). The Open void stays worldwide") : shareLocation())}
+      aria-label={gps ? "Location on" : "Location off: tap to share it for the Nearby filter"}
       title={gps ? "Location on" : "Location off: tap to turn it on"}
     >
       {gps ? <LuMapPin aria-hidden /> : <LuMapPinOff aria-hidden />}
@@ -2594,7 +2594,6 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             onSpaces={() => setPanel({ kind: "space" })}
             onShare={shareWork}
             onMenu={() => setPanel({ kind: "menu" })}
-            area={area ? area.toUpperCase() : ""}
           />
           <WorkRail
             inSpace={!!space}
@@ -2688,13 +2687,16 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           {/* anonymous: the void goes dark and cold (vignette, grain, scan lines, a big mask), so nobody forgets */}
           {anonNow && !inArchive && (
             <div className="ghost-layer" aria-hidden>
-              <div className="ghost-mid">
-                <BsIncognito className="ghost-mask" />
-                <b className="ghost-title">You&apos;ve gone anonymous</b>
-                <span className="ghost-sub">Other users can&apos;t see your location, your name or your device. Files go through the encrypted cloud only.</span>
-              </div>
               {/* the sealed container: its edge is a ring of dots that runs down with the session's time */}
               <AnonSeal sess={anonSess} />
+            </div>
+          )}
+          {/* the message sits above the orbs, never under them: big in an empty void, a slim plate once things float */}
+          {anonNow && !inArchive && (
+            <div className={`ghost-mid${shown.length ? " over" : ""}`} aria-hidden>
+              <BsIncognito className="ghost-mask" />
+              <b className="ghost-title">You&apos;ve gone anonymous</b>
+              <span className="ghost-sub">Other users can&apos;t see your location, your name or your device. Files go through the encrypted cloud only.</span>
             </div>
           )}
           {!work && !inArchive && !space && (anonNow ? (
@@ -2808,7 +2810,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           </div>
           <div className="ghost-big" aria-hidden>
             <div className="wide">30 Min</div>
-            <p className="mono">Longest life of any object.<br />The sender picks 5 to 30.</p>
+            <p className="mono">Longest life of a file.<br />The sender picks 5 to 30.</p>
           </div>
 
           {earth && !space && !anonNow && (
@@ -2818,27 +2820,16 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
               gps={gps}
               picking={picking}
               onEnter={(cell) => {
+                // the void is worldwide: the Earth only opens to pick this device's own area (for Nearby)
                 setEarth(false);
-                if (picking) {
-                  setPicking(false);
-                  return pickHere(cell);
-                }
-                setArea(cell);
-                if (cell !== home) toast(gps ? "You're looking at another area · what you post still goes to yours" : "You're looking at another area · tap \"I'm here\" to make it yours");
+                if (!picking) return;
+                setPicking(false);
+                pickHere(cell);
               }}
               onLocate={shareLocation}
               onSpace={() => (setEarth(false), setPanel({ kind: "space" }))}
               onClose={() => (setEarth(false), setPicking(false))}
             />
-          )}
-          {/* only while looking at another area; "share location" and "create your space" live in the navbar, not mid-screen */}
-          {!earth && !space && !inArchive && !anonNow && area !== home && !geoAsk && !pillOff && (
-            <div className="area-pill lg" data-no-pan>
-              <button className="area-x" onClick={() => setPillOff(true)} aria-label="Hide this" title="Hide"><LuX aria-hidden /></button>
-              <span>Another area</span>
-              {!gps && <button className="pill solid lg-press" onClick={() => pickHere(area)}><LuMapPin aria-hidden /> I&apos;m here</button>}
-              <button className={`pill${gps ? " solid" : ""} lg-press`} onClick={() => setArea(home)}>Back to my area</button>
-            </div>
           )}
           {work && loaded && shown.length === 0 && !(map && map.spots.size) && (
             <p className="w-hint">{space ? `${space.title} is empty` : "Drop files anywhere, or press Upload"}</p>

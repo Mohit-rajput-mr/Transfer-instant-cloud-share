@@ -24,7 +24,7 @@ html[data-ui="work"] {
 }
 html[data-ui="work"][data-theme="light"] {
   --w-canvas: #f6f6f5; --w-dot: #d9d9d6; --w-surface: #ffffff; --w-raised: #f4f4f3; --w-hover: #ededec; --w-press: #e4e4e2;
-  --w-border: #e3e3e0; --w-border-2: #cfcfcb; --w-text: #18181b; --w-text-2: #5d5d65; --w-text-3: #9a9aa1;
+  --w-border: #e3e3e0; --w-border-2: #cfcfcb; --w-text: #18181b; --w-text-2: #5d5d65; --w-text-3: #6b6b72; /* ≥4.5:1 on canvas, surface and hover (was #9a9aa1, 2.6:1) */
   --w-accent: #18181b; --w-accent-2: #333338; --w-accent-ink: #ffffff; --w-ok: #16a36a; --w-warn: #c98100; --w-danger: #d92d20; --w-info: #4f5fe8;
   --w-wire: #a9a9b0; --w-wire-on: #5d5d65; --w-port: #a4a4ab; --w-scrim: rgba(20,20,22,0.28);
   --w-anon: #18181b;
@@ -196,6 +196,8 @@ html[data-ui="work"] .orb-body > .kind-badge { position: static; width: 34px; he
 html[data-ui="work"] .orb-body > .kind-badge svg { width: 30px; height: 30px; stroke-width: 1.6; }
 html[data-ui="work"] .kind-badge.k-photo { color: #a78bfa; } html[data-ui="work"] .kind-badge.k-video { color: #f472b6; } html[data-ui="work"] .kind-badge.k-doc { color: #60a5fa; }
 html[data-ui="work"] .kind-badge.k-audio { color: #2dd4bf; } html[data-ui="work"] .kind-badge.k-archive { color: #fbbf24; } html[data-ui="work"] .kind-badge:not([class*="k-"]) { color: var(--w-text-2); }
+/* any other type (k-other): the theme's grey, not the classic white (white-on-white on light cards) */
+html[data-ui="work"] .kind-badge.k-other { color: var(--w-text-2); }
 html[data-ui="work"] .orb-body > .ext { position: absolute; left: 0; right: 0; bottom: 7px; display: block; text-align: center; font: 600 8.5px/1 var(--w-mono) !important; letter-spacing: 0.06em !important; color: var(--w-text-3) !important; text-shadow: none !important; text-transform: uppercase; padding: 0 !important; }
 /* the format (.PDF, .ZAP…) always shows under the icon */
 html[data-ui="work"] .orb-body:not(.bubble-body) > .ext { opacity: 1; }
@@ -1089,3 +1091,21 @@ html[data-ui="work"] .w-bar :is(.w-btn, .w-classic-btn, .w-icon, .w-tabs button,
   html[data-ui="work"] .w-tabs button svg { display: none; }
 }
 @media (max-width: 360px) { html[data-ui="work"] .w-tabs em { display: none; } html[data-ui="work"] .w-tabs { gap: 0; } }
+
+/* phones (QA 2026-10-21): the scope tabs never break a word ("WI-/FI"), the place's name fits next to the icons,
+   no second round Bubble button behind the tab bar (its Note does the same), Switch to Classic lives in ☰ */
+@media (max-width: 720px) {
+  html[data-ui="work"] .w-tabs { width: max-content; max-width: calc(100vw - 16px); overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+  html[data-ui="work"] .w-tabs button { white-space: nowrap; flex: 0 0 auto; }
+  html[data-ui="work"] .bub-fab { display: none !important; }
+}
+@media (max-width: 480px) {
+  html[data-ui="work"] .w-classic-btn { display: none; }
+  html[data-ui="work"] .w-title { padding-inline: 4px; }
+  html[data-ui="work"]:not([data-theme="light"]) .w-title b, html[data-ui="work"] .w-title b { font-size: 12.5px !important; letter-spacing: 0 !important; }
+}
+/* anonymous: the slim message plate at the top of the sealed frame (globals.css .ghost-mid.over), in Work's colours */
+html[data-ui="work"] .ghost-mid.over { top: calc(64px + var(--safe-t)); background: color-mix(in srgb, var(--w-surface) 90%, transparent); border-color: color-mix(in srgb, var(--w-text) 30%, transparent); }
+html[data-ui="work"] .ghost-mid.over .ghost-title { color: var(--w-text) !important; }
+html[data-ui="work"] .ghost-mid.over .ghost-mask { color: var(--w-text); }
+@media (max-width: 720px) { html[data-ui="work"][data-anon] .ghost-mid.over { top: auto; bottom: calc(140px + var(--safe-b)); } }

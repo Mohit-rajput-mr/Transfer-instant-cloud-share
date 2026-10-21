@@ -5,6 +5,7 @@ import Void from "./Void";
 import { readTheme } from "@/lib/theme";
 import { speakWork } from "@/lib/words";
 import { rememberClassic } from "@/lib/view";
+import { langOf } from "@/lib/seo";
 
 const isWork = (path: string) => /^\/work(\/|$)/.test(path);
 const COLOR = { classic: "#000000", dark: "#1b1b1c", light: "#f7f7f6" } as const;
@@ -41,6 +42,13 @@ export default function VoidShell({ titles, children }: { titles: Record<string,
       meta()?.setAttribute("content", COLOR.classic);
     };
   }, [work]);
+
+  // html[lang] is the page's language (/fr → fr), for screen readers, translation and search; the app chrome stays
+  // left-to-right (only the Arabic guide, SeoContent, is dir="rtl": the void's English controls must not mirror)
+  useLayoutEffect(() => {
+    document.documentElement.lang = work ? "en" : langOf(path);
+    return () => void (document.documentElement.lang = "en");
+  }, [path, work]);
 
   // the switch keeps the loaded page's metadata: give the tab the title this view's own load would have
   useLayoutEffect(() => {
