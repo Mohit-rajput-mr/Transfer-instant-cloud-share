@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how bees make honey? It starts as flower juice, and ends up as something that almost never goes bad.",
+   "dur": 6.824,
+   "at": 0.35
+  },
+  {
+   "key": "collect",
+   "text": "A worker bee sucks up nectar, a sugary liquid inside flowers, and carries it in a special honey stomach.",
+   "dur": 5.69,
+   "at": 7.57
+  },
+  {
+   "key": "enzyme",
+   "text": "On the way home, enzymes in that stomach start breaking the sugar into simpler sugars.",
+   "dur": 4.708,
+   "at": 13.56
+  },
+  {
+   "key": "pass",
+   "text": "In the hive, bees pass the nectar mouth to mouth, adding more enzymes each time.",
+   "dur": 5.311,
+   "at": 18.57
+  },
+  {
+   "key": "fan",
+   "text": "Then they spread it in wax cells and fan it with their wings, drying it from around seventy percent water to under twenty.",
+   "dur": 6.869,
+   "at": 24.18
+  },
+  {
+   "key": "cap",
+   "text": "When it's thick enough, they seal each cell with a lid of wax.",
+   "dur": 3.984,
+   "at": 31.35
+  },
+  {
+   "key": "stats",
+   "text": "One bee makes only about a twelfth of a teaspoon in her whole life. A single jar takes thousands of bees, and millions of flowers.",
+   "dur": 8.229,
+   "at": 35.64
+  },
+  {
+   "key": "close",
+   "text": "And honey is so dry and acidic that germs can't grow in it. That's why it keeps for so long.",
+   "dur": 6.723,
+   "at": 44.22
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 51.34
+  }
+ ],
+ "duration": 55.89
+}
