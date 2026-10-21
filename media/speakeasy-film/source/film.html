@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>HowSpeakeasiesWorked</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+scene.background = new THREE.Color(0x0a0a10);
+scene.add(new THREE.HemisphereLight(0xffe6c8, 0x14121a, 0.7)); { const l = new THREE.DirectionalLight(0xffd8a8, 1.0); l.position.set(-5, 10, 12); scene.add(l); }
+const brickTex = (w, h, warm) => canvasTex(512, 512, (g) => { g.fillStyle = warm ? "#4a2418" : "#3a1c16"; g.fillRect(0, 0, 512, 512); for (let y = 0; y < 16; y++) for (let x = -1; x < 9; x++) { const v = 0.75 + ((x * 31 + y * 17) % 7) / 20; g.fillStyle = `rgb(${Math.round(96 * v)},${Math.round(46 * v)},${Math.round(36 * v)})`; g.fillRect(x * 64 + (y % 2) * 32 + 3, y * 32 + 3, 58, 26); } });
+// ---- street: brick wall, plain door, peephole slot, lamp ----
+const ST = new THREE.Group(); scene.add(ST);
+{ const bt = brickTex(); bt.wrapS = bt.wrapT = THREE.RepeatWrapping; bt.repeat.set(3, 3); const wall = new THREE.Mesh(new THREE.PlaneGeometry(24, 18), new THREE.MeshStandardMaterial({ map: bt, roughness: 0.95 })); wall.position.set(0, 6, -0.1); ST.add(wall);
+  const walk = new THREE.Mesh(new THREE.PlaneGeometry(24, 8), new THREE.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.9 })); walk.rotation.x = -Math.PI / 2; walk.position.set(0, -3, 4); ST.add(walk); }
+const DOOR = new THREE.Group(); DOOR.position.set(0, -3, 0); ST.add(DOOR);
+{ const d = new THREE.Mesh(new THREE.BoxGeometry(3.2, 6.4, 0.25), new THREE.MeshStandardMaterial({ color: 0x2c1e14, roughness: 0.7 })); d.position.set(1.6, 3.2, 0); DOOR.add(d); const k = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 8), new THREE.MeshStandardMaterial({ color: 0xc8a050, metalness: 0.8 })); k.position.set(2.9, 3, 0.2); DOOR.add(k); }
+DOOR.position.x = -1.6;
+const SLOT = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.36, 0.08), new THREE.MeshStandardMaterial({ color: 0x1a120c })); SLOT.position.set(0, 2.1, 0.17); ST.add(SLOT);
+const SLOTBG = new THREE.Mesh(new THREE.PlaneGeometry(0.96, 0.32), new THREE.MeshBasicMaterial({ map: canvasTex(200, 66, (g) => { g.fillStyle = "#ffc06a"; g.fillRect(0, 0, 200, 66); g.fillStyle = "#1a1008"; for (const x of [70, 130]) { g.beginPath(); g.ellipse(x, 33, 18, 12, 0, 0, 7); g.fill(); g.fillStyle = "#fff"; g.beginPath(); g.arc(x + 4, 30, 4, 0, 7); g.fill(); g.fillStyle = "#1a1008"; } }), toneMapped: false })); SLOTBG.position.set(0, 2.1, 0.13); ST.add(SLOTBG);
+const LAMP = new THREE.PointLight(0xffc880, 30, 14); LAMP.position.set(-4, 4, 3); ST.add(LAMP); const BULB = new THREE.Mesh(new THREE.SphereGeometry(0.25, 12, 8), glow(0xffd9a0)); BULB.position.copy(LAMP.position); ST.add(BULB);
+const GUY = new THREE.Group(); GUY.position.set(2.6, -3, 2.2); ST.add(GUY); { const coat = new THREE.Mesh(new THREE.CapsuleGeometry(0.55, 2.2, 8, 16), new THREE.MeshStandardMaterial({ color: 0x3a3a46 })); coat.position.y = 1.7; GUY.add(coat); const h = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 12), new THREE.MeshStandardMaterial({ color: 0xd9a07a })); h.position.y = 3.35; GUY.add(h); const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.06, 20), new THREE.MeshStandardMaterial({ color: 0x18181e })); brim.position.y = 3.62; GUY.add(brim); const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.45, 0.45, 20), brim.material); crown.position.y = 3.85; GUY.add(crown); }
+// ---- inside: warm bar, a bookcase that swings open, a raid buzzer ----
+const IN = new THREE.Group(); IN.position.set(40, 0, 0); scene.add(IN);
+{ const bt = brickTex(0, 0, true); bt.wrapS = bt.wrapT = THREE.RepeatWrapping; bt.repeat.set(3, 2); const back = new THREE.Mesh(new THREE.PlaneGeometry(20, 12), new THREE.MeshStandardMaterial({ map: bt })); back.position.set(0, 3, -3); IN.add(back);
+  const bar = new THREE.Mesh(new THREE.BoxGeometry(9, 2.2, 1.6), new THREE.MeshStandardMaterial({ color: 0x5a3018, roughness: 0.5 })); bar.position.set(-3, -1.9, 0.5); IN.add(bar); const top = new THREE.Mesh(new THREE.BoxGeometry(9.4, 0.16, 1.9), new THREE.MeshStandardMaterial({ color: 0x8a5028, roughness: 0.3, metalness: 0.2 })); top.position.set(-3, -0.72, 0.5); IN.add(top);
+  for (let i = 0; i < 6; i++) { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.9, 12), new THREE.MeshStandardMaterial({ color: [0x2a6a3a, 0x7a3a1a, 0x3a2a6a][i % 3], roughness: 0.2, metalness: 0.2, transparent: true, opacity: 0.85 })); b.position.set(-6 + i * 0.9, 1.4, -2.7); IN.add(b); } const shelf = new THREE.Mesh(new THREE.BoxGeometry(6, 0.12, 0.6), new THREE.MeshStandardMaterial({ color: 0x5a3018 })); shelf.position.set(-3.75, 0.9, -2.7); IN.add(shelf);
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), new THREE.MeshStandardMaterial({ color: 0x2a1a12 })); fl.rotation.x = -Math.PI / 2; fl.position.y = -3; IN.add(fl); }
+const WARM = new THREE.PointLight(0xffb060, 40, 18); WARM.position.set(-2, 3, 3); IN.add(WARM);
+const CASE = new THREE.Group(); CASE.position.set(3, -3, -2.9); IN.add(CASE); { const c = new THREE.Mesh(new THREE.BoxGeometry(3.4, 5.6, 0.5), new THREE.MeshStandardMaterial({ color: 0x4a2a14 })); c.position.set(1.7, 2.8, 0); CASE.add(c); for (let r = 0; r < 4; r++) for (let i = 0; i < 9; i++) { const bk = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.9, 0.4), new THREE.MeshStandardMaterial({ color: [0x7a2a1a, 0x1a3a5a, 0x3a5a2a, 0x6a5a2a][(r + i) % 4] })); bk.position.set(0.3 + i * 0.34, 0.9 + r * 1.3, 0.3); CASE.add(bk); } }
+const SECRET = new THREE.Mesh(new THREE.PlaneGeometry(3.3, 5.5), new THREE.MeshBasicMaterial({ color: 0xffb060 })); SECRET.position.set(4.7, -0.2, -3.0); IN.add(SECRET);
+const BUZZ = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 12), new THREE.MeshBasicMaterial({ color: 0x401010 })); BUZZ.position.set(-3.6, 3.4, -2.8); IN.add(BUZZ);
+// brick door (21 Club)
+const BD = new THREE.Group(); BD.position.set(80, 0, 0); scene.add(BD);
+{ const bt = brickTex(0, 0, true); bt.wrapS = bt.wrapT = THREE.RepeatWrapping; bt.repeat.set(2, 2); const wall = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.MeshStandardMaterial({ map: bt })); wall.position.set(0, 2, -0.3); BD.add(wall); const cellar = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 5.2), new THREE.MeshBasicMaterial({ map: canvasTex(360, 520, (g) => { g.fillStyle = "#1a0e08"; g.fillRect(0, 0, 360, 520); for (let r = 0; r < 6; r++) for (let i = 0; i < 6; i++) { g.fillStyle = ["#5a1a20", "#2a4a2a", "#6a5a20"][(r + i) % 3]; g.beginPath(); g.arc(34 + i * 58, 40 + r * 80, 18, 0, 7); g.fill(); } }) })); cellar.position.set(0, 0.6, -0.35); BD.add(cellar); }
+{ const l = new THREE.PointLight(0xffc080, 40, 20); l.position.set(1, 3, 5); BD.add(l); }
+const BDOOR = new THREE.Group(); BDOOR.position.set(-1.8, 0.6, -0.25); BD.add(BDOOR); { const bt = brickTex(0, 0, true); bt.wrapS = bt.wrapT = THREE.RepeatWrapping; bt.repeat.set(0.52, 0.75); const d = new THREE.Mesh(new THREE.BoxGeometry(3.6, 5.2, 0.4), new THREE.MeshStandardMaterial({ map: bt })); d.position.set(1.8, 0, 0); BDOOR.add(d); }
+// city of dots
+const CITY = new THREE.Group(); CITY.position.set(0, 60, 0); scene.add(CITY); const DOTS = [];
+{ const m = new THREE.Mesh(new THREE.PlaneGeometry(9, 16), new THREE.MeshBasicMaterial({ map: canvasTex(360, 640, (g) => { g.fillStyle = "#14161e"; g.fillRect(0, 0, 360, 640); g.strokeStyle = "#262a36"; g.lineWidth = 3; for (let i = 0; i < 30; i++) { g.beginPath(); g.moveTo(0, i * 24); g.lineTo(360, i * 24 - 80); g.stroke(); g.beginPath(); g.moveTo(i * 16, 0); g.lineTo(i * 16 + 60, 640); g.stroke(); } g.fillStyle = "#8b91a3"; g.font = "700 26px JetBrains Mono, monospace"; g.fillText("MANHATTAN · 1920s", 20, 40); }), toneMapped: false })); CITY.add(m);
+  let r = 9; const rr = () => (r = (r * 16807) % 2147483647) / 2147483647; for (let i = 0; i < 600; i++) { const d = new THREE.Mesh(new THREE.CircleGeometry(0.05, 6), glow(0xffb060)); d.position.set((rr() - 0.5) * 8.4 * (0.5 + rr() * 0.5), (rr() - 0.5) * 15, 0.02); d.userData.o = rr(); CITY.add(d); DOTS.push(d); } }
+// Orbi Space join
+const OP = new THREE.Group(); OP.position.set(-40, 0, 0); scene.add(OP); OP.add(new THREE.Mesh(new THREE.BoxGeometry(3.3, 6.8, 0.36), new THREE.MeshStandardMaterial({ color: 0x2a2e36, metalness: 0.8, roughness: 0.25 })));
+const OPC = document.createElement("canvas"); OPC.width = 512; OPC.height = 1040; const OPT = new THREE.CanvasTexture(OPC); OPT.colorSpace = THREE.SRGBColorSpace; { const s = new THREE.Mesh(new THREE.PlaneGeometry(3.05, 6.5), new THREE.MeshBasicMaterial({ map: OPT, toneMapped: false })); s.position.z = 0.19; OP.add(s); }
+const OL = new THREE.PointLight(0xffffff, 8, 20); OL.position.set(-40, 2, 6); scene.add(OL);
+function drawSpace(n, inside) { const g = OPC.getContext("2d"); g.fillStyle = "#07080c"; g.fillRect(0, 0, 512, 1040); g.fillStyle = "#3dff8c"; g.font = "800 44px Inter, sans-serif"; g.fillText("ORBI", 36, 96); g.fillStyle = "#eef0f5"; g.font = "700 40px Inter, sans-serif"; g.fillText("Space · The 21 Room", 36, 190);
+  if (!inside) { g.fillStyle = "#8b91a3"; g.font = "500 28px Inter, sans-serif"; g.fillText("passcode to join", 36, 240); g.fillStyle = "#12141b"; g.beginPath(); g.roundRect(36, 290, 440, 110, 24); g.fill(); g.fillStyle = "#3dff8c"; g.font = "800 50px JetBrains Mono, monospace"; g.fillText("• ".repeat(n).trim(), 70, 365); }
+  else { g.fillStyle = "#8b91a3"; g.font = "500 28px Inter, sans-serif"; g.fillText("members only · not public", 36, 240); ["menu-plans.pdf", "guest-list.xlsx", "photos.zip"].forEach((f, i) => { g.fillStyle = "#12141b"; g.beginPath(); g.roundRect(36, 290 + i * 130, 440, 110, 24); g.fill(); g.fillStyle = "#eef0f5"; g.font = "600 34px Inter, sans-serif"; g.fillText(f, 70, 356 + i * 130); }); } OPT.needsUpdate = true; }
+
+window.render = async function (t) { cam.up.set(0, 1, 0);
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  SLOTBG.visible = false; SLOT.position.x = 0;
+  if (t < A("hidden")) { const k = ease(clamp(t / 5)); let cp = V(lerp(-3, 0, k), lerp(6, 1, k), lerp(22, 13, k)), tg = V(0, lerp(3, 0.5, k), 0); const sl = clamp((t - A("door") - 1.6) / 0.4); SLOT.position.x = sl * 0.9; SLOTBG.visible = sl > 0; const open = ease(clamp((t - A("password") - 4.4) / 1.2)); DOOR.rotation.y = -open * 1.4;
+    if (t >= A("door")) { cp = V(lerp(0.5, 0.3, sl), lerp(1.2, 2.1, sl), lerp(11, 4.2, sl)); tg = V(0, lerp(0.6, 2.1, sl), 0); } if (t >= A("password")) { cp = V(1.4, 1.6, 9.5); tg = V(0.2, 1.2, 0); }
+    look(cp, tg, 46); big("NO SIGN", t, A("hook") + 4.4, A("law"), "#ffc06a", "250px", "130px"); card("c0", `1920–1933 · <b>Prohibition</b>`, t, A("law") + 0.6, A("door"), 260, 230, -2); card("c1", `alcohol banned · <b>drinking goes underground</b>`, t, A("law") + 3.4, A("door"), 160, 1720, 2);
+    card("c0", `password?`, t, A("password") + 0.4, A("password") + 2.8, 360, 230, -2); big("SPEAK EASY", t, A("password") + 3.0, A("hidden"), "#ffc06a", "250px", "120px"); card("c1", `🤫 keep your voice down`, t, A("password") + 3.4, A("hidden"), 290, 1720, 2); }
+  else if (t < A("count")) { const o = t - A("hidden"); if (o < 7.8) { const bz = o > 3.0 && o < 5.0 && Math.sin(o * 20) > 0; BUZZ.material.color.setHex(bz ? 0xff2020 : 0x401010); const sw = ease(clamp((o - 5.0) / 1.4)); CASE.rotation.y = -sw * 1.25;
+      look(V(40 + lerp(-3.5, 3.5, ease(clamp((o - 1) / 5))), 1.8, 15), V(40 + lerp(-3.5, 3.8, ease(clamp((o - 1) / 5))), 0.8, -1), 48); card("c0", `buzzer → <b>raid warning</b>`, t, A("hidden") + 3.0, A("hidden") + 4.9, 270, 230, -2); card("c0", `a bookcase that's <b>a door</b>`, t, A("hidden") + 5.0, A("hidden") + 7.8, 250, 230, -2); }
+    else { BDOOR.rotation.y = -ease(clamp((o - 8.6) / 1.6)) * 1.3; look(V(80.5, 1.2, 14), V(80, 0.8, 0), 46); card("c0", `21 Club · <b>a door in a brick wall</b>`, t, A("hidden") + 7.9, A("count"), 210, 230, -2); } }
+  else if (t < A("orbi")) { const k = clamp((t - A("count") - 0.3) / 2.2); DOTS.forEach((d) => (d.visible = d.userData.o < k)); look(V(0, 60, 15), V(0, 60, 0), 46); card("c0", `New York · <b>thousands</b> of speakeasies`, t, A("count") + 0.6, A("orbi"), 190, 230, -2); }
+  else { const o = t - A("orbi"); drawSpace(Math.min(6, Math.max(0, Math.floor((o - 2.4) / 0.25))), o > 4.6); OP.rotation.y = Math.sin(t * 0.4) * 0.1; look(V(-40, 0.2, 10.5), V(-40, 0.2, 0), 46); card("c0", `Orbi Spaces · <b>passcode to join</b>`, t, A("orbi") + 1.0, A("end"), 230, 230, -2); card("c1", `never public · <b>members only</b>`, t, A("orbi") + 5.0, A("end"), 250, 1720, 2); }
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
