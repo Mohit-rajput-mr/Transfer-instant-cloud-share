@@ -1,1 +1,54 @@
-{"lines": [{"key": "hook", "text": "hook", "at": 0.35, "dur": 6}, {"key": "open", "text": "open", "at": 6.6499999999999995, "dur": 5.5}, {"key": "derive", "text": "derive", "at": 12.45, "dur": 6.5}, {"key": "shake", "text": "shake", "at": 19.25, "dur": 8.5}, {"key": "session", "text": "session", "at": 28.05, "dur": 5}, {"key": "weak", "text": "weak", "at": 33.35, "dur": 9.5}, {"key": "orbi", "text": "orbi", "at": 43.150000000000006, "dur": 8.5}, {"key": "end", "text": "end", "at": 51.95, "dur": 3}], "duration": 56.25}
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a Wi-Fi password keeps strangers out? The password itself is never sent through the air.",
+   "dur": 6.338,
+   "at": 0.35
+  },
+  {
+   "key": "open",
+   "text": "Wi-Fi is just radio. Anyone nearby can pick up every packet, so everything has to be scrambled.",
+   "dur": 5.113,
+   "at": 7.09
+  },
+  {
+   "key": "derive",
+   "text": "Your phone and the router each turn the password and the network name into the same secret key, on their own.",
+   "dur": 7.425,
+   "at": 12.5
+  },
+  {
+   "key": "shake",
+   "text": "Then they swap random numbers, and mix them with that key. If both get matching results, each knows the other has the password, without ever saying it.",
+   "dur": 8.598,
+   "at": 20.23
+  },
+  {
+   "key": "session",
+   "text": "That creates a fresh key just for this connection, and everything after it is encrypted.",
+   "dur": 5.43,
+   "at": 29.12
+  },
+  {
+   "key": "weak",
+   "text": "That's why short passwords are risky. On older Wi-Fi, someone who records that handshake can try millions of guesses offline. Newer WPA3 blocks that trick.",
+   "dur": 9.135,
+   "at": 34.85
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Spaces work like a private network. A Space needs a passcode to join, its files never appear in public, and only members can unlock them.",
+   "dur": 8.59,
+   "at": 44.34
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 53.33
+  }
+ ],
+ "duration": 57.88
+}
