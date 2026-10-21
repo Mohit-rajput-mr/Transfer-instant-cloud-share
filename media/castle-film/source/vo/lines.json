@@ -4,51 +4,51 @@
   {
    "key": "hook",
    "text": "Do you know how a castle kept invaders out? It wasn't one wall. It was layer after layer.",
-   "dur": 6.374,
+   "dur": 6.366,
    "at": 0.35
   },
   {
    "key": "moat",
    "text": "First, a moat. A wide ditch, often full of water, so attackers couldn't roll siege towers right up to the walls.",
-   "dur": 6.844,
+   "dur": 6.841,
    "at": 7.12
   },
   {
    "key": "bridge",
    "text": "The only way across was a drawbridge, pulled up by chains when danger came.",
-   "dur": 4.946,
-   "at": 14.27
+   "dur": 4.944,
+   "at": 14.26
   },
   {
    "key": "gate",
    "text": "Behind it, an iron grid called a portcullis dropped down, and the gatehouse often had a second one, to trap attackers in between.",
-   "dur": 7.712,
-   "at": 19.51
+   "dur": 7.706,
+   "at": 19.5
   },
   {
    "key": "walls",
-   "text": "Thick stone walls, towers that stuck out so archers could shoot along the wall, and narrow arrow slits that were hard to hit from outside.",
-   "dur": 7.52,
-   "at": 27.53
+   "text": "Huge stone walls, towers that stuck out so archers could shoot along the wall, and narrow arrow slits that were hard to hit from outside.",
+   "dur": 7.777,
+   "at": 27.51
   },
   {
    "key": "word",
    "text": "And the guards only opened up for people who knew the watchword, the secret password of the day.",
-   "dur": 4.744,
-   "at": 35.35
+   "dur": 4.738,
+   "at": 35.58
   },
   {
    "key": "orbi",
    "text": "Orbi Spaces work like a private castle for your files. A Space needs a passcode to join, its files never show up in public, and only members can open them.",
-   "dur": 8.91,
-   "at": 40.49
+   "dur": 8.904,
+   "at": 40.72
   },
   {
    "key": "end",
    "text": "orbitransfer.com. Now you know!",
-   "dur": 2.749,
-   "at": 49.75
+   "dur": 2.743,
+   "at": 49.98
   }
  ],
- "duration": 54.3
+ "duration": 54.52
 }
