@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how laptop encryption works? Steal a locked laptop, and all you get is a box of noise.",
+   "dur": 5.325,
+   "at": 0.35
+  },
+  {
+   "key": "scramble",
+   "text": "Encryption scrambles every file with a secret key. The maths is so strong that the scrambled data looks completely random.",
+   "dur": 8.651,
+   "at": 6.08
+  },
+  {
+   "key": "key",
+   "text": "Your password unlocks that key. Without it, nothing can be read, even if the drive is pulled out and plugged into another computer.",
+   "dur": 7.886,
+   "at": 15.03
+  },
+  {
+   "key": "guess",
+   "text": "Can't a thief just guess? A security chip in many laptops counts wrong tries, and slows down or locks out anyone who guesses too much.",
+   "dur": 8.476,
+   "at": 23.21
+  },
+  {
+   "key": "aes",
+   "text": "The most common scrambler, AES with a 256 bit key, has so many possible keys that trying them all would take far longer than the age of the universe.",
+   "dur": 9.047,
+   "at": 31.99
+  },
+  {
+   "key": "close",
+   "text": "So the thief has the laptop, but not your files.",
+   "dur": 3.019,
+   "at": 41.38
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi locks files the same way, with AES 256, right on your device. The key is made from your passcode on your phone, and it's never sent.",
+   "dur": 9.037,
+   "at": 44.8
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 54.19
+  }
+ ],
+ "duration": 58.74
+}
