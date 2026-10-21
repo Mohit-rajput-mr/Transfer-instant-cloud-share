@@ -1,1 +1,48 @@
-{"lines": [{"key": "hook", "text": "hook", "at": 0.35, "dur": 5.5}, {"key": "send", "text": "send", "at": 6.1499999999999995, "dur": 6.5}, {"key": "timer", "text": "timer", "at": 12.95, "dur": 5.5}, {"key": "server", "text": "server", "at": 18.75, "dur": 6}, {"key": "catch", "text": "catch", "at": 25.05, "dur": 6.5}, {"key": "orbi", "text": "orbi", "at": 31.85, "dur": 11}, {"key": "end", "text": "end", "at": 43.150000000000006, "dur": 3}], "duration": 47.45}
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how disappearing messages work? They don't vanish from the internet by magic.",
+   "dur": 5.612,
+   "at": 0.35
+  },
+  {
+   "key": "send",
+   "text": "When you send one, it still travels through the app's servers, and lands on your friend's phone like any other message.",
+   "dur": 5.869,
+   "at": 6.36
+  },
+  {
+   "key": "timer",
+   "text": "But the app attaches a timer. When it runs out, the app on each phone deletes the message.",
+   "dur": 4.728,
+   "at": 12.53
+  },
+  {
+   "key": "server",
+   "text": "And the company's servers are set to delete their copy too, once it's been delivered or has expired.",
+   "dur": 5.754,
+   "at": 17.56
+  },
+  {
+   "key": "catch",
+   "text": "There's a catch. Some apps block screenshots, but nothing can stop someone pointing another camera at the screen.",
+   "dur": 5.806,
+   "at": 23.61
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi files disappear too. By default, 30 minutes after you send, the locked pieces on the server are deleted. You can choose anything from five to 30 minutes.",
+   "dur": 9.461,
+   "at": 29.77
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 39.63
+  }
+ ],
+ "duration": 44.18
+}
