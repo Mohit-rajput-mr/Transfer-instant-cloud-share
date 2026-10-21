@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a lava lamp works? It's just wax, water, and a light bulb doing all the work.",
+   "dur": 5.575,
+   "at": 0.35
+  },
+  {
+   "key": "inside",
+   "text": "Inside the glass is a special wax, and a clear liquid it can't mix with. When it's cold, the wax is a little heavier, so it sits at the bottom.",
+   "dur": 7.312,
+   "at": 6.33
+  },
+  {
+   "key": "heat",
+   "text": "The bulb in the base heats the wax. As it warms, it expands, and becomes a little lighter than the liquid around it.",
+   "dur": 6.502,
+   "at": 13.94
+  },
+  {
+   "key": "rise",
+   "text": "So a blob breaks off and floats up, like a hot air balloon.",
+   "dur": 4.222,
+   "at": 20.74
+  },
+  {
+   "key": "cool",
+   "text": "At the top, far from the bulb, it cools, shrinks, gets heavier again, and sinks back down.",
+   "dur": 6.8,
+   "at": 25.26
+  },
+  {
+   "key": "loop",
+   "text": "Then it warms and rises again. Up and down, as long as the bulb is on.",
+   "dur": 4.692,
+   "at": 32.36
+  },
+  {
+   "key": "history",
+   "text": "A British inventor, Edward Craven Walker, started selling them in 1963.",
+   "dur": 5.091,
+   "at": 37.35
+  },
+  {
+   "key": "close",
+   "text": "So a lava lamp is a tiny weather system in a bottle.",
+   "dur": 3.284,
+   "at": 42.84
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 46.53
+  }
+ ],
+ "duration": 51.08
+}
