@@ -11,6 +11,7 @@
 - **Always answer the owner SHORT.** Main points only, one line each. No long reports, no tables unless asked.
 - Live branch: `claude/festive-keller-rln4jk`. Vercel project `orbit` is linked to GitHub: a push to that branch deploys
   production by itself (check `https://orbitransfer.com/api/version`). Merge other branches into it; never deploy another branch.
+- **2026-10-22: Pro trial expired → account was suspended (402 DEPLOYMENT_DISABLED). Support moved the team to Hobby; a fresh push rebuilt production and it came back. Never start/reactivate Pro without the owner.**
 - **Vercel free plan = ~100 builds/day for the whole team** (hit on 2026-10-21: "Deployment rate limited — retry in 24 h").
   `scripts/vercel-ignore.sh` (vercel.json ignoreCommand) builds only the live branch and only when site code changed.
   Batch your work: push to the live branch a few times a day, not after every small edit.
