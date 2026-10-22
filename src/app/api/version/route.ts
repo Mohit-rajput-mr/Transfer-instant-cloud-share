@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 // takes a sender's files out of orbit (they live in that tab), so not every deploy asks for one.
 // Bump RELEASE only when old tabs must pick up new code; tabs wait until they hold nothing to reload.
 // (Pinned to the deployment that was live before this rule, so its open tabs don't reload.)
+// 2026-10-22: rebuilt after the team went back to the Hobby plan (the old deploy was disabled with the Pro trial).
 const RELEASE = "r-2026-10-21-workspace-only-spaces";
 
 export function GET() {
