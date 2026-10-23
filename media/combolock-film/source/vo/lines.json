@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a combination lock works? Behind the dial there's a stack of wheels, each with a tiny notch.",
+   "dur": 6.945,
+   "at": 0.35
+  },
+  {
+   "key": "spin",
+   "text": "Turning the dial spins the first wheel. A small pin on it catches the next wheel, and then the next. That's why you spin it a few times first.",
+   "dur": 8.647,
+   "at": 7.7
+  },
+  {
+   "key": "set",
+   "text": "Then you stop at each number in turn, and each wheel ends up with its notch at the top.",
+   "dur": 4.183,
+   "at": 16.64
+  },
+  {
+   "key": "open",
+   "text": "When all the notches line up, a bar called the fence drops into the gap, and the shackle pops open.",
+   "dur": 5.397,
+   "at": 21.13
+  },
+  {
+   "key": "wrong",
+   "text": "Get one number wrong, and the fence has nowhere to go. With forty numbers and three wheels, that's sixty four thousand combinations to guess.",
+   "dur": 9.913,
+   "at": 26.82
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi locks files too. A locked file needs its passcode, and after twelve wrong tries, it locks for good.",
+   "dur": 6.782,
+   "at": 37.04
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 44.22
+  }
+ ],
+ "duration": 48.77
+}
