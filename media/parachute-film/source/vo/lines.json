@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a parachute works? It doesn't stop your fall. It just makes it slow.",
+   "dur": 4.748,
+   "at": 0.35
+  },
+  {
+   "key": "drag",
+   "text": "When you fall, you have to push the air out of the way. The faster you go, the harder the air pushes back. That push is called drag.",
+   "dur": 8.386,
+   "at": 5.5
+  },
+  {
+   "key": "terminal",
+   "text": "A skydiver stops speeding up at about two hundred kilometres an hour. Drag and weight cancel out.",
+   "dur": 5.42,
+   "at": 14.18
+  },
+  {
+   "key": "open",
+   "text": "Open the canopy, and it grabs a huge amount of air. Drag jumps, and the speed drops to around twenty kilometres an hour.",
+   "dur": 7.231,
+   "at": 19.9
+  },
+  {
+   "key": "vent",
+   "text": "Old round parachutes had a hole in the top, so air could escape and the canopy would not swing.",
+   "dur": 5.572,
+   "at": 27.43
+  },
+  {
+   "key": "wing",
+   "text": "Modern square parachutes are wings. Air fills the cells, so you can steer, glide, and flare to land softly.",
+   "dur": 7.467,
+   "at": 33.31
+  },
+  {
+   "key": "close",
+   "text": "So a parachute is just a way to grab a lot of air, very fast.",
+   "dur": 4.911,
+   "at": 41.07
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 46.38
+  }
+ ],
+ "duration": 50.94
+}
