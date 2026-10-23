@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how an escalator works? It's one long loop of steps, going round and round.",
+   "dur": 5.379,
+   "at": 0.35
+  },
+  {
+   "key": "loop",
+   "text": "A motor at the top pulls a chain, and the steps ride along it. Up the front, and back down underneath.",
+   "dur": 6.059,
+   "at": 6.13
+  },
+  {
+   "key": "wheels",
+   "text": "Each step has two sets of wheels on two tracks. Where the tracks spread apart, the step stands up into a stair. Where they come together, it folds flat.",
+   "dur": 9.032,
+   "at": 12.49
+  },
+  {
+   "key": "rail",
+   "text": "The handrail is its own loop, driven to move at the same speed as the steps.",
+   "dur": 4.833,
+   "at": 21.82
+  },
+  {
+   "key": "comb",
+   "text": "At the end, a comb plate slides between the grooves, so nothing gets pulled under.",
+   "dur": 5.014,
+   "at": 26.95
+  },
+  {
+   "key": "history",
+   "text": "In eighteen ninety six, an early moving stairway at Coney Island was so new, people rode it just for fun.",
+   "dur": 6.737,
+   "at": 32.27
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 39.4
+  }
+ ],
+ "duration": 43.95
+}
