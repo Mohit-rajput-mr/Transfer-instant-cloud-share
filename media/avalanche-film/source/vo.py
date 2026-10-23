@@ -11,7 +11,7 @@ from faster_whisper import WhisperModel
 LINES = [
     ("hook",    "Do you know how rescuers find someone buried in an avalanche? Skiers carry a little radio called a beacon.", 1.10, 0.40),
     ("send",    "While you ski, your beacon quietly sends a pulse on four hundred fifty seven kilohertz, about once a second.", 1.05, 0.30),
-    ("search",  "If someone is buried, everyone else flips theirs to search. The signal gets stronger as they get closer, and the screen shows distance and direction.", 1.05, 0.30),
+    ("search",  "If someone is buried, everyone else switches theirs to search. The signal gets stronger as they get closer, and the screen shows distance and direction.", 1.05, 0.30),
     ("probe",   "Close in, they push a long probe into the snow until it hits something, then dig.", 1.05, 0.30),
     ("time",    "Speed matters. Most people found in the first fifteen minutes survive.", 1.10, 0.30),
     ("orbi",    "Orbi works the other way round. It never needs your exact spot. People nearby only see your rough area, a patch about forty by twenty kilometres.", 1.05, 0.40),
