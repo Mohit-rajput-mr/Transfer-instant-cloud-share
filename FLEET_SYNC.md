@@ -29,6 +29,11 @@ Severity: C critical · H high · M medium · L low. Status: FIXED (verified how
   crisp bright line plus a crescent stacked from 8 faint layers (inner curve wider than the outer), so it fades inward and
   its tips melt into the hairline (no hard edge); 2 rainbow glints on top/bottom edges; `.world.framed::after` = soft inner
   glow masked to the two lit corners. All sizes ÷ zoom. Verified locally (Chromium 2x).
+  + Corners bend the background like real glass (owner ask): MapWorld `GlassLenses` = four 110 px patches in screen space
+  just behind `.world` (a backdrop-filter INSIDE the scaled world sees nothing: verified), `backdrop-filter: url(#lens)`
+  with a displacement map drawn once per corner (lensMap) + slight RGB split. Follows the corners, glides with
+  `.world.glide`. Off on low-perf devices and where url() backdrop filters don't exist (Safari/Firefox: plain rim).
+  NOTE: SVG filter primitives must be direct children of <filter> (a <g> silently breaks the chain).
 - FIXED 2026-10-23 (H) — Downloads slow / stuck on "Unlocking" (owner: 4 MB took ages). Measured live (2 browsers, private
   space, 4 MB): unlock 0.36 s, stored copy not finished at the one check (404) → tied to the direct path → ~4 s handshake
   (new Supabase channel + ICE gather + answer) before bytes; on networks that block direct connections (STUN only, no

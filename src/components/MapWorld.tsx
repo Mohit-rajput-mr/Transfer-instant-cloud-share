@@ -1,7 +1,8 @@
 "use client";
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { LuMaximize, LuMinus, LuPlus } from "react-icons/lu";
 import { mapView } from "@/lib/map";
+import { isLow, onPerf } from "@/lib/perf";
 import { dragAt, overTrash, toTrash } from "@/lib/trash";
 import { TrashButton } from "./Trash";
 
@@ -420,6 +421,7 @@ export default function MapWorld({ W, H, band, children, fit, empty, framed, onR
         zoomAt(1.6, e.clientX - r.left, e.clientY - r.top, true);
       }}
     >
+      {framed && <GlassLenses W={W} H={H} view={view} glide={glide} />}
       <div
         className={`world${glide ? " glide" : ""}${view.k < FAR_K ? " far" : ""}${framed ? " framed" : ""}`}
         style={{ width: W, height: H, transform: `translate3d(${view.x}px, ${view.y}px, 0) scale(${view.k})`, "--mk": view.k } as CSSProperties}
@@ -451,6 +453,93 @@ function rrect(x: number, y: number, w: number, h: number, [tl, tr, br, bl]: Cor
   return `M${x + a[0]},${y}H${x + w - b[0]}A${b[0]},${b[1]} 0 0 1 ${x + w},${y + b[1]}V${y + h - d[1]}` +
     `A${d[0]},${d[1]} 0 0 1 ${x + w - d[0]},${y + h}H${x + e[0]}A${e[0]},${e[1]} 0 0 1 ${x},${y + h - e[1]}` +
     `V${y + a[1]}A${a[0]},${a[1]} 0 0 1 ${x + a[0]},${y}Z`;
+}
+
+// Glass corners bend what is behind them (the sky, the big words), like light through the curved edge of a pane.
+// Only four small corner patches run the filter (an SVG displacement map as backdrop-filter), drawn once, so the page
+// stays as light as before; browsers without url() backdrop filters (Safari) just show the rim, and slow devices skip it.
+const LENS = 110, LENS_R = 34, LENS_Z = 24, LENS_PX = 9;
+type CornerId = "tl" | "tr" | "br" | "bl";
+const CORNERS: CornerId[] = ["tl", "tr", "br", "bl"];
+
+/** one corner's displacement map: near the curved edge each pixel samples from further inside, along the edge's normal
+ *  (R = x shift, G = y shift, 128 = none), strongest at the rim, gone LENS_Z px in and toward the patch's far side */
+function lensMap(c: CornerId): string {
+  const cv = document.createElement("canvas");
+  cv.width = cv.height = LENS;
+  const g = cv.getContext("2d");
+  if (!g) return "";
+  const img = g.createImageData(LENS, LENS);
+  const fx = c === "tr" || c === "br", fy = c === "bl" || c === "br";
+  for (let y = 0; y < LENS; y++)
+    for (let x = 0; x < LENS; x++) {
+      // work as the top-left corner, then mirror
+      const u = fx ? LENS - 1 - x : x, v = fy ? LENS - 1 - y : y;
+      let d: number, nx = 0, ny = 0;
+      if (u < LENS_R && v < LENS_R) {
+        const dx = LENS_R - u, dy = LENS_R - v, r = Math.hypot(dx, dy) || 1;
+        d = LENS_R - r; nx = dx / r; ny = dy / r;
+      } else if (u < v) { d = u; nx = 1; } else { d = v; ny = 1; }
+      // fades out toward the patch's far side too, so the bend dies off along the edges with no seam
+      const far = Math.max(u, v) / LENS, tail = far < 0.45 ? 1 : far >= 1 ? 0 : (1 - (far - 0.45) / 0.55) ** 2;
+      const k = d >= 0 && d < LENS_Z ? (1 - d / LENS_Z) ** 2 * tail : 0;
+      const i = (y * LENS + x) * 4;
+      img.data[i] = 128 + 127 * k * nx * (fx ? -1 : 1);
+      img.data[i + 1] = 128 + 127 * k * ny * (fy ? -1 : 1);
+      img.data[i + 2] = 128;
+      img.data[i + 3] = 255;
+    }
+  g.putImageData(img, 0, 0);
+  return cv.toDataURL();
+}
+
+/** the refraction filters (one per corner): red, green and blue bend a little differently, so the edge splits light */
+function LensFilters({ id, maps }: { id: string; maps: Record<CornerId, string> }) {
+  const S = LENS_PX * 2, keep = (ch: number) => [0, 1, 2].map((r) => [0, 1, 2, 3].map((q) => (q === ch && r === ch ? 1 : 0)).join(" ") + " 0").join(" ") + " 0 0 0 1 0";
+  return (
+    <svg className="glass-defs" width="0" height="0" aria-hidden>
+      {CORNERS.map((c) => (
+        <filter key={c} id={`${id}lens${c}`} x="0" y="0" width="1" height="1" colorInterpolationFilters="sRGB">
+          <feImage href={maps[c]} x="0" y="0" width={LENS} height={LENS} preserveAspectRatio="none" result="m" />
+          {[1, 1.07, 1.14].map((f, ch) => (
+            <Fragment key={ch}>
+              <feDisplacementMap in="SourceGraphic" in2="m" scale={S * f} xChannelSelector="R" yChannelSelector="G" result={`d${ch}`} />
+              <feColorMatrix in={`d${ch}`} type="matrix" values={keep(ch)} result={`c${ch}`} />
+            </Fragment>
+          ))}
+          <feBlend in="c0" in2="c1" mode="screen" result="rg" />
+          <feBlend in="rg" in2="c2" mode="screen" />
+        </filter>
+      ))}
+    </svg>
+  );
+}
+
+/** the four corner lenses. They sit just behind the world in screen space (a backdrop filter inside the scaled world
+ *  sees nothing behind it), follow its corners, and glide with it (same transition as .world.glide). */
+function GlassLenses({ W, H, view, glide }: { W: number; H: number; view: { x: number; y: number; k: number }; glide: boolean }) {
+  const id = useId().replace(/:/g, "");
+  // maps drawn once in the browser (none on the server, on slow devices, or where url() backdrop filters don't exist)
+  const [maps, setMaps] = useState<Record<CornerId, string> | null>(null);
+  useEffect(() => {
+    if (isLow() || typeof CSS === "undefined" || !CSS.supports("backdrop-filter", "url(#x)")) return;
+    setMaps(Object.fromEntries(CORNERS.map((c) => [c, lensMap(c)])) as Record<CornerId, string>);
+    // the device turned out slow (frames dropping): back to the plain rim
+    return onPerf((t) => t === "low" && setMaps(null));
+  }, []);
+  // too small to bend anything worth seeing
+  if (!maps || W * view.k < LENS * 2.5 || H * view.k < LENS * 2.5) return null;
+  const x0 = view.x, y0 = view.y, x1 = view.x + W * view.k - LENS, y1 = view.y + H * view.k - LENS;
+  const at: Record<CornerId, [number, number]> = { tl: [x0, y0], tr: [x1, y0], br: [x1, y1], bl: [x0, y1] };
+  return (
+    <>
+      <LensFilters id={id} maps={maps} />
+      {CORNERS.map((c) => (
+        <i key={c} className={`glass-lens ${c}${glide ? " glide" : ""}`} aria-hidden
+          style={{ transform: `translate3d(${at[c][0]}px, ${at[c][1]}px, 0)`, backdropFilter: `url(#${id}lens${c})`, WebkitBackdropFilter: `url(#${id}lens${c})` }} />
+      ))}
+    </>
+  );
 }
 
 /** the public void's glass rim, after the owner's reference: light falls on two opposite corners only (top-right and

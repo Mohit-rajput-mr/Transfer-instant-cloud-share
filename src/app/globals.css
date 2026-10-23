@@ -2898,6 +2898,15 @@ em.hq-tag { font-style: normal; }
   -webkit-mask: radial-gradient(55% 70% at 100% 0%, #000, transparent 75%), radial-gradient(60% 55% at 0% 100%, #000, transparent 75%);
   mask: radial-gradient(55% 70% at 100% 0%, #000, transparent 75%), radial-gradient(60% 55% at 0% 100%, #000, transparent 75%); }
 .glass-edge { position: absolute; inset: 0; overflow: visible; pointer-events: none; z-index: -1; }
+/* the corner lenses (MapWorld GlassLenses): 110 px squares in screen space behind the world, clipped to the rounded corner */
+.glass-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.glass-lens { position: absolute; left: 0; top: 0; width: 110px; height: 110px; pointer-events: none; will-change: transform; }
+.glass-lens.glide { transition: transform 0.6s var(--ease-out); }
+html[data-perf="low"] .glass-lens.glide { transition-duration: 0.35s; }
+.glass-lens.tl { border-top-left-radius: 34px; }
+.glass-lens.tr { border-top-right-radius: 34px; }
+.glass-lens.br { border-bottom-right-radius: 34px; }
+.glass-lens.bl { border-bottom-left-radius: 34px; }
 .glass-edge .gl { stop-color: #fff; }
 .glass-edge .glass-base { fill: rgba(255, 255, 255, 0.13); }
 html[data-theme="light"] .glass-edge .gl { stop-color: #1e222a; }
