@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how rescuers find someone buried in an avalanche? Skiers carry a little radio called a beacon.",
+   "dur": 5.972,
+   "at": 0.35
+  },
+  {
+   "key": "send",
+   "text": "While you ski, your beacon quietly sends a pulse on four hundred fifty seven kilohertz, about once a second.",
+   "dur": 6.354,
+   "at": 6.72
+  },
+  {
+   "key": "search",
+   "text": "If someone is buried, everyone else flips theirs to search. The signal gets stronger as they get closer, and the screen shows distance and direction.",
+   "dur": 7.519,
+   "at": 13.38
+  },
+  {
+   "key": "probe",
+   "text": "Close in, they push a long probe into the snow until it hits something, then dig.",
+   "dur": 5.838,
+   "at": 21.2
+  },
+  {
+   "key": "time",
+   "text": "Speed matters. Most people found in the first fifteen minutes survive.",
+   "dur": 4.324,
+   "at": 27.33
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi works the other way round. It never needs your exact spot. People nearby only see your rough area, a patch about forty by twenty kilometres.",
+   "dur": 8.207,
+   "at": 31.96
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 40.56
+  }
+ ],
+ "duration": 45.11
+}
