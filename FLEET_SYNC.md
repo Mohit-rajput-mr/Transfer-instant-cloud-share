@@ -20,6 +20,9 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- FIXED 2026-10-23 (M) — Open <select> lists were white with white text (HQ: Countries, Objects, Activity…): the page
+  never said it was dark, so native controls used the light scheme while inheriting white text. :root color-scheme:
+  dark (Work light keeps its own) + dark <option>s. Verified computed styles on all 12 HQ selects, desktop + phone.
 - DONE 2026-10-23 (owner ask) — Anonymous spaces with a NAME + PASSCODE: the 4-character name is the slug's own 4
   (anon-NAME+4, unique among live anonymous spaces; knocking still works). The passcode never leaves the browser:
   PBKDF2-SHA256 (310k, salted with the name) gives the join code the server checks (passHash) and, separately, the

@@ -69,6 +69,10 @@ body {
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 button, a, label, summary, [role="button"], [role="menuitem"] { touch-action: manipulation; }
 input, textarea, select { font: inherit; color: inherit; }
+/* the site is dark: native controls (a <select>'s open list, date pickers, scrollbars) must be drawn dark too, or
+   they keep the browser's white list while taking the page's white text (unreadable). Work light sets its own. */
+:root { color-scheme: dark; }
+html:not([data-theme="light"]) option { background: #141414; color: #eee; }
 a { color: inherit; }
 ::selection { background: #fff; color: #000; }
 button:focus-visible, a:focus-visible { outline: 2px solid rgba(255,255,255,0.8); outline-offset: 2px; }
