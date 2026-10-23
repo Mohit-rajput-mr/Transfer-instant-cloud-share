@@ -2724,7 +2724,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             toast("Back in the public void");
           }} />}
           {map ? (
-            <MapWorld W={map.W} H={map.H} band={(space || inArchive) && !work ? ROOM_BAND[mode] : MAP_BAND[mode]} fit={fitAll} empty={!map.spots.size} onRect={setRect}
+            <MapWorld W={map.W} H={map.H} band={(space || inArchive) && !work ? ROOM_BAND[mode] : MAP_BAND[mode]} fit={fitAll} empty={!map.spots.size} framed={!space && !inArchive} onRect={setRect}
               onMoveItem={(key, dx, dy) => {
                 const p = map.spots.get(key);
                 if (!p) return;

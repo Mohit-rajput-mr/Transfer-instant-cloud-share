@@ -32,7 +32,7 @@ const HANDLE = ".tb-head, .bub-stack.on-map > header";
 const INNER = "button, a, input, textarea, select, label, form, .tb-row";
 const TEXTY = "input, textarea, select, [contenteditable], .tb-edit, .tb-take, .tb-redeem, .tb-route";
 
-export default function MapWorld({ W, H, band, children, fit, empty, onRect, onEarth, onMoveItem }: {
+export default function MapWorld({ W, H, band, children, fit, empty, framed, onRect, onEarth, onMoveItem }: {
   W: number;
   H: number;
   band: Band;
@@ -41,6 +41,8 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
   fit?: number;
   /** nothing on the map yet: no zoom tools */
   empty?: boolean;
+  /** draw the edge of the area (the public void): zooming out shows where it ends */
+  framed?: boolean;
   /** what is on screen (only that needs drawing) */
   onRect?: (r: Rect) => void;
   /** the Earth button: up to the globe */
@@ -421,7 +423,7 @@ export default function MapWorld({ W, H, band, children, fit, empty, onRect, onE
       }}
     >
       <div
-        className={`world${glide ? " glide" : ""}${view.k < FAR_K ? " far" : ""}`}
+        className={`world${glide ? " glide" : ""}${view.k < FAR_K ? " far" : ""}${framed ? " framed" : ""}`}
         style={{ width: W, height: H, transform: `translate3d(${view.x}px, ${view.y}px, 0) scale(${view.k})`, "--mk": view.k } as CSSProperties}
       >
         {children}
