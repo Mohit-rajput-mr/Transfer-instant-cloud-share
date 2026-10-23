@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a vending machine knows your coin is real? It checks it in less than a second.",
+   "dur": 5.675,
+   "at": 0.35
+  },
+  {
+   "key": "size",
+   "text": "First, the coin rolls down a narrow track, past sensors that measure how wide and how thick it is.",
+   "dur": 6.421,
+   "at": 6.42
+  },
+  {
+   "key": "metal",
+   "text": "Then it rolls through a magnetic field. Every metal mix reacts in its own way, almost like a fingerprint.",
+   "dur": 6.317,
+   "at": 13.15
+  },
+  {
+   "key": "magnet",
+   "text": "Older machines used a strong magnet too. Steel fakes stuck to it, and real coins slowed down just enough to land in the right place.",
+   "dur": 7.59,
+   "at": 19.76
+  },
+  {
+   "key": "gate",
+   "text": "If everything matches, a little gate flips, and the coin drops into the cash box. If not, it falls back to the return slot.",
+   "dur": 7.015,
+   "at": 27.65
+  },
+  {
+   "key": "close",
+   "text": "So that clunk you hear is a tiny inspection, finished before you blink.",
+   "dur": 4.944,
+   "at": 34.97
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 40.31
+  }
+ ],
+ "duration": 44.86
+}
