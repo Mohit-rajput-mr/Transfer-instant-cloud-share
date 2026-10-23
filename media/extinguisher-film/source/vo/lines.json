@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a fire extinguisher works? Fire needs three things. Heat, fuel, and oxygen. Take one away, and it dies.",
+   "dur": 9.258,
+   "at": 0.35
+  },
+  {
+   "key": "inside",
+   "text": "Inside, everything is under pressure. Squeeze the handle, a valve opens, and the pressure pushes it all out of the nozzle.",
+   "dur": 6.793,
+   "at": 10.01
+  },
+  {
+   "key": "types",
+   "text": "Water cools the fire down. Foam lays a blanket over the fuel. Carbon dioxide pushes the oxygen away.",
+   "dur": 6.599,
+   "at": 17.1
+  },
+  {
+   "key": "powder",
+   "text": "Dry powder goes one step further. It interrupts the chemical reaction that keeps the flames going.",
+   "dur": 5.131,
+   "at": 24.0
+  },
+  {
+   "key": "pass",
+   "text": "To use one, remember PASS. Pull the pin, aim at the base, squeeze, and sweep from side to side.",
+   "dur": 6.887,
+   "at": 29.43
+  },
+  {
+   "key": "close",
+   "text": "So a fire extinguisher just breaks the triangle, as fast as it can.",
+   "dur": 3.471,
+   "at": 36.62
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 40.49
+  }
+ ],
+ "duration": 45.04
+}
