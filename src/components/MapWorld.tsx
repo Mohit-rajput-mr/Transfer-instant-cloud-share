@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { LuEarth, LuMaximize, LuMinus, LuPlus } from "react-icons/lu";
 import { mapView } from "@/lib/map";
 import { dragAt, overTrash, toTrash } from "@/lib/trash";
@@ -426,6 +426,7 @@ export default function MapWorld({ W, H, band, children, fit, empty, framed, onR
         className={`world${glide ? " glide" : ""}${view.k < FAR_K ? " far" : ""}${framed ? " framed" : ""}`}
         style={{ width: W, height: H, transform: `translate3d(${view.x}px, ${view.y}px, 0) scale(${view.k})`, "--mk": view.k } as CSSProperties}
       >
+        {framed && <GlassEdge W={W} H={H} k={view.k} />}
         {children}
       </div>
       <div className="map-tools lg" data-no-pan>
@@ -441,5 +442,38 @@ export default function MapWorld({ W, H, band, children, fit, empty, framed, onR
         {onEarth && <button className="map-earth" onClick={onEarth} aria-label="See the whole Earth" title="See the whole Earth"><LuEarth /></button>}
       </div>
     </div>
+  );
+}
+
+/** rounded-rect path (clockwise) */
+function rrect(x: number, y: number, w: number, h: number, r: number) {
+  r = Math.max(0, Math.min(r, w / 2, h / 2));
+  return `M${x + r},${y}H${x + w - r}A${r},${r} 0 0 1 ${x + w},${y + r}V${y + h - r}A${r},${r} 0 0 1 ${x + w - r},${y + h}` +
+    `H${x + r}A${r},${r} 0 0 1 ${x},${y + h - r}V${y + r}A${r},${r} 0 0 1 ${x + r},${y}Z`;
+}
+
+/** the public void's glass rim: the inner edge curves wider than the outer one, so the light band is a hairline along the
+ *  sides and swells into a bright crescent at each corner (like the edge of a glass pane). Sized in screen px (÷ zoom). */
+function GlassEdge({ W, H, k }: { W: number; H: number; k: number }) {
+  const id = useId().replace(/:/g, "");
+  const px = 1 / k, R = 30 * px, Ri = 37 * px, w = 1.1 * px, g = Math.min(240 * px, Math.min(W, H) * 0.7);
+  const ring = rrect(0, 0, W, H, R) + rrect(w, w, W - 2 * w, H - 2 * w, Ri);
+  const glows: [string, number, number, string, number][] = [
+    ["tr", W, 0, "var(--gh)", 0.9], ["bl", 0, H, "var(--gh)", 0.8], ["tl", 0, 0, "var(--gh)", 0.45], ["br", W, H, "var(--gw)", 0.8],
+  ];
+  return (
+    <svg className="glass-edge" width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden>
+      <defs>
+        {glows.map(([n, cx, cy, c, o]) => (
+          <radialGradient key={n} id={`${id}${n}`} gradientUnits="userSpaceOnUse" cx={cx} cy={cy} r={g}>
+            <stop offset="0" style={{ stopColor: `rgb(${c})`, stopOpacity: o }} />
+            <stop offset="0.45" style={{ stopColor: `rgb(${c})`, stopOpacity: o * 0.35 }} />
+            <stop offset="1" style={{ stopColor: `rgb(${c})`, stopOpacity: 0 }} />
+          </radialGradient>
+        ))}
+      </defs>
+      <path d={ring} fillRule="evenodd" className="glass-base" />
+      {glows.map(([n]) => <path key={n} d={ring} fillRule="evenodd" fill={`url(#${id}${n})`} />)}
+    </svg>
   );
 }

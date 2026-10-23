@@ -20,10 +20,10 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
-- DONE 2026-10-23 (L, owner ask) — Public void edge: glass pane (owner reference: frosted fill, rim glowing white at the
-  corners, warm glint bottom-right; `.world.framed::before` rim + `::after` fill, masked gradients),
-  MapWorld `framed` prop, only on the public void). Width = 1.5px / zoom, so it stays thin on screen and shrinks with
-  the area when zooming out. Verified locally in Chromium (frame visible at fit zoom).
+- DONE 2026-10-23 (L, owner ask) — Public void edge = glass pane (owner's reference image): MapWorld `framed` (public void
+  only) renders `GlassEdge`, an SVG ring whose inner corner radius (37) is wider than the outer (30), so the light band is a
+  hairline on the sides and swells into a crescent at each corner; corner glows white (warm bottom-right); frosted fill =
+  `.world.framed::after`. All sizes ÷ zoom, so it stays crisp and shrinks with the area. Verified locally (Chromium 2x).
 - FIXED 2026-10-23 (H) — Downloads slow / stuck on "Unlocking" (owner: 4 MB took ages). Measured live (2 browsers, private
   space, 4 MB): unlock 0.36 s, stored copy not finished at the one check (404) → tied to the direct path → ~4 s handshake
   (new Supabase channel + ICE gather + answer) before bytes; on networks that block direct connections (STUN only, no
