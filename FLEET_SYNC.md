@@ -20,6 +20,20 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- DONE 2026-10-23 (owner ask) — Anonymous spaces with a NAME + PASSCODE: the 4-character name is the slug's own 4
+  (anon-NAME+4, unique among live anonymous spaces; knocking still works). The passcode never leaves the browser:
+  PBKDF2-SHA256 (310k, salted with the name) gives the join code the server checks (passHash) and, separately, the
+  content key (server never gets it). lib/space.ts createAnonPassSpace / joinAnonByName / passKeys (unit-tested);
+  POST /api/spaces {anon, name}; GET /api/anon-find?name= (migration 028 orbit_anon_find, applied + grants checked);
+  join reuses /api/spaces/[slug]/join and its wrong-passcode limits. UI: passcode field in the anonymous card, the gate
+  and Spaces → Create; Spaces → Browse takes name + passcode (empty passcode = knock). Passcode min 6 (the key comes
+  from it). Browser-tested with a mocked server (create → name shown; wrong pass refused; right pass → in the space).
+  RISK: a weak passcode can be guessed offline by whoever holds the server's hash (same as any passcode).
+- DONE 2026-10-23 (owner ask) — Anonymous screens read as a terminal: JetBrains Mono at normal width, sentence case,
+  calm buttons, green prompt; every card/drawer while anonymous, the void's words, the space title (html:not(#_) beats
+  Work). Plain "what anonymous means" lines under "You've gone anonymous" — only true claims. The owner asked for
+  "location shuffles every second / routed through many IPs": NOT written, Orbi doesn't do that (that's Tor).
+- FIXED 2026-10-23 (L) — React dev warning "getServerSnapshot should be cached": lib/trash.ts returned a new [] per call.
 - **2026-10-23 Space join: a taken name no longer blocks entry (owner ask).** Join used to answer 409 "is taken". Now `uniqueHandle` (src/lib/spaces.ts, tested) adds the next number at the end ("Mohit" → "Mohit 2"); the same device keeps its name. Also removed the card/box behind member avatars in Work (work.css `.room-crew`). Verified: unit test, prod build + Playwright (no background/border), live API after deploy.
 - **2026-10-21 Bubble life 30 min default, up to 8 h (owner ask).** Was fixed at 15 min (server fallback 15, allowed 5–30). Now `BUBBLE_LIVES` in `src/lib/limits.ts` (30 min, 1/2/4/8 h) is the one list for the composer picker ("Stays for"), `postBubble`, the API check and the ring. Hidden in a named space (bubble lives with the space). Copy updated (About, Upgrade). Verified: prod build + Playwright 1440/390, picker shows, note text follows the pick, POST sends life=480. DB `orbit_bubble_add` takes any int life (no migration).
 - FIXED 2026-10-21 (QA pass, not deployed yet) — (H) /fr /ar /ru SEO said 2 GB → 20 (lib/seo.test.ts checks every

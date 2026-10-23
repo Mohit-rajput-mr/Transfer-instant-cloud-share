@@ -5,7 +5,7 @@ import { BsIncognito } from "react-icons/bs";
 import { ANON_MINUTES, lastMinutes } from "@/lib/anon";
 import { useDialog } from "@/lib/dialog";
 import {
-  createSpace, joinSpace, knock, knockState, savedHandle, savedSpaces, searchSpaces,
+  ANON_PASS_MIN, createSpace, joinAnonByName, joinSpace, knock, knockState, savedHandle, savedSpaces, searchSpaces,
   type Knock, type SpaceHit, type SpaceInfo, type SpaceSession,
 } from "@/lib/space";
 
@@ -75,7 +75,7 @@ export default function SpacePanel(props: {
   /** the "Stay anonymous" switch (lib/anon.ts): named spaces show your name, so they are closed while it is on */
   anon?: boolean;
   /** make an anonymous space (random title, code and key; one link) and step in */
-  onAnonSpace?: (min?: number) => void;
+  onAnonSpace?: (min?: number, pass?: string) => void;
   copyAnonLink?: () => void;
 }) {
   const { current, info } = props;
@@ -85,6 +85,7 @@ export default function SpacePanel(props: {
   const ends = info?.ends ? new Date(info.ends).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : null;
   const [quitArm, setQuitArm] = useState(false);
   const [mins, setMins] = useState<number>(() => lastMinutes());
+  const [anonPass, setAnonPass] = useState("");
   // start: a space to look up, or the header's "+" (":create") / search (":search") buttons
   const [tab, setTab] = useState<Tab>(props.start === ":create" ? "create" : props.start ? "browse" : current ? "here" : "browse");
   const [q, setQ] = useState(props.start?.startsWith(":") ? "" : props.start ?? "");
@@ -226,7 +227,12 @@ export default function SpacePanel(props: {
                 <span className="mono dim">then you, the space and everything in it burn</span>
               </>
             )}
-            <button className="cta lg-press" onClick={() => props.onAnonSpace?.(mins)}>Create anonymous space <Arrow /></button>
+            <label className="anon-pass">
+              <span className="mono">Passcode <i>(optional)</i></span>
+              <input type="password" className="line-input" value={anonPass} onChange={(e) => setAnonPass(e.target.value.slice(0, 64))} placeholder={`${ANON_PASS_MIN}+ characters`} autoComplete="new-password" aria-label="Passcode for the new anonymous space (optional)" />
+              <small>{anonPass ? (anonPass.length >= ANON_PASS_MIN ? "It gets a 4-letter name: name + this passcode lets people in" : `At least ${ANON_PASS_MIN} characters`) : "Leave empty: only its link gets people in"}</small>
+            </label>
+            <button className="cta lg-press" disabled={!!anonPass && anonPass.length < ANON_PASS_MIN} onClick={() => props.onAnonSpace?.(mins, anonPass || undefined)}>{anonPass ? "Create with passcode" : "Create anonymous space"} <Arrow /></button>
           </div>
           {anon ? (
             <p className="note">Named spaces show your name to their members. Turn off Anonymous to make one.</p>
@@ -264,6 +270,8 @@ export default function SpacePanel(props: {
  */
 function KnockForm(props: { onEnter: (s: SpaceSession) => void }) {
   const [code, setCode] = useState("");
+  // with the space's passcode: straight in (no knock, nobody has to let you in)
+  const [pass, setPass] = useState("");
   const [k, setK] = useState<Knock | null>(null);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
@@ -275,6 +283,7 @@ function KnockForm(props: { onEnter: (s: SpaceSession) => void }) {
     setBusy(true);
     setMsg("");
     try {
+      if (pass) return enter.current(await joinAnonByName(code, pass));
       setK(await knock(code));
     } catch (e) {
       setMsg((e as Error).message);
@@ -312,12 +321,15 @@ function KnockForm(props: { onEnter: (s: SpaceSession) => void }) {
     );
   return (
     <div className="knock">
-      <span className="mono dim"><BsIncognito className="ic-inline" aria-hidden /> Anonymous code</span>
+      <span className="mono dim"><BsIncognito className="ic-inline" aria-hidden /> Anonymous space: its 4-letter name</span>
       <div className="knock-row">
-        <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase().replace(/^ANON-?/, "").replace(/[^A-Z0-9]/g, "").slice(0, 4))}
-          onKeyDown={(e) => e.key === "Enter" && go()} placeholder="A1B2" inputMode="text" autoCapitalize="characters" autoComplete="off" spellCheck={false} aria-label="4-letter anonymous code" />
-        <button className="cta lg-press" disabled={!ok || busy} onClick={go}>{busy ? "…" : "Knock"}</button>
+        <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase().replace(/^ANON(YMOUS)?[-·\s]*/, "").replace(/[^A-Z0-9]/g, "").slice(0, 4))}
+          onKeyDown={(e) => e.key === "Enter" && go()} placeholder="A1B2" inputMode="text" autoCapitalize="characters" autoComplete="off" spellCheck={false} aria-label="4-letter anonymous space name" />
+        <input type="password" className="knock-pass" value={pass} onChange={(e) => setPass(e.target.value.slice(0, 64))}
+          onKeyDown={(e) => e.key === "Enter" && go()} placeholder="Passcode" autoComplete="off" aria-label="Its passcode (empty: knock instead)" />
+        <button className="cta lg-press" disabled={!ok || busy} onClick={go}>{busy ? "…" : pass ? "Enter" : "Knock"}</button>
       </div>
+      <span className="knock-note dim">With the passcode you go straight in. Without it you knock and someone inside lets you in.</span>
       {msg && <span className="knock-note">{msg}</span>}
     </div>
   );

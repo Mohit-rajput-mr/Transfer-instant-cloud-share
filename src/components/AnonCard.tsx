@@ -1,10 +1,10 @@
 "use client";
 import { useState, type ReactNode } from "react";
-import { LuCloud, LuEyeOff, LuMapPinOff, LuShieldCheck, LuUserRoundX } from "react-icons/lu";
+import { LuCloud, LuEyeOff, LuLink, LuMapPinOff, LuShieldCheck, LuTimer, LuUserRoundX } from "react-icons/lu";
 import { BsIncognito } from "react-icons/bs";
 import { ANON_MINUTES, lastMinutes } from "@/lib/anon";
 import { Pop } from "./Spaces";
-import type { SpaceSession } from "@/lib/space";
+import { ANON_PASS_MIN, type SpaceSession } from "@/lib/space";
 
 // "Stay anonymous" (lib/anon.ts): the explainer, the "you're anonymous" status, the gate in front of every send in the
 // public void, the join card of an anonymous link and the link itself. The copy says what Orbi does NOT keep or share,
@@ -26,7 +26,7 @@ export function AnonFacts() {
 }
 
 /** the explainer's lead line (also on the privacy page): about the people you send to, not Orbi's servers */
-export const ANON_LEAD = "Become a ghost. No location, no identity shown to other users. Send anonymously.";
+export const ANON_LEAD = "Become a ghost. No login, no name, no location. Sender and receiver never meet: files cross through the encrypted cloud, in a temporary space off the map that burns when your time is up.";
 
 /** what still happens while anonymous */
 const ANON_STILL = [
@@ -41,6 +41,17 @@ const ANON_STILL = [
 /** the same, as a plain list (the privacy page) */
 export function AnonStillList() {
   return <ul>{ANON_STILL.map((t) => <li key={t}>{t}</li>)}</ul>;
+}
+
+/** three things to read at a glance (the full list is in AnonFacts / Still) */
+function Points() {
+  return (
+    <ul className="anon-pts" data-keep-words>
+      <li><LuLink aria-hidden /><span>One link gets people in</span></li>
+      <li><LuShieldCheck aria-hidden /><span>Encrypted in your browser</span></li>
+      <li><LuTimer aria-hidden /><span>Burns when your time is up</span></li>
+    </ul>
+  );
 }
 
 function Still({ open }: { open: boolean }) {
@@ -64,8 +75,10 @@ export default function AnonCard(props: {
   /** turn it on for this many minutes (5 to 30): then everything burns */
   onTurnOn: (min: number) => void;
   onTurnOff: () => void;
-  /** make an anonymous space and carry on (the gate: with the same files) */
-  onCreate: () => Promise<void>;
+  /** make an anonymous space and carry on (the gate: with the same files); with a passcode: its name + passcode open it */
+  onCreate: (pass?: string) => Promise<void>;
+  /** go to where a name + passcode (or a knock) gets you into someone's anonymous space */
+  onEnterByName?: () => void;
   onPick: (s: SpaceSession) => void;
   /** the link opened: the title worked out from it, and joining */
   join?: { title: string; go: () => Promise<void> };
@@ -93,6 +106,21 @@ export default function AnonCard(props: {
     await f().catch(() => {});
     setBusy(false);
   };
+  // optional: a passcode makes the new space open with its 4-character name + this passcode (as well as its link)
+  const [pass, setPass] = useState("");
+  const passOk = pass.length === 0 || pass.length >= ANON_PASS_MIN;
+  const passBox = (
+    <label className="anon-pass">
+      <span className="mono">Passcode <i>(optional)</i></span>
+      <input type="password" className="line-input" value={pass} onChange={(e) => setPass(e.target.value.slice(0, 64))} placeholder={`${ANON_PASS_MIN}+ characters`} autoComplete="new-password" aria-label="Passcode for the new space (optional)" />
+      <small>{pass ? (passOk ? "People get in with the space's 4-letter name + this passcode" : `At least ${ANON_PASS_MIN} characters`) : "Leave empty: only the link gets people in"}</small>
+    </label>
+  );
+  const createBtn = (label: string) => (
+    <button className="cta lg-press" disabled={busy || !passOk} onClick={run(() => props.onCreate(pass || undefined))}>{busy ? "Creating…" : pass ? `${label} with passcode` : label}</button>
+  );
+  const enterBtn = props.onEnterByName && <button className="ghost-btn lg-press" onClick={props.onEnterByName}>Have a name + passcode? Enter</button>;
+
   const share = typeof navigator !== "undefined" && !!navigator.share && !!props.link;
   const doShare = () => props.link && navigator.share?.({ title: props.space?.title ?? "Anonymous space", url: props.link }).catch(() => {});
   const ring = <i className="geo-ring anon-ring" aria-hidden><BsIncognito /></i>;
@@ -154,9 +182,12 @@ export default function AnonCard(props: {
     return card("Anonymous", (
       <>
         <h3 className="wide">You&apos;re anonymous</h3>
-        <p>Anonymous sends go into a private space of their own. Share it with one link: whoever has it can get in and open what you send.</p>
+        <p>What you send goes into your own private space, not the open void.</p>
+        <Points />
         {savedList("Send into")}
-        <button className="cta lg-press" disabled={busy} onClick={run(props.onCreate)}>{busy ? "Creating…" : "Create anonymous space"}</button>
+        {passBox}
+        {createBtn("Create anonymous space")}
+        {enterBtn}
         <button className="geo-later mono" onClick={props.onClose}>Just look around</button>
         {mode === "status" && (
           <>
@@ -171,9 +202,11 @@ export default function AnonCard(props: {
     return card("Send anonymously", (
       <>
         <h3 className="wide">Send anonymously</h3>
-        <p>Everything in the public void is seen worldwide and carries your rough area and network, so anonymous sends go into an anonymous space instead. Only people with its link see what&apos;s in it.</p>
+        <p>The open void is seen worldwide and shows your area and network. Anonymous sends go into your own private space instead.</p>
+        <Points />
         {savedList("Into")}
-        <button className="cta lg-press" disabled={busy} onClick={run(props.onCreate)}>{busy ? "Creating…" : "Create anonymous space and continue"}</button>
+        {passBox}
+        {createBtn("Create space and continue")}
         <button className="geo-later mono" onClick={props.onClose}>Cancel</button>
       </>
     ));
@@ -191,7 +224,14 @@ export default function AnonCard(props: {
   // "link": right after the first send into a new anonymous space, or when the link couldn't be copied
   return card("Share the link", (
     <>
-      <h3 className="wide">Share the link</h3>
+      <h3 className="wide">{space?.named ? "Your space is ready" : "Share the link"}</h3>
+      {space?.named && (
+        <div className="anon-name" data-keep-words>
+          <span className="mono">Name</span>
+          <b>{space.slug.slice(5, 9).toUpperCase()}</b>
+          <small>Give people this name and your passcode (Spaces → Browse), or send the link below.</small>
+        </div>
+      )}
       <input readOnly className="line-input anon-link" value={props.link ?? ""} onFocus={(e) => e.currentTarget.select()} aria-label="Anonymous link" />
       <p>It holds the space&apos;s code and its key. Anyone who has it can get in and open what&apos;s sent here, so send it only to the person you mean. Orbi never sees the key: it stays after the # in the link.</p>
       <button className="cta lg-press" onClick={props.onCopy}>Copy link</button>

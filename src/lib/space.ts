@@ -21,6 +21,8 @@ export interface SpaceSession {
   // anonymous spaces (lib/anon.ts), local only: this device's id in it, the join code and the content key
   // (the key never reaches Orbi: it rides in the link's #fragment)
   anon?: true;
+  /** an anonymous space that its 4-character name and a passcode open (lib/space.ts createAnonPassSpace) */
+  named?: true;
   anonId?: string;
   code?: string;
   key?: string;
@@ -143,6 +145,57 @@ export async function joinAnonSpace(slug: string, code: string, key: string): Pr
   const s = await post<SpaceSession>(`/api/spaces/${slug}/join`, { anon: true, pass: code, deviceId: anonId });
   return { ...s, anon: true, anonId, code, key };
 }
+// ---- anonymous spaces with a name and a passcode: a 4-character name (the slug's own 4, so knocking works too) and a
+// passcode the creator picks. The passcode never leaves the browser: it is stretched (PBKDF2, salted with the name) into
+// the join code the server checks and, separately, into the content key, which the server never gets.
+export const ANON_NAME_CHARS = "abcdefghjkmnpqrstuvwxyz23456789";
+export const ANON_PASS_MIN = 6;
+export const anonName = () => Array.from(crypto.getRandomValues(new Uint8Array(4)), (b) => ANON_NAME_CHARS[b % ANON_NAME_CHARS.length]).join("");
+export const cleanAnonName = (s: string) => s.toLowerCase().trim().replace(/^anon(ymous)?[-·\s]*/, "").replace(/[^a-z0-9]/g, "").slice(0, 4);
+export async function passKeys(name: string, pass: string): Promise<{ code: string; key: string }> {
+  const enc = new TextEncoder();
+  const base = await crypto.subtle.importKey("raw", enc.encode(pass), "PBKDF2", false, ["deriveBits"]);
+  const bits = (use: string, n: number) =>
+    crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: enc.encode(`orbit-anon-${use}:${name.toLowerCase()}`), iterations: 310_000 }, base, n * 8).then((b) => new Uint8Array(b));
+  const [c, k] = await Promise.all([bits("join", 12), bits("key", 16)]);
+  const code = Array.from(c, (b) => b.toString(16).padStart(2, "0")).join("");
+  const key = btoa(String.fromCharCode(...k)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return { code, key };
+}
+/** a new anonymous space that a name and a passcode open (and its link, like any anonymous space) */
+export async function createAnonPassSpace(pass: string): Promise<SpaceSession> {
+  for (let i = 0; i < 5; i++) {
+    const name = anonName(), anonId = newAnonId();
+    const { code, key } = await passKeys(name, pass);
+    try {
+      const s = await post<SpaceSession>("/api/spaces", { anon: true, name, pass: code, deviceId: anonId, sid: anonSession()?.id });
+      return { ...s, anon: true, named: true, anonId, code, key };
+    } catch (e) {
+      if ((e as { status?: number }).status !== 409) throw e;
+    }
+  }
+  throw new Error("Couldn't find a free name, try again");
+}
+/** step into an anonymous space with its name and passcode */
+export async function joinAnonByName(name: string, pass: string): Promise<SpaceSession> {
+  const n = cleanAnonName(name);
+  const r = await fetch(`/api/anon-find?name=${n}`, { cache: "no-store" }).catch(() => null);
+  const slugs = ((await r?.json().catch(() => null)) as { slugs?: string[] } | null)?.slugs ?? [];
+  if (!r?.ok) throw new Error("Couldn't look that name up, try again");
+  if (!slugs.length) throw new Error(`No live anonymous space called ${n.toUpperCase()}`);
+  const { code, key } = await passKeys(n, pass);
+  let last: Error | null = null;
+  for (const slug of slugs) {
+    try {
+      return { ...(await joinAnonSpace(slug, code, key)), named: true };
+    } catch (e) {
+      last = e as Error;
+      if ((e as { status?: number }).status === 429) break;
+    }
+  }
+  throw last && (last as { status?: number }).status === 429 ? last : new Error("Wrong name or passcode");
+}
+
 /** the only way in: the code and the key sit after the #, which browsers never send to a server */
 export const anonLink = (s: SpaceSession) => `${location.origin}${homePath()}?space=${s.slug}#j=${s.code}&k=${s.key}`;
 /** the key "open" files in the active anonymous space are encrypted with (instead of the well-known OPEN_PASS) */

@@ -46,7 +46,9 @@ const subscribe = (f: () => void) => (subs.add(f), () => void subs.delete(f));
 const EMPTY = new Set<string>();
 /** the trashed keys: re-renders when something goes in or comes back */
 export const useTrash = () => useSyncExternalStore(subscribe, () => keys, () => EMPTY);
-export const useTrashList = () => useSyncExternalStore(subscribe, () => list, () => [] as Trashed[]);
+// the server snapshot must be the same object every call (a fresh [] each time makes React warn and re-render)
+const NO_TRASH: Trashed[] = [];
+export const useTrashList = () => useSyncExternalStore(subscribe, () => list, () => NO_TRASH);
 
 // ---- the drop zone: shown while anything is dragged, grows when the pointer comes close ----
 let zone: HTMLElement | null = null;
