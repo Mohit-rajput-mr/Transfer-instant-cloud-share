@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how popcorn pops? Every kernel is a tiny pressure cooker.",
+   "dur": 3.934,
+   "at": 0.35
+  },
+  {
+   "key": "inside",
+   "text": "Inside the hard shell is soft starch, and a little bit of water, about fourteen percent.",
+   "dur": 4.726,
+   "at": 4.68
+  },
+  {
+   "key": "heat",
+   "text": "Heat it, and the water turns to steam. The shell is so tough that the steam can't get out.",
+   "dur": 4.793,
+   "at": 9.71
+  },
+  {
+   "key": "pop",
+   "text": "At around one hundred eighty degrees, the pressure inside is about nine times the air around us. The shell bursts.",
+   "dur": 6.199,
+   "at": 14.8
+  },
+  {
+   "key": "foam",
+   "text": "The hot starch puffs out like foam and sets in a split second, turning the kernel inside out.",
+   "dur": 5.873,
+   "at": 21.3
+  },
+  {
+   "key": "dud",
+   "text": "Kernels that have dried out don't have enough steam, so they never pop.",
+   "dur": 3.668,
+   "at": 27.48
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 31.54
+  }
+ ],
+ "duration": 36.09
+}
