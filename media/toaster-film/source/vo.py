@@ -11,8 +11,8 @@ from faster_whisper import WhisperModel
 LINES = [
     ("hook",    "Do you know how a toaster knows when to pop? It's a spring, a magnet, and a little timer.", 1.10, 0.40),
     ("lever",   "Pushing the lever down stretches a spring and closes a switch, so current flows.", 1.05, 0.30),
-    ("heat",    "Thin nichrome wires glow red hot, hundreds of degrees, and toast the bread with infrared heat.", 1.05, 0.30),
-    ("hold",    "An electromagnet holds the lever down, while a simple timer counts. The darkness dial just changes how long.", 1.05, 0.30),
+    ("heat",    "Thin nichrome wires glow red hot at hundreds of degrees, and toast the bread with infrared heat.", 1.05, 0.30),
+    ("hold",    "An electromagnet holds the lever down, while a simple timer counts. The darkness dial sets how long it counts.", 1.05, 0.30),
     ("pop",     "When time is up, the magnet lets go, the spring snaps back, and up comes your toast.", 1.10, 0.30),
     ("old",     "Older toasters used a strip of two metals that bends as it heats, and trips the catch instead.", 1.05, 0.40),
     ("end",     "Orbi Transfer dot com. Now you know!", 1.05, 0.00),
@@ -21,7 +21,7 @@ LINES = [
 torch.set_num_threads(4)
 tts = ChatterboxTTS.from_pretrained(device="cpu")
 asr = WhisperModel("small.en", device="cpu", compute_type="int8")
-norm = lambda s: re.sub(r"[^a-z0-9 ]", "", s.lower().replace("orbee", "orbi").replace("orby", "orbi").replace("thirty", "30").replace("123456","one two three four five six").replace("wi-fi","wifi").replace("air drop","airdrop").replace("42","forty two").replace("40","forty").replace("color","colour").replace("1783","seventeen eighty three").replace("100","a hundred").replace("vapor","vapour").replace("nickrome","nichrome").replace("nicrome","nichrome").replace("nichrom ","nichrome ")).split()
+norm = lambda s: re.sub(r"[^a-z0-9 ]", "", s.lower().replace("orbee", "orbi").replace("orby", "orbi").replace("thirty", "30").replace("123456","one two three four five six").replace("wi-fi","wifi").replace("air drop","airdrop").replace("42","forty two").replace("40","forty").replace("color","colour").replace("1783","seventeen eighty three").replace("100","a hundred").replace("vapor","vapour").replace("red-hot","red hot").replace("nickrome","nichrome").replace("nicrome","nichrome").replace("nichrom ","nichrome ")).split()
 
 
 def trim(y, sr):
