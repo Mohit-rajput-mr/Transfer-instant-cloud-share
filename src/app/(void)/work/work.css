@@ -405,8 +405,9 @@ html[data-ui="work"] .room-glass { display: none !important; }
 html[data-ui="work"] .room-top { top: 16px !important; width: calc(100% - 140px) !important; left: 50% !important; }
 html[data-ui="work"] .room-name b { font: 600 18px/1.2 var(--w-font) !important; text-transform: none !important; letter-spacing: -0.01em !important; color: var(--w-text); }
 html[data-ui="work"] .room-name .mono { color: var(--w-text-3); font: 500 11.5px/1 var(--w-font); }
-html[data-ui="work"] .room-crew .you, html[data-ui="work"] .room-crew > * { border-radius: 7px !important; }
-html[data-ui="work"] .room-crew > button, html[data-ui="work"] .room-crew > span { background: var(--w-surface) !important; border: 1px solid var(--w-border-2) !important; color: var(--w-text) !important; box-shadow: var(--w-shadow-s) !important; }
+/* members: just the round avatar and the name, no card behind them (owner 2026-10-23) */
+html[data-ui="work"] .room-crew > button, html[data-ui="work"] .room-crew > span { background: none !important; border: 0 !important; box-shadow: none !important; color: var(--w-text) !important; }
+html[data-ui="work"] .room-crew .crew span { color: var(--w-text-3); }
 html[data-ui="work"] .room-exit { background: var(--w-surface) !important; border: 1px solid var(--w-border-2) !important; color: var(--w-text) !important; border-radius: 8px !important; }
 html[data-ui="work"] .void.in-space { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--w-accent) 35%, transparent); }
 

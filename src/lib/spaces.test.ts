@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SPACE_LIFE_MS, cleanHandle, closesAt, tagName, untag, type SpaceMeta } from "./spaces";
+import { SPACE_LIFE_MS, cleanHandle, closesAt, uniqueHandle, tagName, untag, type SpaceMeta } from "./spaces";
 
 const meta = (m: Partial<SpaceMeta>): SpaceMeta => ({ slug: "kech", title: "Kech", priv: false, pass: null, owner: "o", at: 1_000_000, ...m });
 
@@ -30,4 +30,13 @@ describe("cleanHandle", () => {
   it("strips the tag delimiters so a name can't forge tags", () => expect(cleanHandle("a⟪s=x;b=y⟫|/z")).toBe("as=xb=yz".replace(/[=;]/g, "")));
   it("caps at 24 characters and trims", () => expect(cleanHandle("  " + "x".repeat(40) + " ")).toBe("x".repeat(24)));
   it("non-strings are empty", () => expect(cleanHandle(42)).toBe(""));
+});
+
+describe("uniqueHandle", () => {
+  it("keeps a free name and numbers a taken one at the end", () => {
+    expect(uniqueHandle("Mohit", [])).toBe("Mohit");
+    expect(uniqueHandle("Mohit", ["mohit"])).toBe("Mohit 2");
+    expect(uniqueHandle("Mohit", ["Mohit", "Mohit 2"])).toBe("Mohit 3");
+    expect(uniqueHandle("x".repeat(24), ["x".repeat(24)])).toBe("x".repeat(22) + " 2");
+  });
 });

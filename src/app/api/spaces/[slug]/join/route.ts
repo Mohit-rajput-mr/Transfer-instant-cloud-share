@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { clean, netHash } from "@/lib/server";
-import { addMember, anonAlias, chanFor, checkPass, cleanHandle, devHash, getMeta, roster, tokenFor, validSlug } from "@/lib/spaces";
+import { addMember, anonAlias, chanFor, checkPass, cleanHandle, devHash, getMeta, roster, tokenFor, uniqueHandle, validSlug } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
 
@@ -11,11 +11,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const { slug } = await params;
   const b = await req.json().catch(() => null);
   const deviceId = clean(b?.deviceId, 40);
-  const handle = cleanHandle(b?.handle);
+  const typed = cleanHandle(b?.handle);
   if (!validSlug(slug) || !deviceId) return NextResponse.json({ error: "bad request" }, { status: 400 });
   const meta = await getMeta(slug);
   // an anonymous space gives every member an alias: a typed name is ignored
-  if (!handle && !meta?.anon) return NextResponse.json({ error: "Pick a name for yourself" }, { status: 400 });
+  if (!typed && !meta?.anon) return NextResponse.json({ error: "Pick a name for yourself" }, { status: 400 });
   if (!meta) return NextResponse.json({ error: "No such space" }, { status: 404 });
   const dh = devHash(deviceId);
   const r = await roster(slug, true);
@@ -38,8 +38,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     await addMember(slug, dh, alias);
     return NextResponse.json({ slug, title: meta.title, priv: meta.priv, handle: alias, token: tokenFor(slug, dh), chan: chanFor(slug), anon: true });
   }
-  if (r.members.some((m) => m.dh !== dh && m.handle.toLowerCase() === handle.toLowerCase()))
-    return NextResponse.json({ error: `"${handle}" is taken in this space. Pick another name` }, { status: 409 });
+  // a name someone else holds gets a number at the end ("Mohit 2"); the same device coming back keeps its name
+  const handle = uniqueHandle(typed, r.members.filter((m) => m.dh !== dh).map((m) => m.handle));
   await addMember(slug, dh, handle);
   return NextResponse.json({ slug, title: meta.title, priv: meta.priv, work: !!meta.work, handle, token: tokenFor(slug, dh), chan: chanFor(slug) });
 }

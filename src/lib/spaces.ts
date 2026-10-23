@@ -126,6 +126,15 @@ export function anonAlias(dh: string, taken: string[]) {
   }
   return "Anon-" + dh.slice(0, 8).toUpperCase();
 }
+/** a taken name gets the next free number at the end ("Mohit" → "Mohit 2"), so nobody is turned away for a name */
+export function uniqueHandle(handle: string, taken: string[]) {
+  const t = new Set(taken.map((x) => x.toLowerCase()));
+  if (!t.has(handle.toLowerCase())) return handle;
+  for (let n = 2; ; n++) {
+    const tail = ` ${n}`, h = handle.slice(0, 24 - tail.length).trimEnd() + tail;
+    if (!t.has(h.toLowerCase())) return h;
+  }
+}
 export const isAnonSpace = async (slug: string) => (await getMeta(slug))?.anon === true;
 
 export const checkPass = (meta: SpaceMeta, pass: unknown) => !meta.priv || (typeof pass === "string" && !!meta.pass && same(passHash(meta.slug, pass), meta.pass));
