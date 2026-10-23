@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>How a car factory works</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+scene.background = new THREE.Color(0x161a22);
+scene.add(new THREE.HemisphereLight(0xf2f4ff, 0x22242a, 1.0)); { const dl = new THREE.DirectionalLight(0xffffff, 1.4); dl.position.set(6, 14, 10); scene.add(dl); }
+const segTo = (m, p, q) => { m.position.copy(p).add(q).multiplyScalar(0.5); m.scale.y = Math.max(0.001, p.distanceTo(q)); m.quaternion.setFromUnitVectors(V(0, 1, 0), q.clone().sub(p).normalize()); };
+const FLOOR = new THREE.Mesh(new THREE.PlaneGeometry(140, 60), new THREE.MeshStandardMaterial({ color: 0x3a3e46, roughness: 0.85 })); FLOOR.rotation.x = -Math.PI / 2; scene.add(FLOOR);
+const BELT = new THREE.Mesh(new THREE.BoxGeometry(76, 0.3, 3.4), new THREE.MeshStandardMaterial({ color: 0x22252a, roughness: 0.6 })); BELT.position.y = 0.15; scene.add(BELT);
+{ for (const z of [-1.9, 1.9]) { const s = new THREE.Mesh(new THREE.BoxGeometry(76, 0.12, 0.12), new THREE.MeshStandardMaterial({ color: 0xffd04a })); s.position.set(0, 0.32, z); scene.add(s); } }
+const ST = [-12, -4, 4, 12, 20], STN = ["doors", "seats", "wheels", "paint", "test"];
+const ARMS = ST.map((x, i) => { const g = new THREE.Group(); g.position.set(x, 0, -3.2); scene.add(g); const base = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 0.6, 16), new THREE.MeshStandardMaterial({ color: 0xff8a1a })); base.position.y = 0.3; g.add(base);
+  const a1 = new THREE.Group(); a1.position.y = 0.6; g.add(a1); const s1 = new THREE.Mesh(new THREE.BoxGeometry(0.4, 2.6, 0.4), base.material); s1.position.y = 1.3; a1.add(s1); const a2 = new THREE.Group(); a2.position.y = 2.6; a1.add(a2); const s2 = new THREE.Mesh(new THREE.BoxGeometry(0.32, 2.2, 0.32), base.material); s2.position.y = 1.1; a2.add(s2); const tip = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshStandardMaterial({ color: 0x30343c })); tip.position.y = 2.2; a2.add(tip); g.userData = { a1, a2, tip, i }; return g; });
+// cars
+const PRIMER = 0x9aa0a8, PAINT = 0xd8242c;
+const mkCar = () => { const g = new THREE.Group(); scene.add(g); const body = new THREE.Mesh(new THREE.BoxGeometry(4, 0.9, 2), new THREE.MeshStandardMaterial({ color: PRIMER, metalness: 0.4, roughness: 0.4 })); body.position.y = 1.05; g.add(body);
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.9, 1.8), new THREE.MeshStandardMaterial({ color: 0x8ab0d0, transparent: true, opacity: 0.45, roughness: 0.1 })); cab.position.set(-0.2, 1.95, 0); g.add(cab);
+  const doors = [-1, 1].map((s) => { const d = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.8, 0.08), body.material); d.position.set(-0.2, 1.1, s * 1.04); g.add(d); return d; });
+  const seats = [-0.45, 0.45].map((z) => { const s = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.55), new THREE.MeshStandardMaterial({ color: 0x2a2a30 })); s.position.set(-0.5, 1.75, z); g.add(s); return s; });
+  const wheels = [[-1.3, -1], [-1.3, 1], [1.3, -1], [1.3, 1]].map(([x, z]) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.35, 20), new THREE.MeshStandardMaterial({ color: 0x15161a })); w.rotation.x = Math.PI / 2; w.position.set(x, 0.75, z * 1.05); g.add(w); return w; });
+  g.userData = { body, cab, doors, seats, wheels }; return g; };
+const CARS = Array.from({ length: 13 }, mkCar);
+// sparks + paint mist
+const SPARK = Array.from({ length: 40 }, () => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.05, 5, 4), glow(0xffd070, { transparent: true })); m.userData = { d: V(rnd() - 0.5, rnd() * 0.8 + 0.2, rnd() - 0.5).normalize(), o: rnd() }; scene.add(m); return m; });
+const MIST = Array.from({ length: 30 }, () => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff4a4a, transparent: true, depthWrite: false })); m.userData = { o: rnd(), x: (rnd() - 0.5) * 2, y: rnd() }; scene.add(m); return m; });
+const SEPIA = document.createElement("div"); SEPIA.className = "ov"; S(SEPIA, { inset: "0", background: "rgba(200,150,80,0.45)", mixBlendMode: "overlay", opacity: 0, zIndex: 15 }); document.body.appendChild(SEPIA);
+// Orbi Work board
+const BOARD = document.createElement("div"); BOARD.className = "ov"; S(BOARD, { left: "60px", right: "60px", top: "420px", height: "760px", display: "flex", gap: "22px", opacity: 0, zIndex: 30 });
+BOARD.innerHTML = ["Doing", "Review", "Done"].map((h, i) => `<div style="flex:1;border-radius:22px;background:rgba(6,12,10,0.92);border:2px solid rgba(61,255,140,0.35);padding:22px;position:relative"><div style="font:700 30px M;letter-spacing:0.1em;color:${["#ffd04a", "#5ab8ff", "#3dff8c"][i]}">${h.toUpperCase()}</div></div>`).join("") + `<div id="wk" style="position:absolute;width:250px;padding:20px;border-radius:16px;background:#fff;color:#111;font:800 30px/1.2 D;box-shadow:0 20px 40px rgba(0,0,0,0.5)">Fix login bug<div style="font:600 22px M;color:#666;margin-top:8px">@lea</div></div>`; document.body.appendChild(BOARD);
+window.render = async function (t) { cam.up.set(0, 1, 0);
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  const isF = t >= A("ford") && t < A("robots"), isO = t >= A("orbi"), v = isF ? 0.35 : 1.2;
+  const off = t < A("ford") ? t * 1.2 : t < A("robots") ? A("ford") * 1.2 + (t - A("ford")) * 0.35 : A("ford") * 1.2 + (A("robots") - A("ford")) * 0.35 + (t - A("robots")) * 1.2;
+  CARS.forEach((g, i) => { const x = ((off + i * 6) % 78) - 39; g.position.set(x, 0.3, 0); const u = g.userData; const has = (k) => x > ST[k] + 0.5;
+    u.doors.forEach((d) => (d.visible = has(0) && !isF)); u.seats.forEach((s) => (s.visible = has(1) && !isF)); u.wheels.forEach((w) => { w.visible = has(2) || isF; w.rotation.y = 0; }); u.cab.visible = !isF; u.body.material.color.set(isF ? 0x3a3530 : has(3) ? PAINT : PRIMER); u.body.scale.set(1, isF ? 0.35 : 1, isF ? 0.7 : 1); u.body.position.y = isF ? 0.75 : 1.05; g.visible = !isO; });
+  ARMS.forEach((g) => { const { a1, a2, i } = g.userData; a1.rotation.x = 0.35 + Math.sin(t * 2.2 + i) * 0.25; a2.rotation.x = 0.9 + Math.sin(t * 2.2 + i + 1) * 0.3; g.visible = !isF && !isO; });
+  const sk = win(t, A("robots") + 0.6, A("check"), 0.3, 0.3); SPARK.forEach((m) => { const u = m.userData, f = (t * 1.5 + u.o) % 1; m.visible = sk > 0.01; m.position.set(-12, 1.6, -1.1).addScaledVector(u.d, f * 2.2).add(V(0, -f * f * 1.5, 0)); m.material.opacity = sk * (1 - f); });
+  MIST.forEach((m) => { const u = m.userData, f = (t * 0.8 + u.o) % 1; m.visible = sk > 0.01; m.position.set(12 + u.x, 2.6 - f * 1.4 + u.y * 0.3, -1.4 + f * 1.6); m.scale.setScalar(0.6 + f * 1.4); m.material.opacity = 0.35 * sk * (1 - f); });
+  S(SEPIA, { opacity: win(t, A("ford"), A("robots"), 0.5, 0.4) });
+  // camera
+  let cp = V(-4, 6.5, 15), tg = V(-4, 1.4, 0), fov = 46;
+  if (t < A("line")) { const k = ease(clamp(t / 4.5)); cp = V(lerp(-30, -4, k), lerp(16, 6.5, k), lerp(22, 15, k)); tg = V(lerp(-8, -4, k), 1.4, 0); }
+  if (t >= A("line")) { const k = clamp((t - A("line")) / (A("ford") - A("line"))); cp = V(lerp(-12, 6, k), 7.5, 17); tg = V(lerp(-10, 6, k), 1.8, 0); }
+  if (isF) { cp = V(0, 6, 12); tg = V(0, 1, 0); }
+  if (t >= A("robots")) { const k = ease(clamp((t - A("robots")) / 1.0)); cp = V(lerp(-12, 0, clamp((t - A("robots") - 3.0) / 2.5)), 5.2, 10); tg = V(lerp(-12, 12, clamp((t - A("robots") - 3.0) / 2.5)), 1.8, -1); }
+  if (t >= A("check")) { cp = V(20, 4.4, 9.5); tg = V(20, 1.4, 0); }
+  look(cp, tg, fov);
+  // text
+  big("NOBODY BUILDS IT ALL", t, A("hook") + 3.8, A("line"), "#ffffff", "300px", "90px");
+  if (t >= A("line") && t < A("ford")) ST.slice(0, 3).forEach((x, i) => lbl("l" + i, V(x, 5.6, -3.2), t, A("line") + 2.6 + i * 0.8, A("ford"), STN[i], "#ffd04a"));
+  card("c0", `one station · <b>one small job</b>`, t, A("line") + 1.0, A("ford"), 210, 240, -2);
+  if (isF) { const k = ease(clamp((t - A("ford") - 3.5) / 2.5)); timer(`${(lerp(12.5, 1.5, k)).toFixed(1)} h`, t, A("ford") + 3.0, A("robots"), "#ffd04a", "150px"); card("c0", `<h5>Ford · 1913</h5>Model T chassis · <b>12 h → ~1.5 h</b>`, t, A("ford") + 0.8, A("robots"), 160, 560, -2); }
+  card("c0", `robots · <b>weld + paint</b>`, t, A("robots") + 0.8, A("check"), 260, 240, -2); card("c1", `parts arrive · <b>just in time</b>`, t, A("robots") + 3.4, A("check"), 200, 1640, 2);
+  card("c0", `every car · <b>tested</b>`, t, A("check") + 0.6, A("orbi"), 300, 240, -2); if (t >= A("check") + 1.8 && t < A("orbi")) { const c = CARS.reduce((b, g) => (Math.abs(g.position.x - 20) < Math.abs(b.position.x - 20) ? g : b)); lbl("l3", c.position.clone().add(V(0, 3.2, 0)), t, A("check") + 1.8, A("orbi"), "✓ passed", "#3dff8c"); }
+  // board
+  S(BOARD, { opacity: win(t, A("orbi") + 0.2, A("end"), 0.4, 0.3) }); { const col = t < A("orbi") + 3.0 ? 0 : t < A("orbi") + 5.5 ? 1 : 2, k = ease(clamp((t - A("orbi") - (col === 1 ? 3.0 : col === 2 ? 5.5 : 0)) / 0.5)); const xs = [22, 342, 662], x = col === 0 ? xs[0] : lerp(xs[col - 1], xs[col], k); S($("wk"), { left: `${x + 0}px`, top: "90px", opacity: clamp((t - A("orbi") - 1.4) / 0.4) }); }
+  card("c0", `Orbi Work · <b>live for everyone</b>`, t, A("orbi") + 0.6, A("end"), 210, 240, -2);
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
