@@ -20,7 +20,8 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
-- DONE 2026-10-23 (L, owner ask) — Public void edge: thin light-grey frame around the area (`.world.framed::before`,
+- DONE 2026-10-23 (L, owner ask) — Public void edge: glass pane (owner reference: frosted fill, rim glowing white at the
+  corners, warm glint bottom-right; `.world.framed::before` rim + `::after` fill, masked gradients),
   MapWorld `framed` prop, only on the public void). Width = 1.5px / zoom, so it stays thin on screen and shrinks with
   the area when zooming out. Verified locally in Chromium (frame visible at fit zoom).
 - FIXED 2026-10-23 (H) — Downloads slow / stuck on "Unlocking" (owner: 4 MB took ages). Measured live (2 browsers, private
