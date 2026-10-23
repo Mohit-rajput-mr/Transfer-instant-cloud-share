@@ -4,45 +4,45 @@
   {
    "key": "hook",
    "text": "Do you know how Morse code works? Every letter is just short and long beeps.",
-   "dur": 4.82,
+   "dur": 4.816,
    "at": 0.35
   },
   {
    "key": "wire",
    "text": "Press a key, and you close an electric circuit. Miles away, a sounder clicks. Short is a dot, long is a dash.",
-   "dur": 7.813,
+   "dur": 7.808,
    "at": 5.57
   },
   {
    "key": "letters",
    "text": "The most common letters got the shortest codes. E is a single dot. T is a single dash.",
-   "dur": 5.693,
-   "at": 13.68
+   "dur": 5.69,
+   "at": 13.67
   },
   {
    "key": "first",
    "text": "In eighteen forty four, Samuel Morse sent the words, What hath God wrought, from Washington to Baltimore.",
-   "dur": 6.435,
-   "at": 19.68
+   "dur": 6.432,
+   "at": 19.66
   },
   {
    "key": "sos",
    "text": "S O S is three dots, three dashes, three dots. It isn't short for anything. It's just impossible to miss.",
-   "dur": 6.657,
-   "at": 26.41
+   "dur": 7.319,
+   "at": 26.4
   },
   {
    "key": "orbi",
    "text": "Orbi gives every file a code too, a QR code. Scan it to land right on the file, and add a code, so only people who know it can open it.",
-   "dur": 8.511,
-   "at": 33.37
+   "dur": 8.508,
+   "at": 34.02
   },
   {
    "key": "end",
    "text": "orbitransfer.com. Now you know!",
-   "dur": 2.751,
-   "at": 42.28
+   "dur": 2.749,
+   "at": 42.92
   }
  ],
- "duration": 46.83
+ "duration": 47.47
 }
