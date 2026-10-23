@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Every follower adds a planet (Instagram)</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+const CNT = 18, HANDLE = "@orbitransfer", BOX = [496,256,658,355], IMGH = 940;
+scene.background = new THREE.Color(0x03050c);
+scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x10131c, 0.9)); { const dl = new THREE.DirectionalLight(0xffffff, 2.0); dl.position.set(6, 8, 10); scene.add(dl); }
+// stars
+{ const g = new THREE.BufferGeometry(), P = []; for (let i = 0; i < 2500; i++) { const u = rnd() * 2 - 1, a = rnd() * Math.PI * 2, d = 120 + rnd() * 200, q = Math.sqrt(1 - u * u); P.push(Math.cos(a) * q * d, u * d, Math.sin(a) * q * d); } g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3)); scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 0.9, sizeAttenuation: true }))); }
+// Orbi at the centre: white planet + ring
+const CORE = new THREE.Group(); scene.add(CORE);
+CORE.add(new THREE.Mesh(new THREE.SphereGeometry(1.5, 48, 32), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.35, emissive: 0x334433 })));
+{ const ring = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.12, 12, 96), glow(0x3dff8c)); ring.rotation.set(Math.PI / 2 - 0.35, 0, 0.3); CORE.add(ring); }
+{ const halo = new THREE.Mesh(new THREE.SphereGeometry(2.0, 32, 16), new THREE.MeshBasicMaterial({ color: 0x3dff8c, transparent: true, opacity: 0.08, depthWrite: false })); CORE.add(halo); }
+// one planet per follower
+const COLS = [0xff6a5a, 0x5ab8ff, 0xffd04a, 0xb57aff, 0x3dffc8, 0xff8ad8, 0xff9a3c, 0x7affa0, 0x6a8cff];
+const orbitOf = (i, n) => { const rr = n <= 4 ? 3.6 + i * 2.2 : 3.4 + (i / n) * 7.5; return { rr, sp: 0.5 / Math.sqrt(rr) * (i % 2 ? 1 : 0.8), ph: i * 2.399, tilt: (rnd() - 0.5) * 0.35, sz: n <= 4 ? 0.55 : 0.28 + rnd() * 0.32 }; };
+const PL = Array.from({ length: CNT }, (_, i) => { const o = orbitOf(i, CNT); const m = new THREE.Mesh(new THREE.SphereGeometry(o.sz, 24, 16), new THREE.MeshStandardMaterial({ color: COLS[i % COLS.length], roughness: 0.5, emissive: COLS[i % COLS.length], emissiveIntensity: 0.25 })); m.userData = o; scene.add(m);
+  const path = new THREE.Mesh(new THREE.TorusGeometry(o.rr, 0.012, 4, 160), new THREE.MeshBasicMaterial({ color: 0x6a7a9a, transparent: true, opacity: 0.35 })); path.rotation.x = Math.PI / 2 + o.tilt; scene.add(path); m.userData.path = path; return m; });
+// empty slots up to 100: ghosts
+const GH = Array.from({ length: 100 - CNT }, (_, j) => { const i = CNT + j, o = { rr: 3.4 + ((i * 37) % 100) / 100 * 13, sp: 0, ph: i * 2.399, tilt: (rnd() - 0.5) * 0.5, sz: 0.22 + rnd() * 0.2 }; o.sp = 0.5 / Math.sqrt(o.rr);
+  const m = new THREE.Mesh(new THREE.SphereGeometry(o.sz, 12, 8), new THREE.MeshBasicMaterial({ color: 0x8aa0c8, wireframe: true, transparent: true, opacity: 0 })); m.userData = o; scene.add(m); return m; });
+const YOU = GH[0];
+const place = (m, t) => { const o = m.userData, a = o.ph + t * o.sp; m.position.set(Math.cos(a) * o.rr, Math.sin(a) * o.rr * Math.sin(o.tilt), Math.sin(a) * o.rr * Math.cos(o.tilt)); };
+// the real profile screenshot
+const PI_ = document.createElement("div"); PI_.className = "ov"; S(PI_, { left: "40px", top: "330px", width: "1000px", height: `${IMGH}px`, borderRadius: "28px", overflow: "hidden", opacity: 0, zIndex: 30, boxShadow: "0 40px 100px rgba(0,0,0,0.8), 0 0 0 3px rgba(255,255,255,0.15)" });
+PI_.innerHTML = `<img src="profile.png" style="width:1000px;display:block"><div id="pbox" style="position:absolute;border:7px solid #3dff8c;border-radius:20px;box-shadow:0 0 40px rgba(61,255,140,0.8);opacity:0"></div>`; document.body.appendChild(PI_);
+await new Promise((ok) => { const im = PI_.querySelector("img"); im.complete ? ok() : (im.onload = ok); });
+document.querySelector("#endc p").textContent = "Your planet is next"; document.querySelector("#endc .url").textContent = HANDLE;
+const popT = (i) => A("count") + 1.4 + (CNT <= 4 ? i * 0.7 : i * Math.min(0.22, 3.6 / CNT));
+window.render = async function (t) { cam.up.set(0, 1, 0);
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  CORE.rotation.y = t * 0.3;
+  let shown = 0; PL.forEach((m, i) => { place(m, t); const k = clamp((t - popT(i)) / 0.35); if (k > 0) shown = i + 1; m.scale.setScalar(Math.max(0.001, back(k))); m.visible = k > 0; m.userData.path.material.opacity = 0.35 * k; });
+  const gk = t >= A("goal") ? clamp((t - A("goal") - 0.6) / 2.0) : 0; GH.forEach((m, j) => { place(m, t); m.material.opacity = 0.35 * clamp(gk * 1.6 - (j / GH.length) * 0.6); });
+  const youOn = t >= A("cta"); if (youOn) { YOU.material.color.set(0x3dff8c); YOU.material.opacity = 0.5 + 0.5 * Math.abs(Math.sin(t * 5)); YOU.scale.setScalar(1.8); } else { YOU.material.color.set(0x8aa0c8); YOU.scale.setScalar(1); }
+  // camera
+  const sw = t * 0.06; let dist = 19, hgt = 7;
+  if (t >= A("goal")) { const k = ease(clamp((t - A("goal")) / 2.4)); dist = lerp(19, 40, k); hgt = lerp(7, 15, k); }
+  if (youOn) { const k = ease(clamp((t - A("cta")) / 1.6)); const yp = YOU.position.clone(); const cp = V(Math.sin(sw) * 40, 15, Math.cos(sw) * 40); look(cp.lerp(yp.clone().add(V(0, 3, 9)), k * 0.6), V(0, 0, 0).lerp(yp, k * 0.8), 42); }
+  else look(V(Math.sin(sw) * dist, hgt, Math.cos(sw) * dist), V(0, t < A("prof") ? lerp(-3, -1, clamp(t / 4)) : -1, 0), 42);
+  // hook
+  big("1 FOLLOWER", t, A("hook") + 0.4, A("prof"), "#ffffff", "250px", "120px"); if (t > A("hook") + 1.6 && t < A("prof")) { timer("= 1 PLANET", t, A("hook") + 1.6, A("prof"), "#3dff8c", "110px"); S($("timer"), { top: "400px" }); }
+  // profile
+  const pk = win(t, A("prof"), A("count") + 0.6, 0.4, 0.5);
+  const zk = ease(clamp((t - A("prof") - 2.6) / 0.9)); const bx = (BOX[0] + BOX[2]) / 2, by = (BOX[1] + BOX[3]) / 2;
+  S(PI_, { opacity: pk, transform: `translateY(${(1 - out(clamp((t - A("prof")) / 0.5))) * 120}px) scale(${lerp(1, 1.9, zk)})`, transformOrigin: `${bx}px ${by}px` });
+  S($("pbox"), { left: `${BOX[0] - 14}px`, top: `${BOX[1] - 12}px`, width: `${BOX[2] - BOX[0] + 28}px`, height: `${BOX[3] - BOX[1] + 24}px`, opacity: clamp((t - A("prof") - 1.6) / 0.3) * (0.75 + 0.25 * Math.sin(t * 8)) });
+  // counter
+  if (t >= A("count") + 1.2 && t < A("goal")) { timer(`${shown}`, t, A("count") + 1.2, A("goal"), "#3dff8c", "190px");
+    card("c1", `<b>${shown}</b> ${shown === 1 ? "follower" : "followers"} = <b>${shown}</b> ${shown === 1 ? "planet" : "planets"}`, t, A("count") + 1.2, A("goal"), 540, 560, 0); $("c1").style.transform += " translateX(-50%)"; }
+  if (t >= A("empty") && t < A("goal")) big(CNT <= 4 ? "SO EMPTY..." : "SO MUCH SPACE", t, A("empty") + 0.3, A("goal"), "#ffd04a", "1060px", "110px");
+  // goal
+  if (t >= A("goal")) card("c0", `<h5>Goal · a galaxy</h5><b style="font-size:60px">${CNT}</b> / 100 planets<div style="margin-top:16px;width:640px;height:22px;border-radius:11px;background:#1c2a24"><div style="width:${CNT * clamp((t - A("goal") - 0.6) / 1.2)}%;height:100%;border-radius:11px;background:#3dff8c"></div></div>`, t, A("goal") + 0.4, A("end"), 190, 230, 0);
+  if (youOn) { lbl("l0", YOU.position.clone().add(V(0, 0.9, 0)), t, A("cta") + 1.2, A("end"), `your planet?<small>follower #${CNT + 1}</small>`, "#3dff8c"); big("FOLLOW", t, A("cta") + 0.3, A("end"), "#3dff8c", "1060px", "150px"); }
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
