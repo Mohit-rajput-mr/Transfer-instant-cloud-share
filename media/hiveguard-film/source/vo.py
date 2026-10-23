@@ -13,7 +13,7 @@ LINES = [
     ("smell",   "The wax and the food give each colony its own scent, and every bee carries it on her body.", 1.05, 0.30),
     ("guards",  "At the entrance, guard bees check each arrival, touching her with their antennae.", 1.05, 0.30),
     ("stranger", "A bee from another hive smells wrong. The guards grab her and push her back out.", 1.10, 0.30),
-    ("robbers", "That's how a hive keeps robber bees from stealing its honey.", 1.05, 0.30),
+    ("robbers", "That's how a hive stops thieves from other hives stealing its honey.", 1.05, 0.30),
     ("orbi",    "Orbi Spaces work the same way. A Space is never public. Only people with the passcode can get in.", 1.05, 0.40),
     ("end",     "Orbi Transfer dot com. Now you know!", 1.05, 0.00),
 ]

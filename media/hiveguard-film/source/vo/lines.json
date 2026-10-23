@@ -4,45 +4,45 @@
   {
    "key": "hook",
    "text": "Do you know how a beehive knows who's allowed in? Every hive has its own smell.",
-   "dur": 5.061,
+   "dur": 5.057,
    "at": 0.35
   },
   {
    "key": "smell",
    "text": "The wax and the food give each colony its own scent, and every bee carries it on her body.",
-   "dur": 5.307,
+   "dur": 5.302,
    "at": 5.81
   },
   {
    "key": "guards",
    "text": "At the entrance, guard bees check each arrival, touching her with their antennae.",
-   "dur": 4.96,
-   "at": 11.42
+   "dur": 4.956,
+   "at": 11.41
   },
   {
    "key": "stranger",
    "text": "A bee from another hive smells wrong. The guards grab her and push her back out.",
-   "dur": 5.229,
-   "at": 16.68
+   "dur": 5.219,
+   "at": 16.66
   },
   {
    "key": "robbers",
-   "text": "That's how a hive keeps robber bees from stealing its honey.",
-   "dur": 2.694,
-   "at": 22.21
+   "text": "That's how a hive stops thieves from other hives stealing its honey.",
+   "dur": 3.863,
+   "at": 22.18
   },
   {
    "key": "orbi",
    "text": "Orbi Spaces work the same way. A Space is never public. Only people with the passcode can get in.",
-   "dur": 6.457,
-   "at": 25.2
+   "dur": 6.452,
+   "at": 26.35
   },
   {
    "key": "end",
    "text": "orbitransfer.com. Now you know!",
-   "dur": 2.751,
-   "at": 32.06
+   "dur": 2.749,
+   "at": 33.2
   }
  ],
- "duration": 36.61
+ "duration": 37.75
 }
