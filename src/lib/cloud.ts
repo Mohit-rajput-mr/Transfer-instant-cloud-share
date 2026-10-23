@@ -437,13 +437,15 @@ export async function isStored(url: string, signal?: AbortSignal) {
   return !!r && (r.status === 206 || r.status === 200);
 }
 
-/** Waits for a copy that is still uploading (the direct path failed), up to `ms`. */
-export async function waitStored(url: string, ms: number, signal?: AbortSignal) {
-  const end = Date.now() + ms;
+/** Waits for a copy that is still uploading, up to `ms` (false also once `stop()` says it isn't needed any more).
+ *  Asked every second for the first 30 s (a small file's copy lands within a second or two of its launch), then every
+ *  3 s. Each ask is one tiny ranged GET, free on R2. */
+export async function waitStored(url: string, ms: number, signal?: AbortSignal, stop?: () => boolean) {
+  const start = Date.now(), end = start + ms;
   while (Date.now() < end) {
-    if (signal?.aborted) return false;
+    if (signal?.aborted || stop?.()) return false;
     if (await isStored(url, signal)) return true;
-    await new Promise((r) => setTimeout(r, 3000));
+    await new Promise((r) => setTimeout(r, Date.now() - start < 30_000 ? 1000 : 3000));
   }
   return false;
 }

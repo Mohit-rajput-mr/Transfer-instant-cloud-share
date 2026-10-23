@@ -20,6 +20,15 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- FIXED 2026-10-23 (H) — Downloads slow / stuck on "Unlocking" (owner: 4 MB took ages). Measured live (2 browsers, private
+  space, 4 MB): unlock 0.36 s, stored copy not finished at the one check (404) → tied to the direct path → ~4 s handshake
+  (new Supabase channel + ICE gather + answer) before bytes; on networks that block direct connections (STUN only, no
+  TURN) up to ~35 s, then a 3 s-poll wait. Fixes: transfer.ts firstSource races the direct path and the stored copy
+  (polled every 1 s for 30 s, then 3 s) — first ready serves, the loser is hung up; unlock/peek have a 12 s timeout +
+  one retry (no endless "Unlocking"); net.ts: a live device-to-device send goes before stored-copy upload parts, which
+  drop to 1 at a time while anyone is served (big files: the receiver gets the line). Unit tests: firstsource, net.
+  OPEN: P2P signalling still opens a fresh Supabase channel per download (~1–3 s); no TURN relay (blocked networks
+  rely on the stored copy). Big files are bound by the sender's upload speed (physics, not code).
 - FIXED 2026-10-23 (M) — Open <select> lists were white with white text (HQ: Countries, Objects, Activity…): the page
   never said it was dark, so native controls used the light scheme while inheriting white text. :root color-scheme:
   dark (Work light keeps its own) + dark <option>s. Verified computed styles on all 12 HQ selects, desktop + phone.

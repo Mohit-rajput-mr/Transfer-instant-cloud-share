@@ -179,14 +179,29 @@ function openPassFor(o: Orb) {
   return p;
 }
 
+/** A request that answers or fails within `ms`: a dropped connection otherwise leaves it (and the card on
+ *  "Unlocking") pending for minutes. Asked a second time once, then it says so. */
+async function quickPost(url: string, body: unknown, signal?: AbortSignal, ms = 12_000): Promise<Response> {
+  for (let attempt = 1; ; attempt++) {
+    const t = new AbortController();
+    const timer = setTimeout(() => t.abort(), ms);
+    const stop = () => t.abort();
+    signal?.addEventListener("abort", stop, { once: true });
+    try {
+      return await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: t.signal });
+    } catch (e) {
+      if (signal?.aborted) throw e;
+      if (attempt >= 2) throw new Error("Orbi didn't answer. Check your connection and try again");
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", stop);
+    }
+  }
+}
+
 export async function unlockOrb(orb: Orb, passcode: string, signal?: AbortSignal): Promise<Unlocked> {
   const { key, auth } = await deriveKeys(orb.open ? openPassFor(orb) : passcode, fromB64(orb.salt), orb.iterations);
-  const res = await fetch(`/api/transfers/${orb.id}/unlock`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ auth, device: deviceLabel(), ...spaceBody() }),
-    signal,
-  });
+  const res = await quickPost(`/api/transfers/${orb.id}/unlock`, { auth, device: deviceLabel(), ...spaceBody() }, signal);
   const r = await res.json().catch(() => ({ ok: false, reason: "gone" }));
   if (!r.ok) throw new UnlockError(r.reason, r.left);
   return { key, r };
@@ -195,12 +210,7 @@ export async function unlockOrb(orb: Orb, passcode: string, signal?: AbortSignal
 /** No-password objects only: the same key + location as unlock, but nothing is counted (previews). */
 export async function peekOrb(orb: Orb, signal?: AbortSignal): Promise<Unlocked> {
   const { key, auth } = await deriveKeys(openPassFor(orb), fromB64(orb.salt), orb.iterations);
-  const res = await fetch(`/api/transfers/${orb.id}/peek`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ auth, ...spaceBody() }),
-    signal,
-  });
+  const res = await quickPost(`/api/transfers/${orb.id}/peek`, { auth, ...spaceBody() }, signal);
   const r = await res.json().catch(() => ({ ok: false, reason: "gone" }));
   if (!r.ok) throw new UnlockError(r.reason, r.left);
   return { key, r };
@@ -229,13 +239,42 @@ async function source(r: UnlockReply, signal: AbortSignal | undefined, cloudOnly
   }
   const id = r.url.slice(P2P_PREFIX.length);
   if (holding(id)) return { body: await pull(id, signal), stored: false };
-  if (r.store && (await isStored(r.store, signal))) return { body: fetchStored(r.store, r.size, signal), stored: true };
-  try {
-    return { body: await pull(id, signal), stored: false };
-  } catch (e) {
-    if (r.store && !signal?.aborted && (await waitStored(r.store, 3 * 60_000, signal))) return { body: fetchStored(r.store, r.size, signal), stored: true };
-    throw e;
-  }
+  const store = r.store;
+  if (!store) return { body: await pull(id, signal), stored: false };
+  if (await isStored(store, signal)) return { body: fetchStored(store, r.size, signal), stored: true };
+  return firstSource(id, store, r.size, signal);
+}
+
+type Src = { body: ReadableStream<Uint8Array>; stored: boolean };
+/**
+ * The stored copy isn't complete yet: the direct connection and the stored copy, both at once, and whichever is ready
+ * first serves the download. The direct path needs a handshake (live channel, network addresses, an answer: a few
+ * seconds, longer or never on networks that block it), while a small file's stored copy lands within a second or two
+ * of its launch. Before, the copy was looked at once and then the download was tied to the direct path, so a copy that
+ * finished a moment later was ignored while the handshake (up to ~35 s on a blocking network) ran out.
+ * The loser is dropped: a late direct stream is cancelled (that hangs up), a late stored stream was never read.
+ */
+export function firstSource(id: string, store: string, size: number, signal?: AbortSignal): Promise<Src> {
+  let won = false;
+  return new Promise<Src>((resolve, reject) => {
+    let failed = 0;
+    let directErr: unknown = null;
+    const take = (x: Src) => {
+      if (won) return void x.body.cancel().catch(() => {});
+      won = true;
+      resolve(x);
+    };
+    const lose = (e: unknown, direct: boolean) => {
+      if (direct) directErr = e;
+      // both gave up: the direct path's reason says more (sender offline, network blocks it) than "not stored"
+      if (++failed === 2 && !won) reject(directErr ?? e);
+    };
+    pull(id, signal).then((body) => take({ body, stored: false }), (e) => lose(e, true));
+    waitStored(store, 3 * 60_000, signal, () => won).then(
+      (ok) => (ok ? take({ body: fetchStored(store, size, signal), stored: true }) : lose(new Error("The file isn't stored yet"), false)),
+      (e) => lose(e, false),
+    );
+  });
 }
 
 /** A background preview whose stored copy isn't complete yet (try again later; nothing was fetched). */

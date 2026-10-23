@@ -88,8 +88,10 @@ export const netLoaded = () => st.busy || st.users > 0 || runs.up > 0 || runs.se
 // ---- turns: who may move bytes right now ------------------------------------------------------------------------
 // up: one upload part (or a small file). serve: one device-to-device send to someone over the internet (same Wi-Fi
 // doesn't touch the line and takes no turn). peek: a background preview, only when nothing else moves.
+// A person waiting for a file right now goes first: serve before up, and while anyone is being served the stored-copy
+// upload (which is for later receivers) keeps to one part at a time, so the receiver gets most of the line.
 export type NetKind = "up" | "serve" | "peek";
-const ORDER: NetKind[] = ["up", "serve", "peek"];
+const ORDER: NetKind[] = ["serve", "up", "peek"];
 const runs: Record<NetKind, number> = { up: 0, serve: 0, peek: 0 };
 type Wait = { kind: NetKind; rank: number; seq: number; go: (release: () => void) => void };
 const waits: Wait[] = [];
@@ -97,7 +99,7 @@ let seq = 0;
 
 const limit = (k: NetKind) => {
   const busy = netCongested();
-  if (k === "up") return upSpeed() === "full" ? 6 : busy ? 1 : 2; // (never 0: nothing stalls for good on a wrong probe)
+  if (k === "up") return upSpeed() === "full" ? 6 : busy || runs.serve > 0 ? 1 : 2; // (never 0: nothing stalls for good on a wrong probe)
   if (k === "serve") return busy ? 1 : 2;
   return st.busy || runs.up || runs.serve || waits.some((w) => w.kind !== "peek") ? 0 : 1;
 };

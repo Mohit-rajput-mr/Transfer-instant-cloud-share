@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 // Bump RELEASE only when old tabs must pick up new code; tabs wait until they hold nothing to reload.
 // (Pinned to the deployment that was live before this rule, so its open tabs don't reload.)
 // 2026-10-22: rebuilt after the team went back to the Hobby plan (the old deploy was disabled with the Pro trial).
-const RELEASE = "r-2026-10-23-anon-passcode";
+const RELEASE = "r-2026-10-23-fast-receive";
 
 export function GET() {
   // `build` changes with every deploy: HQ (which holds no files) reloads on it
