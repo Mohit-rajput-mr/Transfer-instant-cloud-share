@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how invisible ink works? The simplest one is already in your kitchen. Lemon juice.",
+   "dur": 6.463,
+   "at": 0.35
+  },
+  {
+   "key": "lemon",
+   "text": "Write with lemon juice and let it dry. The paper looks completely blank.",
+   "dur": 4.95,
+   "at": 7.21
+  },
+  {
+   "key": "heat",
+   "text": "Now warm it gently near a lamp. The juice turns brown before the paper does, and the message appears.",
+   "dur": 6.152,
+   "at": 12.46
+  },
+  {
+   "key": "why",
+   "text": "Lemon juice is acidic and full of sugars. Heat breaks them down, and they darken first, a bit like toast.",
+   "dur": 6.421,
+   "at": 18.91
+  },
+  {
+   "key": "vanish",
+   "text": "Disappearing ink works the other way. It starts out blue, and as it soaks up carbon dioxide from the air, it fades to clear.",
+   "dur": 7.242,
+   "at": 25.64
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi files vanish too. By default, 30 minutes after you send, the stored file is deleted. You can pick anything from five to thirty.",
+   "dur": 8.209,
+   "at": 33.18
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 41.79
+  }
+ ],
+ "duration": 46.34
+}
