@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a Venetian mask made everyone equal? For centuries, at Carnival, Venice let anyone hide who they were.",
+   "dur": 7.71,
+   "at": 0.35
+  },
+  {
+   "key": "bauta",
+   "text": "The classic mask, the bauta, covered the whole face. Its jutting chin changed your voice, and still let you eat and drink.",
+   "dur": 7.53,
+   "at": 8.46
+  },
+  {
+   "key": "cloak",
+   "text": "Add a black cloak and a three-cornered hat, and a servant and a noble looked exactly the same.",
+   "dur": 5.327,
+   "at": 16.29
+  },
+  {
+   "key": "equal",
+   "text": "Behind the mask, rank didn't matter. People could talk, gamble, and trade, and nobody knew who was who.",
+   "dur": 7.461,
+   "at": 21.92
+  },
+  {
+   "key": "laws",
+   "text": "Venice even passed laws limiting masks, when people abused the secret.",
+   "dur": 4.347,
+   "at": 29.68
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi's Anonymous mode keeps the same spirit. No profile, no name, no GPS. Just a throwaway ID that's gone when you leave.",
+   "dur": 8.236,
+   "at": 34.32
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 42.96
+  }
+ ],
+ "duration": 47.51
+}
