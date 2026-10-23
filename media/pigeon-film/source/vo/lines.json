@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a homing pigeon finds its way home? Take it hundreds of kilometres away, and it still flies straight back.",
+   "dur": 6.806,
+   "at": 0.35
+  },
+  {
+   "key": "sun",
+   "text": "One trick is the sun. Pigeons keep an inner clock, so they can use the sun's position like a compass.",
+   "dur": 6.557,
+   "at": 7.56
+  },
+  {
+   "key": "magnet",
+   "text": "When it's cloudy, many scientists think they can sense the Earth's magnetic field. A compass built into the bird.",
+   "dur": 7.273,
+   "at": 14.41
+  },
+  {
+   "key": "near",
+   "text": "Closer to home, they follow what they know. Roads, rivers, even smells carried on the wind.",
+   "dur": 5.64,
+   "at": 21.99
+  },
+  {
+   "key": "war",
+   "text": "In the First World War, a pigeon called Cher Ami carried a message that helped save nearly two hundred trapped soldiers.",
+   "dur": 7.28,
+   "at": 27.93
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi doesn't need your exact spot. People nearby only ever see your rough area, a patch about forty by twenty kilometres.",
+   "dur": 7.3,
+   "at": 35.51
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 43.21
+  }
+ ],
+ "duration": 47.76
+}
