@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a thermos keeps your tea hot for hours? It fights heat in three different ways.",
+   "dur": 5.257,
+   "at": 0.35
+  },
+  {
+   "key": "three",
+   "text": "Heat escapes by touch, by moving air, and by glowing out as invisible light.",
+   "dur": 6.004,
+   "at": 6.01
+  },
+  {
+   "key": "vacuum",
+   "text": "Between the two walls there's almost nothing. A vacuum. With no air in the gap, heat can't travel by touch or by moving air.",
+   "dur": 8.448,
+   "at": 12.31
+  },
+  {
+   "key": "mirror",
+   "text": "The walls are shiny, like a mirror, so the glowing heat gets bounced back inside.",
+   "dur": 5.205,
+   "at": 21.06
+  },
+  {
+   "key": "lid",
+   "text": "The weak spot is the top, so a tight stopper seals it. And the same trick keeps cold drinks cold.",
+   "dur": 6.099,
+   "at": 26.56
+  },
+  {
+   "key": "history",
+   "text": "It was invented in eighteen ninety two by James Dewar, to keep liquid gases ice cold in his lab.",
+   "dur": 6.169,
+   "at": 32.96
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 39.53
+  }
+ ],
+ "duration": 44.08
+}
