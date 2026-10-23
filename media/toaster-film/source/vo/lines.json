@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a toaster knows when to pop? It's a spring, a magnet, and a little timer.",
+   "dur": 5.354,
+   "at": 0.35
+  },
+  {
+   "key": "lever",
+   "text": "Pushing the lever down stretches a spring and closes a switch, so current flows.",
+   "dur": 5.213,
+   "at": 6.1
+  },
+  {
+   "key": "heat",
+   "text": "Thin nichrome wires glow red hot, hundreds of degrees, and toast the bread with infrared heat.",
+   "dur": 6.073,
+   "at": 11.62
+  },
+  {
+   "key": "hold",
+   "text": "An electromagnet holds the lever down, while a simple timer counts. The darkness dial just changes how long.",
+   "dur": 7.098,
+   "at": 17.99
+  },
+  {
+   "key": "pop",
+   "text": "When time is up, the magnet lets go, the spring snaps back, and up comes your toast.",
+   "dur": 5.317,
+   "at": 25.39
+  },
+  {
+   "key": "old",
+   "text": "Older toasters used a strip of two metals that bends as it heats, and trips the catch instead.",
+   "dur": 4.495,
+   "at": 31.01
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 35.9
+  }
+ ],
+ "duration": 40.45
+}
