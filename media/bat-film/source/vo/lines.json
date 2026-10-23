@@ -4,45 +4,45 @@
   {
    "key": "hook",
    "text": "Do you know how bats fly in total darkness? They shout, and listen to the echoes.",
-   "dur": 5.856,
+   "dur": 5.852,
    "at": 0.35
   },
   {
    "key": "call",
    "text": "A bat sends out calls so high-pitched that we can't hear them. The sound bounces off everything around it.",
-   "dur": 5.274,
-   "at": 6.61
+   "dur": 5.269,
+   "at": 6.6
   },
   {
    "key": "echo",
    "text": "How long the echo takes tells the bat how far away something is. Which ear hears it first tells it where.",
-   "dur": 6.497,
-   "at": 12.18
+   "dur": 6.494,
+   "at": 12.17
   },
   {
    "key": "buzz",
    "text": "Closing in on a moth, it calls faster and faster, up to about two hundred times a second.",
-   "dur": 5.214,
-   "at": 18.98
+   "dur": 5.213,
+   "at": 18.96
   },
   {
    "key": "moth",
    "text": "Some moths fight back. They hear the bat coming and dive, and a few even click back to jam the signal.",
-   "dur": 6.365,
-   "at": 24.49
+   "dur": 5.667,
+   "at": 24.48
   },
   {
    "key": "orbi",
    "text": "Orbi Nearby finds what's close to you too. Phones on the same Wi-Fi show up for each other, with no login and no pairing.",
-   "dur": 8.411,
-   "at": 31.16
+   "dur": 8.409,
+   "at": 30.45
   },
   {
    "key": "end",
    "text": "orbitransfer.com. Now you know!",
-   "dur": 2.751,
-   "at": 39.97
+   "dur": 2.749,
+   "at": 39.25
   }
  ],
- "duration": 44.52
+ "duration": 43.8
 }
