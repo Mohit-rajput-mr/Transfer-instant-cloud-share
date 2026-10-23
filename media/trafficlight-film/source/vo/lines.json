@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a traffic light knows you're waiting? Look down. There's a wire hidden in the road.",
+   "dur": 5.072,
+   "at": 0.35
+  },
+  {
+   "key": "loop",
+   "text": "Cut into the asphalt is a loop of wire, carrying a small electric current. It makes a magnetic field just above the road.",
+   "dur": 7.769,
+   "at": 5.82
+  },
+  {
+   "key": "car",
+   "text": "When a car stops on top, its metal changes that field. A detector at the corner notices the change.",
+   "dur": 6.7,
+   "at": 13.89
+  },
+  {
+   "key": "queue",
+   "text": "The controller adds you to the queue, and gives your direction a green as soon as it safely can.",
+   "dur": 6.035,
+   "at": 20.89
+  },
+  {
+   "key": "bike",
+   "text": "Bikes have much less metal, so some roads paint a mark showing exactly where to stop. Many junctions also use cameras or radar.",
+   "dur": 8.751,
+   "at": 27.23
+  },
+  {
+   "key": "close",
+   "text": "So that light didn't see you. It felt your car.",
+   "dur": 3.274,
+   "at": 36.28
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 39.95
+  }
+ ],
+ "duration": 44.5
+}
