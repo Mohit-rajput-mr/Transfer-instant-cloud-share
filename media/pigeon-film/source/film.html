@@ -1,0 +1,185 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>How homing pigeons find home</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+const SKY = new THREE.Color(0x8cc4ef), GREY = new THREE.Color(0x56606e); scene.background = SKY.clone(); scene.fog = new THREE.Fog(0xb8d8f0, 60, 220);
+const HEMI = new THREE.HemisphereLight(0xffffff, 0x4a6a3a, 1.0); scene.add(HEMI); const SUNL = new THREE.DirectionalLight(0xfff0d0, 1.6); SUNL.position.set(80, 60, -100); scene.add(SUNL);
+const segTo = (m, p, q) => { m.position.copy(p).add(q).multiplyScalar(0.5); m.scale.y = Math.max(0.001, p.distanceTo(q)); m.quaternion.setFromUnitVectors(V(0, 1, 0), q.clone().sub(p).normalize()); };
+const W2C = (x, z) => [(x + 100) / 200 * 2048, (z + 100) / 200 * 2048];
+const ROAD = [[90, 60], [50, 40], [25, 15], [8, -10], [2, -30], [0, -44]], RIVER = [[-100, 30], [-40, 10], [-10, -5], [20, -20], [60, -10], [100, -30]];
+const GROUND = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ roughness: 1, map: canvasTex(2048, 2048, (g, w, h) => { g.fillStyle = "#5d8a45"; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 260; i++) { g.fillStyle = ["#7aa652", "#9ab45c", "#4c7838", "#b8a868", "#6d9a4a"][i % 5]; g.save(); g.translate(rnd() * w, rnd() * h); g.rotate((rnd() - 0.5) * 0.3); g.fillRect(0, 0, 60 + rnd() * 160, 60 + rnd() * 160); g.restore(); }
+  for (let i = 0; i < 120; i++) { g.fillStyle = "#2f5a2a"; g.beginPath(); g.arc(rnd() * w, rnd() * h, 6 + rnd() * 14, 0, 7); g.fill(); }
+  const line = (pts, col, wd) => { g.strokeStyle = col; g.lineWidth = wd; g.lineCap = "round"; g.beginPath(); pts.forEach(([x, z], i) => { const [cx, cy] = W2C(x, z); i ? g.lineTo(cx, cy) : g.moveTo(cx, cy); }); g.stroke(); };
+  line(RIVER, "#3a7ac8", 34); line(ROAD, "#c8c2b0", 22); line(ROAD, "#8a8478", 4); }) }));
+GROUND.rotation.x = -Math.PI / 2; scene.add(GROUND);
+// glowing highlights of road and river (for "near")
+const glowLine = (pts, col) => pts.slice(1).map((p, i) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1, 6), glow(col, { transparent: true, opacity: 0 })); segTo(m, V(pts[i][0], 0.3, pts[i][1]), V(p[0], 0.3, p[1])); scene.add(m); return m; });
+const GROAD = glowLine(ROAD, 0xffe070), GRIV = glowLine(RIVER, 0x7ad0ff);
+// loft
+const LOFT = new THREE.Group(); LOFT.position.set(0, 0, -47); scene.add(LOFT); { const b = new THREE.Mesh(new THREE.BoxGeometry(5, 3.5, 4), new THREE.MeshStandardMaterial({ color: 0xe8e0cc })); b.position.y = 1.75; LOFT.add(b); const rf = new THREE.Mesh(new THREE.ConeGeometry(3.8, 2, 4), new THREE.MeshStandardMaterial({ color: 0x9a3a2a })); rf.rotation.y = Math.PI / 4; rf.position.y = 4.5; LOFT.add(rf); }
+// sun
+const SUN = new THREE.Mesh(new THREE.SphereGeometry(7, 32, 16), glow(0xffe060)); SUN.position.set(70, 55, -110); scene.add(SUN);
+const SUNRAY = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1, 6), glow(0xffd04a, { transparent: true })); scene.add(SUNRAY);
+// magnetic field lines: big arcs running north-south
+const FIELD = Array.from({ length: 7 }, (_, i) => { const m = new THREE.Mesh(new THREE.TorusGeometry(70 + i * 6, 0.25, 6, 120, Math.PI), glow(0xb57aff, { transparent: true, opacity: 0 })); m.rotation.y = Math.PI / 2; m.position.set(-30 + i * 10, -40, -10); scene.add(m); return m; });
+// clouds
+const CLOUDS = Array.from({ length: 30 }, () => { const g = new THREE.Group(); for (let j = 0; j < 5; j++) { const s = new THREE.Mesh(new THREE.SphereGeometry(2.5 + rnd() * 2.5, 12, 8), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 })); s.position.set((rnd() - 0.5) * 9, (rnd() - 0.5) * 2, (rnd() - 0.5) * 5); g.add(s); } g.position.set((rnd() - 0.5) * 180, 26 + rnd() * 10, (rnd() - 0.5) * 180); scene.add(g); return g; });
+// smell wisps
+const WISP = Array.from({ length: 30 }, () => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.6, 10, 6), new THREE.MeshBasicMaterial({ color: 0x9affb0, transparent: true, opacity: 0, depthWrite: false })); m.userData = { o: rnd(), x: (rnd() - 0.5) * 30, y: 2 + rnd() * 8 }; scene.add(m); return m; });
+// the pigeon
+const PG = new THREE.Group(); scene.add(PG); const BIRD = new THREE.Group(); PG.add(BIRD); BIRD.scale.setScalar(0.9);
+const FEATH = new THREE.MeshStandardMaterial({ color: 0x8c96a8, roughness: 0.7 });
+{ const b = new THREE.Mesh(new THREE.SphereGeometry(0.6, 20, 14), FEATH); b.scale.set(0.8, 0.75, 1.35); BIRD.add(b); const hd = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 12), new THREE.MeshStandardMaterial({ color: 0x6a7488 })); hd.position.set(0, 0.35, 0.85); BIRD.add(hd);
+  const neck = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.08, 8, 20), new THREE.MeshStandardMaterial({ color: 0x3a8a6a, metalness: 0.5, roughness: 0.3 })); neck.position.set(0, 0.22, 0.62); neck.rotation.x = 1.2; BIRD.add(neck);
+  const bk = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.25, 8), new THREE.MeshStandardMaterial({ color: 0x3a3030 })); bk.rotation.x = Math.PI / 2; bk.position.set(0, 0.32, 1.22); BIRD.add(bk);
+  for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff7a1a })); e.position.set(s * 0.2, 0.42, 1.0); BIRD.add(e); }
+  const tl = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.06, 0.6), new THREE.MeshStandardMaterial({ color: 0x4a5262 })); tl.position.set(0, 0.05, -0.95); BIRD.add(tl); }
+const WINGS = [-1, 1].map((s) => { const g = new THREE.Group(); g.position.set(s * 0.35, 0.2, 0.1); const w = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.05, 0.7), FEATH); w.position.x = s * 0.8; g.add(w); const tip = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.04, 0.5), new THREE.MeshStandardMaterial({ color: 0x3a3e48 })); tip.position.x = s * 1.85; g.add(tip); g.userData.s = s; BIRD.add(g); return g; });
+const CAPS = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.3, 10), new THREE.MeshStandardMaterial({ color: 0xc8a050, metalness: 0.7 })); CAPS.position.set(0.18, -0.45, 0.1); BIRD.add(CAPS);
+const PATH = new THREE.CatmullRomCurve3([V(80, 16, 75), V(50, 18, 42), V(24, 15, 14), V(8, 11, -12), V(2, 7, -32), V(0, 4.2, -44)]);
+// map view: geohash-4 style cells (about 39 x 20 km), drawn at the scale of the map
+const MAP = new THREE.Group(); MAP.position.set(0, 0.5, 0); scene.add(MAP); const CW = 39 * 0.9, CH = 20 * 0.9;
+const CELLS = []; for (let i = -2; i <= 2; i++) for (let j = -3; j <= 3; j++) { const e = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(CW, CH)), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 })); e.rotation.x = -Math.PI / 2; e.position.set(i * CW, 0, j * CH); e.userData = { i, j }; MAP.add(e); CELLS.push(e); }
+const FILL = new THREE.Mesh(new THREE.PlaneGeometry(CW, CH), glow(0x3dff8c, { transparent: true, opacity: 0, depthWrite: false })); FILL.rotation.x = -Math.PI / 2; FILL.position.y = 0.1; MAP.add(FILL);
+const PIN = new THREE.Group(); PIN.position.set(7, 0, 3); MAP.add(PIN); { const c = new THREE.Mesh(new THREE.ConeGeometry(1.4, 4, 16), new THREE.MeshStandardMaterial({ color: 0xe0452f, transparent: true })); c.rotation.x = Math.PI; c.position.y = 2; PIN.add(c); const s = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 12), c.material); s.position.y = 4.6; PIN.add(s); }
+const SEPIA = document.createElement("div"); SEPIA.className = "ov"; S(SEPIA, { inset: "0", background: "rgba(150,100,40,0.35)", mixBlendMode: "multiply", opacity: 0, zIndex: 15 }); document.body.appendChild(SEPIA);
+window.render = async function (t) { cam.up.set(0, 1, 0);
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  const isMap = t >= A("orbi"), isWar = t >= A("war") && !isMap;
+  // flight progress along the path, from release to the loft
+  const u = clamp((t - A("hook") - 3.0) / (A("war") - A("hook") - 3.0)), p = PATH.getPointAt(u), q = PATH.getPointAt(Math.min(1, u + 0.01));
+  if (!isWar) { PG.position.copy(p); if (u < 0.999) PG.lookAt(q); }
+  else { PG.position.set(0, 30, 40); PG.rotation.set(0, Math.PI, 0); }
+  WINGS.forEach((g) => { g.rotation.z = g.userData.s * Math.sin(t * 13) * 0.75; }); BIRD.position.y = Math.sin(t * 13 + 1) * 0.08; CAPS.visible = isWar;
+  // weather: cloudy during the magnet part
+  const cl = win(t, A("magnet"), A("near") + 0.5, 1.0, 1.0); scene.background = SKY.clone().lerp(GREY, cl * 0.7); HEMI.intensity = 1.0 - cl * 0.35; SUNL.intensity = 1.6 * (1 - cl * 0.8); SUN.visible = cl < 0.5 && !isMap;
+  CLOUDS.forEach((g, i) => { g.position.y = lerp(36, 22, cl) + (i % 3) * 3; g.visible = !isMap; });
+  FIELD.forEach((m, i) => { m.material.opacity = cl * (0.45 + 0.3 * Math.sin(t * 3 - i)); });
+  const sk = win(t, A("sun") + 0.8, A("magnet"), 0.6, 0.6); SUNRAY.material.opacity = sk; SUNRAY.visible = sk > 0.01; segTo(SUNRAY, PG.position.clone(), PG.position.clone().lerp(SUN.position, 0.12));
+  const nk = win(t, A("near") + 0.6, A("war"), 0.8, 0.5); GROAD.forEach((m) => (m.material.opacity = nk * (0.6 + 0.3 * Math.sin(t * 4)))); GRIV.forEach((m) => (m.material.opacity = nk * 0.7));
+  WISP.forEach((m) => { const w = m.userData, f = (t * 0.25 + w.o) % 1; m.position.set(PG.position.x + w.x * 0.6 - 15 + f * 30, w.y + PG.position.y * 0.4, PG.position.z + 10 - f * 6); m.material.opacity = nk * 0.35 * Math.sin(f * Math.PI); });
+  S(SEPIA, { opacity: win(t, A("war"), A("orbi"), 0.5, 0.4) });
+  // map
+  GROUND.material.color.set(isMap ? 0x9aa69a : 0xffffff); const mk = isMap ? clamp((t - A("orbi") - 1.2) / 1.0) : 0, ck = isMap ? clamp((t - A("orbi") - 3.6) / 0.8) : 0;
+  CELLS.forEach((e) => { e.material.opacity = mk * ((Math.abs(e.userData.i) <= 1 && Math.abs(e.userData.j) <= 1) ? 0.9 : 0.4); });
+  FILL.material.opacity = ck * (0.35 + 0.1 * Math.sin(t * 4)); PIN.visible = isMap; PIN.children[0].material.opacity = 1 - ck; PIN.scale.setScalar(isMap ? lerp(0.3, 1, out(clamp((t - A("orbi") - 0.4) / 0.5))) * (1 - ck * 0.6) : 1); MAP.visible = isMap; PG.visible = !isMap;
+  // camera
+  let cp, tg = PG.position.clone();
+  const off = PG.localToWorld(V(5.5, 2.4, -7.5)); cp = off;
+  if (t < A("hook") + 3.0) { const k = ease(clamp(t / 3)); cp = V(lerp(95, off.x, k), lerp(30, off.y, k), lerp(95, off.z, k)); }
+  if (t >= A("sun") && t < A("magnet")) { const sd = SUN.position.clone().sub(PG.position).normalize(); cp = PG.position.clone().addScaledVector(sd, -11).add(V(3, -1.5, 0)); tg = PG.position.clone().addScaledVector(sd, 8); }
+  if (t >= A("near")) { cp = PG.localToWorld(V(0, 9, -14)); tg = PG.localToWorld(V(0, -4, 10)); }
+  if (isWar) { cp = V(3.6, 31.0, 35.2); tg = V(0, 29.8, 40); }
+  if (isMap) { const k = ease(clamp((t - A("orbi")) / 1.2)); cp = V(0, lerp(60, 150, k), lerp(40, 22, k)); tg = V(0, 0, lerp(-10, 0, k)); }
+  look(cp, tg, isWar ? 40 : 50);
+  // text
+  card("c0", `released · <b>far from home</b>`, t, A("hook") + 4.0, A("sun"), 240, 240, -2);
+  card("c0", `sun + <b>inner clock</b> = compass`, t, A("sun") + 1.0, A("magnet"), 200, 240, -2);
+  card("c0", `cloudy · <b>magnetic field</b>`, t, A("magnet") + 1.0, A("near"), 240, 240, -2);
+  card("c0", `near home · <b>roads · rivers · smells</b>`, t, A("near") + 1.0, A("war"), 140, 240, -2);
+  card("c0", `<h5>1918</h5>Cher Ami · <b>message on its leg</b>`, t, A("war") + 1.0, A("orbi"), 180, 240, -2);
+  if (isWar) lbl("l0", V(0.18, 29.35, 40.1), t, A("war") + 2.5, A("orbi"), "message", "#ffd04a");
+  if (isMap) { lbl("l1", V(7, 6.5, 3), t, A("orbi") + 1.0, A("orbi") + 3.6, "exact spot", "#ff6a6a"); lbl("l2", V(0, 1, CH / 2 + 2), t, A("orbi") + 4.0, A("end"), `rough area<small>about 39 × 20 km</small>`, "#3dff8c"); }
+  card("c0", `Orbi · <b>no exact location</b>`, t, A("orbi") + 1.0, A("end"), 230, 240, -2); card("c1", `others see · <b>the rough area only</b>`, t, A("orbi") + 4.5, A("end"), 170, 1640, 2);
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
