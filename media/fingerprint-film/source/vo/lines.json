@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how fingerprints work? Those tiny ridges formed before you were born, and no two people share them. Not even identical twins.",
+   "dur": 7.288,
+   "at": 0.35
+  },
+  {
+   "key": "ridge",
+   "text": "The ridges carry sweat and oil, so everything you touch keeps a faint copy of the pattern.",
+   "dur": 5.772,
+   "at": 8.04
+  },
+  {
+   "key": "dust",
+   "text": "Detectives brush on a fine powder. It sticks to the oil, and the print appears.",
+   "dur": 5.23,
+   "at": 14.11
+  },
+  {
+   "key": "match",
+   "text": "Experts don't compare the whole picture. They look for tiny details, where ridges end, or split in two.",
+   "dur": 6.721,
+   "at": 19.64
+  },
+  {
+   "key": "phone",
+   "text": "Your phone's sensor does something similar. The ridges touch it, the valleys don't, and it maps the difference.",
+   "dur": 6.464,
+   "at": 26.66
+  },
+  {
+   "key": "orbi",
+   "text": "Sometimes you'd rather leave no trace. Orbi's Anonymous mode has no profile, no name, no GPS. Just a throwaway ID that's gone when you leave.",
+   "dur": 9.521,
+   "at": 33.43
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 43.35
+  }
+ ],
+ "duration": 47.9
+}
