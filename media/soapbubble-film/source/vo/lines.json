@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a soap bubble works? It's a ball of air, wrapped in a skin of water much thinner than a hair.",
+   "dur": 5.656,
+   "at": 0.35
+  },
+  {
+   "key": "layers",
+   "text": "That skin is a sandwich. A thin layer of water, held between two layers of soap that stop it drying out too fast.",
+   "dur": 7.83,
+   "at": 6.41
+  },
+  {
+   "key": "round",
+   "text": "The air inside pushes out equally in every direction, so the skin pulls into a sphere, the smallest shape that can hold it.",
+   "dur": 7.93,
+   "at": 14.54
+  },
+  {
+   "key": "colours",
+   "text": "The colours come from light bouncing off the inside and the outside of the skin. As the skin gets thinner, the colours shift.",
+   "dur": 6.642,
+   "at": 22.77
+  },
+  {
+   "key": "pop",
+   "text": "As the water drains down and dries out, the top turns dark, and then. Pop.",
+   "dur": 5.012,
+   "at": 29.71
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi has bubbles too. Post one, everyone gets their own colour, and it's gone within 30 minutes.",
+   "dur": 5.558,
+   "at": 35.12
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 41.08
+  }
+ ],
+ "duration": 45.63
+}
