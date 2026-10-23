@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Every single follower we get adds one planet to our universe.",
+   "dur": 4.586,
+   "at": 0.35
+  },
+  {
+   "key": "prof",
+   "text": "This is our TikTok right now. Three followers. Three.",
+   "dur": 4.044,
+   "at": 5.34
+  },
+  {
+   "key": "count",
+   "text": "So here they are. Three planets. Three lonely little planets.",
+   "dur": 4.303,
+   "at": 9.68
+  },
+  {
+   "key": "empty",
+   "text": "Our poor universe looks very empty right now.",
+   "dur": 3.354,
+   "at": 14.28
+  },
+  {
+   "key": "goal",
+   "text": "Let's see how fast we can fill this sky. A hundred is the goal.",
+   "dur": 4.411,
+   "at": 17.94
+  },
+  {
+   "key": "cta",
+   "text": "Follow us, and your planet joins the orbit in the next video.",
+   "dur": 3.573,
+   "at": 22.65
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer. Your planet is next!",
+   "dur": 2.276,
+   "at": 26.62
+  }
+ ],
+ "duration": 30.7
+}
