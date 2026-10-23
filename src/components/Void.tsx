@@ -2188,9 +2188,12 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       const near = wired ? taskKey.get(wired) : undefined;
       things.push({ key: `o:${alias.current.get(o.id) ?? o.id}`, w: L ? L.W + 60 : 210, h: L ? L.H + 120 : 250, born: Date.parse(o.createdAt), near });
     }
-    const { W, H } = worldSize(things, vw.w, Math.max(620, vw.h));
+    // the public void starts exactly the size of the free screen (between the header, the send button and the
+    // tools), so it opens at full size with its glass edge just off screen; it only shows once zoomed out (MapWorld)
+    const b = !space && !inArchive ? MAP_BAND[mode] : null;
+    const { W, H } = b ? worldSize(things, Math.max(300, vw.w - b.left - b.right), Math.max(420, vw.h - b.top - b.bottom)) : worldSize(things, vw.w, Math.max(620, vw.h));
     return { W, H, spots: place(things, W, H), size: new Map(things.map((t) => [t.key, t])) };
-  }, [mapOn, sizes, showTasks, tGroups, stacks, visible, groups, vw, pinTick]);
+  }, [mapOn, sizes, showTasks, tGroups, stacks, visible, groups, vw, pinTick, space, inArchive, mode]);
   // only what is on screen is drawn (the map tells what that is as it moves); everything else waits off screen
   const [rect, setRect] = useState<Rect | null>(null);
   const onScreen = useCallback(

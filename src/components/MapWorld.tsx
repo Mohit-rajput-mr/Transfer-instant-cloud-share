@@ -15,6 +15,8 @@ export type Rect = { x0: number; y0: number; x1: number; y1: number; k: number }
 const MAX_K = 2.5;
 // the view opens at a size things are easy to read at; zooming out further shows more of the area
 const OPEN_K = 0.62;
+// below this zoom the public void's edge (its glass pane) is shown; at full size it fills the free screen
+const GLASS_K = 0.97;
 // far out, things are drawn simply (no names, stats or idle motion): cheaper, and unreadable anyway
 const FAR_K = 0.42;
 // touches on these are the thing's own (open, drag, type), never a pan of the map
@@ -42,7 +44,7 @@ export default function MapWorld({ W, H, band, children, fit, empty, framed, onR
   fit?: number;
   /** nothing on the map yet: no zoom tools */
   empty?: boolean;
-  /** draw the edge of the area (the public void): zooming out shows where it ends */
+  /** draw the edge of the area (the public void) once zoomed out: where it ends, and where things can be dragged */
   framed?: boolean;
   /** what is on screen (only that needs drawing) */
   onRect?: (r: Rect) => void;
@@ -407,6 +409,9 @@ export default function MapWorld({ W, H, band, children, fit, empty, framed, onR
     }
   };
 
+  // the glass edge shows only once the view is zoomed out (by hand, or because so much is in the void that it opens
+  // smaller): at full size the area fills the free screen and its edge sits just off it
+  const glass = !!framed && view.k < GLASS_K;
   return (
     <div
       ref={box}
@@ -421,9 +426,9 @@ export default function MapWorld({ W, H, band, children, fit, empty, framed, onR
         zoomAt(1.6, e.clientX - r.left, e.clientY - r.top, true);
       }}
     >
-      {framed && <GlassLenses W={W} H={H} view={view} glide={glide} />}
+      {glass && <GlassLenses W={W} H={H} view={view} glide={glide} />}
       <div
-        className={`world${glide ? " glide" : ""}${view.k < FAR_K ? " far" : ""}${framed ? " framed" : ""}`}
+        className={`world${glide ? " glide" : ""}${view.k < FAR_K ? " far" : ""}${framed ? " framed" : ""}${glass ? " glass-on" : ""}`}
         style={{ width: W, height: H, transform: `translate3d(${view.x}px, ${view.y}px, 0) scale(${view.k})`, "--mk": view.k } as CSSProperties}
       >
         {framed && <GlassEdge W={W} H={H} k={view.k} />}

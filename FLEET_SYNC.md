@@ -20,6 +20,12 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- DONE 2026-10-23 (M, owner ask) — Public void opens FULL SIZE, glass edge only when zoomed out. Before: the world was
+  window-sized (vw × max(620,vh)) then shrunk into the free band, so the edge always showed and phones got a small box.
+  Now (Void map memo) the public void's base size = the free screen (window minus MAP_BAND), so the opening view is k=1
+  and fills it exactly; MapWorld shows the glass (`.world.glass-on`, lenses) only below GLASS_K 0.97: zoomed out by hand
+  or because many files grew the world. Spaces/archive keep the old sizing. Verified locally: desk 1440×900 + iPhone 13,
+  default k=1 no edge, zoomed out k=0.55 edge shown. (`.glass` is a site-wide class: don't reuse it.)
 - DONE 2026-10-23 (H, owner ask: privacy) — Globe removed from the public site. "Pick my area on the map" button gone
   (LocationBlocked now only says how to unblock + Try again); EarthView.tsx and the public `/api/world` route deleted
   (it served every area's live counts worldwide = where other people share). `orbit_world` stays secret-gated in the DB;

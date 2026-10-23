@@ -2897,7 +2897,9 @@ em.hq-tag { font-style: normal; }
   box-shadow: inset 0 0 calc(var(--px) * 14) rgba(255, 255, 255, 0.22), inset 0 0 calc(var(--px) * 3) rgba(255, 255, 255, 0.25);
   -webkit-mask: radial-gradient(55% 70% at 100% 0%, #000, transparent 75%), radial-gradient(60% 55% at 0% 100%, #000, transparent 75%);
   mask: radial-gradient(55% 70% at 100% 0%, #000, transparent 75%), radial-gradient(60% 55% at 0% 100%, #000, transparent 75%); }
-.glass-edge { position: absolute; inset: 0; overflow: visible; pointer-events: none; z-index: -1; }
+.glass-edge { position: absolute; inset: 0; overflow: visible; pointer-events: none; z-index: -1; opacity: 0; transition: opacity 0.35s ease; }
+.world.framed::after { opacity: 0; transition: opacity 0.35s ease; }
+.world.glass-on .glass-edge, .world.glass-on::after { opacity: 1; }
 /* the corner lenses (MapWorld GlassLenses): 110 px squares in screen space behind the world, clipped to the rounded corner */
 .glass-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 .glass-lens { position: absolute; left: 0; top: 0; width: 110px; height: 110px; pointer-events: none; will-change: transform; }
