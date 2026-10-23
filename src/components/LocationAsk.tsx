@@ -47,8 +47,8 @@ function steps(): string[] {
   return ["Click the icon left of the address → Location → Allow.", "Reload and tap Share location."];
 }
 
-/** Location was refused: how to turn it back on, or pick the area by hand so Nearby still knows where you are. */
-export function LocationBlocked(props: { reason: "denied" | "failed"; onPick: () => void; onRetry: () => void; onClose: () => void }) {
+/** Location was refused: how to turn it back on. */
+export function LocationBlocked(props: { reason: "denied" | "failed"; onRetry: () => void; onClose: () => void }) {
   return (
     <Pop label="Location" onClose={props.onClose} className="geo-pop" small>
       <div className="geo-ask">
@@ -56,8 +56,7 @@ export function LocationBlocked(props: { reason: "denied" | "failed"; onPick: ()
         <h3 className="wide">{props.reason === "denied" ? "Location is blocked" : "Couldn't get your location"}</h3>
         <p>Without it Nearby can&apos;t tell where you are: an internet connection&apos;s guess can be a city away. The Open void still shows everything, worldwide.</p>
         <ol className="geo-steps">{steps().map((s) => <li key={s}>{s}</li>)}</ol>
-        <button className="cta lg-press" onClick={props.onPick}><LuMapPin aria-hidden /> Pick my area on the map</button>
-        <button className="geo-later mono" onClick={props.onRetry}>Try again</button>
+        <button className="cta lg-press" onClick={props.onRetry}><LuMapPin aria-hidden /> Try again</button>
       </div>
     </Pop>
   );

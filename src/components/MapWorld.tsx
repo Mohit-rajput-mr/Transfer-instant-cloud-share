@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { LuEarth, LuMaximize, LuMinus, LuPlus } from "react-icons/lu";
+import { LuMaximize, LuMinus, LuPlus } from "react-icons/lu";
 import { mapView } from "@/lib/map";
 import { dragAt, overTrash, toTrash } from "@/lib/trash";
 import { TrashButton } from "./Trash";
@@ -12,7 +12,7 @@ export type Band = { top: number; bottom: number; left: number; right: number };
 export type Rect = { x0: number; y0: number; x1: number; y1: number; k: number };
 
 const MAX_K = 2.5;
-// the view opens at a size things are easy to read at; zooming out further shows more of the area, then the Earth
+// the view opens at a size things are easy to read at; zooming out further shows more of the area
 const OPEN_K = 0.62;
 // far out, things are drawn simply (no names, stats or idle motion): cheaper, and unreadable anyway
 const FAR_K = 0.42;
@@ -25,14 +25,14 @@ const OWN_TOUCH = "input, textarea, select, .tb-acts, .tb-route, .map-tools, [da
 /**
  * The area, seen from above, with Google Maps' controls: drag to move, scroll / pinch to zoom at the pointer,
  * double-click to zoom in, arrow keys to move, + / - to zoom, 0 to go back. Until you move it yourself the view
- * follows the area as it grows. Zooming out just shows more (smaller); the Earth button goes up to the globe.
+ * follows the area as it grows. Zooming out just shows more (smaller).
  */
 // what picks a whole panel up: its header, or its own background (never a button, field or row inside it)
 const HANDLE = ".tb-head, .bub-stack.on-map > header";
 const INNER = "button, a, input, textarea, select, label, form, .tb-row";
 const TEXTY = "input, textarea, select, [contenteditable], .tb-edit, .tb-take, .tb-redeem, .tb-route";
 
-export default function MapWorld({ W, H, band, children, fit, empty, framed, onRect, onEarth, onMoveItem }: {
+export default function MapWorld({ W, H, band, children, fit, empty, framed, onRect, onMoveItem }: {
   W: number;
   H: number;
   band: Band;
@@ -45,8 +45,6 @@ export default function MapWorld({ W, H, band, children, fit, empty, framed, onR
   framed?: boolean;
   /** what is on screen (only that needs drawing) */
   onRect?: (r: Rect) => void;
-  /** the Earth button: up to the globe */
-  onEarth?: () => void;
   /** a panel (task panel, bubble stack) was dragged by this much (world px) */
   onMoveItem?: (key: string, dx: number, dy: number) => void;
 }) {
@@ -439,41 +437,73 @@ export default function MapWorld({ W, H, band, children, fit, empty, framed, onR
             <button className={follow ? "on" : ""} onClick={() => setFollow(true)} aria-label="Back to the opening view (0)" title="Back to the opening view (0)"><LuMaximize /></button>
           </>
         )}
-        {onEarth && <button className="map-earth" onClick={onEarth} aria-label="See the whole Earth" title="See the whole Earth"><LuEarth /></button>}
       </div>
     </div>
   );
 }
 
-/** rounded-rect path (clockwise) */
-function rrect(x: number, y: number, w: number, h: number, r: number) {
-  r = Math.max(0, Math.min(r, w / 2, h / 2));
-  return `M${x + r},${y}H${x + w - r}A${r},${r} 0 0 1 ${x + w},${y + r}V${y + h - r}A${r},${r} 0 0 1 ${x + w - r},${y + h}` +
-    `H${x + r}A${r},${r} 0 0 1 ${x},${y + h - r}V${y + r}A${r},${r} 0 0 1 ${x + r},${y}Z`;
+type Corner = [number, number]; // [rx, ry] of one rounded corner
+
+/** rounded-rect path (clockwise) with its own elliptical radius per corner: top-left, top-right, bottom-right, bottom-left */
+function rrect(x: number, y: number, w: number, h: number, [tl, tr, br, bl]: Corner[]) {
+  const c = ([rx, ry]: Corner): Corner => [Math.max(0, Math.min(rx, w / 2)), Math.max(0, Math.min(ry, h / 2))];
+  const [a, b, d, e] = [c(tl), c(tr), c(br), c(bl)];
+  return `M${x + a[0]},${y}H${x + w - b[0]}A${b[0]},${b[1]} 0 0 1 ${x + w},${y + b[1]}V${y + h - d[1]}` +
+    `A${d[0]},${d[1]} 0 0 1 ${x + w - d[0]},${y + h}H${x + e[0]}A${e[0]},${e[1]} 0 0 1 ${x},${y + h - e[1]}` +
+    `V${y + a[1]}A${a[0]},${a[1]} 0 0 1 ${x + a[0]},${y}Z`;
 }
 
-/** the public void's glass rim: the inner edge curves wider than the outer one, so the light band is a hairline along the
- *  sides and swells into a bright crescent at each corner (like the edge of a glass pane). Sized in screen px (÷ zoom). */
+/** the public void's glass rim, after the owner's reference: light falls on two opposite corners only (top-right and
+ *  bottom-left): a crisp bright hairline, with a softer crescent behind it where the inner edge curves wider than the
+ *  outer one, fading out along the sides; the other two corners stay a faint hairline. Two small rainbow glints sit on the top and
+ *  bottom edges, as light splits in real glass. No fill: the void shows through clear. Sized in screen px (÷ zoom). */
 function GlassEdge({ W, H, k }: { W: number; H: number; k: number }) {
   const id = useId().replace(/:/g, "");
-  const px = 1 / k, R = 30 * px, Ri = 37 * px, w = 1.1 * px, g = Math.min(240 * px, Math.min(W, H) * 0.7);
-  const ring = rrect(0, 0, W, H, R) + rrect(w, w, W - 2 * w, H - 2 * w, Ri);
-  const glows: [string, number, number, string, number][] = [
-    ["tr", W, 0, "var(--gh)", 0.9], ["bl", 0, H, "var(--gh)", 0.8], ["tl", 0, 0, "var(--gh)", 0.45], ["br", W, H, "var(--gw)", 0.8],
+  const px = 1 / k, R = 34 * px, w = 1 * px, R0: Corner = [R, R];
+  const flat: Corner = [R - w, R - w], outer = rrect(0, 0, W, H, [R0, R0, R0, R0]);
+  // hairline all round, and a crescent (wider inner curve) on the two lit corners
+  const ring = outer + rrect(w, w, W - 2 * w, H - 2 * w, [flat, flat, flat, flat]);
+  // the crescent is stacked from thin to full in faint layers, so its tips melt into the hairline and it fades inward
+  // (no hard edge anywhere); the lit corners' inner curve grows from 37x44 to 48x66 px
+  const swells = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => { const f = n / 8;
+    const a = (37 + 11 * f) * px, b = (44 + 22 * f) * px;
+    return outer + rrect(w, w, W - 2 * w, H - 2 * w, [flat, [a, b], flat, [b, a]]);
+  });
+  // how far each lit corner's light runs along its two edges
+  const lit: [string, number, number, number, number][] = [
+    ["tr", W, 0, Math.min(W * 0.55, 900 * px), Math.min(H * 0.75, 900 * px)],
+    ["bl", 0, H, Math.min(W * 0.6, 900 * px), Math.min(H * 0.6, 900 * px)],
   ];
+  const glint = (n: string, cx: number, y: number) => {
+    const L = Math.min(70 * px, W * 0.2);
+    return <rect key={n} x={cx - L / 2} y={y} width={L} height={1.6 * px} fill={`url(#${id}rb)`} />;
+  };
   return (
     <svg className="glass-edge" width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden>
       <defs>
-        {glows.map(([n, cx, cy, c, o]) => (
-          <radialGradient key={n} id={`${id}${n}`} gradientUnits="userSpaceOnUse" cx={cx} cy={cy} r={g}>
-            <stop offset="0" style={{ stopColor: `rgb(${c})`, stopOpacity: o }} />
-            <stop offset="0.45" style={{ stopColor: `rgb(${c})`, stopOpacity: o * 0.35 }} />
-            <stop offset="1" style={{ stopColor: `rgb(${c})`, stopOpacity: 0 }} />
+        {lit.map(([n, cx, cy, rx, ry]) => (
+          <radialGradient key={n} id={`${id}${n}`} gradientUnits="userSpaceOnUse" cx={0} cy={0} r={1}
+            gradientTransform={`translate(${cx} ${cy}) scale(${rx} ${ry})`}>
+            <stop offset="0" className="gl" style={{ stopOpacity: 1 }} />
+            <stop offset="0.12" className="gl" style={{ stopOpacity: 0.95 }} />
+            <stop offset="0.4" className="gl" style={{ stopOpacity: 0.45 }} />
+            <stop offset="0.75" className="gl" style={{ stopOpacity: 0.12 }} />
+            <stop offset="1" className="gl" style={{ stopOpacity: 0 }} />
           </radialGradient>
         ))}
+        <linearGradient id={`${id}rb`}>
+          <stop offset="0" stopColor="#ff9a3c" stopOpacity="0" />
+          <stop offset="0.3" stopColor="#ffb057" stopOpacity="0.85" />
+          <stop offset="0.5" stopColor="#ff6fb5" stopOpacity="0.8" />
+          <stop offset="0.7" stopColor="#7fd8ff" stopOpacity="0.8" />
+          <stop offset="1" stopColor="#7fd8ff" stopOpacity="0" />
+        </linearGradient>
       </defs>
       <path d={ring} fillRule="evenodd" className="glass-base" />
-      {glows.map(([n]) => <path key={n} d={ring} fillRule="evenodd" fill={`url(#${id}${n})`} />)}
+      {lit.map(([n]) => swells.map((d, i) => <path key={`s${n}${i}`} d={d} fillRule="evenodd" fill={`url(#${id}${n})`} opacity={0.07} />))}
+      {lit.map(([n]) => <path key={n} d={ring} fillRule="evenodd" fill={`url(#${id}${n})`} />)}
+      {glint("gt", W * 0.62, 0)}
+      {glint("gb", W * 0.5, H - 1.6 * px)}
     </svg>
   );
 }

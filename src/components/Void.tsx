@@ -41,16 +41,13 @@ import { addTask, assignTask, burnTask, carryTasks, wireObject, editTask, isMyTa
 import { cleanOrb, ORB_ID, readSync, type SyncMsg } from "@/lib/sync";
 import { joinLive, liveOn, roomsFor, type Chan, type Live } from "@/lib/live";
 import { around } from "@/lib/area";
-import { anonCellNow, asked, dropGps, fixNow, follow, forgetFix, fromIp, locate, markAsked, markSent, permission, pickArea, setAnonCell, where } from "@/lib/where";
+import { anonCellNow, asked, dropGps, fixNow, follow, forgetFix, fromIp, locate, markAsked, markSent, permission, setAnonCell, where } from "@/lib/where";
 import LocationAsk, { LocationBlocked } from "./LocationAsk";
 import { ArchiveRestore, ArchiveRoom, TrashZone } from "./Trash";
 import { trashedAt, trashLabel, useTrash } from "@/lib/trash";
 import TaskThrow, { type Grab } from "./TaskThrow";
-import dynamic from "next/dynamic";
 import { perf } from "@/lib/perf";
 import type { Rect } from "./MapWorld";
-// the globe (MapLibre) loads only when someone goes up to it
-const EarthView = dynamic(() => import("./EarthView"), { ssr: false, loading: () => <div className="earth-view earth-load"><span className="mono">Going up…</span></div> });
 import { GoPrivate, InviteCard } from "./TeamMove";
 import { bubbleName, burnBubble, editBubble, hueFor, isMine as isMyBubble, postBubble, senderOf, type Bubble } from "@/lib/bubbles";
 import StylePicker from "./StylePicker";
@@ -346,17 +343,13 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   homeRef.current = home;
   const [area, setArea] = useState("");
   useEffect(() => setArea(home), [home]);
-  // up on the Earth (components/EarthView.tsx)
-  const [earth, setEarth] = useState(false);
   const areaRef = useRef(area);
   areaRef.current = area;
   const [gps, setGps] = useState(false);
   const [areaReady, setAreaReady] = useState(false);
   const [geoAsk, setGeoAsk] = useState(false);
-  // location refused or failed: how to fix it, or pick the area on the map (null: not shown)
+  // location refused or failed: how to fix it (null: not shown)
   const [geoFail, setGeoFail] = useState<"denied" | "failed" | null>(null);
-  // the Earth was opened to pick this device's area by hand
-  const [picking, setPicking] = useState(false);
   const [skew, setSkew] = useState(0);
   const skewRef = useRef(skew);
   skewRef.current = skew;
@@ -483,13 +476,6 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     setArea(homeRef.current);
   };
   useEffect(() => void perf(), []);
-  // up on the Earth the page holds still (the globe takes every drag and scroll), and the sky stops drawing
-  useEffect(() => {
-    if (!earth) return;
-    window.scrollTo(0, 0);
-    document.documentElement.dataset.earth = "1";
-    return () => void delete document.documentElement.dataset.earth;
-  }, [earth]);
   // a task of mine picked up to be thrown into one of my spaces (components/TaskThrow.tsx)
   const [grab, setGrab] = useState<(Grab & { spaces: SpaceSession[] }) | null>(null);
   const [launches, setLaunches] = useState<Launch[]>([]);
@@ -1130,8 +1116,6 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       setGps(false);
       setGeoAsk(false);
       setGeoFail(null);
-      setEarth(false);
-      setPicking(false);
       setNet(null);
       inviteKeyRef.current = "";
       setInvite(null);
@@ -1183,8 +1167,6 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       setGps(false);
       setGeoAsk(false);
       setGeoFail(null);
-      setEarth(false);
-      setPicking(false);
       setNet(null);
       inviteKeyRef.current = "";
       setInvite(null);
@@ -1616,7 +1598,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     // are named by area, so they follow it
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scheduleRefresh, rtOn, spaceReady, areaReady, liveOn ? space?.chan ?? "" : chanNames]);
-  // the area moved (a walk, a flight over the Earth, a new IP guess): the same rooms stay open (only their filter and
+  // the area moved (a walk, a new IP guess): the same rooms stay open (only their filter and
   // tag move), new regions open and ones left behind close; nothing said meanwhile is lost
   useEffect(() => {
     liveRef.current?.update(chanNames.split(" "), "");
@@ -1721,13 +1703,6 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     if (s === "area" && !placed(gps, where()?.how) && !(await shareLocation())) return;
     setScope(s);
   }, [gps, shareLocation]);
-  // location blocked: this device's area is the one picked on the map (lib/where.ts), not its connection's guess
-  const pickHere = useCallback((cell: string) => {
-    pickArea(cell);
-    setHome(cell);
-    setArea(cell);
-    toast("Your area is set: Nearby shows what was sent from it");
-  }, [toast]);
   // a new area: its void (the first load waits for areaReady and asks with the area by then)
   useEffect(() => {
     if (!area || !areaReady || spaceRef.current) return;
@@ -2821,24 +2796,6 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             <p className="mono">Longest life of a file.<br />The sender picks 5 to 30.</p>
           </div>
 
-          {earth && !space && !anonNow && (
-            <EarthView
-              home={home}
-              from={area}
-              gps={gps}
-              picking={picking}
-              onEnter={(cell) => {
-                // the void is worldwide: the Earth only opens to pick this device's own area (for Nearby)
-                setEarth(false);
-                if (!picking) return;
-                setPicking(false);
-                pickHere(cell);
-              }}
-              onLocate={shareLocation}
-              onSpace={() => (setEarth(false), setPanel({ kind: "space" }))}
-              onClose={() => (setEarth(false), setPicking(false))}
-            />
-          )}
           {work && loaded && shown.length === 0 && !(map && map.spots.size) && (
             <p className="w-hint">{space ? `${space.title} is empty` : "Drop files anywhere, or press Upload"}</p>
           )}
@@ -3047,7 +3004,6 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       {geoFail && !panel && !anonNow && (
         <LocationBlocked
           reason={geoFail}
-          onPick={() => (setGeoFail(null), setPicking(true), setEarth(true))}
           onRetry={() => (setGeoFail(null), void shareLocation())}
           onClose={() => setGeoFail(null)}
         />

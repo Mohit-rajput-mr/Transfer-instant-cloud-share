@@ -143,7 +143,6 @@ html[data-ui="work"] .map-tools.lg > button:hover { background: var(--w-hover) !
 html[data-ui="work"] .map-tools.lg > button.on { color: var(--w-accent) !important; }
 html[data-ui="work"] .map-tools.lg > .mono { min-width: 46px; height: 36px; display: grid; place-items: center; border-radius: 8px; border: 1px solid var(--w-border); background: var(--w-surface); color: var(--w-text-2); font: 500 12px/1 var(--w-mono); }
 html[data-ui="work"] .map-tools svg { width: 16px; height: 16px; }
-html[data-ui="work"] .map-earth { display: none !important; }
 
 /* ---------- canvas action bar (n8n "Test workflow" row) ---------- */
 html[data-ui="work"] .w-dock { position: fixed; z-index: 31; left: calc(50% + 28px); bottom: calc(18px + var(--safe-b)); transform: translateX(-50%); display: flex; gap: 8px; }

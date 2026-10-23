@@ -20,10 +20,15 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
-- DONE 2026-10-23 (L, owner ask) — Public void edge = glass pane (owner's reference image): MapWorld `framed` (public void
-  only) renders `GlassEdge`, an SVG ring whose inner corner radius (37) is wider than the outer (30), so the light band is a
-  hairline on the sides and swells into a crescent at each corner; corner glows white (warm bottom-right); frosted fill =
-  `.world.framed::after`. All sizes ÷ zoom, so it stays crisp and shrinks with the area. Verified locally (Chromium 2x).
+- DONE 2026-10-23 (H, owner ask: privacy) — Globe removed from the public site. "Pick my area on the map" button gone
+  (LocationBlocked now only says how to unblock + Try again); EarthView.tsx and the public `/api/world` route deleted
+  (it served every area's live counts worldwide = where other people share). `orbit_world` stays secret-gated in the DB;
+  the admin Earth (admin/Earth.tsx) is untouched. Areas picked earlier (lib/where pickArea) still work. Local: /api/world 404.
+- DONE 2026-10-23 (L, owner ask) — Public void edge = clear glass pane (owner's reference image), no fill. MapWorld
+  `framed` (public void only) renders `GlassEdge` SVG: faint hairline all round; light only on top-right + bottom-left: a
+  crisp bright line plus a crescent stacked from 8 faint layers (inner curve wider than the outer), so it fades inward and
+  its tips melt into the hairline (no hard edge); 2 rainbow glints on top/bottom edges; `.world.framed::after` = soft inner
+  glow masked to the two lit corners. All sizes ÷ zoom. Verified locally (Chromium 2x).
 - FIXED 2026-10-23 (H) — Downloads slow / stuck on "Unlocking" (owner: 4 MB took ages). Measured live (2 browsers, private
   space, 4 MB): unlock 0.36 s, stored copy not finished at the one check (404) → tied to the direct path → ~4 s handshake
   (new Supabase channel + ICE gather + answer) before bytes; on networks that block direct connections (STUN only, no

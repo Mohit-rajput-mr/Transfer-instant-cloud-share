@@ -2889,19 +2889,21 @@ em.hq-tag { font-style: normal; }
 .void.map .map-view:active { cursor: grabbing; }
 .world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
 .world.glide { transition: transform 0.6s var(--ease-out); }
-/* the public void as a glass pane: frosted fill here, the crescent rim is MapWorld's GlassEdge SVG. Sizes ÷ zoom (--mk). */
+/* the public void as clear glass: the rim is MapWorld's GlassEdge SVG; here only a soft glow just inside the two lit
+   corners (top-right, bottom-left), no fill. Sizes ÷ zoom (--mk). */
 .world.framed { --px: calc(1px / var(--mk, 1)); }
 .world.framed::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: -1;
-  border-radius: calc(var(--px) * 30);
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025) 45%, rgba(255, 255, 255, 0.055));
-  box-shadow: inset 0 0 calc(var(--px) * 40) rgba(255, 255, 255, 0.06), 0 calc(var(--px) * 24) calc(var(--px) * 70) rgba(0, 0, 0, 0.55); }
-.glass-edge { position: absolute; inset: 0; overflow: visible; pointer-events: none; z-index: -1;
-  --gh: 255, 255, 255; --gw: 255, 205, 160; }
-.glass-edge .glass-base { fill: rgba(255, 255, 255, 0.16); }
-html[data-theme="light"] .glass-edge { --gh: 30, 34, 42; --gw: 170, 105, 50; }
-html[data-theme="light"] .glass-edge .glass-base { fill: rgba(30, 34, 42, 0.14); }
-html[data-theme="light"] .world.framed::after { background: linear-gradient(160deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.15) 45%, rgba(255, 255, 255, 0.35));
-  box-shadow: inset 0 0 calc(var(--px) * 40) rgba(255, 255, 255, 0.5), 0 calc(var(--px) * 24) calc(var(--px) * 70) rgba(0, 0, 0, 0.1); }
+  border-radius: calc(var(--px) * 34);
+  box-shadow: inset 0 0 calc(var(--px) * 14) rgba(255, 255, 255, 0.22), inset 0 0 calc(var(--px) * 3) rgba(255, 255, 255, 0.25);
+  -webkit-mask: radial-gradient(55% 70% at 100% 0%, #000, transparent 75%), radial-gradient(60% 55% at 0% 100%, #000, transparent 75%);
+  mask: radial-gradient(55% 70% at 100% 0%, #000, transparent 75%), radial-gradient(60% 55% at 0% 100%, #000, transparent 75%); }
+.glass-edge { position: absolute; inset: 0; overflow: visible; pointer-events: none; z-index: -1; }
+.glass-edge .gl { stop-color: #fff; }
+.glass-edge .glass-base { fill: rgba(255, 255, 255, 0.13); }
+html[data-theme="light"] .glass-edge .gl { stop-color: #1e222a; }
+html[data-theme="light"] .glass-edge .glass-base { fill: rgba(30, 34, 42, 0.12); }
+html[data-theme="light"] .world.framed::after {
+  box-shadow: inset 0 0 calc(var(--px) * 14) rgba(30, 34, 42, 0.12), inset 0 0 calc(var(--px) * 3) rgba(30, 34, 42, 0.14); }
 /* every ball sits exactly on its spot (no sky bands, no side columns) */
 .void.map .orb-anchor { left: var(--x) !important; top: var(--y) !important; }
 .void.map .task-boards.mapped { position: absolute; inset: 0; width: auto; max-height: none; overflow: visible; display: block; pointer-events: none; }
@@ -3058,42 +3060,16 @@ html[data-perf="low"] .orb, html[data-perf="low"] .orb *:not(.sphere), html[data
 html[data-perf="low"] .orb-anchor, html[data-perf="low"] .bub-stack.on-map, html[data-perf="low"] .task-board { transition-duration: 0.25s !important; }
 html[data-perf="low"] .bub, html[data-perf="low"] .task-board, html[data-perf="low"] .sphere { box-shadow: none !important; }
 html[data-perf="low"] .world.glide { transition-duration: 0.35s; }
-.map-tools .map-earth { color: #9fd3ff; }
-
-/* =====================================================================
-   EARTH — components/EarthView.tsx
-   ===================================================================== */
-.earth-view { position: fixed; inset: 0; z-index: 12; background: #000; animation: fade-in 0.35s ease-out both; }
-.earth-map, .earth-map.maplibregl-map { position: absolute; inset: 0; }
-.earth-load { display: grid; place-items: center; color: #9a9a9a; font-size: 11px; }
-.earth-bar { position: absolute; z-index: 2; left: 50%; top: calc(96px + var(--safe-t) + var(--scope-h, 0px)); translate: -50% 0; display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 18px;
-  border-radius: 999px; background: rgba(16,17,20,0.86); border: 1px solid rgba(255,255,255,0.16); max-width: calc(100vw - 24px); }
-.earth-bar b { font-size: 15px; text-transform: uppercase; }
-.earth-bar .mono { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.earth-bar .pill, .earth-ask .pill, .area-pill .pill { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.earth-bar .pill svg, .earth-ask .pill svg, .area-pill .pill svg { width: 14px; height: 14px; }
-.earth-ask { position: absolute; z-index: 2; left: 50%; bottom: calc(118px + var(--safe-b)); translate: -50% 0; display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 18px;
-  border-radius: 999px; background: rgba(16,17,20,0.9); border: 1px solid rgba(61,255,140,0.35); font-size: 13px; color: #eee; max-width: calc(100vw - 24px); flex-wrap: wrap; justify-content: center; }
-.earth-hint { position: absolute; z-index: 2; left: 50%; bottom: calc(88px + var(--safe-b)); translate: -50% 0; font-size: 9.5px; color: #8a8a8a; white-space: nowrap; pointer-events: none; }
-.earth-home { width: 16px; height: 16px; border-radius: 50%; background: #3dff8c; box-shadow: 0 0 0 4px rgba(61,255,140,0.25); animation: earth-ping 1.8s ease-out infinite; }
-@keyframes earth-ping { 0% { box-shadow: 0 0 0 0 rgba(61,255,140,0.55); } 100% { box-shadow: 0 0 0 22px rgba(61,255,140,0); } }
-.earth-view .maplibregl-ctrl-attrib { background: rgba(0,0,0,0.5) !important; color: #777; font-size: 10px; }
-.earth-view .maplibregl-ctrl-attrib a { color: #999; }
+.area-pill .pill { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.area-pill .pill svg { width: 14px; height: 14px; }
 /* local map: share-location / another-area nudge under the header */
 .area-pill { position: absolute; z-index: 9; left: 50%; top: calc(96px + var(--safe-t) + var(--scope-h, 0px)); translate: -50% 0; display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 16px;
   border-radius: 999px; background: rgba(16,17,20,0.88); border: 1px solid rgba(61,255,140,0.3); font-size: 12px; color: #ddd; max-width: calc(100vw - 20px); }
 .area-pill .pill { height: 30px; font-size: 10.5px; padding: 0 12px; }
 @media (max-width: 720px) {
-  .earth-bar { top: calc(66px + var(--safe-t) + var(--scope-h, 0px)); padding-left: 14px; gap: 8px; }
-  .earth-bar .mono { display: none; }
   .area-pill { top: calc(64px + var(--safe-t) + var(--scope-h, 0px)); font-size: 11px; }
   .area-pill > span { display: none; }
-  .earth-ask { bottom: calc(100px + var(--safe-b)); padding: 6px; gap: 6px; flex-wrap: nowrap; }
-  .earth-ask > span { display: none; }
-  .earth-hint { display: none; }
 }
-html[data-perf="low"] .earth-home { animation: none; }
-html[data-earth], html[data-earth] body { overflow: hidden; overscroll-behavior: none; }
 
 /* a whole panel picked up off the map (MapWorld) */
 .task-boards.mapped > .task-board .tb-head, .bub-stack.on-map > header, .bub-stack.on-map .bub { cursor: grab; }

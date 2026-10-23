@@ -111,8 +111,6 @@ export default function Starfield() {
       raf = 0;
       if (!visible || document.hidden) return;
       raf = requestAnimationFrame(frame);
-      // the Earth view covers the sky: nothing to draw
-      if (document.documentElement.dataset.earth) return;
       if (ts - last < 1000 / FPS - 2) return;
       const dt = last ? Math.min(3, (ts - last) / 16.667) : 1; // speed is per time, not per frame (120 Hz safe)
       last = ts;
