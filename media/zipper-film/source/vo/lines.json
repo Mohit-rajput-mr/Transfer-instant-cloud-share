@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a zipper works? It's just two rows of teeth, and one clever little slider.",
+   "dur": 6.075,
+   "at": 0.35
+  },
+  {
+   "key": "teeth",
+   "text": "Each tooth has a bump on top and a hollow underneath. The rows are offset, so every tooth fits between two teeth on the other side.",
+   "dur": 7.117,
+   "at": 6.83
+  },
+  {
+   "key": "slider",
+   "text": "The slider is a Y-shaped tunnel. Pull it up, and it squeezes the rows together at just the right angle, so each bump snaps into a hollow.",
+   "dur": 8.164,
+   "at": 14.24
+  },
+  {
+   "key": "open",
+   "text": "Pull it down, and a small wedge inside pushes the teeth apart again, one by one.",
+   "dur": 5.571,
+   "at": 22.71
+  },
+  {
+   "key": "history",
+   "text": "The modern zipper was patented in nineteen seventeen by Gideon Sundback. Before that, it was buttons and hooks.",
+   "dur": 7.104,
+   "at": 28.58
+  },
+  {
+   "key": "close",
+   "text": "So every zip is a row of tiny locks, closed by one small tunnel.",
+   "dur": 4.65,
+   "at": 35.98
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 41.03
+  }
+ ],
+ "duration": 45.58
+}
