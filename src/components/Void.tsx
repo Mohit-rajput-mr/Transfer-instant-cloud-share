@@ -2594,6 +2594,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           </button>
           <span className="m-live" aria-label={`${online} ${online > 1 ? "devices" : "device"} ${space ? "in this space" : "in orbit"}`}><i />{online}</span>
           <span className="m-sp" />
+          {!anonNow && anonOffButton("m-ic lg-press")}
           {pinButton("m-ic lg-press")}
           <button className="m-ic lg-press" onClick={() => setPanel({ kind: "menu" })} aria-label={kind === "all" ? "Menu" : "Menu, filter on"}><LuMenu />{kind !== "all" && <i className="m-dot" />}</button>
         </div>

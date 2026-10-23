@@ -20,6 +20,8 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- DONE 2026-10-23 (L, owner ask) — Phone top bar: the Anonymous (incognito) button now sits beside the location pin
+  (Void m-bar, `anonOffButton("m-ic")`; while anonymous the pin's place already shows the on-badge). Verified iPhone 13.
 - DONE 2026-10-23 (M, owner ask) — Public void opens FULL SIZE, glass edge only when zoomed out. Before: the world was
   window-sized (vw × max(620,vh)) then shrunk into the free band, so the edge always showed and phones got a small box.
   Now (Void map memo) the public void's base size = the free screen (window minus MAP_BAND), so the opening view is k=1
