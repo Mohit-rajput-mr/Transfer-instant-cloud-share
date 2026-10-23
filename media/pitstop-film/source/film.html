@@ -1,0 +1,157 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>How an F1 pit stop works</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+scene.background = new THREE.Color(0x1a1e26);
+scene.add(new THREE.HemisphereLight(0xf2f4ff, 0x2a2c34, 1.3)); { const dl = new THREE.DirectionalLight(0xffffff, 1.8); dl.position.set(4, 14, 10); scene.add(dl); }
+const GROUND = new THREE.Mesh(new THREE.PlaneGeometry(80, 40), new THREE.MeshStandardMaterial({ color: 0x3a3c42, roughness: 0.8 })); GROUND.rotation.x = -Math.PI / 2; scene.add(GROUND);
+{ const box = new THREE.Mesh(new THREE.PlaneGeometry(7, 4), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.12 })); box.rotation.x = -Math.PI / 2; box.position.y = 0.01; scene.add(box); const garage = new THREE.Mesh(new THREE.BoxGeometry(14, 5, 0.4), new THREE.MeshStandardMaterial({ color: 0x2a2c32 })); garage.position.set(0, 2.5, -4.5); scene.add(garage); }
+// car
+const CAR = new THREE.Group(); scene.add(CAR); const RED = new THREE.MeshStandardMaterial({ color: 0xd8202a, metalness: 0.4, roughness: 0.3 });
+{ const body = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.45, 0.9), RED); body.position.y = 0.45; CAR.add(body); const nose = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.4, 12), RED); nose.rotation.z = -Math.PI / 2; nose.position.set(3.0, 0.4, 0); CAR.add(nose); const side = new THREE.Mesh(new THREE.BoxGeometry(2, 0.45, 1.6), RED); side.position.set(-0.4, 0.45, 0); CAR.add(side);
+  const fw = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.06, 2.3), new THREE.MeshStandardMaterial({ color: 0x15161a })); fw.position.set(3.6, 0.2, 0); CAR.add(fw); const rw = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 1.6), fw.material); rw.position.set(-2.4, 1.1, 0); CAR.add(rw); const halo = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.04, 6, 20, Math.PI), new THREE.MeshStandardMaterial({ color: 0x15161a })); halo.position.set(0.6, 0.85, 0); halo.rotation.y = Math.PI / 2; CAR.add(halo); }
+const WP = [[1.7, 1], [1.7, -1], [-1.6, 1], [-1.6, -1]];
+const mkWheel = (col) => { const g = new THREE.Group(); const w = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.42, 24), new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.8 })); w.rotation.x = Math.PI / 2; g.add(w); const band = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.03, 6, 24), new THREE.MeshBasicMaterial({ color: col })); band.position.z = 0.22; g.add(band); scene.add(g); return g; };
+const OLD = WP.map(() => mkWheel(0xffd04a)), NEW = WP.map(() => mkWheel(0xff3a3a));
+// crew: 3 per wheel + 2 jacks
+const crew = (col) => { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.CapsuleGeometry(0.22, 0.7, 4, 8), new THREE.MeshStandardMaterial({ color: col })); b.position.y = 0.6; g.add(b); const h = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshStandardMaterial({ color: 0xf4f4f4 })); h.position.y = 1.2; g.add(h); scene.add(g); return g; };
+const ROLES = []; WP.forEach(([x, z], w) => { const s = Math.sign(z); [["gun", 0xff8a1a, V(x, 0, z + s * 1.0)], ["off", 0x5ab8ff, V(x - 0.7, 0, z + s * 1.6)], ["on", 0x3dff8c, V(x + 0.7, 0, z + s * 1.6)]].forEach(([r, c, p]) => { const g = crew(c); g.position.copy(p); g.lookAt(x, 0, z); g.userData = { r, w, home: p.clone() }; ROLES.push(g); }); });
+const JF = crew(0xffffff), JR = crew(0xffffff); JF.position.set(4.6, 0, 0); JF.lookAt(0, 0, 0); JR.position.set(-3.6, 0, 0); JR.lookAt(0, 0, 0);
+const LAMP = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 12), new THREE.MeshBasicMaterial({ color: 0xff2a2a, toneMapped: false })); LAMP.position.set(5.2, 3.0, -1.2); scene.add(LAMP);
+// Orbi Work board
+const BOARD = document.createElement("div"); BOARD.className = "ov"; S(BOARD, { left: "60px", right: "60px", top: "420px", height: "760px", display: "flex", gap: "22px", opacity: 0, zIndex: 30 });
+BOARD.innerHTML = ["Doing", "Review", "Done"].map((h, i) => `<div style="flex:1;border-radius:22px;background:rgba(6,12,10,0.92);border:2px solid rgba(61,255,140,0.35);padding:22px;position:relative"><div style="font:700 30px M;letter-spacing:0.1em;color:${["#ffd04a", "#5ab8ff", "#3dff8c"][i]}">${h.toUpperCase()}</div></div>`).join("") + `<div id="wk" style="position:absolute;width:250px;padding:20px;border-radius:16px;background:#fff;color:#111;font:800 30px/1.2 D;box-shadow:0 20px 40px rgba(0,0,0,0.5)">Ship v2.4<div style="font:600 22px M;color:#666;margin-top:8px">@sam</div></div>`; document.body.appendChild(BOARD);
+window.render = async function (t) { cam.up.set(0, 1, 0);
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  // stop progress: real time in the hook, slow replay through wheels..practice, real again in light
+  let s = 0, arrive = 1, leave = 0;
+  if (t < A("wheels")) { arrive = clamp((t - A("hook") - 1.0) / 1.6); s = clamp((t - A("hook") - 2.8) / 2.0); }
+  else if (t < A("light")) { arrive = 1; s = clamp((t - A("wheels") - 0.4) / (A("light") - A("wheels") - 1.2)); }
+  else { arrive = 1; s = 1; leave = clamp((t - A("light") - 1.4) / 1.2); }
+  CAR.position.set(lerp(-26, 0, out(arrive)) + leave * leave * 30, lerp(0, 0.35, clamp((s - 0.05) / 0.08) * (1 - clamp((s - 0.86) / 0.08))), 0);
+  WP.forEach(([x, z], i) => { const sg = Math.sign(z), base = CAR.position.clone().add(V(x, 0.42, z));
+    const offK = clamp((s - 0.25) / 0.18), onK = clamp((s - 0.45) / 0.18); OLD[i].position.copy(base).add(V(-offK * 0.7, -offK * 0.1, sg * offK * 1.4)); OLD[i].visible = offK < 1 || s < 0.95; OLD[i].rotation.y = 0; if (offK >= 1) OLD[i].position.copy(V(x - 0.7, 0.42, z + sg * 2.2));
+    NEW[i].position.copy(onK <= 0 ? V(x + 0.7, 0.42, z + sg * 2.0) : V(x + 0.7, 0.42, z + sg * 2.0).lerp(base, ease(onK))); if (s >= 0.63) NEW[i].position.copy(base); NEW[i].visible = arrive >= 1;
+    if (leave > 0) { OLD[i].position.copy(V(x - 0.7, 0.42, z + sg * 2.2)); NEW[i].position.copy(base); } });
+  ROLES.forEach((g) => { const u = g.userData, [x, z] = WP[u.w], sg = Math.sign(z); const gunOn = (s > 0.18 && s < 0.28) || (s > 0.63 && s < 0.74); g.position.copy(u.home); if (u.r === "gun") { g.position.z = z + sg * (gunOn ? 0.75 : 1.0); g.rotation.z = gunOn ? Math.sin(t * 60) * 0.05 : 0; } g.visible = arrive >= 1 && leave < 0.3; });
+  JF.position.x = 4.6 + (s > 0.05 && s < 0.9 ? -0.4 : 0); JR.position.x = -3.6 + (s > 0.05 && s < 0.9 ? 0.4 : 0); JF.visible = JR.visible = arrive >= 1 && leave < 0.3;
+  LAMP.material.color.set(s >= 0.9 ? 0x3dff6a : 0xff2a2a);
+  // camera
+  let cp = V(6, 9, 13), tg = V(0, 0.5, 0), fov = 44;
+  if (t < A("wheels")) { const k = ease(clamp(t / 3)); cp = V(lerp(-14, 6, k), lerp(4, 9, k), lerp(10, 13, k)); }
+  if (t >= A("wheels")) { cp = V(3.8, 3.2, 6.5); tg = V(1.7, 0.5, 1.4); }
+  if (t >= A("jacks")) { cp = V(9, 2.4, 3.5); tg = V(0, 0.6, 0); }
+  if (t >= A("practice")) { cp = V(0, 12, 6); tg = V(0, 0, 0.2); }
+  if (t >= A("light")) { cp = V(9, 5, 11); tg = V(2, 1.2, 0); }
+  look(cp, tg, fov);
+  // text
+  if (t >= A("hook") + 2.8 && t < A("wheels")) timer(`${(Math.min(2, (t - A("hook") - 2.8))).toFixed(2)} s`, t, A("hook") + 2.8, A("wheels"), "#ffd04a", "140px");
+  big("~20 PEOPLE · 1 JOB EACH", t, A("hook") + 5.2, A("wheels"), "#ffffff", "640px", "80px");
+  if (t >= A("wheels") + 0.6 && t < A("jacks")) { const r0 = ROLES.filter((g) => g.userData.w === 0); [["gun", "#ff8a1a", "wheel gun"], ["off", "#5ab8ff", "old off"], ["on", "#3dff8c", "new on"]].forEach(([r, c, n], i) => { const g = r0.find((q) => q.userData.r === r); lbl("l" + i, g.position.clone().add(V(0, 1.7, 0)), t, A("wheels") + 0.6 + i * 0.8, A("jacks"), n, c); }); }
+  card("c0", `3 per wheel · <b>gun · off · on</b>`, t, A("wheels") + 0.8, A("jacks"), 220, 240, -2);
+  card("c0", `jacks · <b>front + back</b>`, t, A("jacks") + 0.6, A("practice"), 260, 240, -2);
+  card("c0", `practice · <b>same moves, every time</b>`, t, A("practice") + 0.6, A("light"), 170, 240, -2);
+  card("c0", `green light · <b>record under 2 s</b>`, t, A("light") + 1.4, A("orbi"), 200, 240, -2);
+  S(BOARD, { opacity: win(t, A("orbi") + 0.2, A("end"), 0.4, 0.3) }); { const col = t < A("orbi") + 3.0 ? 0 : t < A("orbi") + 5.5 ? 1 : 2, k = ease(clamp((t - A("orbi") - (col === 1 ? 3.0 : col === 2 ? 5.5 : 0)) / 0.5)); const xs = [22, 342, 662], x = col === 0 ? xs[0] : lerp(xs[col - 1], xs[col], k); S($("wk"), { left: `${x}px`, top: "90px", opacity: clamp((t - A("orbi") - 1.4) / 0.4) }); }
+  card("c0", `Orbi Work · <b>live for everyone</b>`, t, A("orbi") + 0.6, A("end"), 210, 240, -2);
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
