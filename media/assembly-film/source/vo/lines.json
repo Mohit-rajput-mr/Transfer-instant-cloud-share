@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a car factory builds a car about every minute? Nobody builds a whole car.",
+   "dur": 5.175,
+   "at": 0.35
+  },
+  {
+   "key": "line",
+   "text": "The car moves along a line, and each station does one small job. Doors on. Seats in. Wheels on.",
+   "dur": 5.588,
+   "at": 5.92
+  },
+  {
+   "key": "ford",
+   "text": "Henry Ford tried this in nineteen thirteen. Building a Model T chassis went from about twelve hours to about an hour and a half.",
+   "dur": 7.492,
+   "at": 11.81
+  },
+  {
+   "key": "robots",
+   "text": "Today, robots do the welding and the painting, and parts arrive right when they're needed.",
+   "dur": 4.908,
+   "at": 19.6
+  },
+  {
+   "key": "check",
+   "text": "At the end, every car is tested before it rolls out the door.",
+   "dur": 3.545,
+   "at": 24.81
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Work runs on the same idea. Type a task, tag a teammate, and it moves step by step. Doing, review, done. And everyone sees it live.",
+   "dur": 9.517,
+   "at": 28.66
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 38.57
+  }
+ ],
+ "duration": 43.13
+}
