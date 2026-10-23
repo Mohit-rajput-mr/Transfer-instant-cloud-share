@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how leafcutter ants move a whole tree? One small piece at a time.",
+   "dur": 4.85,
+   "at": 0.35
+  },
+  {
+   "key": "cut",
+   "text": "Each ant snips a piece it can carry. It even vibrates while it cuts, which helps its jaws slice cleanly.",
+   "dur": 6.244,
+   "at": 5.6
+  },
+  {
+   "key": "carry",
+   "text": "Then thousands of them march home along a cleared highway, each one carrying many times its own weight.",
+   "dur": 6.112,
+   "at": 12.14
+  },
+  {
+   "key": "rider",
+   "text": "Tiny ants ride on top of the leaves, guarding the carriers from flies that attack them.",
+   "dur": 5.14,
+   "at": 18.56
+  },
+  {
+   "key": "fungus",
+   "text": "And they don't even eat the leaves. They feed them to a fungus garden underground, and eat the fungus.",
+   "dur": 5.851,
+   "at": 24.0
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi moves big files the same way. Files up to twenty gigabytes go in parts of about thirty two megabytes, three at a time. If your connection drops, only the missing parts are sent again.",
+   "dur": 10.139,
+   "at": 30.15
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 40.69
+  }
+ ],
+ "duration": 45.24
+}
