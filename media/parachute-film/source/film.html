@@ -1,0 +1,180 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>How a parachute works</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+scene.background = new THREE.Color(0x6fb2ec); scene.fog = new THREE.Fog(0xa8d0f0, 40, 160);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x4a6a3a, 1.1)); { const dl = new THREE.DirectionalLight(0xfff4e0, 1.6); dl.position.set(8, 14, 10); scene.add(dl); }
+const segTo = (m, p, q) => { m.position.copy(p).add(q).multiplyScalar(0.5); m.scale.y = Math.max(0.001, p.distanceTo(q)); m.quaternion.setFromUnitVectors(V(0, 1, 0), q.clone().sub(p).normalize()); };
+// ground far below
+const GROUND = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ map: canvasTex(1024, 1024, (g, w, h) => { g.fillStyle = "#4f7a3a"; g.fillRect(0, 0, w, h); for (let i = 0; i < 140; i++) { g.fillStyle = ["#6a9a48", "#8aa850", "#3e6630", "#a89a5a"][i % 4]; g.fillRect(rnd() * w, rnd() * h, 40 + rnd() * 120, 40 + rnd() * 120); } }), roughness: 1 })); GROUND.rotation.x = -Math.PI / 2; scene.add(GROUND);
+// clouds
+const CLOUDS = Array.from({ length: 26 }, (_, i) => { const g = new THREE.Group(); for (let j = 0; j < 5; j++) { const s = new THREE.Mesh(new THREE.SphereGeometry(1.4 + rnd() * 1.4, 14, 10), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.92 })); s.position.set((rnd() - 0.5) * 5, (rnd() - 0.5) * 1.2, (rnd() - 0.5) * 3); g.add(s); } g.userData = { x: (rnd() - 0.5) * 70, z: -10 - rnd() * 50, y0: rnd() * 140 }; scene.add(g); return g; });
+// air streaks
+const STREAKS = Array.from({ length: 70 }, () => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.03, 2.2, 0.03), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 })); m.userData = { x: (rnd() - 0.5) * 16, z: (rnd() - 0.5) * 10, y0: rnd() * 30 }; scene.add(m); return m; });
+// the diver
+const DIV = new THREE.Group(); scene.add(DIV);
+const SUIT = new THREE.MeshStandardMaterial({ color: 0xe0452f, roughness: 0.6 }), DARK = new THREE.MeshStandardMaterial({ color: 0x22252c });
+{ const b = new THREE.Mesh(new THREE.CapsuleGeometry(0.32, 0.9, 6, 12), SUIT); DIV.add(b); const h = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 12), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 })); h.position.y = 0.95; DIV.add(h);
+  const pack = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.7, 0.3), DARK); pack.position.set(0, 0.15, -0.3); DIV.add(pack); }
+const LIMBS = [[-0.35, 0.45, 1], [0.35, 0.45, -1], [-0.18, -0.6, 1], [0.18, -0.6, -1]].map(([x, y, s], i) => { const m = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.7, 4, 8), SUIT); const g = new THREE.Group(); g.position.set(x, y, 0); m.position.y = i < 2 ? 0.45 : -0.45; g.add(m); g.userData.s = s; DIV.add(g); return g; });
+// force arrows
+const arrowG = (col) => { const g = new THREE.Group(); const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1, 10), glow(col)); sh.position.y = 0.5; g.add(sh); const hd = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.6, 14), glow(col)); g.add(hd); g.userData = { sh, hd }; scene.add(g); return g; };
+const setArrow = (g, len, up) => { g.userData.sh.scale.y = Math.max(0.01, len); g.userData.sh.position.y = len / 2; g.userData.hd.position.y = len + 0.3; g.rotation.z = up ? 0 : Math.PI; };
+const DRAG = arrowG(0x3dff8c), WEIGHT = arrowG(0xff4a4a);
+// round canopy with a vent at the top
+const ROUND = new THREE.Group(); scene.add(ROUND);
+{ const tex = canvasTex(512, 64, (g, w, h) => { for (let i = 0; i < 16; i++) { g.fillStyle = i % 2 ? "#ffffff" : "#e0452f"; g.fillRect(i * w / 16, 0, w / 16 + 1, h); } });
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(4, 48, 20, 0, Math.PI * 2, 0.2, 1.25), new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide, roughness: 0.8 })); dome.position.y = 5.0; ROUND.add(dome); }
+const RLINES = Array.from({ length: 12 }, () => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1, 4), new THREE.MeshBasicMaterial({ color: 0x333333 })); ROUND.add(m); return m; });
+const VENTAIR = Array.from({ length: 14 }, (_, i) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), glow(0x3dff8c, { transparent: true })); m.userData.o = i / 14; ROUND.add(m); return m; });
+// square ram-air wing
+const WING = new THREE.Group(); scene.add(WING);
+const CELLS = Array.from({ length: 7 }, (_, i) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.55, 2.4), new THREE.MeshStandardMaterial({ color: i % 2 ? 0x1e3a8a : 0xffb020, roughness: 0.6 })); const x = (i - 3) * 0.95; m.position.set(x, 5.6 - Math.pow(i - 3, 2) * 0.09, 0); m.rotation.z = -(i - 3) * 0.05; WING.add(m); return m; });
+const WLINES = Array.from({ length: 8 }, () => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1, 4), new THREE.MeshBasicMaterial({ color: 0x333333 })); WING.add(m); return m; });
+const CELLAIR = Array.from({ length: 10 }, (_, i) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), glow(0x3dff8c, { transparent: true })); m.userData.o = i / 10; WING.add(m); return m; });
+// speed model (km/h) and distance fallen, pure functions of t
+const openAt = () => A("open") + 1.2;
+const spd = (t) => { if (t < A("hook") + 0.5) return 0; let v = 200 * (1 - Math.exp(-(t - A("hook") - 0.5) / 2.6)); if (t >= A("terminal")) v = Math.max(v, lerp(v, 200, clamp((t - A("terminal")) / 0.8))); if (t >= openAt()) v = 20 + (v - 20) * Math.exp(-(t - openAt()) / 0.6); return v; };
+const fallen = (t) => { let d = 0; for (let x = 0; x < t; x += 0.05) d += spd(x) * 0.05; return d / 200 * 22; };
+window.render = async function (t) { cam.up.set(0, 1, 0);
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  const v = spd(t), D = fallen(t), op = clamp((t - openAt() + 0.2) / 0.9), isWing = t >= A("wing");
+  // posture: belly-down in free fall, upright under canopy
+  const up = ease(clamp((t - openAt()) / 0.8)); DIV.rotation.x = lerp(-Math.PI / 2 + 0.1, 0, up); DIV.position.set(0, 0, 0);
+  LIMBS.forEach((g, i) => { g.rotation.z = lerp((i < 2 ? 2.2 : 0.35) * g.userData.s, (i < 2 ? 0.3 : 0.05) * g.userData.s, up) + Math.sin(t * 9 + i) * 0.04 * (1 - up); });
+  // flare at the very end: legs forward
+  if (t >= A("close")) { const f = ease(clamp((t - A("close") - 1.0) / 1.0)); LIMBS[2].rotation.x = LIMBS[3].rotation.x = -f * 0.9; }
+  // world moving up past the diver
+  STREAKS.forEach((m) => { const u = m.userData; m.position.set(u.x, ((u.y0 + D * 1.5) % 30) - 15, u.z); m.scale.y = 0.2 + v / 200 * 1.4; m.material.opacity = 0.15 + 0.5 * v / 200; m.visible = v > 6; });
+  CLOUDS.forEach((g) => { const u = g.userData; g.position.set(u.x, ((u.y0 + D * 0.8) % 140) - 70, u.z); });
+  const gy = isWing ? lerp(-140, -7.5, ease(clamp((t - A("wing")) / (A("end") - A("wing") - 0.3)))) : -400; GROUND.position.y = gy; GROUND.visible = isWing;
+  // canopies
+  ROUND.visible = t >= openAt() - 0.2 && !isWing; ROUND.scale.set(lerp(0.15, 1, out(op)), lerp(0.4, 1, out(op)), lerp(0.15, 1, out(op))); ROUND.rotation.z = t >= A("vent") ? Math.sin(t * 1.4) * 0.04 : Math.sin(t * 1.6) * 0.12 * op;
+  RLINES.forEach((m, i) => { const a = i / 12 * Math.PI * 2, rr = 4 * Math.sin(1.45); segTo(m, V(Math.cos(a) * rr, 5.0 + 4 * Math.cos(1.45), Math.sin(a) * rr), V(Math.cos(a) * 0.25, 0.6, Math.sin(a) * 0.25)); });
+  VENTAIR.forEach((m) => { const f = (t * 0.8 + m.userData.o) % 1; m.position.set(Math.sin(m.userData.o * 40) * 0.5, 7.4 + f * 4, Math.cos(m.userData.o * 40) * 0.5); m.material.opacity = (1 - f) * (t >= A("vent") + 1.0 ? 1 : 0); });
+  WING.visible = isWing; WING.rotation.x = t >= A("close") + 1.0 ? -ease(clamp((t - A("close") - 1.0) / 1.0)) * 0.3 : 0;
+  WLINES.forEach((m, i) => { const c = CELLS[Math.min(6, i)]; segTo(m, V(c.position.x * (i < 7 ? 1 : 0), c.position.y - 0.25, i % 2 ? 0.8 : -0.8), V(0, 0.6, 0)); });
+  CELLAIR.forEach((m) => { const f = (t * 1.2 + m.userData.o) % 1; m.position.set((m.userData.o - 0.5) * 6, 5.6, lerp(4, -1.2, f)); m.material.opacity = Math.min(f * 4, 1) * (1 - f) * (isWing && t < A("close") ? 1 : 0); });
+  // force arrows (drag grows with speed squared; jumps when the canopy opens)
+  const showF = t >= A("drag") && t < A("vent"); DRAG.visible = WEIGHT.visible = showF;
+  let dl = 2.2 * Math.pow(v / 200, 2); if (t >= openAt()) dl = 2.2 + 3.5 * Math.exp(-(t - openAt()) / 0.9) * clamp((t - openAt()) / 0.2); setArrow(DRAG, Math.max(0.05, dl), true); DRAG.position.set(-1.6, 0.4, 0); setArrow(WEIGHT, 2.2, false); WEIGHT.position.set(1.6, -0.4, 0);
+  if (showF) { lbl("l0", V(-1.6, dl + 1.0, 0), t, A("drag") + 0.6, A("vent"), "drag", "#3dff8c"); lbl("l1", V(1.6, -3.2, 0), t, A("drag") + 0.6, A("vent"), "weight", "#ff6a6a"); }
+  // camera
+  let cp = V(5.5, 1.5, 9), tg = V(0, 0, 0), fov = 42;
+  if (t < A("drag")) { const k = ease(clamp(t / 4)); cp = V(lerp(2, 5.5, k), lerp(9, 1.5, k), lerp(4, 9, k)); }
+  if (t >= A("drag")) { cp = V(0.5, -0.3, 11); tg = V(0, -0.2, 0); }
+  if (t >= openAt() - 0.4) { const k = ease(clamp((t - openAt() + 0.4) / 1.2)); cp = V(lerp(0.5, 5, k), lerp(0.5, 1, k), lerp(11, 19, k)); tg = V(0, lerp(0.2, 3.6, k), 0); }
+  if (t >= A("vent")) { cp = V(2.5, 1.2, 6.5); tg = V(0, 8.5, 0); fov = 50; }
+  if (isWing) { const k = ease(clamp((t - A("wing")) / 1.5)); cp = V(lerp(9, 7, k), lerp(4, 2.5, k), lerp(-8, 10, k)); tg = V(0, 2.6, 0); }
+  if (t >= A("close")) { cp = V(9, -1.5, 13); tg = V(0, 0.5, 0); }
+  look(cp, tg, fov);
+  // text
+  if (t >= A("hook") + 0.5 && t < A("close")) timer(`${Math.round(v)} km/h`, t, A("hook") + 0.5, A("close"), v > 60 ? "#ff7a3c" : "#3dff8c", "120px");
+  big("SLOW, NOT STOP", t, A("hook") + 3.4, A("drag"), "#ffffff", "520px", "120px");
+  card("c0", `drag · <b>grows with speed</b>`, t, A("drag") + 1.5, A("terminal"), 200, 1620, -2);
+  card("c0", `terminal velocity · <b>~200 km/h</b>`, t, A("terminal") + 0.8, A("open"), 170, 1620, -2);
+  card("c0", `canopy open · <b>~20 km/h</b>`, t, A("open") + 2.6, A("vent"), 220, 1620, -2);
+  card("c0", `the vent · <b>air escapes · no swinging</b>`, t, A("vent") + 0.8, A("wing"), 110, 1620, -2);
+  card("c0", `ram-air wing · <b>steer · glide · flare</b>`, t, A("wing") + 1.2, A("close"), 120, 1620, -2);
+  big("GRAB AIR", t, A("close") + 0.5, A("end"), "#3dff8c", "520px", "140px");
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
