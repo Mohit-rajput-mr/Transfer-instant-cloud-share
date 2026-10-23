@@ -176,6 +176,15 @@ export async function createAnonPassSpace(pass: string): Promise<SpaceSession> {
   }
   throw new Error("Couldn't find a free name, try again");
 }
+/** is an anonymous space with this 4-character name live right now? (null: couldn't tell) */
+export async function anonLive(name: string): Promise<boolean | null> {
+  const n = cleanAnonName(name);
+  if (n.length !== 4) return false;
+  const r = await fetch(`/api/anon-find?name=${n}`, { cache: "no-store" }).catch(() => null);
+  if (!r?.ok) return null;
+  const slugs = ((await r.json().catch(() => null)) as { slugs?: string[] } | null)?.slugs ?? [];
+  return slugs.length > 0;
+}
 /** step into an anonymous space with its name and passcode */
 export async function joinAnonByName(name: string, pass: string): Promise<SpaceSession> {
   const n = cleanAnonName(name);

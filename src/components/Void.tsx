@@ -29,7 +29,7 @@ const release = (id: string) => {
 };
 import { downloading } from "@/lib/downloads";
 import { warm } from "@/lib/peek";
-import { anonLink, anonTitle, createAnonPassSpace, createAnonSpace, createSpace, joinAnonSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
+import { anonLink, anonTitle, createAnonPassSpace, createSpace, joinAnonByName, joinAnonSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
 import { BsIncognito } from "react-icons/bs";
 import AnonSeal from "./AnonSeal";
 import KnockBell from "./KnockBell";
@@ -1214,31 +1214,34 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     toast(`You're anonymous in ${s.title}`);
     carryOn.current(then);
   }, [switchSpace, toast]);
-  /** a new anonymous space (random title, code and key), stepped into; its one link is copied if it can be */
-  const goAnonSpace = useCallback(async (then?: Then, min?: number, pass?: string) => {
+  /** a new anonymous space (a made-up 4-character code + the passcode picked), stepped into; its code is shown */
+  const goAnonSpace = useCallback(async (then: Then | undefined, min: number | undefined, pass: string) => {
     // an anonymous space only exists inside a timed anonymous session (5 to 30 min): start one first, so the space
     // is filed under it and burns with it
     if (!anonSwitch()) toggleAnon(true, false, min ?? lastMinutes());
     let s: SpaceSession;
     try {
-      s = pass ? await createAnonPassSpace(pass) : await createAnonSpace();
+      s = await createAnonPassSpace(pass);
     } catch (e) {
       toast((e as { status?: number }).status === 500 ? "Anonymous spaces aren't available yet" : (e as Error).message);
       throw e;
     }
     await remember(s);
     switchSpace(s);
-    let copied = false;
-    try {
-      await navigator.clipboard.writeText(anonLink(s));
-      copied = true;
-    } catch {}
-    if (!copied || s.named) linkAfter.current = s.slug;
-    toast(s.named ? `${s.title} is ready · name ${s.slug.slice(5, 9).toUpperCase()} + your passcode` : copied ? `${s.title} is ready · link copied` : `${s.title} is ready`);
+    linkAfter.current = s.slug;
+    toast(`Space ${s.slug.slice(5, 9).toUpperCase()} is live`);
     if (then) carryOn.current(then);
-    // a passcode space: its name is shown (that's how people get in), the link is there too
-    else setPanel(copied && !s.named ? null : { kind: "anon-link" });
+    // its code is shown (code + passcode is how people get in)
+    else setPanel({ kind: "anon-link" });
   }, [switchSpace, toast, toggleAnon]);
+
+  /** into someone's anonymous space with its code and passcode (a session starts first, so this device is a ghost) */
+  const findAnon = useCallback(async (code: string, pass: string, min: number, then?: Then) => {
+    if (!anonSwitch()) toggleAnon(true, false, min);
+    const s = await joinAnonByName(code, pass);
+    intoAnon(s, then);
+    setPanel(null);
+  }, [intoAnon, toggleAnon]);
 
   // stepped into an anonymous space (its link, a knock, or a saved one) without the switch on: being in one is being
   // anonymous, so a session starts (30 min at most) with its clock on the seal, and it ends by itself
@@ -2675,15 +2678,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           {anonNow && !inArchive && (
             <div className={`ghost-mid${shown.length ? " over" : ""}`} aria-hidden>
               <BsIncognito className="ghost-mask" />
-              <b className="ghost-title">You&apos;ve gone anonymous</b>
-              <span className="ghost-sub">Other users can&apos;t see your location, your name or your device. Files go through the encrypted cloud only.</span>
-              {/* what anonymous means, in plain words. Only what Orbi really does (no routing through other IPs: that is
-                  Tor's job, and the card's "What still happens" says so) */}
-              <ul className="ghost-why">
-                <li>No login. No name. No GPS. Nothing ties a file to you.</li>
-                <li>Sender and receiver never meet: the encrypted cloud stands between them, so neither sees the other&apos;s IP or place.</li>
-                <li>Your space is off the map: never listed, no place on Earth, and it burns when your time is up.</li>
-              </ul>
+              <b className="ghost-title">You&apos;re anonymous</b>
+              <span className="ghost-sub">No name, no location, no device. Only the encrypted cloud.</span>
             </div>
           )}
           {!work && !inArchive && !space && (anonNow ? (
@@ -2962,7 +2958,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           onClose={() => setPanel(null)}
           toast={toast}
           anon={anonOn}
-          onAnonSpace={(min?: number, pass?: string) => void goAnonSpace(undefined, min, pass).catch(() => {})}
+          onAnonSpace={(min: number, pass: string) => void goAnonSpace(undefined, min, pass).catch(() => {})}
           copyAnonLink={copyAnonLink}
         />
       )}
@@ -3049,8 +3045,6 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             inSpace: !!space?.anon,
             toggle: (v) => (v ? requestAnon() : toggleAnon(false)),
             card: () => setPanel({ kind: "anon", mode: "status" }),
-            newSpace: () => void goAnonSpace().catch(() => {}),
-            copyLink: space?.anon ? copyAnonLink : undefined,
           }}
         />
       )}
@@ -3071,29 +3065,35 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         <AnonCard
           mode="gate"
           switchOn={anonOn}
+          sess={anonSess}
           space={null}
           saved={anonSaved}
           onClose={() => setPanel(null)}
-          onTurnOn={noop}
+          onLook={noop}
           onTurnOff={() => toggleAnon(false)}
-          onCreate={(pass) => goAnonSpace(gate, undefined, pass)}
-          onEnterByName={() => setPanel({ kind: "space", start: ":search" })}
+          onCreate={(pass, min) => goAnonSpace(gate, min, pass)}
+          onFind={(code, pass, min) => findAnon(code, pass, min, gate)}
           onPick={(s) => intoAnon(s, gate)}
-          onCopy={noop}
         />
       )}
       {anonCard && (
         <AnonCard
+          key={anonCard === "link" ? "link" : "card"}
           mode={anonCard}
           switchOn={anonOn}
+          sess={anonSess}
           space={space?.anon ? space : null}
           saved={anonSaved}
           onClose={() => setPanel(null)}
-          onTurnOn={(m) => toggleAnon(true, true, m)}
+          onLook={(m) => {
+            toggleAnon(true, false, m);
+            setPanel(null);
+          }}
           onTurnOff={() => toggleAnon(false)}
-          onCreate={(pass) => goAnonSpace(undefined, undefined, pass)}
-          onEnterByName={() => setPanel({ kind: "space", start: ":search" })}
+          onCreate={(pass, min) => goAnonSpace(undefined, min, pass)}
+          onFind={(code, pass, min) => findAnon(code, pass, min)}
           onPick={(s) => (intoAnon(s), setPanel(null))}
+          onLeave={space?.anon ? () => (switchSpace(null), setPanel(null), toast("Back in the open void, still anonymous")) : undefined}
           join={panel?.kind === "anon-join" ? {
             title: anonTitle(panel.slug),
             go: async () => {
@@ -3111,7 +3111,6 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             },
           } : undefined}
           link={space?.anon ? anonLink(space) : undefined}
-          onCopy={copyAnonLink}
         />
       )}
       {panel?.kind === "send" && !gate && (

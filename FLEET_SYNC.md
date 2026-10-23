@@ -20,6 +20,27 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- DONE 2026-10-23 (H, owner ask) — Anonymous mode rebuilt simple (AnonCard = one black "portal" card, readable sans,
+  squircle shapes). Home: Burns after 5–30 + three choices: Look around (open void as a ghost) · Create a space (code made
+  up: 4 chars, caps + digits; PASSCODE REQUIRED, 6+) · Find a space (type code → "K7QX is live" via /api/anon-find →
+  passcode → in). Inside a space: the code as 4 big tiles, Copy code / Share (text with the code, never the key link),
+  Leave space, Exit anonymous. Passcode-less anonymous spaces are gone everywhere: card, Spaces → Create (required now),
+  mobile menu (opens the card), and the SERVER (/api/spaces anon without a name → 400). RELEASE bumped so old tabs reload.
+  Old #j=…&k=… links still join (join mode). Anonymous theme: terminal mono + "> " / "$" marks replaced by the site sans.
+- FIXED 2026-10-23 (M) — Anonymous void layout (owner's iPhone: the hat sat on the seal's "ANON-XXXX · BURNS IN" label;
+  on others the label hid under the bar). Root cause: AnonSeal measured the bar once, too early (28 px vs 62 px real), and
+  the hat block was centred on its own with a tall list. Now AnonSeal re-measures (rAF for 2 s, every size change, lowest
+  visible part of the bar) and shares --seal-top; .ghost-mid sits at max(50% − 90px, seal-top + 44px); the explainer list
+  is gone (one line). Black portal: no grey tint / 100vmax shadow sliding over the fixed sky when the page scrolls.
+  Verified iPhone 13 emulation: label at 76 px under a 62 px bar, hat at 226 px.
+- DONE 2026-10-23 (M, owner ask) — Admin page switcher (HQ · Spaces, components/admin/Pages.tsx) and /admin/spaces
+  (AdminSpaces.tsx, every 10 s): per space (30 d) live members, members, objects in it now + size, flowed all-time (files,
+  bytes up, downloads, bytes out, notes, tasks), made / burnt / last seen; Anonymous tab (each session: alias, live mm:ss
+  or how it ended, length, start UTC, the space codes it made + their totals, place); History tab (30-day bars + table).
+  DB: migration 029 (space_members.seen_at stamped by /enter, which members call every ~15 s → live = 90 s;
+  private.space_stats counted by exception-safe triggers on transfers/bubbles/tasks; orbit_admin_spaces). NOTE: the
+  Supabase MCP apply_migration hung on CREATE TRIGGER twice (no locks seen); the triggers and orbit_admin_spaces were
+  applied with execute_sql + lock_timeout instead. The file holds all of it.
 - DONE 2026-10-23 (L, owner ask) — Phone top bar: the Anonymous (incognito) button now sits beside the location pin
   (Void m-bar, `anonOffButton("m-ic")`; while anonymous the pin's place already shows the on-badge). Verified iPhone 13.
 - DONE 2026-10-23 (M, owner ask) — Public void opens FULL SIZE, glass edge only when zoomed out. Before: the world was

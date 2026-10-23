@@ -29,7 +29,7 @@ export default function MobileMenu(props: {
   /** /work: theme switch instead of styles, and the way back to the classic look */
   work?: { onBoard: () => void };
   /** "Stay anonymous" (lib/anon.ts): on = the switch, now = anonymous here (the switch or an anonymous space) */
-  anon?: { on: boolean; now: boolean; inSpace: boolean; toggle: (v: boolean) => void; card: () => void; newSpace: () => void; copyLink?: () => void };
+  anon?: { on: boolean; now: boolean; inSpace: boolean; toggle: (v: boolean) => void; card: () => void };
 }) {
   const [theme, setTheme] = useTheme();
   const [out, setOut] = useState(false);
@@ -79,8 +79,8 @@ export default function MobileMenu(props: {
                 <span className="sd-switch" aria-hidden><i /></span>
               </button>
               {a.now && (a.inSpace
-                ? a.copyLink && row(<LuLink />, "Copy anonymous link", "the link holds the code and the key", a.copyLink)
-                : row(<LuLink />, "Anonymous space", "make one · share by link", go(a.newSpace)))}
+                ? row(<LuLink />, "Your space code", "share it with your passcode", go(a.card))
+                : row(<LuLink />, "Anonymous space", "create one · find one by code", go(a.card)))}
             </div>
           )}
 

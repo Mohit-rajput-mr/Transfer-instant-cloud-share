@@ -36,11 +36,13 @@ export default function AnonSeal({ sess }: { sess: AnonSession | null }) {
     return () => clearInterval(t);
   }, []);
 
-  // outside a space: the frame's top sits under the navbar as it is at the top of the page. The navbar is fixed (its
-  // bottom on screen doesn't move with scrolling) while the layer scrolls with the page, so the frame's top is that
-  // bottom minus where the layer starts on the page. Measured only while the bar is full size: scrolled down it turns
-  // into a smaller pill (.compact), which must not move the frame. (Adding scrollY to the fixed bar's bottom, as this
-  // did before, pushed the frame down on every re-measure while scrolled, and a running max kept it there.)
+  // outside a space: the frame's top sits just under the navbar. The navbar is fixed and the layer scrolls with the
+  // page, so the frame's top is the bar's bottom minus where the layer starts on the page. The bar's bottom is the
+  // lowest of its visible parts (the pill can reach below the header box), measured only while the bar is full size
+  // (scrolled down it turns into a smaller pill, .compact, which must not move the frame). It is measured again for
+  // the first two seconds and on every size change: one early measure (fonts, the scope row still coming in) put the
+  // label under the bar on some phones and the frame far below it on others. The result is also shared as
+  // --seal-top, so the "you're anonymous" plate is laid out under the label instead of on it.
   useEffect(() => {
     if (glass) return;
     let hdrBottom = 0;
@@ -48,16 +50,40 @@ export default function AnonSeal({ sess }: { sess: AnonSession | null }) {
       const layer = box.current?.parentElement;
       const hdr = document.querySelector<HTMLElement>(".top");
       if (!layer || !hdr) return;
-      if (!hdr.classList.contains("compact") || !hdrBottom) hdrBottom = hdr.getBoundingClientRect().bottom;
-      const next = Math.round(hdrBottom - (layer.getBoundingClientRect().top + window.scrollY) + 18);
+      if (!hdr.classList.contains("compact")) {
+        let bottom = hdr.getBoundingClientRect().bottom;
+        hdr.querySelectorAll<HTMLElement>(":scope > *").forEach((el) => {
+          const r = el.getBoundingClientRect();
+          if (r.height > 0 && getComputedStyle(el).display !== "none") bottom = Math.max(bottom, r.bottom);
+        });
+        hdrBottom = bottom;
+      }
+      if (!hdrBottom) return;
+      const next = Math.round(hdrBottom - (layer.getBoundingClientRect().top + window.scrollY) + 16);
       setTop((t) => (t === next ? t : next));
+      document.documentElement.style.setProperty("--seal-top", `${next}px`);
     };
     place();
+    const t0 = performance.now();
+    let raf = 0;
+    const settle = () => {
+      place();
+      if (performance.now() - t0 < 2000) raf = requestAnimationFrame(settle);
+    };
+    raf = requestAnimationFrame(settle);
     const ro = new ResizeObserver(place);
     const hdr = document.querySelector(".top");
-    if (hdr) ro.observe(hdr);
+    if (hdr) {
+      ro.observe(hdr);
+      hdr.querySelectorAll(":scope > *").forEach((el) => ro.observe(el));
+    }
     window.addEventListener("resize", place);
-    return () => { ro.disconnect(); window.removeEventListener("resize", place); };
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      window.removeEventListener("resize", place);
+      document.documentElement.style.removeProperty("--seal-top");
+    };
   }, [glass]);
 
   const total = sess ? sess.ends - sess.start : 1;

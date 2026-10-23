@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatBytes } from "@/lib/client";
 import type { Layer, RouteLine } from "./Earth";
 import AdminVoid from "./AdminVoid";
+import AdminPages from "./Pages";
 import History, { loadHistory, routeLines } from "./History";
 import type { AdminSpace, AdminTransfer, AnonSessionRec, Overview } from "./types";
 import { country, flag, n } from "./fmt";
@@ -261,6 +262,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
           <img className="brand-logo" src="/logo.svg" alt="Orbi Transfer" width={194} height={28} />
           <span className="brand-by">Mission HQ</span>
         </Link>
+        <AdminPages />
         <nav className="hq-tabs" aria-label="HQ sections">
           <button className={!expand ? "on" : ""} onClick={() => setExpand(null)}>Globe</button>
           <button className={expand === "void" ? "on" : ""} onClick={() => setExpand("void")}>Void</button>

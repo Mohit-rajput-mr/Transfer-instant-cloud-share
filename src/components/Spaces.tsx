@@ -75,7 +75,7 @@ export default function SpacePanel(props: {
   /** the "Stay anonymous" switch (lib/anon.ts): named spaces show your name, so they are closed while it is on */
   anon?: boolean;
   /** make an anonymous space (random title, code and key; one link) and step in */
-  onAnonSpace?: (min?: number, pass?: string) => void;
+  onAnonSpace?: (min: number, pass: string) => void;
   copyAnonLink?: () => void;
 }) {
   const { current, info } = props;
@@ -213,7 +213,7 @@ export default function SpacePanel(props: {
         <div className="sp-pane" key="create-anon">
           <div className="sp-hero sp-anon">
             <span className="mono dim"><BsIncognito className="ic-inline" aria-hidden /> <b>Anonymous space</b></span>
-            <p className="note">No name, a random title, private. Share it with one link; only people with the link get in and can open what&apos;s sent.</p>
+            <p className="note">No name, private, off the map. It gets a 4-character code: people need the code and your passcode to get in.</p>
             {anon ? (
               <span className="mono dim">It burns with your anonymous session</span>
             ) : (
@@ -228,11 +228,11 @@ export default function SpacePanel(props: {
               </>
             )}
             <label className="anon-pass">
-              <span className="mono">Passcode <i>(optional)</i></span>
-              <input type="password" className="line-input" value={anonPass} onChange={(e) => setAnonPass(e.target.value.slice(0, 64))} placeholder={`${ANON_PASS_MIN}+ characters`} autoComplete="new-password" aria-label="Passcode for the new anonymous space (optional)" />
-              <small>{anonPass ? (anonPass.length >= ANON_PASS_MIN ? "It gets a 4-letter name: name + this passcode lets people in" : `At least ${ANON_PASS_MIN} characters`) : "Leave empty: only its link gets people in"}</small>
+              <span className="mono">Passcode</span>
+              <input type="password" className="line-input" value={anonPass} onChange={(e) => setAnonPass(e.target.value.slice(0, 64))} placeholder={`${ANON_PASS_MIN}+ characters`} autoComplete="new-password" aria-label="Passcode for the new anonymous space" />
+              <small>{anonPass.length >= ANON_PASS_MIN ? "Code + this passcode lets people in" : `At least ${ANON_PASS_MIN} characters (required)`}</small>
             </label>
-            <button className="cta lg-press" disabled={!!anonPass && anonPass.length < ANON_PASS_MIN} onClick={() => props.onAnonSpace?.(mins, anonPass || undefined)}>{anonPass ? "Create with passcode" : "Create anonymous space"} <Arrow /></button>
+            <button className="cta lg-press" disabled={anonPass.length < ANON_PASS_MIN} onClick={() => props.onAnonSpace?.(mins, anonPass)}>Create anonymous space <Arrow /></button>
           </div>
           {anon ? (
             <p className="note">Named spaces show your name to their members. Turn off Anonymous to make one.</p>

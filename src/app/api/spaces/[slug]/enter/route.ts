@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rpc } from "@/lib/server";
 import { chanFor, closesAt, getMeta, isOwner, member, roster } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const meta = me && (await getMeta(me.slug));
   if (!me || !meta) return NextResponse.json({ error: "You are not in this space (removed, or it is gone)" }, { status: 403 });
   const owner = isOwner(meta, b?.owner);
-  const { members } = await roster(slug);
+  // members re-enter every ~15 s while the space is open: that stamp is "live now" on the admin's Spaces page
+  const [{ members }] = await Promise.all([roster(slug), rpc("orbit_space_seen", { p_slug: me.slug, p_dh: me.dh }).catch(() => {})]);
   return NextResponse.json(
     {
       slug, title: meta.title, priv: meta.priv, work: !!meta.work, handle: me.handle, chan: chanFor(slug), owner,

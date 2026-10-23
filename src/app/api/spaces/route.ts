@@ -27,18 +27,18 @@ async function createAnon(req: NextRequest, b: { deviceId?: unknown; pass?: unkn
   const n = anonMade.get(net) ?? 0;
   if (n >= 20) return NextResponse.json({ error: "Too many anonymous spaces from your network. Try again in an hour." }, { status: 429 });
   anonMade.set(net, n + 1);
-  // with a passcode: the browser picked the 4-character name (its passcode is turned into `pass` and the content key
-  // with that name, so the name can't change here); it must not be the name of another live anonymous space
+  // every anonymous space has a passcode: the browser picked the 4-character name (its passcode is turned into `pass`
+  // and the content key with that name, so the name can't change here); it must not be the name of another live
+  // anonymous space. No name = no passcode = refused (spaces only a link opened are not made any more)
   const name = typeof b.name === "string" ? b.name : null;
-  if (name !== null) {
-    if (!ANON_NAME.test(name)) return NextResponse.json({ error: "bad request" }, { status: 400 });
-    const taken = await rpc<string[]>("orbit_anon_find", { p_name: name }).catch(() => null);
-    if (!taken) return NextResponse.json({ error: "Anonymous spaces aren't available yet" }, { status: 500 });
-    if (taken.length) return NextResponse.json({ error: "name taken", taken: true }, { status: 409 });
-  }
+  if (name === null) return NextResponse.json({ error: "Anonymous spaces need a passcode. Reload the page and try again." }, { status: 400 });
+  if (!ANON_NAME.test(name)) return NextResponse.json({ error: "bad request" }, { status: 400 });
+  const taken = await rpc<string[]>("orbit_anon_find", { p_name: name }).catch(() => null);
+  if (!taken) return NextResponse.json({ error: "Anonymous spaces aren't available yet" }, { status: 500 });
+  if (taken.length) return NextResponse.json({ error: "name taken", taken: true }, { status: 409 });
   let made: Awaited<ReturnType<typeof createSpace>> = null;
   for (let i = 0; i < 3 && !made; i++) {
-    const slug = "anon-" + (name ? name + newId(4) : newId(8));
+    const slug = "anon-" + name + newId(4);
     made = await createSpace("Anonymous · " + slug.slice(5, 9).toUpperCase(), true, pass, { slug, anon: true });
   }
   if (!made) return NextResponse.json({ error: "Anonymous spaces aren't available yet" }, { status: 500 });
