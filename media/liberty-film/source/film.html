@@ -1,0 +1,164 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>How the Statue of Liberty crossed the ocean</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1300px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 10px rgba(0,0,0,0.65); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.88); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff5a5a; font-style: normal; }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.92); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card .red { color: #ff6a6a; }
+  #env { transform: translate(-50%, -120%); }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.92); border: 2px solid; font: 700 40px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 24px; opacity: 0.75; }
+  .mc { padding: 24px 30px; border-radius: 22px; background: #fff; color: #1a1a1a; font: 800 40px/1.1 "D"; font-stretch: 100%; display: flex; gap: 18px; align-items: center; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .mc i { width: 58px; height: 58px; border-radius: 50%; background: #e0452f; color: #fff; display: grid; place-items: center; font: 900 34px/1 Arial; font-style: normal; }
+  .big { left: 0; right: 0; top: 330px; text-align: center; font: 900 150px/1 D; font-stretch: 125%; color: #fff; -webkit-text-stroke: 6px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #timer { left: 0; right: 0; top: 380px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #ph { left: 30px; top: 360px; width: 1020px; height: 694px; border-radius: 18px; background: #1c1d21; padding: 52px 0 0; box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 2px #3a3a3e inset, 0 0 80px rgba(61,255,140,0.22); opacity: 0; z-index: 30; overflow: hidden; }
+  #ph::before { content: ""; position: absolute; left: 22px; top: 19px; width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; box-shadow: 24px 0 #febc2e, 48px 0 #28c840; }
+  #ph::after { content: "orbitransfer.com"; position: absolute; left: 50%; top: 11px; transform: translateX(-50%); padding: 6px 60px; border-radius: 8px; background: #2a2b30; font: 500 20px/1.2 "M"; color: #bbb; }
+  #ph .in { position: relative; width: 100%; height: 642px; overflow: hidden; background: #000; }
+  #ph .hl { position: absolute; border: 6px solid #3dff8c; border-radius: 18px; opacity: 0; box-shadow: 0 0 30px rgba(61,255,140,0.7); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #red { inset: 0; background: radial-gradient(80% 60% at 50% 50%, rgba(255,0,0,0), rgba(255,0,0,0.45)); opacity: 0; z-index: 25; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+  #prof { line-height: 1.6; }
+  #prof s { color: #ff6a6a; }
+  #tries { left: 0; right: 0; top: 300px; text-align: center; font: 800 64px/1.2 "M"; color: #fff; -webkit-text-stroke: 3px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #tries b { color: #ff5a5a; }
+  .doc { padding: 28px 30px; border-radius: 10px; background: #f4f1e6; color: #222; font: 800 34px/1.1 "D"; font-stretch: 100%; white-space: nowrap; opacity: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border-top: 14px solid #e0452f; }
+  .doc small { display: block; font: 600 22px/1.3 "M"; color: #777; margin-top: 10px; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "water": "./lib/Water.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div><div class="ov card" id="c2"></div><div class="ov card" id="c3"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div><div class="ov lbl" id="l4"></div>
+<div class="ov" id="ph"><div class="in"><canvas id="pcv" width="2880" height="1800" style="position:absolute;inset:0;width:100%;height:100%"></canvas><div class="hl" id="phl"></div></div></div>
+<div class="ov tag" id="tA">Password → <b>hash</b></div>
+<div class="ov tag" id="tB">One way · <i>no way back</i></div>
+<div class="ov tag" id="tC">Salt · <b>random pinch</b></div>
+<div class="ov tag" id="tD">Stolen list · <i>they guess</i></div>
+<div class="ov tag" id="tE">Slow on <b>purpose</b></div>
+<div class="ov tag" id="tF">Passcode stays · <b>on your phone</b></div>
+<div class="ov tag" id="tG">310,000 <b>rounds</b></div>
+<div class="ov big" id="shout1">THEY DON'T?</div>
+<div class="ov big" id="shout2" style="color:#3dff8c">MATCH</div>
+<div class="ov" id="tries"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="red"></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module">
+import * as THREE from "three";
+const W = 1080, H = 1920, $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k;
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2), out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const win = (t, a, b, fi = 0.25, fo = 0.25) => clamp((t - a) / fi) * clamp((b - t) / fo);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), S = (el, o) => Object.assign(el.style, o);
+let seed = 7; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const LINES = await (await fetch("vo/lines.json")).json(); const L = Object.fromEntries(LINES.lines.map((l) => [l.key, l])); const A = (k) => L[k].at; window.DURATION = LINES.duration;
+const r = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
+r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.0; r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, W / H, 0.01, 6000);
+function canvasTex(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+const look = (p, q, fov = 42) => { cam.position.copy(p); cam.lookAt(q); if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); } };
+const project = (v) => { cam.updateMatrixWorld(); const pp = v.clone().project(cam); return [(pp.x + 1) / 2 * W, (1 - pp.y) / 2 * H]; };
+const tag = (html, t, a, b, y = 160) => { if (t < a || t > b) return; const el = $("tA"); el.innerHTML = html; const k = win(t, a, b, 0.3, 0.3); S(el, { opacity: k, left: "540px", top: `${y}px`, transform: `translate(-50%, ${(1 - out(clamp((t - a) / 0.3))) * 20}px)` }); };
+const lbl = (id, pos, t, a, b, html, col) => { if (t < a || t > b) return; const [x, y] = project(pos); const el = $(id); el.innerHTML = html; S(el, { left: `${x}px`, top: `${y}px`, borderColor: col, color: col, opacity: win(t, a, b, 0.25, 0.25) }); };
+const card = (id, html, t, a, b, x, y, rot = 0) => { if (t < a || t > b) return; const el = $(id); el.innerHTML = html; const k = clamp((t - a) / 0.3); S(el, { left: `${x}px`, top: `${y}px`, opacity: k * clamp((b - t) / 0.3), transform: `scale(${lerp(0.5, 1, back(k))}) rotate(${rot}deg)` }); };
+const big = (txt, t, a, b, col = "#fff", top = "300px", size = "110px") => { if (t < a || t > b) return; const el = $("shout1"); el.textContent = txt; S(el, { opacity: clamp((t - a) / 0.15) * clamp((b - t) / 0.2), transform: `scale(${lerp(1.6, 1, back(clamp((t - a) / 0.25)))}) rotate(-3deg)`, top, fontSize: size, color: col }); };
+const timer = (txt, t, a, b, col = "#3dff8c", size = "110px") => { if (t < a || t > b) return; $("timer").textContent = txt; S($("timer"), { opacity: win(t, a, b, 0.2, 0.2), color: col, fontSize: size, top: "330px" }); };
+const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, flatShading: true, ...o });
+const glow = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+
+
+scene.background = new THREE.Color(0x8ab4d8); scene.fog = new THREE.Fog(0x9ac0e0, 40, 140);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x4a5a6a, 1.2)); { const dl = new THREE.DirectionalLight(0xfff2dc, 1.7); dl.position.set(-10, 20, 14); scene.add(dl); }
+const SEA = new THREE.Mesh(new THREE.PlaneGeometry(400, 200), new THREE.MeshStandardMaterial({ color: 0x2a5a8a, metalness: 0.4, roughness: 0.3 })); SEA.rotation.x = -Math.PI / 2; SEA.position.set(40, -0.2, -20); scene.add(SEA);
+const LANDP = new THREE.Mesh(new THREE.BoxGeometry(24, 1, 20), new THREE.MeshStandardMaterial({ color: 0x8a8070 })); LANDP.position.set(-6, 0.3, 0); scene.add(LANDP);
+const LANDN = new THREE.Mesh(new THREE.BoxGeometry(24, 1, 20), new THREE.MeshStandardMaterial({ color: 0x6a8a5a })); LANDN.position.set(86, 0.3, 0); scene.add(LANDN);
+const NY = V(84, 0.8, 0);
+// pedestal in New York, grows during "wait"
+const PED = new THREE.Mesh(new THREE.BoxGeometry(5, 4, 5), new THREE.MeshStandardMaterial({ color: 0xc8b898, roughness: 0.8 })); PED.geometry.translate(0, 2, 0); PED.position.copy(NY); scene.add(PED);
+// statue made of copper tiles around an iron frame
+const COP = new THREE.MeshStandardMaterial({ color: 0x5ab89a, roughness: 0.55, metalness: 0.2 });
+const FRAME = new THREE.Group(); scene.add(FRAME); { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.5, 7.5, 8, 6, true), new THREE.MeshBasicMaterial({ color: 0x3a3c42, wireframe: true })); m.position.y = 3.75; FRAME.add(m); const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 3, 6), new THREE.MeshStandardMaterial({ color: 0x3a3c42 })); arm.position.set(0.9, 8.3, 0); arm.rotation.z = -0.25; FRAME.add(arm); }
+const TILES = []; for (let r = 0; r < 9; r++) { const y = 0.45 + r * 0.85, rad = lerp(1.6, 0.95, r / 8); for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2; const m = new THREE.Mesh(new THREE.BoxGeometry(rad * 0.72, 0.84, 0.14), COP); const p = V(Math.cos(a) * rad, y, Math.sin(a) * rad); m.userData = { p, ry: -a + Math.PI / 2, i: TILES.length }; scene.add(m); TILES.push(m); } }
+{ const extra = [[V(0, 8.4, 0), new THREE.SphereGeometry(0.7, 16, 12)], [V(1.25, 9.6, 0), new THREE.CylinderGeometry(0.16, 0.16, 2.6, 8)], [V(1.6, 11.1, 0), new THREE.ConeGeometry(0.4, 0.8, 10)]]; extra.forEach(([p, g]) => { const m = new THREE.Mesh(g, COP); m.userData = { p, ry: 0, i: TILES.length, rz: g.type === "CylinderGeometry" ? -0.25 : 0 }; scene.add(m); TILES.push(m); }); for (let k = 0; k < 7; k++) { const a = k / 7 * Math.PI - Math.PI / 2; const m = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.7, 6), COP); m.userData = { p: V(Math.sin(a) * 0.65, 9.1 + Math.cos(a) * 0.2, Math.cos(a) * 0.65 * 0.3 + 0.3), ry: 0, i: TILES.length, rz: -Math.sin(a) * 0.8 }; scene.add(m); TILES.push(m); } }
+const FLAME = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 10), glow(0xffd04a)); scene.add(FLAME);
+// ship with crates
+const SHIP = new THREE.Group(); scene.add(SHIP); { const hull = new THREE.Mesh(new THREE.BoxGeometry(14, 2, 4.4), new THREE.MeshStandardMaterial({ color: 0x2a2c32 })); hull.position.y = 0.6; SHIP.add(hull); for (const x of [-3, 2]) { const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 9, 8), new THREE.MeshStandardMaterial({ color: 0x5a3e28 })); mast.position.set(x, 5.6, 0); SHIP.add(mast); const sail = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 4.4), new THREE.MeshStandardMaterial({ color: 0xf4efe2, side: THREE.DoubleSide })); sail.position.set(x, 6.2, 0.2); SHIP.add(sail); } const fun = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 2.4, 12), new THREE.MeshStandardMaterial({ color: 0x15161a })); fun.position.set(-0.5, 2.8, 0); SHIP.add(fun); }
+const NCR = 12, CRATES = Array.from({ length: NCR }, (_, k) => { const m = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.1, 1.2), new THREE.MeshStandardMaterial({ map: canvasTex(128, 128, (g) => { g.fillStyle = "#a87a4a"; g.fillRect(0, 0, 128, 128); g.strokeStyle = "#6a4a2a"; g.lineWidth = 10; g.strokeRect(5, 5, 118, 118); g.beginPath(); g.moveTo(5, 5); g.lineTo(123, 123); g.stroke(); }), roughness: 0.9 })); scene.add(m); return m; });
+const crateLocal = (k) => V(-4.5 + (k % 6) * 1.6, 2.15 + Math.floor(k / 6) * 1.15, k % 2 ? 0.7 : -0.7);
+// Orbi part transfer (vertical lanes)
+const OX = 160, Y0 = 30; const FILE = new THREE.Mesh(new THREE.BoxGeometry(4.4, 3, 0.5), new THREE.MeshBasicMaterial({ toneMapped: false, map: canvasTex(512, 350, (g, w, h) => { g.fillStyle = "#e8eef8"; g.fillRect(0, 0, w, h); g.fillStyle = "#2a5ad8"; g.fillRect(0, 0, w, 70); g.fillStyle = "#fff"; g.font = "700 40px M"; g.fillText("FILE", 24, 50); g.fillStyle = "#111"; g.font = "800 64px D"; g.fillText("video.mp4", 30, 190); g.fillStyle = "#555"; g.font = "600 46px M"; g.fillText("20 GB", 30, 280); }) })); FILE.position.set(OX, Y0 + 8, 0); scene.add(FILE);
+const PHONE = new THREE.Mesh(new THREE.BoxGeometry(2.4, 4.4, 0.3), new THREE.MeshBasicMaterial({ toneMapped: false, map: canvasTex(256, 470, (g, w, h) => { g.fillStyle = "#15171c"; g.fillRect(0, 0, w, h); g.fillStyle = "#07160e"; g.fillRect(14, 20, w - 28, h - 40); g.fillStyle = "#3dff8c"; g.font = "700 30px M"; g.textAlign = "center"; g.fillText("receiving", w / 2, 200); g.fillRect(40, 240, w - 80, 14); }) })); PHONE.position.set(OX, Y0 - 1.5, 0); scene.add(PHONE);
+const PARTS = Array.from({ length: 12 }, (_, i) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.4), glow(0x3dff8c, { transparent: true })); m.userData.i = i; scene.add(m); return m; });
+const LANES = [0, 1, 2].map((j) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.04, 8, 0.04), new THREE.MeshBasicMaterial({ color: 0x3dff8c, transparent: true, opacity: 0.2 })); m.position.set(OX + (j - 1) * 1.3, Y0 + 3.5, 0); scene.add(m); return m; });
+window.render = async function (t) { cam.up.set(0, 1, 0);
+  for (const id of ["c0", "c1", "c2", "c3", "l0", "l1", "l2", "l3", "l4", "tA", "shout1", "timer", "red", "flash"]) S($(id), { opacity: 0 });
+  // ship: docked in Paris, sails during "crates" end, docks in NY for "wait"
+  const sail = ease(clamp((t - A("crates") - 3.0) / (A("wait") + 1.0 - A("crates") - 3.0))); SHIP.position.set(lerp(9, 72, sail), 0, 8); SHIP.rotation.z = Math.sin(t * 1.2) * 0.02;
+  const pedK = ease(clamp((t - A("wait") - 0.8) / 3.0)); PED.scale.y = Math.max(0.02, pedK); FRAME.position.copy(t >= A("rebuild") ? NY.clone().add(V(0, 4, 0)) : V(0, 0.8, 0)); FRAME.visible = !(t >= A("wait") && t < A("rebuild"));
+  const crateW = (k) => { if (t < A("wait") + 3.5) return SHIP.localToWorld(crateLocal(k)); return V(78 + (k % 4) * 1.6, 1.35 + Math.floor(k / 4) * 1.15, 5 + (k % 2) * 1.3); };
+  CRATES.forEach((c, k) => { c.position.copy(crateW(k)); c.visible = t >= A("crates") - 1.0 && t < A("rebuild") + 3.5; });
+  // tiles: assembled -> into crates -> out to New York
+  const N = TILES.length; TILES.forEach((m) => { const u = m.userData, k = u.i % NCR, base = (t >= A("rebuild") ? NY.clone().add(V(0, 4, 0)) : V(0, 0.8, 0)); const P = u.p.clone().add(base);
+    const out = clamp((t - A("build") - 1.6 - (u.i / N) * 3.4) / 0.7), back_ = clamp((t - A("rebuild") - 0.6 - (u.i / N) * 3.6) / 0.7); let pos = P, vis = true;
+    if (t < A("rebuild")) { if (out > 0) { const C = crateW(k); pos = P.clone().lerp(C, ease(out)).add(V(0, Math.sin(out * Math.PI) * 3, 0)); vis = out < 1; } }
+    else { const C = crateW(k); pos = C.clone().lerp(P, ease(back_)).add(V(0, Math.sin(back_ * Math.PI) * 3, 0)); vis = back_ > 0; }
+    m.position.copy(pos); m.rotation.set(0, u.ry, u.rz || 0); m.visible = vis && t < A("orbi"); });
+  const lit = t < A("build") + 1.6 || t >= A("rebuild") + 5.0; FLAME.position.copy((t >= A("rebuild") ? NY.clone().add(V(0, 4, 0)) : V(0, 0.8, 0)).add(V(1.6, 11.7, 0))); FLAME.visible = lit && t < A("orbi");
+  // Orbi lanes
+  const ok = t >= A("orbi") ? clamp((t - A("orbi") - 1.4) / 7.0) : 0; FILE.scale.y = 1 - ok * 0.9; FILE.visible = t >= A("orbi"); PHONE.visible = t >= A("orbi");
+  PARTS.forEach((m) => { const i = m.userData.i, lane = i % 3, st = Math.floor(i / 3) * 1.6 + lane * 0.25, f = clamp((t - A("orbi") - 1.4 - st) / 1.4); const lost = i === 4 && t < A("orbi") + 7.4; const rf = i === 4 ? clamp((t - A("orbi") - 7.6) / 1.4) : f; const ff = i === 4 ? (t < A("orbi") + 7.4 ? Math.min(f, 0.5) : rf) : f;
+    const dr = lost && f >= 0.5 ? Math.min(2.4, (t - A("orbi") - 1.4 - st - 0.7) * 3) : 0; m.position.set(OX + (lane - 1) * 1.3 + dr, Y0 + 7.2 - ff * 7.6 - dr * 0.3, 0); m.material.color.set(lost && f >= 0.5 ? 0xff5a5a : 0x3dff8c); m.material.opacity = (f > 0 || rf > 0) && ff < 1 ? 1 : 0; m.visible = t >= A("orbi"); m.rotation.z = lost && f >= 0.5 ? t * 4 : 0; });
+  LANES.forEach((m) => (m.material.opacity = t >= A("orbi") ? 0.25 : 0));
+  // camera
+  let cp = V(8, 7, 22), tg = V(0, 6, 0), fov = 44;
+  if (t < A("build")) { const k = ease(clamp(t / 4.5)); cp = V(lerp(-12, 7, k), lerp(16, 7, k), lerp(30, 20, k)); tg = V(0, lerp(9, 6, k), 0); }
+  if (t >= A("build")) { cp = V(-2, 9, 30); tg = V(3.2, 5, 4); }
+  if (t >= A("crates") + 2.6) { cp = SHIP.position.clone().add(V(-6, 10, 26)); tg = SHIP.position.clone().add(V(0, 3, 0)); }
+  if (t >= A("wait")) { cp = V(92, 8, 24); tg = V(81, 3.5, 2); }
+  if (t >= A("rebuild")) { cp = V(95, 10, 26); tg = V(84, 8, 0); }
+  if (t >= A("orbi")) { cp = V(OX, Y0 + 3.8, 23); tg = V(OX, Y0 + 3.8, 0); }
+  look(cp, tg, fov);
+  // text
+  big("~350 PIECES", t, A("hook") + 4.4, A("build"), "#ffffff", "300px", "130px");
+  card("c0", `Paris · <b>built, then taken apart</b>`, t, A("build") + 0.6, A("crates"), 190, 240, -2);
+  card("c0", `214 crates · <b>one ship</b>`, t, A("crates") + 0.6, A("wait"), 260, 240, -2);
+  card("c0", `New York · <b>waiting for the pedestal</b>`, t, A("wait") + 0.6, A("rebuild"), 140, 240, -2);
+  card("c0", `riveted back on · <b>1886</b>`, t, A("rebuild") + 1.0, A("orbi"), 250, 240, -2);
+  card("c0", `Orbi · <b>up to 20 GB</b> · ~32 MB parts`, t, A("orbi") + 1.0, A("end"), 150, 110, -2); card("c1", `3 at a time · <b>only missing parts resent</b>`, t, A("orbi") + 5.0, A("end"), 130, 1760, 2);
+  if (t >= A("orbi")) { lbl("l0", V(OX, Y0 + 10.3, 0), t, A("orbi") + 0.8, A("end"), "big file", "#ffffff"); lbl("l1", V(OX, Y0 - 4.2, 0), t, A("orbi") + 0.8, A("end"), "their phone", "#3dff8c"); lbl("l2", V(OX + 2.4, Y0 + 5.0, 0), t, A("orbi") + 4.2, A("orbi") + 7.6, "dropped", "#ff6a6a"); lbl("l3", V(OX + 2.4, Y0 + 5.0, 0), t, A("orbi") + 7.8, A("end"), "resent", "#3dff8c"); }
+  let sub = ""; for (const ln of LINES.lines) { if (t < ln.at - 0.05 || t > ln.at + ln.dur + 0.1) continue; const words = ln.text.split(" "), total = words.reduce((s, w) => s + w.length + 2, 0); let acc = 0; const stt = words.map((w) => { const s = ln.at + (acc / total) * ln.dur; acc += w.length + 2; return s; }); let cur = 0; for (let i = 0; i < words.length; i++) if (t >= stt[i]) cur = i; const ch = []; let c = []; words.forEach((w, i) => { c.push(i); if (c.length === 3 || /[.,?!:]$/.test(w)) { ch.push(c); c = []; } }); if (c.length) ch.push(c); sub = ch.find((cc) => cc.includes(cur)).map((i) => words[i]).join(" "); }
+  $("sub").textContent = sub; S($("sub"), { opacity: t > A("end") - 0.1 ? 0 : 1 });
+  const e = clamp((t - A("end") + 0.1) / 0.45); S($("endc"), { opacity: e }); document.querySelector("#endc .em").style.transform = `rotate(${(t - A("end")) * 25}deg) scale(${lerp(0.6, 1, back(e))})`;
+  S($("fade"), { opacity: Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)) });
+  r.render(scene, cam);
+};
+await document.fonts.ready;
+window.ready = true;
+</script>
+</body>
+</html>
