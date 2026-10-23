@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how the Statue of Liberty crossed the ocean? Not in one piece. In about three hundred fifty.",
+   "dur": 6.049,
+   "at": 0.35
+  },
+  {
+   "key": "build",
+   "text": "It was built in Paris, then taken apart into about three hundred fifty pieces.",
+   "dur": 4.85,
+   "at": 6.8
+  },
+  {
+   "key": "crates",
+   "text": "They were packed into two hundred fourteen crates, and loaded onto a French navy ship.",
+   "dur": 5.375,
+   "at": 11.95
+  },
+  {
+   "key": "wait",
+   "text": "In New York, the crates waited for months, until the pedestal was finished.",
+   "dur": 4.251,
+   "at": 17.62
+  },
+  {
+   "key": "rebuild",
+   "text": "Then the pieces were riveted back onto an iron frame, and in eighteen eighty six, she was finally unveiled.",
+   "dur": 6.038,
+   "at": 22.17
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi moves big files the same way. Files up to twenty gigabytes go in parts of about thirty two megabytes, three at a time. If your connection drops, only the missing parts are sent again.",
+   "dur": 10.139,
+   "at": 28.51
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 39.05
+  }
+ ],
+ "duration": 43.6
+}
