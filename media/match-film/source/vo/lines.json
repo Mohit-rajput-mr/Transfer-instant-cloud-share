@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a match lights? The fire is split into two halves, and they only meet when you strike.",
+   "dur": 5.214,
+   "at": 0.35
+  },
+  {
+   "key": "head",
+   "text": "The match head holds a chemical packed with oxygen, mixed with sulfur and glue.",
+   "dur": 4.427,
+   "at": 5.96
+  },
+  {
+   "key": "strip",
+   "text": "The strip on the box has red phosphorus and powdered glass.",
+   "dur": 3.768,
+   "at": 10.69
+  },
+  {
+   "key": "strike",
+   "text": "Striking rubs a tiny bit of phosphorus into a hotter, touchier form. It catches fire in the air, and lights the head.",
+   "dur": 6.3,
+   "at": 14.76
+  },
+  {
+   "key": "wood",
+   "text": "The stick is soaked in wax, so the flame keeps burning down the wood.",
+   "dur": 4.363,
+   "at": 21.36
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi files burn out too. By default, 30 minutes after you send, the stored file is deleted. You can pick anything from five to thirty.",
+   "dur": 8.117,
+   "at": 26.02
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 34.54
+  }
+ ],
+ "duration": 39.09
+}
