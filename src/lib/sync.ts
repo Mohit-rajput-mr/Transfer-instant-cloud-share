@@ -10,7 +10,9 @@ import type { Task } from "./tasks";
 // waiting for the shared list. The list is cached at the edge for a few seconds, so for a short while it can
 // still show the old state: a change is kept over any list made before it happened (see Void's refresh).
 
-export type SyncMsg = { b?: Bubble; bg?: string[]; t?: Task; tg?: string[]; og?: string[] };
+/** od: files someone just downloaded (+1 download each) · ov / ox: files someone started / stopped looking at
+ *  (live viewers ±1) · vw: of those, the ones this device opened for the first time (+1 view) */
+export type SyncMsg = { b?: Bubble; bg?: string[]; t?: Task; tg?: string[]; og?: string[]; od?: string[]; ov?: string[]; ox?: string[]; vw?: string[] };
 
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, "").slice(0, max) : null);
 const time = (v: unknown) => (typeof v === "string" && Number.isFinite(Date.parse(v)) ? v : null);
@@ -116,5 +118,9 @@ export function readSync(p: unknown, serverNow: number): SyncMsg {
   if (bg.length) out.bg = bg;
   if (tg.length) out.tg = tg;
   if (og.length) out.og = og;
+  for (const k of ["od", "ov", "ox", "vw"] as const) {
+    const l = ids(m[k], ORB_ID).slice(0, 20);
+    if (l.length) out[k] = l;
+  }
   return out;
 }

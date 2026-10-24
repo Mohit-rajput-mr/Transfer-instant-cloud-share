@@ -754,6 +754,15 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       gone.forEach((id) => put("t", id, null));
       setTasks((ts) => ts.filter((t) => !gone.includes(t.id)));
     }
+    // someone downloaded / opened / closed a file: its numbers move here at once, no list reload (the next list,
+    // at most a minute later, carries the server's own count and settles any drift)
+    if (m.od?.length || m.ov?.length || m.ox?.length || m.vw?.length) {
+      const n = (l: string[] | undefined, id: string) => (l ? l.filter((x) => x === id).length : 0);
+      setOrbs((list) => list.map((o) => {
+        const d = n(m.od, o.id), v = n(m.vw, o.id), w = n(m.ov, o.id) - n(m.ox, o.id);
+        return d || v || w ? { ...o, downloads: o.downloads + d, views: o.views + v, watchers: Math.max(0, (o.watchers ?? 0) + w) } : o;
+      }));
+    }
     if (m.og?.length) {
       const gone = m.og;
       unsayLanded(gone);
@@ -1958,6 +1967,18 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // opening a container counts as looking at it: its viewer dot shows for everyone right away
   const zoomFirst = (zoom && bubbles.find((b) => b.id === zoom.id)?.members[0]?.id) || null;
   viewingRef.current = viewing ?? zoomFirst;
+  // what this screen looks at, said live: others see the viewer dot and the view count move at once
+  const looking = viewing ?? zoomFirst;
+  useEffect(() => {
+    if (!looking) return;
+    let first = false;
+    try {
+      first = localStorage.getItem(`orbit:viewed:${looking}`) !== "1";
+      if (first) localStorage.setItem(`orbit:viewed:${looking}`, "1");
+    } catch {}
+    say("sync", { ov: [looking], ...(first ? { vw: [looking] } : null) }, spaceRef.current?.slug ?? "");
+    return () => say("sync", { ox: [looking] }, spaceRef.current?.slug ?? "");
+  }, [looking]);
   const firstZoom = useRef(true);
   useEffect(() => {
     if (firstZoom.current) {
@@ -2248,6 +2269,14 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     prev.current = { ids, orbs: new Map(visible.map((o) => [o.id, o])), pos: new Map(positions), hue: colors };
   }, [visible, alive, positions, colors, loaded]);
   // spheres this device already downloaded: dimmed, so what's new stands out
+  useEffect(() => {
+    const on = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (typeof id === "string") sync({ od: [id] });
+    };
+    window.addEventListener("orbit:downloaded", on);
+    return () => window.removeEventListener("orbit:downloaded", on);
+  }, [sync]);
   const [gotTick, setGotTick] = useState(0);
   useEffect(() => {
     const on = () => setGotTick((t) => t + 1);

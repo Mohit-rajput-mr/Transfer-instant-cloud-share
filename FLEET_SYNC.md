@@ -20,6 +20,13 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- DONE 2026-10-24 (M, owner ask: "uploads only show after a reload") — Measured on prod first (2 browsers, Playwright):
+  a far device's upload DOES arrive live (launch + landed over the worker's r/void in < 2.5 s) and after a 40 s offline
+  drop the list catches up < 2.5 s after the line returns. What did NOT move live: downloads and viewers/views (they
+  only reached others with the next list, up to 60 s). Now: a finished download says sync {od:[id]}; opening / closing a
+  file says {ov}/{ox} (+{vw} on this device's first look); every screen bumps downloads / views / watchers in place
+  (applySync), no list reload; the minute list still settles drift. If the owner still sees a stuck screen, get the
+  device + browser + whether the tab was in the background (iOS freezes background tabs).
 - DONE 2026-10-23 (H, owner ask) — Anonymous mode rebuilt simple (AnonCard = one black "portal" card, readable sans,
   squircle shapes). Home: Burns after 5–30 + three choices: Look around (open void as a ghost) · Create a space (code made
   up: 4 chars, caps + digits; PASSCODE REQUIRED, 6+) · Find a space (type code → "K7QX is live" via /api/anon-find →
