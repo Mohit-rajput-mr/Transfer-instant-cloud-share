@@ -25,7 +25,9 @@ Severity: C critical · H high · M medium · L low. Status: FIXED (verified how
   whole file again. Now UnlockPanel.go: after unlock (still counted), a ready peek file is handed over at once
   (autoDownload on desktop, held on phones). Spaces warm up to 50 MB (10 on low devices; worldwide void stays 1 MB;
   guessCap 160 MB/10 min still applies). A download from the card says sync {od} instead of a "pulse" (which made every
-  tab worldwide reload its list).
+  tab worldwide reload its list). + Download waits for a background copy already on its way; not-stored retries
+  5/10/20 s (was 60 s); every file type (non-previewable ≤ 50 MB; canPeek needed viewKind before, so .bin/.zip never
+  pre-fetched). Measured prod: 1 MB tap→saved 0.44 s (only the counting unlock), was 1.4–2.3 s.
 - DONE 2026-10-24 (H, owner: "fix speed for every corner of the earth, free") — Research: (1) R2 Local Uploads (open
   beta, free, no extra cost): uploads land in storage near the SENDER and copy to WEUR in the background, readable at once
   (fast for readers in the sender's region). Needs the OWNER to switch it on: dashboard → R2 → orbi-storage → Settings →
