@@ -2844,7 +2844,15 @@ em.hq-tag { font-style: normal; }
 
 /* cards never scroll sideways: columns can shrink, the no-password chip wraps its hint */
 .drawer-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); overflow-x: hidden; }
-@media (max-width: 720px) { .drawer-body { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 720px) {
+  .drawer-body { grid-template-columns: minmax(0, 1fr); }
+  /* one column on phones: each part keeps its full height and the card scrolls. The columns had min-height 0, so the
+     grid squeezed both into the card's height and each one's contents spilled over the next (Send: the file list and
+     + Folder over the password row; Download: the name over "No password", the size/burns grid over the buttons) */
+  .drawer-body { grid-auto-rows: max-content; align-content: start; }
+  .drawer-body > .col { min-height: max-content; }
+  .drawer-body > .col > * { flex-shrink: 0; }
+}
 .drawer-body > * { min-width: 0; }
 .open-badge { flex-wrap: wrap; row-gap: 4px; min-width: 0; }
 .open-badge .mono { white-space: normal; margin-left: 18px; flex-basis: 100%; }

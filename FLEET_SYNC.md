@@ -20,6 +20,10 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- FIXED 2026-10-24 (H) — Phone Send + Download cards: parts overlapping (owner screenshots). Root cause: .drawer-body
+  is a grid inside a fixed-height card and its .col children had min-height 0, so on phones (one column) both rows were
+  squeezed into the card height and each column's content spilled over the next. Mobile: grid-auto-rows max-content,
+  .col min-height max-content, children flex-shrink 0 → stacked, card scrolls. Measured with Playwright iPhone 13.
 - DONE 2026-10-24 (H, owner: auto-download like WhatsApp) — Found: lib/peek.ts already fetched small no-password
   files in the background (≤1 MB in sight, hover ≤100 MB, card open ≤400 MB), but Download IGNORED it and fetched the
   whole file again. Now UnlockPanel.go: after unlock (still counted), a ready peek file is handed over at once
