@@ -20,6 +20,12 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- FIXED 2026-10-24 (M) — HQ "From" filter (owner: too much live info to track daily traffic). Header: date+time picker,
+  1 h / Today / Now / All. With a time set, /api/admin/overview?since= calls orbit_admin_overview_since (migration 030,
+  applied): devices, new devices, visits, GPS on vs no GPS, uploads/downloads/bytes/views, countries, cities, browsers,
+  hourly, visitor/upload/download dots, arcs, feed, exact pins, objects, anonymous places/sessions all count only from
+  then; globe routes = History since then. "Online now" and live dots stay live. Kept per browser (localStorage).
+  RPC verified in SQL (3 h window: 34 devices, 36 visits, 16 up, 19 down); tsc, eslint, next build clean.
 - FIXED 2026-10-24 (H) — Phone Send + Download cards: parts overlapping (owner screenshots). Root cause: .drawer-body
   is a grid inside a fixed-height card and its .col children had min-height 0, so on phones (one column) both rows were
   squeezed into the card height and each column's content spilled over the next. Mobile: grid-auto-rows max-content,

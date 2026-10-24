@@ -67,6 +67,18 @@ function countryRows(data: Overview, events: Ev[]): CountryRow[] {
   return [...m.values()];
 }
 
+/** HQ's "From" filter: only what happened from this moment on (null = everything). Kept on this browser. */
+const SINCE_KEY = "hq:since";
+function savedSince(): string | null {
+  try {
+    const v = localStorage.getItem(SINCE_KEY);
+    return v && !Number.isNaN(Date.parse(v)) ? v : null;
+  } catch {
+    return null;
+  }
+}
+const sinceLabel = (iso: string) => new Date(iso).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
 const ago = (iso: string, now: number) => {
   const s = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000));
   return s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m` : `${Math.floor(s / 3600)}h`;
@@ -78,13 +90,21 @@ export default function AdminApp() {
   const [now, setNow] = useState(() => Date.now());
   const [events, setEvents] = useState<Ev[]>([]);
   useEffect(() => setEvents(recalled()), []);
+  const [since, setSinceState] = useState<string | null>(null);
+  const sinceRef = useRef<string | null>(null);
+  useEffect(() => {
+    sinceRef.current = savedSince();
+    setSinceState(sinceRef.current);
+  }, []);
 
   const load = useCallback(async () => {
-    const r = await fetch("/api/admin/overview", { cache: "no-store" }).catch(() => null);
+    const s = sinceRef.current;
+    const r = await fetch(s ? `/api/admin/overview?since=${encodeURIComponent(s)}` : "/api/admin/overview", { cache: "no-store" }).catch(() => null);
     if (!r) return;
     if (r.status === 401) return setAuth("locked");
     if (r.ok) {
       const d: Overview = await r.json();
+      if (s !== sinceRef.current) return; // the filter changed while this was loading
       setData(d);
       if (d?.feed?.length) setEvents((prev) => remember(prev.length ? prev : recalled(), d.feed));
       setAuth("in");
@@ -123,9 +143,20 @@ export default function AdminApp() {
     };
   }, [auth, load]);
 
+  const setSince = (v: string | null) => {
+    sinceRef.current = v;
+    setSinceState(v);
+    try {
+      if (v) localStorage.setItem(SINCE_KEY, v);
+      else localStorage.removeItem(SINCE_KEY);
+    } catch {}
+    void load();
+  };
+  const shown = useMemo(() => (since ? events.filter((e) => Date.parse(e.at) >= Date.parse(since)) : events), [events, since]);
+
   if (auth === "checking") return <div className="hq-boot mono">Establishing uplink…</div>;
   if (auth === "locked") return <Login onIn={load} />;
-  return <Dashboard data={data} events={events} now={now} onRefresh={load} onLogout={() => setAuth("locked")} />;
+  return <Dashboard data={data} events={shown} now={now} since={since} onSince={setSince} onRefresh={load} onLogout={() => setAuth("locked")} />;
 }
 
 function Login({ onIn }: { onIn: () => void }) {
@@ -181,7 +212,7 @@ const LAYERS: { id: Layer; label: string; dot: string }[] = [
 
 type Expand = "history" | "void" | "anon" | "activity" | "countries" | "objects" | "containers" | "cities" | "spaces" | "pins" | null;
 
-function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview | null; events: Ev[]; now: number; onRefresh: () => void; onLogout: () => void }) {
+function Dashboard({ data, events, now, since, onSince, onRefresh, onLogout }: { data: Overview | null; events: Ev[]; now: number; since: string | null; onSince: (v: string | null) => void; onRefresh: () => void; onLogout: () => void }) {
   const [layers, setLayers] = useState<Set<Layer>>(new Set(["live", "exact", "exactSeen", "anon", "visitors", "uploads", "downloads", "routes"]));
   const [expand, setExpand] = useState<Expand>(null);
   // a click on a country anywhere opens Activity filtered to it
@@ -203,6 +234,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
   const [hist, setHist] = useState<{ lines: RouteLine[]; label: string } | null>(null);
   const routesLoaded = useRef(false);
   const allTime = async (quiet = false) => {
+    if (since) return;
     if (hist && !quiet) return setHist(null);
     const d = await loadHistory(null, null);
     if (d && typeof d === "object") {
@@ -221,6 +253,25 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // with a "From" time, the globe's routes are only the ones since then
+  useEffect(() => {
+    if (!since) {
+      routesLoaded.current = false;
+      void allTime(true);
+      return;
+    }
+    let off = false;
+    const get = () => loadHistory(since, null).then((d) => {
+      if (!off && d && typeof d === "object") setHist({ lines: routeLines(d.routes), label: `Routes since ${sinceLabel(since)}` });
+    });
+    void get();
+    const t = setInterval(() => document.visibilityState === "visible" && void get(), 60_000);
+    return () => {
+      off = true;
+      clearInterval(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [since]);
   const toggle = (l: Layer) => setLayers((s) => {
     const x = new Set(s);
     if (x.has(l)) x.delete(l);
@@ -276,6 +327,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
           <button className={expand === "anon" ? "on" : ""} onClick={() => setExpand("anon")}>Anonymous <b>{data?.anonSessions?.length ?? 0}</b></button>
           <button className={expand === "pins" ? "on" : ""} onClick={() => setExpand("pins")}>Pins <b>{data ? pinRows(data).length : 0}</b></button>
         </nav>
+        <SinceBar since={since} onSince={onSince} />
         <span className="live"><span className="dot" /><b>{n(data?.online)}</b> online now</span>
         <span className="mono dim hq-clock">{new Date(now).toLocaleTimeString()}</span>
         <button
@@ -299,7 +351,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
           <div className="hq-globe-title">
             <span className="mono dim">Universe view</span>
             <div className="wide">{n(data?.online)} <small>live</small></div>
-            <span className="mono dim">{n(data?.devices)} devices · {n(data?.countries)} countries all-time</span>
+            <span className="mono dim">{n(data?.devices)} devices · {n(data?.countries)} countries {since ? `since ${sinceLabel(since)}` : "all-time"}</span>
           </div>
           <button className={`chip hq-layers-btn${layersOpen ? " on" : ""}`} onClick={() => setLayersOpen((o) => !o)}>
             {layersOpen ? "✕ Close" : `☰ Layers · ${layers.size}`}
@@ -320,15 +372,16 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
           <div className="hq-tiles">
             <Tile label="Online now" value={n(data?.online)} accent="live" />
             <Tile label="Objects in orbit" value={n(data?.orbit.objects)} sub={`${formatBytes(data?.orbit.bytes ?? 0)} · ${n(data?.orbit.uploading)} uploading`} />
-            <Tile label="Uploads today" value={n(today.uploads)} sub={formatBytes(today.bytes_up ?? 0)} />
-            <Tile label="Downloads today" value={n(today.downloads)} sub={formatBytes(today.bytes_down ?? 0)} />
-            <Tile label="Devices all-time" value={n(data?.devices)} sub={`${n(data?.visits)} visits`} />
+            <Tile label={since ? "Uploads since" : "Uploads today"} value={n(today.uploads)} sub={formatBytes(today.bytes_up ?? 0)} />
+            <Tile label={since ? "Downloads since" : "Downloads today"} value={n(today.downloads)} sub={formatBytes(today.bytes_down ?? 0)} />
+            <Tile label={since ? "Devices since" : "Devices all-time"} value={n(data?.devices)} sub={since ? `${n(data?.newDevices)} new · ${n(data?.visits)} visits` : `${n(data?.visits)} visits`} />
+            {since && data?.gps ? <Tile label="GPS since" value={`${n(data.gps.on)} on`} sub={`${n(data.gps.off)} no GPS / off · ${n(today.views)} views`} /> : null}
             <Tile label="Spaces" value={n(spaces?.length)} sub={`${n(spaces?.filter((x) => x.priv).length)} private · ${n(spaces?.reduce((a, x) => a + x.members.length, 0))} members`} />
             <Tile label="Open objects now" value={n(data?.transfers.filter((t) => t.open).length)} sub={`${n(data?.transfers.filter((t) => !t.open).length)} with passcode`} />
             <Tile label="Saved in cloud now" value={n(data?.cloud?.ids.length)} sub={`${formatBytes(data?.cloud?.bytes ?? 0)} · today ${n(data?.cloud?.today.copies)} (${formatBytes(data?.cloud?.today.bytes ?? 0)})`} />
             <Tile label="Containers now" value={n(containers(data?.transfers ?? []).length)} sub={`${n(containers(data?.transfers ?? []).reduce((a, c) => a + c.items.length, 0))} objects inside`} />
             <Tile label="In spaces now" value={n(data?.transfers.filter((t) => t.space).length)} sub={`${n(data?.transfers.filter((t) => !t.space).length)} in the public void`} />
-            <Tile label="Data moved all-time" value={formatBytes((data?.totals.bytes_up ?? 0) + (data?.totals.bytes_down ?? 0))} sub={`${n(data?.totals.uploads)} up · ${n(data?.totals.downloads)} down`} />
+            <Tile label={since ? "Data moved since" : "Data moved all-time"} value={formatBytes((data?.totals.bytes_up ?? 0) + (data?.totals.bytes_down ?? 0))} sub={`${n(data?.totals.uploads)} up · ${n(data?.totals.downloads)} down`} />
           </div>
 
           <Panel title="Spaces" right={`${spaces?.length ?? "…"}`} onExpand={() => setExpand("spaces")}>
@@ -343,7 +396,7 @@ function Dashboard({ data, events, now, onRefresh, onLogout }: { data: Overview 
             </div>
           </Panel>
 
-          <Panel title="Last 24 hours">
+          <Panel title={since ? `Hourly since ${sinceLabel(since)}` : "Last 24 hours"}>
             <Hourly data={data} />
           </Panel>
 
@@ -775,6 +828,36 @@ function Expanded({ kind, data, events, focusCc, onCountry, spaces, now, onClose
           {!spaces.length && <Empty />}
         </div>
       )}
+    </div>
+  );
+}
+
+/** "From" filter in the header: pick a date and time, or a quick span; everything on HQ then counts only from there. */
+function SinceBar({ since, onSince }: { since: string | null; onSince: (v: string | null) => void }) {
+  const local = (iso: string) => {
+    const d = new Date(iso);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+  };
+  const ago = (ms: number) => onSince(new Date(Date.now() - ms).toISOString());
+  const midnight = () => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    onSince(d.toISOString());
+  };
+  return (
+    <div className={`hq-since${since ? " on" : ""}`} title="Show only what happened from this time on (globe, numbers, lists)">
+      <span className="mono">From</span>
+      <input
+        type="datetime-local"
+        value={since ? local(since) : ""}
+        max={local(new Date().toISOString())}
+        onChange={(e) => (e.target.value ? onSince(new Date(e.target.value).toISOString()) : onSince(null))}
+        aria-label="Show activity from this date and time"
+      />
+      <button className="chip" onClick={() => ago(3_600_000)}>1 h</button>
+      <button className="chip" onClick={midnight}>Today</button>
+      <button className="chip" onClick={() => onSince(new Date().toISOString())}>Now</button>
+      {since ? <button className="chip on" onClick={() => onSince(null)}>All ✕</button> : null}
     </div>
   );
 }

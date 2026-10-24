@@ -3900,3 +3900,13 @@ html:not(#_) .pop.anon-portal .ap-search input::placeholder { color: rgba(255,25
 .hqs-bar .stack i { display: block; min-height: 0; }
 .hqs-bar > span { font-size: 8.5px; text-align: center; }
 .k-sp { background: #7cc4ff; } .k-an { background: #e8eaed; } .k-se { background: #3ddc84; }
+
+/* HQ "From" filter (only activity from a chosen time on) */
+.hq-top { flex-wrap: wrap; height: auto; min-height: calc(48px + var(--safe-t)); row-gap: 6px; padding-block: 6px; }
+.hq-since { display: inline-flex; align-items: center; gap: 6px; padding: 3px 6px 3px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); }
+.hq-since.on { border-color: rgba(61,255,140,0.6); box-shadow: 0 0 0 1px rgba(61,255,140,0.25) inset; }
+.hq-since > span { font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: #bbb; }
+.hq-since.on > span { color: var(--live); }
+.hq-since input { height: 28px; padding: 0 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #0b0c0e; color: #fff; font: 500 12px/1 var(--mono, monospace); color-scheme: dark; min-width: 0; }
+.hq-since .chip { height: 28px; padding: 0 10px; font-size: 11px; }
+@media (max-width: 860px) { .hq-since { order: 4; width: 100%; flex-wrap: wrap; } .hq-since input { flex: 1 1 170px; } }

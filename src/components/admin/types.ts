@@ -1,5 +1,11 @@
 export interface Overview {
   now: string;
+  /** set when HQ shows only what happened from a chosen time on (migration 030) */
+  since?: string;
+  /** devices first seen since then (filtered view only) */
+  newDevices?: number;
+  /** devices active since then that shared GPS, and those that didn't (filtered view only) */
+  gps?: { on: number; off: number };
   online: number;
   devices: number;
   visits: number;
