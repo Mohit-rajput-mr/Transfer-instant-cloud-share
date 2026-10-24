@@ -1112,10 +1112,17 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     tick("success");
     // already fetched quietly in the background (lib/peek.ts: the card's preview): it is on this device, so Download
     // hands it over at once instead of fetching it all again. The unlock above still counted it as a download
-    if (peekF && !isFolder && !inline && !asDir) {
+    // (still on its way: waited for, not started a second time)
+    let pre = peekF;
+    if (!pre && peekMode && !isFolder && !inline && !asDir) {
+      setBusy(true);
+      pre = await peekFile(orb).catch(() => null);
+      setBusy(false);
+    }
+    if (pre && !isFolder && !inline && !asDir) {
       const held = env.mobile || wantView.current;
-      if (!held) autoDownload(peekF);
-      return landed({ kind: "file", file: peekF, held });
+      if (!held) autoDownload(pre);
+      return landed({ kind: "file", file: pre, held });
     }
     // a folder or a big file needs a "where?" picker, which browsers only open on a fresh tap
     if (!wantView.current && (asDir && canWriteFolders()) || (!wantView.current && !inline && !isFolder && needsSavePicker(orb))) return setVerified(un);

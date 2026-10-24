@@ -2066,7 +2066,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     const go = () => warm(visible.filter((o) => !isPending(o.id) && !isIncoming(o.id)), !!space);
     const t = setTimeout(go, 400);
     // and again now and then: a file whose stored copy wasn't complete yet (or a busy moment) gets another try
-    const again = setInterval(() => document.visibilityState === "visible" && go(), 20_000);
+    // (every 5 s: a just-landed file is ready to grab within seconds; warm() skips what it tried lately)
+    const again = setInterval(() => document.visibilityState === "visible" && go(), 5_000);
     return () => (clearTimeout(t), clearInterval(again));
   }, [visible, space]);
   const [vw, setVw] = useState({ w: 1440, h: 900 });

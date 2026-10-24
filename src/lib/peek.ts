@@ -139,13 +139,14 @@ function guess(o: Orb) {
       if (ac.signal.aborted) return;
       const n = e instanceof NotYet ? (misses.get(o.id) ?? 0) + 1 : 4;
       misses.set(o.id, n);
-      skip.set(o.id, Date.now() + Math.min(10 * 60_000, 60_000 * 2 ** (n - 1)));
+      // (not stored yet: 5 s, 10 s, 20 s… a fresh file's copy usually lands within seconds; other trouble: minutes)
+      skip.set(o.id, Date.now() + Math.min(10 * 60_000, (e instanceof NotYet ? 5_000 : 60_000) * 2 ** (n - 1)));
     },
   ).finally(() => {
     if (guessStop.get(o.id) === ac) guessStop.delete(o.id);
     done();
     // then the next one in sight (each file is tried once, then cached or set aside: this ends)
-    setTimeout(() => warm(pool), 500);
+    setTimeout(() => warm(pool, poolSpace), 500);
   });
   return true;
 }
@@ -157,8 +158,10 @@ const spaceWarmMax = () => (low() ? 10 : 50) * MB;
 
 /** Warm small previews as they appear in the void (in a space: up to SPACE_WARM_MAX): the smallest first (most ready
  *  soonest), newest first among equals. */
+let poolSpace = false;
 export function warm(orbs: Orb[], inSpace = false) {
   pool = orbs;
+  poolSpace = inSpace;
   const now = Date.now();
   const max = inSpace ? Math.min(SPACE_WARM_MAX, spaceWarmMax()) : WARM_MAX;
   const next = orbs
