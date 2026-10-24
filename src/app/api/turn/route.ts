@@ -12,7 +12,8 @@ const TTL = 4 * 3600;
 let cached: { until: number; body: { iceServers: unknown[]; ttl: number } } | null = null;
 
 export async function GET() {
-  if (!ID || !TOKEN) return NextResponse.json({ iceServers: [] }, { headers: { "Cache-Control": "no-store" } });
+  // (why: no keys in this deployment, or what Cloudflare answered; never the keys themselves)
+  if (!ID || !TOKEN) return NextResponse.json({ iceServers: [], why: "no keys" }, { headers: { "Cache-Control": "no-store" } });
   if (!cached || cached.until < Date.now()) {
     const r = await fetch(`https://rtc.live.cloudflare.com/v1/turn/keys/${encodeURIComponent(ID)}/credentials/generate-ice-servers`, {
       method: "POST",
@@ -24,7 +25,7 @@ export async function GET() {
     const list = Array.isArray(d?.iceServers) ? d.iceServers : d?.iceServers ? [d.iceServers] : [];
     // handed out for at most the last 3 hours of their 4, so every page gets at least an hour of use
     if (list.length) cached = { until: Date.now() + (TTL - 3 * 3600) * 1000, body: { iceServers: list, ttl: 3 * 3600 } };
-    else return NextResponse.json({ iceServers: [] }, { headers: { "Cache-Control": "no-store" } });
+    else return NextResponse.json({ iceServers: [], why: `cloudflare ${r?.status ?? "unreachable"}` }, { headers: { "Cache-Control": "no-store" } });
   }
   return NextResponse.json(cached.body, { headers: { "Cache-Control": "no-store" } });
 }
