@@ -45,8 +45,11 @@ const queue: (() => void)[] = [];
 /** the files in sight at the last warm(): the next one is guessed when one is done */
 let pool: Orb[] = [];
 
+// any kind of file is fetched ahead (so Download hands it over at once, like a chat app); one that can't be previewed
+// only up to this size
+const ANY_MAX = 50 * MB;
 export const canPeek = (o: Orb) =>
-  !!o.open && !o.id.startsWith("up-") && o.maxDownloads == null && o.status === "ready" && !!viewKind(o.fileName, o.mime) && o.size <= HOVER_MAX;
+  !!o.open && !o.id.startsWith("up-") && o.maxDownloads == null && o.status === "ready" && o.size <= (viewKind(o.fileName, o.mime) ? HOVER_MAX : ANY_MAX);
 
 function trim() {
   let total = [...sizes.values()].reduce((a, b) => a + b, 0);
