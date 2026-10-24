@@ -20,6 +20,14 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- FIXED 2026-10-24 (H, owner ask: "even 1 MB takes time, make it faster worldwide") — Measured on prod (2 browsers):
+  1 MB click→saved 2.26 s = unlock 0.37 s + a separate "is it stored?" ranged read (R2 TTFB 1.2 s) + the data read
+  0.4 s; 20 MB 6.3 s (copy still uploading → direct path). R2 bucket orbi-storage is in WEUR, so every round trip from
+  Asia/Americas costs 150–300 ms+. Fixes: cloud.ts openStored — the first data range IS the check (one R2 round trip
+  less per download; transfer.ts source + anonymous path use it); layout preconnects to the R2 host on page load
+  (DNS+TLS done before the tap); transfer.ts keyFor/warmKey — a no-password object's key is derived when its card
+  opens (UnlockPanel), not after Download. Unlock still counts on the tap (it increments downloads). Remaining limit:
+  one bucket in Europe; a Worker/edge cache in front of R2 or a second bucket per region is the next step (owner call).
 - DONE 2026-10-24 (M, owner ask: "uploads only show after a reload") — Measured on prod first (2 browsers, Playwright):
   a far device's upload DOES arrive live (launch + landed over the worker's r/void in < 2.5 s) and after a 40 s offline
   drop the list catches up < 2.5 s after the line returns. What did NOT move live: downloads and viewers/views (they

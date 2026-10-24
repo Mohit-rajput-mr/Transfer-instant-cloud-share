@@ -50,6 +50,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning className={`${display.variable} ${sans.variable} ${mono.variable} ${chip.variable} ${workSans.variable} ${workMono.variable}`}>
       <body>
+        {/* downloads read the stored copy straight from R2: the connection (DNS + TLS) is opened while the page loads,
+            not on the first tap of Download (saves a round trip or two, more the farther away the viewer is) */}
+        {process.env.R2_ACCOUNT_ID && <link rel="preconnect" href={`https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`} crossOrigin="anonymous" />}
         <script dangerouslySetInnerHTML={{ __html: boot }} />
         {children}
       </body>

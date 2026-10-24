@@ -12,7 +12,7 @@ import { autoDownload, safeMime, saveName } from "./save";
 import { spaceBody, spaceOpenPass } from "./space";
 import { bubbleName } from "./bubbles";
 import { P2P_PREFIX, hold, holding, isP2P, pull } from "./p2p";
-import { fetchStored, isStored, storeCopy, waitStored } from "./cloud";
+import { fetchStored, isStored, openStored, storeCopy, waitStored } from "./cloud";
 import { stayAwake } from "./wake";
 
 /** A POST that survives a dropped or stuck connection (a phone switching networks, a cold server, a choked line): up to 3 tries of 20 s, then a clear message. */
@@ -199,8 +199,24 @@ async function quickPost(url: string, body: unknown, signal?: AbortSignal, ms = 
   }
 }
 
+// the key of a no-password object, worked out ahead (warmKey: its card opened) so Download goes straight to the network
+const keys = new Map<string, ReturnType<typeof deriveKeys>>();
+const keyFor = (orb: Orb, pass: string) => {
+  if (!orb.open) return deriveKeys(pass, fromB64(orb.salt), orb.iterations);
+  let k = keys.get(orb.id);
+  if (!k) {
+    if (keys.size > 50) keys.clear();
+    k = deriveKeys(openPassFor(orb), fromB64(orb.salt), orb.iterations);
+    k.catch(() => keys.delete(orb.id));
+    keys.set(orb.id, k);
+  }
+  return k;
+};
+/** a no-password object's card is open: get its key ready now */
+export const warmKey = (orb: Orb) => void (orb.open && keyFor(orb, "").catch(() => {}));
+
 export async function unlockOrb(orb: Orb, passcode: string, signal?: AbortSignal): Promise<Unlocked> {
-  const { key, auth } = await deriveKeys(orb.open ? openPassFor(orb) : passcode, fromB64(orb.salt), orb.iterations);
+  const { key, auth } = await keyFor(orb, passcode);
   const res = await quickPost(`/api/transfers/${orb.id}/unlock`, { auth, device: deviceLabel(), ...spaceBody() }, signal);
   const r = await res.json().catch(() => ({ ok: false, reason: "gone" }));
   if (!r.ok) throw new UnlockError(r.reason, r.left);
@@ -209,7 +225,7 @@ export async function unlockOrb(orb: Orb, passcode: string, signal?: AbortSignal
 
 /** No-password objects only: the same key + location as unlock, but nothing is counted (previews). */
 export async function peekOrb(orb: Orb, signal?: AbortSignal): Promise<Unlocked> {
-  const { key, auth } = await deriveKeys(openPassFor(orb), fromB64(orb.salt), orb.iterations);
+  const { key, auth } = await keyFor(orb, "");
   const res = await quickPost(`/api/transfers/${orb.id}/peek`, { auth, ...spaceBody() }, signal);
   const r = await res.json().catch(() => ({ ok: false, reason: "gone" }));
   if (!r.ok) throw new UnlockError(r.reason, r.left);
@@ -233,15 +249,17 @@ async function source(r: UnlockReply, signal: AbortSignal | undefined, cloudOnly
   }
   if (cloudOnly) {
     // anonymous: only the stored copy (a direct connection would show each side the other's IP)
-    if (r.store && ((await isStored(r.store, signal)) || (await waitStored(r.store, 3 * 60_000, signal))))
-      return { body: fetchStored(r.store, r.size, signal), stored: true };
+    const now = r.store ? await openStored(r.store, r.size, signal) : null;
+    if (now) return { body: now, stored: true };
+    if (r.store && (await waitStored(r.store, 3 * 60_000, signal))) return { body: fetchStored(r.store, r.size, signal), stored: true };
     throw new Error("This file is only on the sender's device. Receiving it directly would show them your IP, so anonymous mode doesn't. Turn off Anonymous to receive it.");
   }
   const id = r.url.slice(P2P_PREFIX.length);
   if (holding(id)) return { body: await pull(id, signal), stored: false };
   const store = r.store;
   if (!store) return { body: await pull(id, signal), stored: false };
-  if (await isStored(store, signal)) return { body: fetchStored(store, r.size, signal), stored: true };
+  const now = await openStored(store, r.size, signal);
+  if (now) return { body: now, stored: true };
   return firstSource(id, store, r.size, signal);
 }
 

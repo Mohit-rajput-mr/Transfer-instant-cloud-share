@@ -12,7 +12,7 @@ import { newContainer } from "@/lib/client";
 import { useDialog } from "@/lib/dialog";
 import { enqueue } from "@/lib/downloads";
 import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, filesBundle, isFolder, isLoose, isLinkText, itemName, itemSize, mergeItems, packFolder, pickFolderTarget, textToFile, type DirHandle, type Item } from "@/lib/bundle";
-import { needsSavePicker, pickSaveTarget, receive, unlockOrb, UnlockError, type Unlocked, type Received, type Stage } from "@/lib/transfer";
+import { needsSavePicker, pickSaveTarget, receive, unlockOrb, UnlockError, warmKey, type Unlocked, type Received, type Stage } from "@/lib/transfer";
 import { autoDownload, canPickSave, canShareFile, canShareFiles, deviceNoun, downloadWhere, downloadsShortcut, pickAndWrite, saveEnv, shareFile } from "@/lib/save";
 import "@/app/save.css";
 import { glyph } from "./Glyph";
@@ -842,6 +842,8 @@ function RichText({ text }: { text: string }) {
 
 export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; onClose: () => void; onDownloaded: () => void; onViewed: () => void; preview?: boolean }) {
   const { orb, now, watchers, onClose } = props;
+  // no password: its key is worked out while the card is read, so Download goes straight to the network
+  useEffect(() => warmKey(orb), [orb]);
   const [env] = useState(saveEnv);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);

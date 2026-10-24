@@ -453,8 +453,20 @@ export async function waitStored(url: string, ms: number, signal?: AbortSignal, 
 const RANGE_CHUNKS = 2;
 const PARALLEL_DOWN = 4;
 
+/** The stored copy, if it is complete: its first range is read right away and IS the check (no separate tiny read
+ *  first, one round trip less to R2 per download). null: not there (yet). The other lanes start the moment it is. */
+export async function openStored(url: string, size: number, signal?: AbortSignal, lanes = PARALLEL_DOWN): Promise<ReadableStream<Uint8Array> | null> {
+  const enc = size + storeChunks(size) * STORE_TAG;
+  const to = Math.min(enc, RANGE_CHUNKS * (STORE_CHUNK + STORE_TAG)) - 1;
+  const r = await fetch(url, { headers: { Range: `bytes=0-${to}` }, cache: "no-store", signal }).catch(() => null);
+  if (!r || (r.status !== 206 && r.status !== 200)) return null;
+  const first = new Uint8Array(await r.arrayBuffer());
+  if (first.length !== to + 1) return null;
+  return fetchStored(url, size, signal, lanes, first);
+}
+
 /** The stored ciphertext as a stream, fetched in parallel byte ranges (`lanes`; background previews take 1) and handed out in order. */
-export function fetchStored(url: string, size: number, signal?: AbortSignal, lanes = PARALLEL_DOWN): ReadableStream<Uint8Array> {
+export function fetchStored(url: string, size: number, signal?: AbortSignal, lanes = PARALLEL_DOWN, first?: Uint8Array): ReadableStream<Uint8Array> {
   const chunks = storeChunks(size);
   const enc = size + chunks * STORE_TAG;
   const step = RANGE_CHUNKS * (STORE_CHUNK + STORE_TAG);
@@ -463,6 +475,7 @@ export function fetchStored(url: string, size: number, signal?: AbortSignal, lan
   let next = 0;
   let out = 0;
   const get = async (k: number) => {
+    if (k === 0 && first) return first;
     const from = k * step;
     const to = Math.min(enc, from + step) - 1;
     for (let attempt = 1; ; attempt++) {
