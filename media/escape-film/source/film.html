@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Escape the ring</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; } html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; } canvas { position: absolute; inset: 0; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Escape the ring: draws one frame of sim.json. Neon ring with a gap, glowing balls with trails, counter, shatter finale.
+const W = 1080, H = 1920, g = document.getElementById("c").getContext("2d");
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k, back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+let S, EMB, seed = 9; const rnd = () => ((seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296);
+const STARS = Array.from({ length: 220 }, () => [rnd() * W, rnd() * H, rnd() * 1.6 + 0.3, rnd()]);
+const FRAG = Array.from({ length: 28 }, (_, i) => ({ a0: (i / 28) * Math.PI * 2, va: (rnd() - 0.5) * 4, v: 500 + rnd() * 700, vy: -300 - rnd() * 500 }));
+function text(s, x, y, size, col = "#fff", w = 900, alpha = 1, stroke = 0, font = "D") { g.save(); g.globalAlpha = alpha; g.font = `${w} ${size}px ${font}`; g.textAlign = "center"; g.textBaseline = "middle"; if (stroke) { g.lineWidth = stroke; g.strokeStyle = "#000"; g.strokeText(s, x, y); } g.fillStyle = col; g.fillText(s, x, y); g.restore(); }
+window.render = async function (t) {
+  const fi = Math.min(S.frames.length - 1, Math.round(t * S.fps)), F = S.frames[fi], sh = S.shatter ?? 1e9, as = t - sh;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+  for (const [x, y, r, p] of STARS) { g.fillStyle = `rgba(255,255,255,${0.2 + 0.3 * Math.abs(Math.sin(t + p * 9))})`; g.fillRect(x, y, r, r); }
+  // shake on hits this frame
+  let shake = 0; for (const e of S.events) if (e.k === "hit" && t - e.t >= 0 && t - e.t < 0.05) shake += 0.6; if (as > 0 && as < 0.8) shake += (1 - as / 0.8) * 30; shake = Math.min(shake, 30);
+  g.setTransform(1, 0, 0, 1, Math.sin(t * 80) * shake, Math.cos(t * 70) * shake);
+  // the ring (a gap at the spin angle); after the shatter its pieces fly
+  const hue0 = (t * 50) % 360;
+  if (as <= 0) { g.save(); g.lineWidth = 12; g.lineCap = "round"; g.shadowBlur = 30; const n = 70, a0 = F.rot + S.GAP / 2, span = Math.PI * 2 - S.GAP;
+    for (let i = 0; i < n; i++) { const a = a0 + (i / n) * span, b = a0 + ((i + 1) / n) * span, h = (hue0 + i * 5) % 360; g.strokeStyle = `hsl(${h},100%,62%)`; g.shadowColor = `hsl(${h},100%,55%)`; g.beginPath(); g.arc(S.CX, S.CY, S.R + 6, a, b + 0.005); g.stroke(); } g.restore(); }
+  else { g.save(); g.lineWidth = 12; g.lineCap = "round"; g.shadowBlur = 24; for (const [i, f] of FRAG.entries()) { const cx = S.CX + Math.cos(f.a0) * f.v * as, cy = S.CY + Math.sin(f.a0) * f.v * as + f.vy * as + 900 * as * as, h = (hue0 + i * 13) % 360;
+      g.strokeStyle = `hsla(${h},100%,62%,${clamp(1 - as / 3)})`; g.shadowColor = `hsl(${h},100%,55%)`; g.beginPath(); g.arc(cx - Math.cos(f.a0) * (S.R + 6), cy - Math.sin(f.a0) * (S.R + 6), S.R + 6, f.a0 + f.va * as, f.a0 + f.va * as + 0.2); g.stroke(); } g.restore(); }
+  // escape flashes
+  for (const e of S.events) { const d = t - e.t; if (e.k !== "esc" || d < 0 || d > 0.45) continue; g.save(); g.globalAlpha = 1 - d / 0.45; g.strokeStyle = "#fff"; g.lineWidth = 4; g.beginPath(); g.arc(e.x, e.y, 20 + d * 160, 0, 7); g.stroke(); g.restore(); }
+  // balls, with a short trail from the previous frames
+  const P = [S.frames[Math.max(0, fi - 2)], S.frames[Math.max(0, fi - 1)]].map((p) => new Map(p.b.map((b) => [b[0], b])));
+  for (const [id, x, y, hue, out] of F.b) { g.save(); for (const [k, pm] of P.entries()) { const q = pm.get(id); if (!q) continue; g.globalAlpha = 0.18 * (k + 1); g.fillStyle = `hsl(${hue},100%,60%)`; g.beginPath(); g.arc(q[1], q[2], S.BR * (0.7 + k * 0.15), 0, 7); g.fill(); }
+    g.globalAlpha = out ? 0.55 : 1; g.shadowBlur = 18; g.shadowColor = `hsl(${hue},100%,55%)`; const rg = g.createRadialGradient(x - 5, y - 6, 2, x, y, S.BR); rg.addColorStop(0, `hsl(${hue},100%,85%)`); rg.addColorStop(1, `hsl(${hue},100%,50%)`); g.fillStyle = rg; g.beginPath(); g.arc(x, y, S.BR, 0, 7); g.fill(); g.restore(); }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  // counter and rule
+  const inside = F.b.filter((b) => !b[4]).length, esc = S.events.filter((e) => e.k === "esc" && e.t <= t).length;
+  text("BALLS", 540, 210, 44, "#9aa", 800, 1, 0, "M"); text(String(inside), 540, 300, 150, "#fff", 900, 1, 10);
+  text("Every ball that escapes", 540, 1480, 50, "#fff", 800); text("= 2 MORE BALLS", 540, 1550, 64, "#3dff8c", 900);
+  text(`escaped ${esc}`, 540, 1640, 30, "rgba(255,255,255,0.7)", 700, 1, 0, "M");
+  text("Will it break the ring?", 540, 1760, 46, "#ffd04a", 800);
+  text("@orbitransfer", 900, 120, 26, "rgba(255,255,255,0.7)", 700, 1, 0, "M");
+  if (as > 0) { const k = clamp(as / 0.3); g.fillStyle = `rgba(255,255,255,${clamp(1 - as / 0.4) * 0.85})`; g.fillRect(0, 0, W, H);
+    g.save(); g.translate(540, 760); g.scale(lerp(2, 1, back(k)), lerp(2, 1, back(k))); text("RING", 0, -70, 150, "#fff", 900, k, 12); text("BROKEN!", 0, 70, 150, "#ff5a4a", 900, k, 12); g.restore();
+    const e = clamp((as - 3.4) / 0.6); if (e > 0) { g.fillStyle = `rgba(0,0,0,${e * 0.92})`; g.fillRect(0, 0, W, H); g.save(); g.globalAlpha = e; g.translate(540, 760); g.rotate((as - 3.4) * 0.4); if (EMB) g.drawImage(EMB, -130, -130, 260, 260); g.restore();
+      text("ORBI TRANSFER", 540, 1010, 96, "#fff", 900, e); text("Follow for the next one", 540, 1110, 44, "#3dff8c", 700, e, 0, "M"); text("@orbitransfer", 540, 1200, 46, "#fff", 600, e, 0, "M"); } }
+  const fade = Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)); if (fade > 0) { g.fillStyle = `rgba(0,0,0,${fade})`; g.fillRect(0, 0, W, H); }
+};
+(async () => { S = await (await fetch("sim.json")).json(); window.DURATION = S.frames.length / S.fps; EMB = new Image(); EMB.src = "emblem.svg"; await EMB.decode().catch(() => (EMB = null)); await document.fonts.load("900 50px D"); await document.fonts.load("700 30px M"); window.ready = true; })();
+</script>
+</body>
+</html>
