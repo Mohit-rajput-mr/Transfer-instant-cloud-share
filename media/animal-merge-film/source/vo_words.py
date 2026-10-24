@@ -2,13 +2,16 @@
 import re, soundfile as sf, librosa, numpy as np, torch, jiwer
 from chatterbox.tts import ChatterboxTTS
 from faster_whisper import WhisperModel
-W = [("hook", "Will this mouse merge into its final form?", 1.0), ("t1", "Rabbit!", 1.2), ("t2", "Fox!", 1.2), ("t3", "Deer!", 1.2),
-     ("t4", "Cow!", 1.2), ("t5", "Lion!", 1.2), ("t6", "Dinosaur!", 1.2), ("t7", "T-Rex!", 1.2),
+W = [("hook", "Will this mouse merge into its final form?", 1.0), ("t1", "A rabbit!", 1.1), ("t2", "Fox!", 1.2), ("t3", "A deer!", 1.1),
+     ("t4", "Cow!", 1.2), ("t5", "A lion!", 1.1), ("t6", "Dinosaur!", 1.2), ("t7", "T-Rex!", 1.2),
      ("t8", "Dragon. Final form.", 1.0), ("end", "Follow for the next one!", 1.1)]
 torch.set_num_threads(4)
 tts = ChatterboxTTS.from_pretrained(device="cpu"); asr = WhisperModel("small.en", device="cpu", compute_type="int8")
 norm = lambda s: re.sub(r"[^a-z0-9 ]", "", s.lower().replace("orbee", "orbi").replace("orby", "orbi").replace("trex", "t rex").replace("tea rex", "t rex").replace("gig", "gig")).split()
+import sys
+ONLY = set(sys.argv[1:])
 for key, text, ex in W:
+    if ONLY and key not in ONLY: continue
     best = None
     for take in range(3):
         torch.manual_seed(take * 11 + len(key))

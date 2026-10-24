@@ -94,7 +94,7 @@ function world(t) {
   const xk = win(t, A("learn"), A("cta"), 0.4, 0.3); XPH.visible = xk > 0; XPH.position.set(0, 3.4 + Math.sin(t * 1.5) * 0.1, -2); XPH.rotation.y = (t - A("learn")) * 0.7; XPH.scale.setScalar(back(clamp((t - A("learn")) / 0.5)) || 0.001); XR(clamp((t - wt("learn", "tech")) / 0.6));
   CHIPS.forEach((c, i) => { c.position.z = clamp((t - wt("learn", "really") - i * 0.05) / 0.5) * (0.4 + (i % 3) * 0.25); c.material.emissiveIntensity = 0.5 + 0.5 * Math.sin(t * 8 + i); });
   // the follow button
-  const bk = clamp((t - A("cta")) / 0.5); BTN.visible = t >= A("cta") && t < A("end"); BTN.position.set(-0.6, 3.1, 3.6); BTN.scale.setScalar(back(bk) || 0.001); BTN.lookAt(cam.position); const press = win(t, wt("cta", "follow"), wt("cta", "follow") + 0.35, 0.05, 0.2); BTN.base.position.z = -press * 0.2; BTN.base.material.emissiveIntensity = 0.5 + press * 2;
+  const bk = clamp((t - A("cta")) / 0.5); BTN.visible = t >= A("cta") && t < A("end"); BTN.position.set(-0.6, 3.1, 3.6); BTN.scale.setScalar((back(bk) || 0.001) * 0.7); BTN.lookAt(cam.position); const press = win(t, wt("cta", "follow"), wt("cta", "follow") + 0.35, 0.05, 0.2); BTN.base.position.z = -press * 0.2; BTN.base.material.emissiveIntensity = 0.5 + press * 2;
 }
 
 const SH = [], shot = (at, dur, p0, t0, f0, p1, t1, f1, shake) => SH.push({ at, dur, from: { p: p0, t: t0, fov: f0 }, to: { p: p1 ?? p0, t: t1 ?? t0, fov: f1 ?? f0 }, shake });
@@ -102,16 +102,16 @@ const Y = () => YOUSPOT;
 shot(0, 2.4, V(40, 34, 60), V(0, 0, -3), 42, V(14, 8, 24), V(0, 1, -2), 40);
 shot(wt("hook", "follow") - 0.1, 1.6, V(-5, 1.0, 7), V(0, 1.6, -2), 46, V(-4, 1.2, 6), V(0, 1.7, -2), 44);
 shot(A("spot"), 1.8, V(8, 4, 13), V(1.6, 2, 4.2), 40, V(6, 3, 11), V(1.6, 1.5, 4.2), 38);
-shot(wt("spot", "tiny") - 0.1, 2.4, V(1.9, 1.5, 6.6), V(1.6, 1.25, 4.2), 36, V(1.8, 1.4, 6.0), V(1.6, 1.3, 4.2), 32);
-shot(A("style"), 0.9, V(1.7, 1.75, 5.2), V(1.6, 1.72, 4.2), 34, V(1.7, 1.75, 5.0), V(1.6, 1.72, 4.2), 30);
-shot(wt("style", "hat"), 0.9, V(2.4, 2.2, 5.0), V(1.6, 1.8, 4.2), 36, V(2.2, 2.1, 4.9), V(1.6, 1.8, 4.2), 34);
-shot(wt("style", "your"), 1.0, V(0.6, 1.2, 6.2), V(1.6, 1.1, 4.2), 40, V(0.9, 1.1, 5.8), V(1.6, 1.1, 4.2), 38);
+shot(wt("spot", "tiny") - 0.1, 2.4, V(2.2, 1.7, 8.4), V(1.6, 1.3, 4.2), 36, V(2.0, 1.65, 7.4), V(1.6, 1.35, 4.2), 34);
+shot(A("style"), 0.9, V(1.75, 1.75, 6.0), V(1.6, 1.68, 4.2), 34, V(1.72, 1.74, 5.7), V(1.6, 1.68, 4.2), 32);
+shot(wt("style", "hat"), 0.9, V(2.6, 2.3, 6.2), V(1.6, 1.75, 4.2), 36, V(2.4, 2.2, 5.9), V(1.6, 1.75, 4.2), 34);
+shot(wt("style", "your"), 1.0, V(0.4, 1.2, 8.0), V(1.6, 1.0, 4.2), 42, V(0.7, 1.1, 7.4), V(1.6, 1.0, 4.2), 40);
 shot(wt("style", "dancing"), 1.6, V(4.5, 2.2, 7), V(1, 1, 2), 44, V(3.5, 2.4, 6.5), V(0.8, 1, 1.5), 44);
 shot(A("grow"), 3.6, V(0.5, 24, 12), V(0, 0, -1), 46, V(0.5, 17, 9), V(0, 0, -1), 50, 0.01);
-shot(A("learn"), 1.6, V(3, 3.6, 4), V(0, 3.4, -2), 40, V(2, 3.6, 3), V(0, 3.4, -2), 36);
-shot(wt("learn", "tech"), 2.0, V(-1.2, 3.8, 1.2), V(0, 3.3, -2), 36, V(-0.8, 3.6, 0.4), V(0, 3.3, -2), 34);
-shot(wt("learn", "really") - 0.1, 1.4, V(1.4, 3.6, 0.6), V(0, 3.3, -2), 40, V(1.0, 3.5, 0.2), V(0, 3.3, -2), 36);
-shot(A("cta"), 1.4, V(0.2, 2.6, 9.5), V(-0.3, 2.4, 3.6), 40, V(0.1, 2.8, 8.2), V(-0.3, 2.6, 3.6), 38);
+shot(A("learn"), 1.6, V(5, 4.2, 10), V(0, 3.2, -2), 42, V(4, 4.0, 9), V(0, 3.2, -2), 40);
+shot(wt("learn", "tech"), 2.0, V(-2.2, 4.0, 5.5), V(0, 3.3, -2), 40, V(-1.6, 3.8, 4.6), V(0, 3.3, -2), 38);
+shot(wt("learn", "really") - 0.1, 1.4, V(2.6, 3.8, 4.4), V(0, 3.3, -2), 40, V(2.0, 3.6, 3.8), V(0, 3.3, -2), 38);
+shot(A("cta"), 1.4, V(0.4, 2.4, 12.5), V(-0.3, 2.2, 3.6), 40, V(0.3, 2.6, 11), V(-0.3, 2.4, 3.6), 40);
 shot(wt("cta", "save") - 0.1, 2.0, V(4, 2.0, 8), V(1.6, 1.3, 4.2), 40, V(3.2, 1.8, 7), V(1.6, 1.4, 4.2), 36);
 const camAt = camRig(cam);
 

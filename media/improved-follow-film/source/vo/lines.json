@@ -1,0 +1,48 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know what happens when you follow Orbi?",
+   "dur": 2.949,
+   "at": 0.35
+  },
+  {
+   "key": "spot",
+   "text": "You get a spot on our island. A tiny little you, right here on the sand.",
+   "dur": 4.348,
+   "at": 3.7
+  },
+  {
+   "key": "style",
+   "text": "Glasses, a hat, your favourite colour. Dancing by the fire.",
+   "dur": 4.547,
+   "at": 8.35
+  },
+  {
+   "key": "grow",
+   "text": "And with every new follower, the party gets bigger.",
+   "dur": 2.812,
+   "at": 13.19
+  },
+  {
+   "key": "learn",
+   "text": "Plus, every video shows you how the tech in your pocket really works.",
+   "dur": 4.64,
+   "at": 16.31
+  },
+  {
+   "key": "cta",
+   "text": "So hit follow, and save your spot on the beach.",
+   "dur": 3.775,
+   "at": 21.25
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer. See you on the island!",
+   "dur": 2.321,
+   "at": 25.42
+  }
+ ],
+ "duration": 29.54
+}
