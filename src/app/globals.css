@@ -2852,6 +2852,11 @@ em.hq-tag { font-style: normal; }
   .drawer-body { grid-auto-rows: max-content; align-content: start; }
   .drawer-body > .col { min-height: max-content; }
   .drawer-body > .col > * { flex-shrink: 0; }
+  /* the card's main button (Send / Download) stays in reach while the rest scrolls: its column melts into the card's
+     grid so the button can stick to the card's bottom edge */
+  .drawer-body > .col:last-child:has(> .cta) { display: contents; }
+  .drawer-body > .col:last-child > .grow { display: none; }
+  .drawer-body > .col:last-child > .cta { position: sticky; bottom: 0; z-index: 3; box-shadow: 0 -14px 24px 8px rgba(12,13,16,0.92); }
 }
 .drawer-body > * { min-width: 0; }
 .open-badge { flex-wrap: wrap; row-gap: 4px; min-width: 0; }
