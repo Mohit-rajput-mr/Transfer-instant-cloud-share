@@ -16,6 +16,19 @@ const ICE: RTCIceServer[] = [
   { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] },
   { urls: "stun:stun.cloudflare.com:3478" },
 ];
+// + a relay (Cloudflare's TURN, nearest city by anycast) for networks that block a direct line (offices, campuses,
+// some mobile carriers): without it such a pair waits for the stored copy. Short-lived credentials from /api/turn,
+// fetched once and kept until shortly before they end; none configured (or slow): STUN only, as before
+let relay: { at: number; until: number; list: RTCIceServer[] } | null = null;
+async function ice(): Promise<RTCIceServer[]> {
+  if (relay && relay.until > Date.now()) return [...ICE, ...relay.list];
+  if (relay && Date.now() - relay.at < 60_000) return ICE;
+  const r = await fetch("/api/turn", { cache: "no-store", signal: AbortSignal.timeout(2500) }).catch(() => null);
+  const d = r?.ok ? ((await r.json().catch(() => null)) as { iceServers?: RTCIceServer[]; ttl?: number } | null) : null;
+  const list = Array.isArray(d?.iceServers) ? d.iceServers : [];
+  relay = { at: Date.now(), until: list.length ? Date.now() + Math.max(60, (d?.ttl ?? 3600) - 300) * 1000 : 0, list };
+  return [...ICE, ...list];
+}
 /** data-channel message size every browser accepts */
 const FRAME = 64 * 1024;
 /** pause sending above this much queued, resume below LOW */
@@ -188,7 +201,7 @@ export function hold(id: string, file: File, key: CryptoKey, nonce: Uint8Array, 
     if (!peer || !payload?.sdp) return;
     // a v2 receiver names its download session; older receivers get the whole file on one connection
     const sid = payload.v === 2 && typeof payload.sid === "string" ? payload.sid.slice(0, 64) : null;
-    const pc = new RTCPeerConnection({ iceServers: ICE });
+    const pc = new RTCPeerConnection({ iceServers: await ice() });
     peers.add(pc);
     let laneOpen = false;
     // (an older receiver's single connection: its own turn, given back when it ends)
@@ -334,7 +347,7 @@ export async function pull(id: string, signal?: AbortSignal): Promise<ReadableSt
   /** One peer connection to the sender, opened. */
   const dial = async (first: boolean) => {
     const peer = crypto.randomUUID();
-    const pc = new RTCPeerConnection({ iceServers: ICE });
+    const pc = new RTCPeerConnection({ iceServers: await ice() });
     conns.add(pc);
     const dc = pc.createDataChannel("f", { ordered: true });
     dc.binaryType = "arraybuffer";

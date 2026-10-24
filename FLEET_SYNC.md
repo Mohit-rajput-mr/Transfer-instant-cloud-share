@@ -20,6 +20,15 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- DONE 2026-10-24 (H, owner: "fix speed for every corner of the earth, free") — Research: (1) R2 Local Uploads (open
+  beta, free, no extra cost): uploads land in storage near the SENDER and copy to WEUR in the background, readable at once
+  (fast for readers in the sender's region). Needs the OWNER to switch it on: dashboard → R2 → orbi-storage → Settings →
+  Local Uploads → Enable (or `wrangler r2 bucket local-uploads enable orbi-storage`); no code change (presigned PUT /
+  UploadPart are covered). (2) Cloudflare Realtime TURN (1,000 GB/month free, anycast nearest city): relays the direct
+  device-to-device path on networks that block it (offices, campuses, carriers), which today fall back to waiting for
+  the stored copy. Code shipped: /api/turn (credentials/generate-ice-servers, ttl 4 h, cached per instance) + p2p.ts
+  ice() adds them to STUN. Dormant until the OWNER adds Vercel env CF_TURN_KEY_ID + CF_TURN_KEY_TOKEN (dashboard →
+  Realtime → TURN → Create key) and redeploys.
 - DONE 2026-10-24 (H, owner: "yes build for free") — Downloads through Cloudflare's edge. live/ worker now also serves
   GET /f/<id>?t=<token> (Range only) from an R2 binding STORE (orbi-storage) and caches each range at the reader's
   location (Cache API, TTL ≤ 3 h / the ticket's end). Auth: site writes ticket k/<id> (x-amz-meta tok = sha256(token),
