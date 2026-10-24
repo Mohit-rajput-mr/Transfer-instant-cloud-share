@@ -8,6 +8,8 @@ import { DurableObject } from "cloudflare:workers";
 
 interface Env {
   ROOM: DurableObjectNamespace<Room>;
+  /** the stored copies (R2 orbi-storage): f/<id> the ciphertext, k/<id> its download ticket */
+  STORE: R2Bucket;
 }
 
 // only Orbit's own pages may connect (another site can't spend this account's free allowance)
@@ -26,10 +28,55 @@ const MAX_SOCKETS = 30_000;
 // k (must count) and s (told to slow down this window) came later: sockets attached before carry only n, t, id
 type Tag = { n: number; k?: number; s?: boolean; t: number; id: string | null };
 
+// ---- downloads at the edge: GET /f/<id>?t=<ticket>, with a Range ----
+// The stored copy lives in one bucket (Western Europe). Read through here, the bytes come from the Cloudflare location
+// nearest the reader: the first read of a range travels Cloudflare's own network to the bucket (an R2 binding, faster
+// than the S3 API a signed link uses), and it stays cached at that location for the object's short life, so the next
+// reader nearby gets it at once. Only a ticket opens a file: the site writes k/<id> when it lets someone
+// download (unlock, src/lib/edge.ts on the site), with its end time; destroying a file deletes its tickets, and every request checks the ticket,
+// so a burnt file is never served again, cached or not. What is served is ciphertext; keys never come here.
+// The ticket (k/<id>) holds a hash of the file's token and until when it opens it.
+const FILE = /^\/f\/([a-z0-9]{4,12})$/;
+const TICKET = /^[A-Za-z0-9_-]{32}$/;
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Range", "Access-Control-Expose-Headers": "Content-Range, Content-Length, X-Edge, X-Edge-Missing", "Access-Control-Max-Age": "86400" };
+
+async function file(req: Request, env: Env, ctx: ExecutionContext, id: string): Promise<Response> {
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...CORS, "Access-Control-Allow-Methods": "GET, OPTIONS" } });
+  if (req.method !== "GET") return new Response("method", { status: 405, headers: CORS });
+  const url = new URL(req.url);
+  const t = url.searchParams.get("t") ?? "";
+  if (!TICKET.test(t)) return new Response("forbidden", { status: 403, headers: CORS });
+  const ticket = await env.STORE.head(`k/${id}`);
+  const until = Number(ticket?.customMetadata?.exp ?? 0);
+  const hash = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map((x) => x.toString(16).padStart(2, "0")).join("");
+  if (!ticket || ticket.customMetadata?.tok !== hash || !(until > Date.now())) return new Response("forbidden", { status: 403, headers: CORS });
+  const m = /^bytes=(\d+)-(\d+)$/.exec(req.headers.get("Range") ?? "");
+  if (!m) return new Response("range required", { status: 416, headers: CORS });
+  const from = Number(m[1]), to = Number(m[2]);
+  if (to < from || to - from > 64 * 1024 * 1024) return new Response("range", { status: 416, headers: CORS });
+  // the cache knows a range by the object and its bytes, never by the ticket (every reader shares it)
+  const key = new Request(`https://orbit-edge.cache/f/${id}/${from}-${to}`);
+  const cache = caches.default;
+  const hit = await cache.match(key);
+  if (hit) return new Response(hit.body, { status: 206, headers: { ...Object.fromEntries(hit.headers), ...CORS, "X-Edge": "hit" } });
+  const obj = await env.STORE.get(`f/${id}`, { range: { offset: from, length: to - from + 1 } });
+  // (marked, so the site can tell "not uploaded yet" from a worker that doesn't serve files at all)
+  if (!obj || !("body" in obj)) return new Response("not stored", { status: 404, headers: { ...CORS, "Cache-Control": "no-store", "X-Edge-Missing": "1" } });
+  const end = Math.min(to, obj.size - 1);
+  const headers = { "Content-Type": "application/octet-stream", "Content-Range": `bytes ${from}-${end}/${obj.size}`, "Content-Length": String(end - from + 1) };
+  const [a, b] = obj.body.tee();
+  // kept at this location while the file can live (at most its ticket's end, 3 hours), then gone by itself
+  const ttl = Math.max(60, Math.min(3 * 3600, Math.floor((until - Date.now()) / 1000)));
+  ctx.waitUntil(cache.put(key, new Response(b, { status: 200, headers: { ...headers, "Cache-Control": `public, max-age=${ttl}` } })).catch(() => {}));
+  return new Response(a, { status: 206, headers: { ...headers, ...CORS, "Cache-Control": "private, no-store", "X-Edge": "miss" } });
+}
+
 export default {
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
     if (url.pathname === "/") return new Response("orbit live", { headers: { "Cache-Control": "no-store" } });
+    const f = FILE.exec(url.pathname);
+    if (f) return file(req, env, ctx, f[1]);
     const m = ROOM.exec(url.pathname);
     if (!m) return new Response("not found", { status: 404 });
     if (req.headers.get("Upgrade") !== "websocket") return new Response("expected a websocket", { status: 426 });

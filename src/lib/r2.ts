@@ -17,6 +17,8 @@ const base = () => `https://${ACCOUNT}.r2.cloudflarestorage.com/${BUCKET}`;
 export const objectKey = (id: string) => `f/${id}`;
 /** the small preview picture of an open object */
 export const previewKey = (id: string) => `t/${id}`;
+/** a file's edge-download ticket (live/ worker): who holds its token may read f/<id> through Cloudflare's edge */
+export const ticketKey = (id: string) => `k/${id}`;
 
 /** A URL that lets a browser do exactly one kind of request on one object, for `seconds`. */
 export async function presign(method: "GET" | "PUT", key: string, query: Record<string, string> = {}, seconds = 3600) {
@@ -101,4 +103,11 @@ export async function getObject(key: string): Promise<ArrayBuffer | null> {
   if (!client) return null;
   const r = await client.fetch(`${base()}/${key}`).catch(() => null);
   return r?.ok ? r.arrayBuffer() : null;
+}
+
+/** The ticket the edge worker checks (live/src/index.ts file): a hash of the token, and until when it opens the file. */
+export async function putTicket(id: string, tokHash: string, exp: number) {
+  if (!client) throw new Error("r2 off");
+  const r = await client.fetch(`${base()}/${ticketKey(id)}`, { method: "PUT", body: "", headers: { "content-type": "text/plain", "x-amz-meta-tok": tokHash, "x-amz-meta-exp": String(exp) } });
+  if (!r.ok) throw new Error(`r2 ticket ${r.status}`);
 }

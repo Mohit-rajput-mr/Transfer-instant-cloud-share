@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { del } from "@vercel/blob";
 import type { NextRequest } from "next/server";
-import { abortAllUploads, objectKey, previewKey, removeObjects } from "./r2";
+import { abortAllUploads, objectKey, previewKey, removeObjects, ticketKey } from "./r2";
 import { areaOf, validArea } from "./area";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -106,7 +106,8 @@ export async function removeBlobs(urls: (string | null | undefined)[]) {
   // p2p:<id> objects may have an encrypted copy in R2 (deletes there are free; a missing one is fine)
   // also "p2p/<id>": a row removed before finalize (an anonymous send uploads its cloud copy first) only has its pathname
   const ids = urls.flatMap((u) => (u && (u.startsWith("p2p:") || u.startsWith("p2p/")) && validId(u.slice(4)) ? [u.slice(4)] : []));
-  await removeObjects(ids.flatMap((id) => [objectKey(id), previewKey(id)])).catch(() => {});
+  // (its edge ticket too: the worker then serves it to nobody, even from a location that still has it cached)
+  await removeObjects(ids.flatMap((id) => [objectKey(id), previewKey(id), ticketKey(id)])).catch(() => {});
   // and the parts of a big upload that never finished
   await Promise.all(ids.map((id) => abortAllUploads(objectKey(id)).catch(() => {})));
   const list = urls.filter((u): u is string => !!u && u.startsWith("https://"));

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isHex, rpc, sha256, validId } from "@/lib/server";
 import { burnedUp, member, untag } from "@/lib/spaces";
 import { objectKey, presign, r2On } from "@/lib/r2";
+import { edgeLink } from "@/lib/edge";
 
 // Look inside without downloading: for no-password objects only (anyone can open those anyway), and never
 // for an object with a download limit. Same answer as unlock, nothing counted, so a preview can be fetched
@@ -15,6 +16,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!info || burnedUp(info) || !info.open) return NextResponse.json({ ok: false, reason: "gone" }, { status: 403 });
   if (info.space && !(await member(info.space, b.deviceId, b.spaceToken))) return NextResponse.json({ ok: false, reason: "gone" }, { status: 403 });
   const r = await rpc<Record<string, unknown>>("orbit_peek", { p_id: id, p_auth_hash: sha256(b.auth) });
-  if (r?.ok && r2On()) r.store = await presign("GET", objectKey(id), {}, 3 * 3600).catch(() => undefined);
+  if (r?.ok && r2On()) {
+    const [store, edge] = await Promise.all([presign("GET", objectKey(id), {}, 3 * 3600).catch(() => undefined), edgeLink(id)]);
+    r.store = store;
+    if (edge) r.edge = edge;
+  }
   return NextResponse.json(r, { status: r?.ok ? 200 : 403 });
 }

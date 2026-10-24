@@ -455,14 +455,28 @@ const PARALLEL_DOWN = 4;
 
 /** The stored copy, if it is complete: its first range is read right away and IS the check (no separate tiny read
  *  first, one round trip less to R2 per download). null: not there (yet). The other lanes start the moment it is. */
-export async function openStored(url: string, size: number, signal?: AbortSignal, lanes = PARALLEL_DOWN): Promise<ReadableStream<Uint8Array> | null> {
+export async function openStored(url: string, size: number, signal?: AbortSignal, lanes = PARALLEL_DOWN, edge?: string): Promise<ReadableStream<Uint8Array> | null> {
   const enc = size + storeChunks(size) * STORE_TAG;
   const to = Math.min(enc, RANGE_CHUNKS * (STORE_CHUNK + STORE_TAG)) - 1;
-  const r = await fetch(url, { headers: { Range: `bytes=0-${to}` }, cache: "no-store", signal }).catch(() => null);
-  if (!r || (r.status !== 206 && r.status !== 200)) return null;
-  const first = new Uint8Array(await r.arrayBuffer());
-  if (first.length !== to + 1) return null;
-  return fetchStored(url, size, signal, lanes, first);
+  const first = async (u: string) => {
+    const r = await fetch(u, { headers: { Range: `bytes=0-${to}` }, cache: "no-store", signal }).catch(() => null);
+    if (!r) return { missing: false, b: null };
+    // the bucket's 404, or the edge worker's own "not uploaded yet" (an edge without that mark isn't serving files)
+    if (r.status === 404) return { missing: u === url || r.headers.get("X-Edge-Missing") === "1", b: null };
+    if (r.status !== 206 && r.status !== 200) return { missing: false, b: null };
+    const b = new Uint8Array(await r.arrayBuffer().catch(() => new ArrayBuffer(0)));
+    return { missing: false, b: b.length === to + 1 ? b : null };
+  };
+  // through Cloudflare's edge first (the location near the reader, cached there for the next one: live/ worker);
+  // not stored yet there means not stored yet at all; any other trouble (the worker's allowance, a hiccup) falls
+  // back to the bucket's own signed link
+  if (edge) {
+    const e = await first(edge);
+    if (e.b) return fetchStored(edge, size, signal, lanes, e.b);
+    if (e.missing) return null;
+  }
+  const d = await first(url);
+  return d.b ? fetchStored(url, size, signal, lanes, d.b) : null;
 }
 
 /** The stored ciphertext as a stream, fetched in parallel byte ranges (`lanes`; background previews take 1) and handed out in order. */

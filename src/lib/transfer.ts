@@ -167,7 +167,7 @@ export type Received =
   /** folder rebuilt inside a directory the user picked */
   | { kind: "dir"; folder: string; files: number; where: string };
 
-type UnlockReply = { url: string; nonce: string; size: number; chunkSize: number; fileName: string; mime: string; store?: string };
+type UnlockReply = { url: string; nonce: string; size: number; chunkSize: number; fileName: string; mime: string; store?: string; /** the same copy through Cloudflare's edge (lib/edge.ts) */ edge?: string };
 /** Checked passcode: the key plus where the ciphertext lives. Nothing is saved or picked before this succeeds. */
 export type Unlocked = { key: Awaited<ReturnType<typeof deriveKeys>>["key"]; r: UnlockReply };
 
@@ -249,7 +249,7 @@ async function source(r: UnlockReply, signal: AbortSignal | undefined, cloudOnly
   }
   if (cloudOnly) {
     // anonymous: only the stored copy (a direct connection would show each side the other's IP)
-    const now = r.store ? await openStored(r.store, r.size, signal) : null;
+    const now = r.store ? await openStored(r.store, r.size, signal, undefined, r.edge) : null;
     if (now) return { body: now, stored: true };
     if (r.store && (await waitStored(r.store, 3 * 60_000, signal))) return { body: fetchStored(r.store, r.size, signal), stored: true };
     throw new Error("This file is only on the sender's device. Receiving it directly would show them your IP, so anonymous mode doesn't. Turn off Anonymous to receive it.");
@@ -258,9 +258,9 @@ async function source(r: UnlockReply, signal: AbortSignal | undefined, cloudOnly
   if (holding(id)) return { body: await pull(id, signal), stored: false };
   const store = r.store;
   if (!store) return { body: await pull(id, signal), stored: false };
-  const now = await openStored(store, r.size, signal);
+  const now = await openStored(store, r.size, signal, undefined, r.edge);
   if (now) return { body: now, stored: true };
-  return firstSource(id, store, r.size, signal);
+  return firstSource(id, store, r.size, signal, r.edge);
 }
 
 type Src = { body: ReadableStream<Uint8Array>; stored: boolean };
@@ -272,7 +272,7 @@ type Src = { body: ReadableStream<Uint8Array>; stored: boolean };
  * finished a moment later was ignored while the handshake (up to ~35 s on a blocking network) ran out.
  * The loser is dropped: a late direct stream is cancelled (that hangs up), a late stored stream was never read.
  */
-export function firstSource(id: string, store: string, size: number, signal?: AbortSignal): Promise<Src> {
+export function firstSource(id: string, store: string, size: number, signal?: AbortSignal, edge?: string): Promise<Src> {
   let won = false;
   return new Promise<Src>((resolve, reject) => {
     let failed = 0;
@@ -289,7 +289,12 @@ export function firstSource(id: string, store: string, size: number, signal?: Ab
     };
     pull(id, signal).then((body) => take({ body, stored: false }), (e) => lose(e, true));
     waitStored(store, 3 * 60_000, signal, () => won).then(
-      (ok) => (ok ? take({ body: fetchStored(store, size, signal), stored: true }) : lose(new Error("The file isn't stored yet"), false)),
+      async (ok) => {
+        if (!ok) return lose(new Error("The file isn't stored yet"), false);
+        // stored now: read it near the reader if the edge can, else from the bucket
+        const body = (await openStored(store, size, signal, undefined, edge).catch(() => null)) ?? fetchStored(store, size, signal);
+        take({ body, stored: true });
+      },
       (e) => lose(e, false),
     );
   });

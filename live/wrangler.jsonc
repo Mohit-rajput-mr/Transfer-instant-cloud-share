@@ -11,5 +11,7 @@
   },
   // the free plan runs SQLite-backed Durable Objects
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  // downloads at the edge (src/index.ts file): the stored copies, read through Cloudflare's network
+  "r2_buckets": [{ "binding": "STORE", "bucket_name": "orbi-storage" }],
   "observability": { "enabled": true }
 }

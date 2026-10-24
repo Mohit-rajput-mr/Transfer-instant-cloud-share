@@ -20,6 +20,14 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- DONE 2026-10-24 (H, owner: "yes build for free") — Downloads through Cloudflare's edge. live/ worker now also serves
+  GET /f/<id>?t=<token> (Range only) from an R2 binding STORE (orbi-storage) and caches each range at the reader's
+  location (Cache API, TTL ≤ 3 h / the ticket's end). Auth: site writes ticket k/<id> (x-amz-meta tok = sha256(token),
+  exp) on unlock/peek (lib/edge.ts; token = HMAC(ORBIT_SECRET, id), 32 chars; at most one write per file per ~hour per
+  instance); the worker checks the ticket on EVERY request, cached or not; removeBlobs deletes k/<id> with f/ and t/ →
+  burnt files are never served. Client (cloud.ts openStored): edge first; the worker's own 404 carries
+  X-Edge-Missing: 1 (= not uploaded yet); any other edge trouble (no route, 403, 429 over the free 100k/day, network)
+  falls back to the signed R2 link. Free: Workers free plan, R2 Class B reads + Cache API free, egress free.
 - FIXED 2026-10-24 (H, owner ask: "even 1 MB takes time, make it faster worldwide") — Measured on prod (2 browsers):
   1 MB click→saved 2.26 s = unlock 0.37 s + a separate "is it stored?" ranged read (R2 TTFB 1.2 s) + the data read
   0.4 s; 20 MB 6.3 s (copy still uploading → direct path). R2 bucket orbi-storage is in WEUR, so every round trip from
