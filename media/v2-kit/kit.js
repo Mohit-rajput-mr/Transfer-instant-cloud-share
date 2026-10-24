@@ -312,3 +312,16 @@ export function bulbs(a, b, n = 14, sag = 0.6, cols = [0xffd27a, 0xff9a6a, 0x9ad
 }
 /** text/emoji texture on a plane (labels in 3D, letters on tiles) */
 export function textTex(draw, w = 256, h = 256) { const cv = document.createElement("canvas"); cv.width = w; cv.height = h; draw(cv.getContext("2d"), w, h); const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }
+
+// ---------------------------------------------------------------- "4D" thermal camera: the whole frame as heat (brightness → black/purple/red/yellow/white)
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+export function thermal(comp) {
+  const p = new ShaderPass({ uniforms: { tDiffuse: { value: null }, k: { value: 0 }, t: { value: 0 } },
+    vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }",
+    fragmentShader: `uniform sampler2D tDiffuse; uniform float k, t; varying vec2 vUv;
+      vec3 pal(float x){ x = clamp(x,0.,1.); vec3 a = vec3(0.02,0.0,0.08), b = vec3(0.35,0.0,0.55), c = vec3(0.95,0.15,0.1), d = vec3(1.0,0.75,0.05), e = vec3(1.,1.,0.9);
+        return x < .25 ? mix(a,b,x/.25) : x < .5 ? mix(b,c,(x-.25)/.25) : x < .75 ? mix(c,d,(x-.5)/.25) : mix(d,e,(x-.75)/.25); }
+      void main(){ vec4 s = texture2D(tDiffuse, vUv); float l = dot(s.rgb, vec3(0.3,0.55,0.15)); float heat = pow(l, 1.25) + (s.r - s.b) * 0.25;
+        vec3 th = pal(heat) + 0.02 * sin(vUv.y * 900. + t * 20.); gl_FragColor = vec4(mix(s.rgb, th, k), s.a); }` });
+  comp.insertPass(p, comp.passes.length - 1); p.set = (k, t = 0) => { p.uniforms.k.value = k; p.uniforms.t.value = t; p.enabled = k > 0.001; }; p.set(0); return p;
+}
