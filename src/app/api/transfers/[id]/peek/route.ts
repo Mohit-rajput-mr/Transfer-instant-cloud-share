@@ -17,7 +17,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (info.space && !(await member(info.space, b.deviceId, b.spaceToken))) return NextResponse.json({ ok: false, reason: "gone" }, { status: 403 });
   const r = await rpc<Record<string, unknown>>("orbit_peek", { p_id: id, p_auth_hash: sha256(b.auth) });
   if (r?.ok && r2On()) {
-    const [store, edge] = await Promise.all([presign("GET", objectKey(id), {}, 3 * 3600).catch(() => undefined), edgeLink(id)]);
+    const store = await presign("GET", objectKey(id), {}, 3 * 3600).catch(() => undefined);
+    const edge = edgeLink(id);
     r.store = store;
     if (edge) r.edge = edge;
   }

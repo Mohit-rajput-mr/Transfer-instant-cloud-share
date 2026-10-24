@@ -28,6 +28,9 @@ Severity: C critical · H high · M medium · L low. Status: FIXED (verified how
   burnt files are never served. Client (cloud.ts openStored): edge first; the worker's own 404 carries
   X-Edge-Missing: 1 (= not uploaded yet); any other edge trouble (no route, 403, 429 over the free 100k/day, network)
   falls back to the signed R2 link. Free: Workers free plan, R2 Class B reads + Cache API free, egress free.
+  v2 (measured v1: unlock +0.3–0.7 s from the ticket write; cold miss 1.4–2.7 s vs direct ~0.8 s; hit 0.6 s, 16 MB
+  range 1.2 s): ticket written ONCE at launch (api/transfers POST, next/server after()), unlock only computes the link;
+  worker: cache.match first; hit → ticket only (memo 30 s per isolate); miss → ticket HEAD and R2 range GET in parallel.
 - FIXED 2026-10-24 (H, owner ask: "even 1 MB takes time, make it faster worldwide") — Measured on prod (2 browsers):
   1 MB click→saved 2.26 s = unlock 0.37 s + a separate "is it stored?" ranged read (R2 TTFB 1.2 s) + the data read
   0.4 s; 20 MB 6.3 s (copy still uploading → direct path). R2 bucket orbi-storage is in WEUR, so every round trip from

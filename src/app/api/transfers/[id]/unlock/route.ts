@@ -24,7 +24,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // a signed link to the stored copy (it may still be uploading: the receiver checks before using it)
   if (r?.ok && r2On()) {
     // and the same copy through Cloudflare's edge, near the reader (lib/edge.ts); the signed link stays the fallback
-    const [store, edge] = await Promise.all([presign("GET", objectKey(id), {}, 3 * 3600).catch(() => undefined), edgeLink(id)]);
+    const store = await presign("GET", objectKey(id), {}, 3 * 3600).catch(() => undefined);
+    const edge = edgeLink(id);
     r.store = store;
     if (edge) r.edge = edge;
   }

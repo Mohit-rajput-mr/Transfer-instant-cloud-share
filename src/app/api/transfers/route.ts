@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
+import { writeTicket } from "@/lib/edge";
 import { MAX_FILE_BYTES, MAX_LABEL } from "@/lib/limits";
 import { ANON_AREA, anonNet, areaFor, areasParam, clean, geo, isB64, isHex, netHash, newId, reap, rpc, sha256 } from "@/lib/server";
 import { validSkin } from "@/lib/skin-list";
@@ -94,6 +95,8 @@ export async function POST(req: NextRequest) {
     throw e;
   }
 
+  // its edge-download ticket (lib/edge.ts), after the reply: the send never waits on it
+  after(() => writeTicket(id).catch(() => {}));
   return NextResponse.json({ id });
 }
 

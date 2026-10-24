@@ -40,16 +40,28 @@ const FILE = /^\/f\/([a-z0-9]{4,12})$/;
 const TICKET = /^[A-Za-z0-9_-]{32}$/;
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Range", "Access-Control-Expose-Headers": "Content-Range, Content-Length, X-Edge, X-Edge-Missing", "Access-Control-Max-Age": "86400" };
 
-async function file(req: Request, env: Env, ctx: ExecutionContext, id: string): Promise<Response> {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...CORS, "Access-Control-Allow-Methods": "GET, OPTIONS" } });
-  if (req.method !== "GET") return new Response("method", { status: 405, headers: CORS });
-  const url = new URL(req.url);
-  const t = url.searchParams.get("t") ?? "";
-  if (!TICKET.test(t)) return new Response("forbidden", { status: 403, headers: CORS });
+// tickets already checked by this isolate: a hit is served with no trip to the bucket at all. A destroyed file stops
+// being served here at most this long after its ticket is deleted
+const CHECKED = new Map<string, number>();
+const RECHECK = 30_000;
+
+async function ticketOk(env: Env, id: string, t: string): Promise<number> {
+  const memo = CHECKED.get(`${id}:${t}`);
+  if (memo && memo > Date.now()) return memo;
   const ticket = await env.STORE.head(`k/${id}`);
   const until = Number(ticket?.customMetadata?.exp ?? 0);
   const hash = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map((x) => x.toString(16).padStart(2, "0")).join("");
-  if (!ticket || ticket.customMetadata?.tok !== hash || !(until > Date.now())) return new Response("forbidden", { status: 403, headers: CORS });
+  if (!ticket || ticket.customMetadata?.tok !== hash || !(until > Date.now())) return 0;
+  if (CHECKED.size > 20_000) CHECKED.clear();
+  CHECKED.set(`${id}:${t}`, Math.min(until, Date.now() + RECHECK));
+  return until;
+}
+
+async function file(req: Request, env: Env, ctx: ExecutionContext, id: string): Promise<Response> {
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...CORS, "Access-Control-Allow-Methods": "GET, OPTIONS" } });
+  if (req.method !== "GET") return new Response("method", { status: 405, headers: CORS });
+  const t = new URL(req.url).searchParams.get("t") ?? "";
+  if (!TICKET.test(t)) return new Response("forbidden", { status: 403, headers: CORS });
   const m = /^bytes=(\d+)-(\d+)$/.exec(req.headers.get("Range") ?? "");
   if (!m) return new Response("range required", { status: 416, headers: CORS });
   const from = Number(m[1]), to = Number(m[2]);
@@ -57,16 +69,25 @@ async function file(req: Request, env: Env, ctx: ExecutionContext, id: string): 
   // the cache knows a range by the object and its bytes, never by the ticket (every reader shares it)
   const key = new Request(`https://orbit-edge.cache/f/${id}/${from}-${to}`);
   const cache = caches.default;
+  // cached here: only the ticket is checked (remembered for 30 s). Not cached: the ticket check and the read run side
+  // by side (one trip to the bucket's region, not two); nothing is sent before the ticket says yes
   const hit = await cache.match(key);
-  if (hit) return new Response(hit.body, { status: 206, headers: { ...Object.fromEntries(hit.headers), ...CORS, "X-Edge": "hit" } });
-  const obj = await env.STORE.get(`f/${id}`, { range: { offset: from, length: to - from + 1 } });
+  if (hit) {
+    if (!(await ticketOk(env, id, t))) return new Response("forbidden", { status: 403, headers: CORS });
+    return new Response(hit.body, { status: 206, headers: { ...Object.fromEntries(hit.headers), ...CORS, "X-Edge": "hit" } });
+  }
+  const [until, obj] = await Promise.all([ticketOk(env, id, t), env.STORE.get(`f/${id}`, { range: { offset: from, length: to - from + 1 } })]);
+  if (!until) {
+    if (obj && "body" in obj) await obj.body.cancel().catch(() => {});
+    return new Response("forbidden", { status: 403, headers: CORS });
+  }
   // (marked, so the site can tell "not uploaded yet" from a worker that doesn't serve files at all)
   if (!obj || !("body" in obj)) return new Response("not stored", { status: 404, headers: { ...CORS, "Cache-Control": "no-store", "X-Edge-Missing": "1" } });
   const end = Math.min(to, obj.size - 1);
   const headers = { "Content-Type": "application/octet-stream", "Content-Range": `bytes ${from}-${end}/${obj.size}`, "Content-Length": String(end - from + 1) };
   const [a, b] = obj.body.tee();
-  // kept at this location while the file can live (at most its ticket's end, 3 hours), then gone by itself
-  const ttl = Math.max(60, Math.min(3 * 3600, Math.floor((until - Date.now()) / 1000)));
+  // kept at this location while the file can live (at most its ticket's end), then gone by itself
+  const ttl = Math.max(60, Math.min(9 * 3600, Math.floor((until - Date.now()) / 1000)));
   ctx.waitUntil(cache.put(key, new Response(b, { status: 200, headers: { ...headers, "Cache-Control": `public, max-age=${ttl}` } })).catch(() => {}));
   return new Response(a, { status: 206, headers: { ...headers, ...CORS, "Cache-Control": "private, no-store", "X-Edge": "miss" } });
 }
