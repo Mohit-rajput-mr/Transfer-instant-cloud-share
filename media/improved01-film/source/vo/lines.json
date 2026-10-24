@@ -1,0 +1,96 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how one photo reaches forty strangers, with no names and no numbers?",
+   "dur": 4.95,
+   "at": 0.35
+  },
+  {
+   "key": "scene",
+   "text": "Sunset on a tiny island. Lena lifts her phone and snaps the whole beach party.",
+   "dur": 5.85,
+   "at": 5.75
+  },
+  {
+   "key": "want",
+   "text": "Now everyone shouts the same thing. Send it to me!",
+   "dur": 3.323,
+   "at": 11.9
+  },
+  {
+   "key": "old",
+   "text": "But nobody has anyone's number. And a group chat with forty strangers? No thanks.",
+   "dur": 4.886,
+   "at": 15.57
+  },
+  {
+   "key": "send",
+   "text": "So she opens Orbi Transfer, sets the code wave, and taps send.",
+   "dur": 3.722,
+   "at": 20.76
+  },
+  {
+   "key": "pop",
+   "text": "Seconds later, phones light up all along the sand.",
+   "dur": 3.123,
+   "at": 24.78
+  },
+  {
+   "key": "how",
+   "text": "Hold on. Let's freeze time and look inside.",
+   "dur": 3.122,
+   "at": 28.45
+  },
+  {
+   "key": "lock",
+   "text": "First, the photo is locked right on her phone. The code becomes the key, and the key never leaves her hand.",
+   "dur": 6.483,
+   "at": 32.03
+  },
+  {
+   "key": "pieces",
+   "text": "Then it splits into pieces, and they fly up together, side by side. That's why it's quick.",
+   "dur": 5.477,
+   "at": 38.81
+  },
+  {
+   "key": "vault",
+   "text": "The pieces wait in a vault, still scrambled. Even the vault can't read them.",
+   "dur": 3.734,
+   "at": 44.59
+  },
+  {
+   "key": "area",
+   "text": "Now Orbi rings the screens in this rough area, about forty by twenty kilometres. Never her exact spot.",
+   "dur": 6.034,
+   "at": 48.62
+  },
+  {
+   "key": "unlock",
+   "text": "Sam taps the photo and types wave. The pieces drop, click together, and unlock on his phone.",
+   "dur": 5.89,
+   "at": 54.95
+  },
+  {
+   "key": "burn",
+   "text": "Thirty minutes later, the vault burns every piece. No account. No trace.",
+   "dur": 5.058,
+   "at": 61.14
+  },
+  {
+   "key": "space",
+   "text": "Only want your friends? Make a private Space with a passcode. Strangers never even see it.",
+   "dur": 5.207,
+   "at": 66.6
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Try it on two phones!",
+   "dur": 2.783,
+   "at": 72.21
+  }
+ ],
+ "duration": 76.79
+}

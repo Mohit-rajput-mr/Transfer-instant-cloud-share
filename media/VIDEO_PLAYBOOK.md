@@ -36,7 +36,10 @@ When the owner says "new version" / "next", make the next film from the story li
   lasts 3 hours; the bytes stream in and unlock chunk by chunk on the receiver's phone.
 - **Bytes never touch the website server:** the browser uploads straight to Cloudflare R2 using signed URLs. Parts are about
   32 MB, 3 at a time; downloads use 4 ranges at once. Uploads resume after a drop (only the missing parts are sent).
-  Phone-to-phone (WebRTC P2P) is tried first; storage is the fallback. There is no TURN server, so P2P is not guaranteed.
+  Phone-to-phone (WebRTC P2P) is tried first; storage is the fallback. Since 2026-10-24 a relay (Cloudflare TURN) helps phones
+  that can't reach each other directly; still say "tries phone to phone first", never "always P2P".
+- **Downloads (2026-10-24):** a stored file is also served through Cloudflare's edge (the nearest city caches the pieces), and small
+  files in a Space can be fetched in the background before you tap, so they open at once. Safe wording: "the nearest edge serves it".
 - **Max file size:** 20 GB. Folders and many files go as one bundle.
 - **Burn:** 5 to 30 minutes (default 30); after the download limit, within 10 minutes. The reaper deletes the stored objects.
   Fair-use caps: 300 uploads/hour per network, 300 GB alive at once (past that it still sends P2P, it just isn't stored).
@@ -113,6 +116,16 @@ When the owner says "new version" / "next", make the next film from the story li
   6. after 30 minutes the vault burns every piece.
 - **New look for the mechanism each time** (same feel, never the same city blocks): e.g. the hex-tile toy town, the vault,
   the holographic phone of `wedding-film/`. Invent a new visual for the next one.
+
+## Improved version (owner 2026-10-24, wins over older look notes)
+- Every film from now on is an **"Improved version"** film: `v2-kit/kit.js` (Three.js r160 + post: GTAO ambient occlusion,
+  soft PCF shadows, bloom, SMAA, ACES). Faceted low-poly people with clothes, glasses, hats, hair (the owner's reference),
+  per-facet shading (`tinted`), gradient skies, faceted seas, clouds, real sets. Never the old basic-primitive look.
+- **Many visuals per sentence** (about one new picture per 2 words): cuts, angle changes, zooms, third-person views, and
+  "4D" views: freeze time + bullet-time orbit, x-ray (`xray`), exploded parts (`explode`), cutaways (`cutaway`), zoom out
+  to the map, time-lapse (sunset → night). Phone close-ups use the `track` shot (camera follows the phone screen, upright).
+- Frames render as JPEG (`render.cjs`, quality 93) to save disk; encode with `-i frames/%05d.jpg`.
+- Label: folder `improvedNN-film/`, MP4 named `ImprovedNN-<Title>.mp4`. Follower videos (IG/TikTok) in between.
 
 ## Story ideas for new versions (each one is a new film)
 Gym (send a workout video to your spotter) · airport gate (boarding pass to your partner) · concert (clips to friends nearby) ·
