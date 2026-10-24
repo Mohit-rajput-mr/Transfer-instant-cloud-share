@@ -1110,6 +1110,13 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     }
     setBusy(false);
     tick("success");
+    // already fetched quietly in the background (lib/peek.ts: the card's preview): it is on this device, so Download
+    // hands it over at once instead of fetching it all again. The unlock above still counted it as a download
+    if (peekF && !isFolder && !inline && !asDir) {
+      const held = env.mobile || wantView.current;
+      if (!held) autoDownload(peekF);
+      return landed({ kind: "file", file: peekF, held });
+    }
     // a folder or a big file needs a "where?" picker, which browsers only open on a fresh tap
     if (!wantView.current && (asDir && canWriteFolders()) || (!wantView.current && !inline && !isFolder && needsSavePicker(orb))) return setVerified(un);
     run(un, Promise.resolve(null), null);
@@ -1152,24 +1159,26 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
         if (s === "decrypting") setSpeed(meter.label(p * orb.size));
       },
     })
-      .then((res) => {
-        if (res.kind === "file") {
-          const many = !!res.parts?.length && res.held && canShareFiles(res.parts, env);
-          setShareParts(many);
-          setShareOk(res.held && (many || canShareFile(res.file, env)));
-          setPickOk(res.held && canPickSave(env));
-        }
-        setBroken(false);
-        setOp("idle");
-        setDone(null);
-        setVerified(null);
-        setGot(res);
-        if (wantView.current && res.kind === "file" && viewKind(res.file.name, res.file.type)) setViewing(true);
-        props.onDownloaded();
-      })
+      .then(landed)
       .catch(fail)
       .finally(() => setBusy(false));
   };
+  /** the file is here (downloaded now, or already fetched in the background) */
+  function landed(res: Received) {
+    if (res.kind === "file") {
+      const many = !!res.parts?.length && res.held && canShareFiles(res.parts, env);
+      setShareParts(many);
+      setShareOk(res.held && (many || canShareFile(res.file, env)));
+      setPickOk(res.held && canPickSave(env));
+    }
+    setBroken(false);
+    setOp("idle");
+    setDone(null);
+    setVerified(null);
+    setGot(res);
+    if (wantView.current && res.kind === "file" && viewKind(res.file.name, res.file.type)) setViewing(true);
+    props.onDownloaded();
+  }
 
   const startPreview = () => {
     if (!canView) return;

@@ -20,6 +20,12 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- DONE 2026-10-24 (H, owner: auto-download like WhatsApp) — Found: lib/peek.ts already fetched small no-password
+  files in the background (≤1 MB in sight, hover ≤100 MB, card open ≤400 MB), but Download IGNORED it and fetched the
+  whole file again. Now UnlockPanel.go: after unlock (still counted), a ready peek file is handed over at once
+  (autoDownload on desktop, held on phones). Spaces warm up to 50 MB (10 on low devices; worldwide void stays 1 MB;
+  guessCap 160 MB/10 min still applies). A download from the card says sync {od} instead of a "pulse" (which made every
+  tab worldwide reload its list).
 - DONE 2026-10-24 (H, owner: "fix speed for every corner of the earth, free") — Research: (1) R2 Local Uploads (open
   beta, free, no extra cost): uploads land in storage near the SENDER and copy to WEUR in the background, readable at once
   (fast for readers in the sender's region). Needs the OWNER to switch it on: dashboard → R2 → orbi-storage → Settings →

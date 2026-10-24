@@ -150,12 +150,19 @@ function guess(o: Orb) {
   return true;
 }
 
-/** Warm small previews as they appear in the void: the smallest first (most ready soonest), newest first among equals. */
-export function warm(orbs: Orb[]) {
+// inside a space the people who see a file are the few it was sent to, so files up to this size are on their device
+// before they tap (like a chat app); the worldwide void stays at WARM_MAX
+const SPACE_WARM_MAX = 50 * MB;
+const spaceWarmMax = () => (low() ? 10 : 50) * MB;
+
+/** Warm small previews as they appear in the void (in a space: up to SPACE_WARM_MAX): the smallest first (most ready
+ *  soonest), newest first among equals. */
+export function warm(orbs: Orb[], inSpace = false) {
   pool = orbs;
   const now = Date.now();
+  const max = inSpace ? Math.min(SPACE_WARM_MAX, spaceWarmMax()) : WARM_MAX;
   const next = orbs
-    .filter((o) => canPeek(o) && o.size <= WARM_MAX && !cache.has(o.id) && !((skip.get(o.id) ?? 0) > now))
+    .filter((o) => canPeek(o) && o.size <= max && !cache.has(o.id) && !((skip.get(o.id) ?? 0) > now))
     .sort((a, b) => a.size - b.size || b.createdAt.localeCompare(a.createdAt))[0];
   if (next) guess(next);
 }

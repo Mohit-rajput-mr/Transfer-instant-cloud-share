@@ -2062,12 +2062,13 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // small open files in sight: decrypted quietly in the background (lib/peek.ts) so a tap previews them at once. Only
   // from a complete stored copy and only while nothing else moves on this device: warm() itself says no otherwise
   useEffect(() => {
-    const go = () => warm(visible.filter((o) => !isPending(o.id) && !isIncoming(o.id)));
+    // (in a space: files up to 50 MB, so they are on this device before anyone taps)
+    const go = () => warm(visible.filter((o) => !isPending(o.id) && !isIncoming(o.id)), !!space);
     const t = setTimeout(go, 400);
     // and again now and then: a file whose stored copy wasn't complete yet (or a busy moment) gets another try
     const again = setInterval(() => document.visibilityState === "visible" && go(), 20_000);
     return () => (clearTimeout(t), clearInterval(again));
-  }, [visible]);
+  }, [visible, space]);
   const [vw, setVw] = useState({ w: 1440, h: 900 });
   useEffect(() => {
     const on = () => setVw({ w: window.innerWidth, h: window.innerHeight });
@@ -3169,10 +3170,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           now={serverNow}
           watchers={watchers(unlockOrb.id)}
           onClose={() => setPanel(null)}
-          onDownloaded={() => {
-            refresh();
-            broadcast();
-          }}
+          // every screen counts it at once (a "pulse" here made every tab worldwide reload its whole list)
+          onDownloaded={() => sync({ od: [unlockOrb.id] })}
           onViewed={onViewed}
           preview={panel.preview}
         />
