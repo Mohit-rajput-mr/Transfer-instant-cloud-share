@@ -2,7 +2,7 @@
 import re, soundfile as sf, librosa, numpy as np, torch, jiwer
 from chatterbox.tts import ChatterboxTTS
 from faster_whisper import WhisperModel
-W = [("hook", "Will this rock merge into its final form?", 1.0), ("t1", "A comet!", 1.1), ("t2", "The moon!", 1.1), ("t3", "Planet Earth!", 1.1),
+W = [("hook", "Will this rock merge into its final form?", 1.0), ("t1", "Comet incoming!", 1.1), ("t2", "The moon!", 1.1), ("t3", "Planet Earth!", 1.1),
      ("t4", "Saturn!", 1.2), ("t5", "The Sun!", 1.2), ("t6", "A giant star!", 1.1), ("t7", "Supernova!", 1.2),
      ("t8", "Black hole. Final form.", 1.0), ("end", "Follow for the next one!", 1.1)]
 torch.set_num_threads(4)

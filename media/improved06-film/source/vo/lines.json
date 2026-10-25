@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how your phone turns your voice into a file?",
+   "dur": 3.943,
+   "at": 0.35
+  },
+  {
+   "key": "scene",
+   "text": "You hum a little tune into a voice note. To the phone, your voice is just air, wobbling back and forth.",
+   "dur": 5.523,
+   "at": 4.74
+  },
+  {
+   "key": "mic",
+   "text": "Those wobbles hit a tiny diaphragm inside the mic, far thinner than a hair, and it shakes right along.",
+   "dur": 5.931,
+   "at": 10.57
+  },
+  {
+   "key": "volts",
+   "text": "Every shake becomes a tiny change in voltage. A wave of electricity, shaped exactly like your voice.",
+   "dur": 6.14,
+   "at": 16.8
+  },
+  {
+   "key": "samples",
+   "text": "Then the phone measures that wave about forty eight thousand times a second, and writes each one down as a number.",
+   "dur": 5.736,
+   "at": 23.24
+  },
+  {
+   "key": "file",
+   "text": "Line up all those numbers, squeeze them smaller, and that's your file.",
+   "dur": 4.306,
+   "at": 29.27
+  },
+  {
+   "key": "orbi",
+   "text": "Then Orbi Transfer sends it. Locked on your phone, it pops up on your friend's screen nearby, and they hear you hum.",
+   "dur": 5.977,
+   "at": 34.03
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 40.41
+  }
+ ],
+ "duration": 44.96
+}
