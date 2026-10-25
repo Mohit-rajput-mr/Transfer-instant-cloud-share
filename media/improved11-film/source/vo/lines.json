@@ -1,0 +1,66 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how your phone knows which way is up?",
+   "dur": 3.24,
+   "at": 0.35
+  },
+  {
+   "key": "scene",
+   "text": "You turn it sideways for a video, and the picture spins around with you. Nobody pressed a thing.",
+   "dur": 5.635,
+   "at": 4.04
+  },
+  {
+   "key": "xray",
+   "text": "Look inside. Right next to the processor sits a chip smaller than a grain of rice.",
+   "dur": 4.495,
+   "at": 9.97
+  },
+  {
+   "key": "zoom",
+   "text": "Zoom in a thousand times. A little block of silicon, hanging on springs thinner than a hair.",
+   "dur": 6.252,
+   "at": 14.77
+  },
+  {
+   "key": "combs",
+   "text": "All around it, rows of tiny fingers, almost touching. Like two combs pushed together.",
+   "dur": 5.655,
+   "at": 21.32
+  },
+  {
+   "key": "tilt",
+   "text": "Now tilt the phone. Gravity drags the block a tiny bit to one side, and the gaps change.",
+   "dur": 5.63,
+   "at": 27.28
+  },
+  {
+   "key": "measure",
+   "text": "Smaller gap, more electric charge. The chip feels that hundreds of times a second.",
+   "dur": 4.555,
+   "at": 33.21
+  },
+  {
+   "key": "rotate",
+   "text": "So it knows exactly where down is, and turns the screen to match.",
+   "dur": 4.52,
+   "at": 38.06
+  },
+  {
+   "key": "steps",
+   "text": "The same little weight counts your steps, and feels it when you shake it.",
+   "dur": 3.744,
+   "at": 42.98
+  },
+  {
+   "key": "end",
+   "text": "No magic. Just a tiny weight on a spring. Now you know!",
+   "dur": 3.762,
+   "at": 47.13
+  }
+ ],
+ "duration": 52.69
+}
