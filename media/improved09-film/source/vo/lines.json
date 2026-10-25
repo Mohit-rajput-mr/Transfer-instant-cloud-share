@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how an app names a song in seconds, in a noisy cafe?",
+   "dur": 4.728,
+   "at": 0.35
+  },
+  {
+   "key": "listen",
+   "text": "Your phone records a few seconds of sound. The music, the coffee machine, the chatter, all of it.",
+   "dur": 5.996,
+   "at": 5.53
+  },
+  {
+   "key": "map",
+   "text": "It turns that sound into a map. Time runs left to right, pitch goes up, and loudness glows.",
+   "dur": 5.657,
+   "at": 11.82
+  },
+  {
+   "key": "peaks",
+   "text": "Then it keeps only the brightest peaks, like stars in a night sky. Noise barely moves them.",
+   "dur": 5.132,
+   "at": 17.78
+  },
+  {
+   "key": "hash",
+   "text": "Pairs of stars become tiny fingerprints, and it looks them up in a giant library of songs.",
+   "dur": 5.256,
+   "at": 23.21
+  },
+  {
+   "key": "match",
+   "text": "When hundreds of fingerprints line up in time, boom. That's your song.",
+   "dur": 4.907,
+   "at": 28.77
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer matches too. A short code finds your file nearby, and only the right code unlocks it.",
+   "dur": 6.781,
+   "at": 34.13
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 41.31
+  }
+ ],
+ "duration": 45.86
+}
