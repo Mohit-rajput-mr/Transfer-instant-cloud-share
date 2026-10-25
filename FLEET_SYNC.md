@@ -20,6 +20,11 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- DONE 2026-10-25 (H, owner: "make sending work when the sender closes or switches") — Web pages can't upload while a
+  phone has them in the background (browser rule). So: (1) SaveGuard bar on top while a copy saves: "Saving online 37%
+  · keep Orbi open until ✓", then "✓ Saved online · safe to close" + buzz; coming back after leaving early says it goes
+  on. (2) Phones put the online copy first (lib/net.ts: 4 upload lanes, 2 on a busy line, direct sends 1 at a time
+  while it saves). OPEN/next: test Chrome Background Fetch for uploads on a real Android; real background = native app.
 - FIXED 2026-10-25 (H) — Downloads counted at "Unlocking" (owner screenshot: Lärm.m4a showed 6 downloads while nobody
   had it). orbit_unlock counted before a byte moved. Now unlock → orbit_unlock_check (passcode only, wrong tries still
   lock) and the page calls POST /api/transfers/<id>/received (orbit_received, needs the same auth proof) once the file

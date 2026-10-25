@@ -3923,3 +3923,10 @@ html:not(#_) .pop.anon-portal .ap-search input::placeholder { color: rgba(255,25
 .hq-since input { height: 28px; padding: 0 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: #0b0c0e; color: #fff; font: 500 12px/1 var(--mono, monospace); color-scheme: dark; min-width: 0; }
 .hq-since .chip { height: 28px; padding: 0 10px; font-size: 11px; }
 @media (max-width: 860px) { .hq-since { order: 4; width: 100%; flex-wrap: wrap; } .hq-since input { flex: 1 1 170px; } }
+
+/* sender: still saving online (components/SaveGuard.tsx) */
+.save-guard { position: fixed; z-index: 70; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 10px); width: min(560px, calc(100vw - 24px)); box-sizing: border-box; padding: 12px 16px; border-radius: 16px; display: flex; flex-direction: column; gap: 4px; background: rgba(12, 14, 18, 0.92); border: 1px solid rgba(255, 200, 80, 0.45); color: #fff; pointer-events: none; }
+.save-guard b { font-size: 14px; } .save-guard .mono { font-size: 11px; color: #c8ccd6; }
+.save-guard.ok { border-color: rgba(61, 255, 140, 0.6); } .save-guard.ok b { color: #3dff8c; }
+.save-guard-bar { display: block; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.12); overflow: hidden; margin-top: 4px; }
+.save-guard-bar > i { display: block; height: 100%; background: #ffd04a; transform-origin: left; transition: transform 0.4s; }

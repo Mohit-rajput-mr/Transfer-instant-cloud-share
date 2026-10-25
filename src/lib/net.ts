@@ -89,7 +89,8 @@ export const netLoaded = () => st.busy || st.users > 0 || runs.up > 0 || runs.se
 // up: one upload part (or a small file). serve: one device-to-device send to someone over the internet (same Wi-Fi
 // doesn't touch the line and takes no turn). peek: a background preview, only when nothing else moves.
 // A person waiting for a file right now goes first: serve before up, and while anyone is being served the stored-copy
-// upload (which is for later receivers) keeps to one part at a time, so the receiver gets most of the line.
+// upload (which is for later receivers) keeps to one part at a time, so the receiver gets most of the line (desktops;
+// phones keep the copy going, see `phone` below).
 export type NetKind = "up" | "serve" | "peek";
 const ORDER: NetKind[] = ["serve", "up", "peek"];
 const runs: Record<NetKind, number> = { up: 0, serve: 0, peek: 0 };
@@ -97,10 +98,14 @@ type Wait = { kind: NetKind; rank: number; seq: number; go: (release: () => void
 const waits: Wait[] = [];
 let seq = 0;
 
+// Phones (owner 2026-10-25): a phone pauses the page as soon as its person switches apps or locks the screen, and the
+// file then only lives on that phone. So there the online copy goes first: more parts at once, and it keeps 2 lanes
+// while someone is served directly (who also gets the copy the moment it is complete). Desktops are unchanged.
+const phone = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 const limit = (k: NetKind) => {
   const busy = netCongested();
-  if (k === "up") return upSpeed() === "full" ? 6 : busy || runs.serve > 0 ? 1 : 2; // (never 0: nothing stalls for good on a wrong probe)
-  if (k === "serve") return busy ? 1 : 2;
+  if (k === "up") return upSpeed() === "full" ? 6 : phone ? (busy ? 2 : 4) : busy || runs.serve > 0 ? 1 : 2; // (never 0: nothing stalls for good on a wrong probe)
+  if (k === "serve") return busy || (phone && runs.up > 0) ? 1 : 2;
   return st.busy || runs.up || runs.serve || waits.some((w) => w.kind !== "peek") ? 0 : 1;
 };
 

@@ -8,6 +8,7 @@ import OrbView, { ORB_CAP, bubbleLayout, inheritSlot, pickHue, layout, type Void
 import MapWorld, { type Band } from "./MapWorld";
 import { pin, place, worldSize, type Thing } from "@/lib/map";
 import { ComposePanel, GroupPanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin, type LaunchJob } from "./Panels";
+import SaveGuard from "./SaveGuard";
 import LaunchDock, { isPending, pendingId, pendingOrb, type Launch } from "./LaunchDock";
 import { launch, type Stage } from "@/lib/transfer";
 import { folderFromInput, fromDrop, textToFile, type Item } from "@/lib/bundle";
@@ -3334,6 +3335,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         </>
       )}
 
+      <SaveGuard />
       <LaunchDock
         launches={dockLaunches}
         badges={badges}
