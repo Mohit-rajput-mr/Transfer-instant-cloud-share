@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how an eSIM works, with no card at all?",
+   "dur": 3.256,
+   "at": 0.35
+  },
+  {
+   "key": "old",
+   "text": "For years, your number lived on a tiny plastic card. Lose it, snap it, and you're stuck.",
+   "dur": 5.79,
+   "at": 4.06
+  },
+  {
+   "key": "chip",
+   "text": "An eSIM is a chip soldered right onto your phone's board. Nothing to pop out.",
+   "dur": 5.028,
+   "at": 10.15
+  },
+  {
+   "key": "profile",
+   "text": "Your carrier sends it a profile. A little locked package with your number and your keys, downloaded over the internet.",
+   "dur": 7.447,
+   "at": 15.47
+  },
+  {
+   "key": "qr",
+   "text": "Usually you just scan a QR code. It tells your phone where to fetch the profile, and gives it a code to claim it.",
+   "dur": 6.49,
+   "at": 23.22
+  },
+  {
+   "key": "multi",
+   "text": "One chip can hold several profiles. Home number, travel number. Switch with a tap.",
+   "dur": 4.525,
+   "at": 30.01
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer uses the same trick. Every file gets its own QR code and a short code, so another phone can grab it in seconds.",
+   "dur": 7.647,
+   "at": 34.99
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 43.03
+  }
+ ],
+ "duration": 47.58
+}
