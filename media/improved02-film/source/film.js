@@ -88,7 +88,7 @@ const DROPS = Array.from({ length: 80 }, (_, i) => { const d = new THREE.Mesh(ne
 const OB = V(600, 0, 0), OBSET = new THREE.Group(); OBSET.position.copy(OB); scene.add(OBSET);
 { const gr = tinted(facet(new THREE.PlaneGeometry(120, 120, 14, 14).rotateX(-Math.PI / 2), 0.3), 0x55704a, 0.1); OBSET.add(gr); const k = new THREE.PointLight(0xfff0dd, 220, 70, 1.3); k.position.set(2, 14, 12); OBSET.add(k);
   for (let i = 0; i < 16; i++) { const t = tree(2.6, i % 2 ? "round" : "pine"); const a = rnd() * 6.28, d = 16 + rnd() * 20; t.position.set(Math.cos(a) * d, 0, Math.sin(a) * d); OBSET.add(t); } }
-const KID = person({ sex: "m", top: 0x4fc3bd, bottom: 0x2b3a55, skin: 0xe0a982, hair: 0x5a3a26, shortSleeve: true, hat: 0x2a2a2a, hatBand: 0x3dff8c }); KID.position.set(-6, 0, 2); KID.rotation.y = 0.6; OBSET.add(KID);
+const KID = person({ sex: "m", top: 0x4fc3bd, bottom: 0x2b3a55, skin: 0xe0a982, hair: 0x5a3a26, shortSleeve: true, hat: 0x2a2a2a, hatBand: 0x3dff8c }); KID.position.set(-2.4, 0, 1.6); KID.rotation.y = 0.9; OBSET.add(KID);
 const KPH = new THREE.Group(); KPH.add(mesh(bbox(0.075, 0.155, 0.012, 0.012), flat(0x1d1f24))); const KSC = new THREE.Mesh(new THREE.PlaneGeometry(0.066, 0.142), glow(0x3dff8c)); KSC.position.z = 0.007; KPH.add(KSC); KID.rig.rElbow.add(KPH); KPH.position.set(0, -0.4, 0.035); KPH.rotation.set(-0.15, 0, Math.PI);
 const SRV = mesh(bbox(1.6, 2.2, 1.4, 0.1), flat(0x2a2f38, { metalness: 0.3, roughness: 0.45 })); SRV.position.set(0, 1.1, -3); OBSET.add(SRV);
 const SRVL = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.4), new THREE.MeshBasicMaterial({ transparent: true, toneMapped: false, map: textTex((g, w, h) => { g.fillStyle = "#3dff8c"; g.font = "800 80px M"; g.textAlign = "center"; g.fillText("ORBI SERVER", w / 2, h * 0.75); }, 640, 120) })); SRVL.position.set(0, 2.45, -2.3); OBSET.add(SRVL);
@@ -157,9 +157,9 @@ shot(A("tower"), 2.0, V(0, 20, 18), V(-17, 12, -11), 42, V(-4, 18, 12), V(-17, 1
 shot(wt("tower", "dumps"), 1.6, V(-11, 15, -4), V(-17, 15, -11), 46, V(-12, 14.6, -5), V(-17, 17, -11), 48);
 shot(wt("tower", "comes"), 2.4, V(40, 40, 50), V(0, 8, -6), 40, V(52, 46, 62), V(0, 8, -6), 40);
 // orbi
-shot(A("orbi"), 1.8, ob(2, 3.2, 10), ob(-3, 1.2, -1), 44, ob(0.5, 3, 8.5), ob(-3, 1.2, -1), 42);
+shot(A("orbi"), 1.8, ob(3, 4.5, 17), ob(-1.2, 1.2, -0.6), 48, ob(1.5, 3.6, 13), ob(-1.2, 1.2, -0.6), 46);
 shot(wt("orbi", "never") - 0.1, 1.6, ob(3.5, 2.8, 3.5), ob(0, 1.4, -3), 42, ob(3, 2.6, 3), ob(0, 1.4, -3), 40);
-shot(wt("orbi", "signs") - 0.1, 1.8, ob(-4, 2.6, 4), ob(-3, 1.8, -1), 44, ob(-3.5, 2.4, 3.5), ob(-3.5, 1.6, 0), 42);
+shot(wt("orbi", "signs") - 0.1, 1.8, ob(1.5, 3.2, 9), ob(-1.2, 1.7, -0.4), 46, ob(0.8, 3.0, 8), ob(-1.2, 1.7, -0.4), 44);
 shot(wt("orbi", "bytes") - 0.1, 2.6, ob(-2, 6, 10), ob(2, 1.6, -3), 46, ob(1, 8, 12), ob(4, 1.6, -4), 48);
 const camAt = camRig(cam);
 
