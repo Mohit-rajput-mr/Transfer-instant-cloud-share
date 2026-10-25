@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>PHOTO vs VIDEO: neon pong</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; } html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; } canvas { position: absolute; inset: 0; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Neon pong: PHOTO (bottom, blue) vs VIDEO (top, red), first to 3, the ball is the Orbi emblem. Plays sim_11.json.
+const W = 1080, H = 1920, g = document.getElementById("c").getContext("2d");
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k, back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const SEED = 11, INTRO = 2.6, TEAM = { top: ["VIDEO", "🎬", "#ff4a5a"], bot: ["PHOTO", "📸", "#2f9fff"] };
+let S, EMB, END;
+function text(s, x, y, size, col = "#fff", w = 900, alpha = 1, stroke = 0, font = "D", align = "center") { g.save(); g.globalAlpha = alpha; g.font = `${w} ${size}px ${font}`; g.textAlign = align; g.textBaseline = "middle"; if (stroke) { g.lineWidth = stroke; g.strokeStyle = "#000"; g.strokeText(s, x, y); } g.fillStyle = col; g.fillText(s, x, y); g.restore(); }
+function emoji(e, x, y, size, a = 1) { g.save(); g.globalAlpha = a; g.font = `${size}px "Noto Color Emoji"`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(e, x, y); g.restore(); }
+function scoreAt(lt) { const sc = { top: 0, bot: 0 }; for (const e of S.events) if (e.k === "score" && e.t <= lt) { sc.top = e.top; sc.bot = e.bot; } return sc; }
+window.render = async function (t) {
+  const lt = t - INTRO, fi = clamp(Math.round(lt * 30), 0, S.frames.length - 1), F = S.frames[fi];
+  // screen shake on fast hits and goals
+  let sh = 0; for (const e of S.events) { const d = lt - e.t; if (d < 0 || d > 0.25) continue; if (e.k === "hit") sh = Math.max(sh, (e.sp / 2300) * 14 * (1 - d / 0.25)); if (e.k === "score") sh = Math.max(sh, 26 * (1 - d / 0.25)); }
+  g.setTransform(1, 0, 0, 1, Math.sin(t * 90) * sh, Math.cos(t * 77) * sh); g.fillStyle = "#05060b"; g.fillRect(-40, -40, W + 80, H + 80);
+  const sc = scoreAt(lt);
+  // giant faded scores behind the field
+  text(String(sc.top), 540, 720, 420, TEAM.top[2], 900, 0.13); text(String(sc.bot), 540, 1300, 420, TEAM.bot[2], 900, 0.13);
+  // field
+  g.save(); g.shadowBlur = 22; g.lineWidth = 8; g.strokeStyle = "#7a5aff"; g.shadowColor = "#7a5aff"; g.beginPath(); g.roundRect(S.X0 - 10, S.YT - 110, S.X1 - S.X0 + 20, S.YB - S.YT + 220, 40); g.stroke();
+  g.setLineDash([26, 22]); g.lineWidth = 5; g.strokeStyle = "rgba(255,255,255,0.35)"; g.shadowBlur = 0; g.beginPath(); g.moveTo(S.X0, 1010); g.lineTo(S.X1, 1010); g.stroke(); g.setLineDash([]);
+  g.beginPath(); g.arc(540, 1010, 110, 0, 7); g.stroke(); g.restore();
+  // paddles
+  for (const side of ["top", "bot"]) { const x = side === "top" ? F[2] : F[3], y = side === "top" ? S.YT : S.YB, col = TEAM[side][2];
+    let hk = 0; for (const e of S.events) if (e.k === "hit" && e.side === side) { const d = lt - e.t; if (d >= 0 && d < 0.2) hk = 1 - d / 0.2; }
+    g.save(); g.shadowBlur = 30 + hk * 40; g.shadowColor = col; g.fillStyle = col; g.beginPath(); g.roundRect(x - S.PW / 2, y - 14 - hk * 4, S.PW, 28 + hk * 8, 14); g.fill(); g.fillStyle = "#fff"; g.globalAlpha = 0.5 + hk * 0.5; g.beginPath(); g.roundRect(x - S.PW / 2 + 10, y - 5, S.PW - 20, 10, 5); g.fill(); g.restore();
+    emoji(TEAM[side][1], x, y + (side === "top" ? -62 : 62), 54); }
+  // hit rings
+  for (const e of S.events) { const d = lt - e.t; if ((e.k !== "hit" && e.k !== "wall") || d < 0 || d > 0.35) continue; const [x, y] = S.frames[clamp(Math.round(e.t * 30), 0, S.frames.length - 1)]; g.save(); g.globalAlpha = 1 - d / 0.35; g.strokeStyle = e.k === "hit" ? TEAM[e.side][2] : "#b8a8ff"; g.lineWidth = 5; g.beginPath(); g.arc(x, y, 40 + d * 220, 0, 7); g.stroke(); g.restore(); }
+  // goal bursts
+  for (const e of S.events) { const d = lt - e.t; if (e.k !== "score" || d < 0 || d > 1.2) continue; const y = e.win === "bot" ? S.YT - 100 : S.YB + 100, col = TEAM[e.win][2];
+    for (let i = 0; i < 40; i++) { const a = (i / 40) * Math.PI * 2 + i, v = 300 + (i * 37) % 400; g.save(); g.globalAlpha = 1 - d / 1.2; g.fillStyle = i % 3 ? col : "#fff"; g.beginPath(); g.arc(e.x + Math.cos(a) * v * d, y + Math.sin(a) * v * d + 300 * d * d, 8 * (1 - d / 1.2) + 2, 0, 7); g.fill(); g.restore(); }
+    const k = clamp(d / 0.2); g.save(); g.translate(540, 1010); g.scale(lerp(2.2, 1, back(k)), lerp(2.2, 1, back(k))); text(`+1 ${TEAM[e.win][0]}`, 0, 0, 120, col, 900, 1 - clamp((d - 0.9) / 0.3), 12); g.restore(); }
+  // the ball: the Orbi emblem with a trail
+  if (lt >= 0 && !F[4]) { for (let j = 8; j >= 1; j--) { const P = S.frames[clamp(fi - j, 0, S.frames.length - 1)]; if (P[4]) continue; g.save(); g.globalAlpha = 0.5 * (1 - j / 9); g.fillStyle = "#c8f0ff"; g.beginPath(); g.arc(P[0], P[1], S.BR * (1 - j / 12), 0, 7); g.fill(); g.restore(); }
+    g.save(); g.translate(F[0], F[1]); g.shadowBlur = 40; g.shadowColor = "#3dff8c"; g.fillStyle = "#0b1a12"; g.beginPath(); g.arc(0, 0, S.BR + 4, 0, 7); g.fill(); g.rotate(t * 6); if (EMB) g.drawImage(EMB, -S.BR, -S.BR, S.BR * 2, S.BR * 2); g.restore(); }
+  else if (lt >= 0) { const bl = Math.sin(t * 14) > 0; if (bl) { g.save(); g.translate(540, 1010); g.globalAlpha = 0.8; if (EMB) g.drawImage(EMB, -S.BR, -S.BR, S.BR * 2, S.BR * 2); g.restore(); } }
+  // header + scoreboard
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  emoji(TEAM.top[1], 180, 105, 64); text(TEAM.top[0], 180, 175, 46, TEAM.top[2], 900); emoji(TEAM.bot[1], 900, 105, 64); text(TEAM.bot[0], 900, 175, 46, TEAM.bot[2], 900);
+  text(`${sc.top}  :  ${sc.bot}`, 540, 140, 96, "#fff", 900, 1, 0, "M");
+  let last = null; for (const e of S.events) if (e.k === "hit" && e.t <= lt) last = e; const spd = last && !F[4] ? last.sp / 820 : 1;
+  text(`SPEED ×${spd.toFixed(1)}`, 540, 1835, 40, spd > 1.9 ? "#ff7a3c" : "#9aa8ff", 800, lt > 0 ? 1 : 0, 0, "M");
+  if ((sc.top === 2 || sc.bot === 2) && lt < END - 0.2 && F[4]) text("MATCH POINT", 540, 880, 90, "#ffd04a", 900, 0.6 + 0.4 * Math.sin(t * 10), 10);
+  // intro: VS + call to comment
+  if (t < INTRO + 0.4) { const k = clamp(t / 0.4), o = clamp((INTRO + 0.4 - t) / 0.4); g.fillStyle = `rgba(0,0,0,${0.55 * o})`; g.fillRect(0, 0, W, H);
+    g.save(); g.translate(540, 760); g.scale(lerp(2, 1, back(k)), lerp(2, 1, back(k))); text("PHOTO vs VIDEO", 0, 0, 112, "#fff", 900, o, 12); g.restore();
+    text("Who wins? Comment 👇", 540, 900, 60, "#ffd04a", 800, o * clamp((t - 0.6) / 0.3), 8); text("first to 3", 540, 1000, 46, "#9aa8ff", 700, o * clamp((t - 0.9) / 0.3), 0, "M"); }
+  // the winner, then the end card
+  const ae = lt - END + 0.3;
+  if (ae > 0) { const win = sc.top > sc.bot ? "top" : "bot", k = clamp(ae / 0.4); g.fillStyle = `rgba(0,0,0,${0.78 * k})`; g.fillRect(0, 0, W, H);
+    text("WINNER", 540, 560, 130, "#ffd04a", 900, k, 12); emoji(TEAM[win][1], 540, 840, 260 * back(k) || 1, k); text(TEAM[win][0], 540, 1110, 150, TEAM[win][2], 900, k, 12); text(`${sc.top} : ${sc.bot}  comeback!`, 540, 1240, 52, "#fff", 800, k, 0, "M");
+    const e2 = clamp((ae - 2.4) / 0.6); if (e2 > 0) { g.fillStyle = `rgba(0,0,0,${e2 * 0.93})`; g.fillRect(0, 0, W, H); g.save(); g.globalAlpha = e2; g.translate(540, 760); g.rotate((ae - 2.4) * 0.4); if (EMB) g.drawImage(EMB, -130, -130, 260, 260); g.restore();
+      text("ORBI TRANSFER", 540, 1010, 96, "#fff", 900, e2); text("Follow for the rematch", 540, 1110, 44, "#3dff8c", 700, e2, 0, "M"); text("@orbitransfer", 540, 1200, 46, "#fff", 600, e2, 0, "M"); } }
+  const fade = Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)); if (fade > 0) { g.fillStyle = `rgba(0,0,0,${fade})`; g.fillRect(0, 0, W, H); }
+};
+(async () => { S = await (await fetch(`sim_${SEED}.json`)).json(); END = S.events.filter((e) => e.k === "score").pop().t + 0.9; window.DURATION = INTRO + END + 5.2;
+  EMB = new Image(); EMB.src = "emblem.svg"; await EMB.decode().catch(() => (EMB = null)); await document.fonts.load("900 50px D"); await document.fonts.load("700 30px M"); window.ready = true; })();
+</script>
+</body>
+</html>

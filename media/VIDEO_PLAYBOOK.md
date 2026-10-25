@@ -178,6 +178,13 @@ Use them in every film where a feature is shown.
   why your phone storage fills up · how "the cloud" is just someone's computer.
 
 ## Films so far
+- Improved series (`improvedNN-film/`, faceted low-poly 3D, 4D views): 01 one photo forty strangers · 02 AI data-center cooling ·
+  03 how AI reads your message · 04 eSIM · 05 AirTag · 06 voice to file · 07 email · 08 blurry photos · 09 song recognition ·
+  10 night mode · 11 which way is up (accelerometer, ×1000 MEMS) · 12 wireless charging (coils, field, thermal) ·
+  13 finding you indoors (Wi-Fi circles → Orbi rough area only)
+- Game formats (2D canvas, deterministic sims, follower CTAs): `merge-film/`, `animal-merge-film/`, `space-merge-film/`
+  (merge-on-touch, voice drops each tier) · `escape-film/` (escape the ring) · `race-film/` (3-round marble race) ·
+  `follow-race-film/` (one race, "pick your ball") · `pong-film/` (PHOTO vs VIDEO neon pong, first to 3, comeback)
 - `sweep-film/`: "What is a liquidity sweep?" (equal lows, sell-/buy-side liquidity, sweep vs breakdown)
 - `candle2-film/`: "Inside a candle" v2 (order-book shelves filling the candle, liquidity sweep) — owner asked for this deeper version
 - `candle-film/`: "How to read a candle" (stock chart candles, wicks, stop loss, stop hunting; ends with share-on-Orbi line)
