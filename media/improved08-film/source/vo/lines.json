@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know why photos get blurry when you send them in a chat?",
+   "dur": 2.557,
+   "at": 0.35
+  },
+  {
+   "key": "scene",
+   "text": "You snap a sunset. Twelve megapixels, every tiny detail.",
+   "dur": 4.376,
+   "at": 3.36
+  },
+  {
+   "key": "blocks",
+   "text": "To save space, the photo gets chopped into tiny squares, eight pixels by eight.",
+   "dur": 4.871,
+   "at": 8.03
+  },
+  {
+   "key": "waves",
+   "text": "Each square is rewritten as a mix of simple patterns, from smooth to super fine.",
+   "dur": 5.257,
+   "at": 13.2
+  },
+  {
+   "key": "toss",
+   "text": "Then the finest patterns, the ones your eye barely notices, get thrown away. That's the squeeze.",
+   "dur": 5.745,
+   "at": 18.76
+  },
+  {
+   "key": "chat",
+   "text": "Many chat apps squeeze your photo again before sending it. Squeeze it twice, and the edges go blocky.",
+   "dur": 6.322,
+   "at": 24.81
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer sends the original file, byte for byte. Locked on your phone, full quality on theirs.",
+   "dur": 6.977,
+   "at": 31.58
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 38.95
+  }
+ ],
+ "duration": 43.51
+}
