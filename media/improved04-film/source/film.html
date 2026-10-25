@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>How an eSIM works (improved version)</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; color: #fff; }
+  canvas#gl { position: absolute; left: 0; top: 0; }
+  .ov { position: absolute; z-index: 20; pointer-events: none; }
+  #sub { left: 40px; right: 40px; top: 1190px; text-align: center; font: 800 70px/1.15 "D"; font-stretch: 100%; color: #fff;
+    -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 4px 12px rgba(0,0,0,0.7); z-index: 40; }
+  .tag { padding: 16px 26px; border-radius: 16px; background: rgba(4,10,8,0.86); border: 2px solid rgba(61,255,140,0.45); font: 700 40px/1 "M"; letter-spacing: 0.04em; text-transform: uppercase; color: #e6fff0; white-space: nowrap; opacity: 0; backdrop-filter: blur(6px); }
+  .tag b { color: #3dff8c; font-weight: 700; } .tag i { color: #ff6a5a; font-style: normal; }
+  .lbl { padding: 12px 22px; border-radius: 14px; background: rgba(6,12,10,0.88); border: 2px solid; font: 700 36px/1.1 "M"; white-space: nowrap; opacity: 0; transform: translate(-50%, -100%); text-align: center; }
+  .lbl small { display: block; font-size: 22px; opacity: 0.75; }
+  .big { left: 0; right: 0; top: 300px; text-align: center; font: 900 120px/1 "D"; font-stretch: 112%; color: #fff; -webkit-text-stroke: 5px #000; paint-order: stroke fill; opacity: 0; z-index: 35; text-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+  .card { padding: 26px 32px; border-radius: 24px; background: rgba(6,12,10,0.9); border: 2px solid rgba(61,255,140,0.5); font: 600 34px/1.35 "M"; color: #cfe; white-space: nowrap; opacity: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .card h5 { font: 700 26px/1 "M"; letter-spacing: 0.12em; color: #3dff8c; margin-bottom: 14px; text-transform: uppercase; }
+  .card b { color: #fff; } .card s { color: #ff6a6a; }
+  #timer { left: 0; right: 0; top: 330px; text-align: center; font: 800 150px/1 "M"; color: #ff7a3c; -webkit-text-stroke: 4px #000; paint-order: stroke fill; opacity: 0; z-index: 35; }
+  #x { width: 120px; height: 120px; margin: -60px 0 0 -60px; opacity: 0; z-index: 30; }
+  #x::before, #x::after { content: ""; position: absolute; left: 50%; top: 0; width: 22px; height: 120px; margin-left: -11px; background: #ff4a4a; border-radius: 11px; box-shadow: 0 0 0 4px #000; transform: rotate(45deg); }
+  #x::after { transform: rotate(-45deg); }
+  #endc { inset: 0; opacity: 0; background: radial-gradient(120% 80% at 50% 40%, #07160e, #000 70%); text-align: center; z-index: 50; }
+  #endc .em { position: absolute; left: 50%; top: 520px; width: 260px; margin-left: -130px; }
+  #endc h1 { position: absolute; left: 0; right: 0; top: 830px; font: 900 96px/1 "D"; font-stretch: 100%; text-transform: uppercase; white-space: nowrap; }
+  #endc .url { position: absolute; left: 50%; top: 1000px; transform: translateX(-50%); padding: 24px 46px; border-radius: 999px; border: 2px solid rgba(255,255,255,0.45); font: 600 46px/1 "M"; white-space: nowrap; }
+  #endc p { position: absolute; left: 0; right: 0; top: 1150px; font: 700 40px/1 "M"; letter-spacing: 0.14em; text-transform: uppercase; color: #3dff8c; }
+  #flash { inset: 0; background: #fff; opacity: 0; z-index: 45; }
+  #grade { inset: 0; opacity: 0; z-index: 15; background: radial-gradient(90% 70% at 50% 50%, rgba(80,160,255,0.0), rgba(30,80,160,0.45)); mix-blend-mode: multiply; }
+  #bars { inset: 0; z-index: 16; opacity: 0; box-shadow: inset 0 140px 0 #000, inset 0 -140px 0 #000; }
+  #fade { inset: 0; background: #000; opacity: 1; z-index: 60; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js", "three/addons/": "./lib/addons/" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<div class="ov" id="grade"></div><div class="ov" id="bars"></div>
+<div class="ov tag" id="tA"></div><div class="ov tag" id="tB"></div>
+<div class="ov lbl" id="l0"></div><div class="ov lbl" id="l1"></div><div class="ov lbl" id="l2"></div><div class="ov lbl" id="l3"></div>
+<div class="ov card" id="c0"></div><div class="ov card" id="c1"></div>
+<div class="ov big" id="big"></div>
+<div class="ov" id="timer"></div>
+<div class="ov" id="x"></div>
+<div class="ov" id="sub"></div>
+<div class="ov" id="endc"><img class="em" src="emblem.svg" /><h1>Orbi Transfer</h1><div class="url">orbitransfer.com</div><p>Now you know</p></div>
+<div class="ov" id="flash"></div>
+<div class="ov" id="fade"></div>
+<script type="module" src="film.js"></script>
+</body>
+</html>
