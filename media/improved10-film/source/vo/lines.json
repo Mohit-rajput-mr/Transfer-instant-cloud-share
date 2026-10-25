@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how your phone takes bright photos in the dark?",
+   "dur": 3.361,
+   "at": 0.35
+  },
+  {
+   "key": "scene",
+   "text": "You point it at the city at night. Hardly any light is reaching the sensor.",
+   "dur": 4.324,
+   "at": 4.16
+  },
+  {
+   "key": "burst",
+   "text": "So the phone doesn't take one photo. It quietly grabs a whole burst of them, over a second or more.",
+   "dur": 5.274,
+   "at": 8.79
+  },
+  {
+   "key": "noise",
+   "text": "Each one alone is dark and grainy. Random speckles of noise that change every single frame.",
+   "dur": 5.552,
+   "at": 14.36
+  },
+  {
+   "key": "align",
+   "text": "The phone lines the frames up, even if your hands shook a little.",
+   "dur": 3.034,
+   "at": 20.21
+  },
+  {
+   "key": "stack",
+   "text": "Then it averages them. The real light adds up, and the random noise cancels out.",
+   "dur": 5.246,
+   "at": 23.54
+  },
+  {
+   "key": "tone",
+   "text": "Finally it lifts the shadows and tames the bright lights. Night, turned almost into day.",
+   "dur": 6.584,
+   "at": 29.09
+  },
+  {
+   "key": "orbi",
+   "text": "Then send it with Orbi Transfer. The full photo, every pixel, to the friends right next to you.",
+   "dur": 5.534,
+   "at": 36.12
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 42.06
+  }
+ ],
+ "duration": 46.61
+}
