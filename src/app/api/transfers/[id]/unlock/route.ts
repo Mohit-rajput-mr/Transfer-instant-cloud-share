@@ -14,7 +14,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (info?.space && !(await member(info.space, b.deviceId, b.spaceToken))) return NextResponse.json({ ok: false, reason: "gone" }, { status: 403 });
   // anonymous receiver, or an anonymous object: counted, never located or linked to other objects
   const anon = b.anon === true || !!info?.anon;
-  const r = await rpc<Record<string, unknown>>("orbit_unlock", {
+  // checks the passcode only: the download is counted when the file has arrived (../received, migration 031)
+  const r = await rpc<Record<string, unknown>>("orbit_unlock_check", {
     p_id: id,
     p_auth_hash: sha256(b.auth),
     p_device: anon ? anonEventId(id, clean(b.deviceId, 40)) : clean(b.deviceId, 40),

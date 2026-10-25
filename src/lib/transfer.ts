@@ -29,7 +29,7 @@ async function sendRetry(url: string, init: RequestInit, tries = 3): Promise<Res
   }
 }
 
-export type Stage = "packing" | "deriving" | "encrypting" | "uploading" | "finalizing" | "decrypting" | "done";
+export type Stage = "packing" | "deriving" | "encrypting" | "uploading" | "finalizing" | "waiting" | "decrypting" | "done";
 
 /** Open objects (no passcode) are still encrypted, with this well-known code: the server stays blind to the
  *  content, and anyone who opens the object can decrypt it without typing anything. */
@@ -167,9 +167,9 @@ export type Received =
   /** folder rebuilt inside a directory the user picked */
   | { kind: "dir"; folder: string; files: number; where: string };
 
-type UnlockReply = { url: string; nonce: string; size: number; chunkSize: number; fileName: string; mime: string; store?: string; /** the same copy through Cloudflare's edge (lib/edge.ts) */ edge?: string };
+type UnlockReply = { /** already counted at unlock (objects with a download limit) */ counted?: boolean; url: string; nonce: string; size: number; chunkSize: number; fileName: string; mime: string; store?: string; /** the same copy through Cloudflare's edge (lib/edge.ts) */ edge?: string };
 /** Checked passcode: the key plus where the ciphertext lives. Nothing is saved or picked before this succeeds. */
-export type Unlocked = { key: Awaited<ReturnType<typeof deriveKeys>>["key"]; r: UnlockReply };
+export type Unlocked = { key: Awaited<ReturnType<typeof deriveKeys>>["key"]; r: UnlockReply; /** the passcode proof, to say "received" */ auth?: string };
 
 /** the code an open object was encrypted with: its anonymous space's key, or the well-known one */
 function openPassFor(o: Orb) {
@@ -220,7 +220,23 @@ export async function unlockOrb(orb: Orb, passcode: string, signal?: AbortSignal
   const res = await quickPost(`/api/transfers/${orb.id}/unlock`, { auth, device: deviceLabel(), ...spaceBody() }, signal);
   const r = await res.json().catch(() => ({ ok: false, reason: "gone" }));
   if (!r.ok) throw new UnlockError(r.reason, r.left);
-  return { key, r };
+  return { key, r, auth };
+}
+
+/**
+ * The file is complete on this device: only now is it a download (counted, on the globe, in the sender's numbers).
+ * Unlock no longer counts (migration 031): a receiver stuck on "Unlocking" or waiting for an asleep sender, who then
+ * gave up, used to show up as a download. Objects with a download limit are still counted at unlock (r.counted).
+ * Once per unlock; keepalive so it still goes out if the page closes right after the save.
+ */
+const told = new WeakSet<Unlocked>();
+export function markReceived(orb: Orb, un: Unlocked) {
+  if (un.r.counted || !un.auth || told.has(un)) return;
+  told.add(un);
+  void fetch(`/api/transfers/${orb.id}/received`, {
+    method: "POST", keepalive: true, headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ auth: un.auth, device: deviceLabel(), anon: isAnon() || !!orb.anon, ...spaceBody() }),
+  }).catch(() => {});
 }
 
 /** No-password objects only: the same key + location as unlock, but nothing is counted (previews). */
@@ -239,7 +255,7 @@ export async function peekOrb(orb: Orb, signal?: AbortSignal): Promise<Unlocked>
  * A guess (a background preview nobody asked for yet) takes only a stored copy that is complete now, and fetches it
  * gently: it never adds a pull on the sender's line (often still uploading that very file), and never waits.
  */
-async function source(r: UnlockReply, signal: AbortSignal | undefined, cloudOnly: boolean, guess = false) {
+async function source(r: UnlockReply, signal: AbortSignal | undefined, cloudOnly: boolean, guess = false, onWait?: () => void) {
   if (guess) {
     // this tab sent it: read here, no network at all (not downloaded back from storage)
     const id = r.url.slice(P2P_PREFIX.length);
@@ -260,7 +276,7 @@ async function source(r: UnlockReply, signal: AbortSignal | undefined, cloudOnly
   if (!store) return { body: await pull(id, signal), stored: false };
   const now = await openStored(store, r.size, signal, undefined, r.edge);
   if (now) return { body: now, stored: true };
-  return firstSource(id, store, r.size, signal, r.edge);
+  return firstSource(id, store, r.size, signal, r.edge, onWait);
 }
 
 type Src = { body: ReadableStream<Uint8Array>; stored: boolean };
@@ -268,34 +284,53 @@ type Src = { body: ReadableStream<Uint8Array>; stored: boolean };
  * The stored copy isn't complete yet: the direct connection and the stored copy, both at once, and whichever is ready
  * first serves the download. The direct path needs a handshake (live channel, network addresses, an answer: a few
  * seconds, longer or never on networks that block it), while a small file's stored copy lands within a second or two
- * of its launch. Before, the copy was looked at once and then the download was tied to the direct path, so a copy that
- * finished a moment later was ignored while the handshake (up to ~35 s on a blocking network) ran out.
- * The loser is dropped: a late direct stream is cancelled (that hangs up), a late stored stream was never read.
+ * of its launch. The loser is dropped: a late direct stream is cancelled (that hangs up), a late stored stream was never read.
+ * Patient (owner 2026-10-25, Barcelona ← Hannover): a sender's phone that locks its screen or switches apps freezes the
+ * page, so neither path answers for a while. Before, the receiver gave up after one try + 3 min ("the sender is offline")
+ * although the sender came back minutes later. Now the direct path is asked again every `retryMs` and the stored copy is
+ * watched for the whole life of a file (30 min), so the download starts by itself the moment either one is there;
+ * `onWait` tells the card it is waiting for the sender. Closing the card (signal) stops it.
  */
-export function firstSource(id: string, store: string, size: number, signal?: AbortSignal, edge?: string): Promise<Src> {
+export function firstSource(id: string, store: string, size: number, signal?: AbortSignal, edge?: string, onWait?: () => void, retryMs = 15_000): Promise<Src> {
   let won = false;
+  let over = false;
   return new Promise<Src>((resolve, reject) => {
-    let failed = 0;
     let directErr: unknown = null;
     const take = (x: Src) => {
-      if (won) return void x.body.cancel().catch(() => {});
+      if (won || over) return void x.body.cancel().catch(() => {});
       won = true;
       resolve(x);
     };
-    const lose = (e: unknown, direct: boolean) => {
-      if (direct) directErr = e;
-      // both gave up: the direct path's reason says more (sender offline, network blocks it) than "not stored"
-      if (++failed === 2 && !won) reject(directErr ?? e);
+    const giveUp = (e: unknown) => {
+      if (won || over) return;
+      over = true;
+      // the direct path's reason says more (sender offline, network blocks it) than "not stored"
+      reject(directErr ?? e);
     };
-    pull(id, signal).then((body) => take({ body, stored: false }), (e) => lose(e, true));
-    waitStored(store, 3 * 60_000, signal, () => won).then(
+    void (async () => {
+      for (;;) {
+        try {
+          return take({ body: await pull(id, signal), stored: false });
+        } catch (e) {
+          directErr = e;
+          if (won || over || signal?.aborted) return;
+          onWait?.();
+          await new Promise<void>((r) => {
+            const t = setTimeout(r, retryMs);
+            signal?.addEventListener("abort", () => (clearTimeout(t), r()), { once: true });
+          });
+          if (won || over || signal?.aborted) return;
+        }
+      }
+    })();
+    waitStored(store, 30 * 60_000, signal, () => won || over).then(
       async (ok) => {
-        if (!ok) return lose(new Error("The file isn't stored yet"), false);
+        if (!ok) return giveUp(signal?.aborted ? signal.reason : new Error("The file isn't stored yet"));
         // stored now: read it near the reader if the edge can, else from the bucket
         const body = (await openStored(store, size, signal, undefined, edge).catch(() => null)) ?? fetchStored(store, size, signal);
         take({ body, stored: true });
       },
-      (e) => lose(e, false),
+      giveUp,
     );
   });
 }
@@ -314,7 +349,9 @@ export async function receive(opts: Parameters<typeof receiveNow>[0]): Promise<R
   stayAwake(why, true);
   pulling++;
   try {
-    return await receiveNow(opts);
+    const got = await receiveNow(opts);
+    markReceived(opts.orb, opts.unlocked);
+    return got;
   } finally {
     pulling--;
     stayAwake(why, false);
@@ -374,7 +411,7 @@ async function receiveNow(opts: {
   try {
     if (!isP2P(r.url)) await decrypt();
     else {
-      const src = await source(r, signal, isAnon() || !!opts.orb.anon, !!opts.guess);
+      const src = await source(r, signal, isAnon() || !!opts.orb.anon, !!opts.guess, () => onProgress("waiting", 0));
       try {
         await decrypt(src.body);
       } catch (e) {

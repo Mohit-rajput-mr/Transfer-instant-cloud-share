@@ -12,7 +12,7 @@ import { newContainer } from "@/lib/client";
 import { useDialog } from "@/lib/dialog";
 import { enqueue } from "@/lib/downloads";
 import { FOLDER_MIME, INLINE_MAX, LINK_MIME, canWriteFolders, filesBundle, isFolder, isLoose, isLinkText, itemName, itemSize, mergeItems, packFolder, pickFolderTarget, textToFile, type DirHandle, type Item } from "@/lib/bundle";
-import { needsSavePicker, pickSaveTarget, receive, unlockOrb, UnlockError, warmKey, type Unlocked, type Received, type Stage } from "@/lib/transfer";
+import { needsSavePicker, pickSaveTarget, markReceived, receive, unlockOrb, UnlockError, warmKey, type Unlocked, type Received, type Stage } from "@/lib/transfer";
 import { autoDownload, canPickSave, canShareFile, canShareFiles, deviceNoun, downloadWhere, downloadsShortcut, pickAndWrite, saveEnv, shareFile } from "@/lib/save";
 import "@/app/save.css";
 import { glyph } from "./Glyph";
@@ -338,6 +338,7 @@ const STAGE_LABEL: Record<Stage, string> = {
   encrypting: "Encrypting in your browser",
   uploading: "Encrypting + beaming into orbit",
   finalizing: "Stabilising orbit",
+  waiting: "Sender's phone is away · starts by itself when it's back",
   decrypting: "Receiving + decrypting",
   done: "Done",
 };
@@ -1111,7 +1112,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     setBusy(false);
     tick("success");
     // already fetched quietly in the background (lib/peek.ts: the card's preview): it is on this device, so Download
-    // hands it over at once instead of fetching it all again. The unlock above still counted it as a download
+    // hands it over at once instead of fetching it all again. It counts as a download right then (markReceived)
     // (still on its way: waited for, not started a second time)
     let pre = peekF;
     if (!pre && peekMode && !isFolder && !inline && !asDir) {
@@ -1122,6 +1123,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     if (pre && !isFolder && !inline && !asDir) {
       const held = env.mobile || wantView.current;
       if (!held) autoDownload(pre);
+      markReceived(orb, un);
       return landed({ kind: "file", file: pre, held });
     }
     // a folder or a big file needs a "where?" picker, which browsers only open on a fresh tap

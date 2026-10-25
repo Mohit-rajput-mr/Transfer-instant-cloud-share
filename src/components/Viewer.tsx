@@ -3,19 +3,27 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { formatBytes } from "@/lib/client";
 import { useDialog } from "@/lib/dialog";
+import { readOffice, ROWS_MAX, type Office, type OfficeKind } from "@/lib/office";
 
 // Full-screen look inside a received file, like a chat app: every PDF page with real, selectable text
 // (copy a line or the whole report), photos you can zoom, video/audio that plays, text you can select.
 // The file never leaves this device; nothing is downloaded unless the user asks.
 
-export type ViewKind = "pdf" | "image" | "video" | "audio" | "text";
-const TEXT_EXT = /\.(txt|md|csv|json|log|xml|ya?ml|ini|conf|js|ts|tsx|jsx|css|html?|py|java|c|cpp|h|rs|go|rb|php|sh|sql)$/i;
+export type ViewKind = "pdf" | "image" | "video" | "audio" | "text" | "table" | "doc" | "slides" | "sheet" | "zip";
+const TEXT_EXT = /\.(txt|md|json|log|xml|ya?ml|ini|conf|toml|env|js|mjs|cjs|ts|tsx|jsx|css|scss|html?|py|java|kt|swift|c|cpp|cc|h|hpp|cs|rs|go|rb|php|sh|bat|ps1|sql|srt|vtt|rtf|tex|gradle|properties)$/i;
+// owner 2026-10-25: "preview should work for any kind of file possible: music, video, pic, pdf, word, excel and the rest"
 export function viewKind(name: string, type: string): ViewKind | null {
   const n = name.toLowerCase();
   if (type === "application/pdf" || n.endsWith(".pdf")) return "pdf";
-  if (/^image\/(jpeg|png|gif|webp|avif|bmp|svg\+xml)$/.test(type) || /\.(jpe?g|png|gif|webp|avif|bmp)$/.test(n)) return "image";
-  if (/^video\//.test(type) || /\.(mp4|m4v|webm|mov)$/.test(n)) return "video";
-  if (/^audio\//.test(type) || /\.(mp3|m4a|wav|ogg|aac|flac)$/.test(n)) return "audio";
+  // svg only as a picture (an <img> never runs its scripts)
+  if (/^image\/(jpeg|png|gif|webp|avif|bmp|svg\+xml|x-icon|vnd\.microsoft\.icon)$/.test(type) || /\.(jpe?g|jfif|png|gif|webp|avif|bmp|svg|ico)$/.test(n)) return "image";
+  if (/^video\//.test(type) || /\.(mp4|m4v|webm|mov|mkv|ogv|3gp)$/.test(n)) return "video";
+  if (/^audio\//.test(type) || /\.(mp3|m4a|m4b|wav|ogg|oga|opus|weba|aac|flac|amr|3ga)$/.test(n)) return "audio";
+  if (/\.(csv|tsv)$/.test(n) || type === "text/csv") return "table";
+  if (/\.(docx|docm|dotx|odt)$/.test(n)) return "doc";
+  if (/\.(xlsx|xlsm|xltx|ods)$/.test(n)) return "sheet";
+  if (/\.(pptx|pptm|ppsx|odp)$/.test(n)) return "slides";
+  if (/\.(zip|apk|jar|epub|ipa|xpi)$/.test(n) || type === "application/zip") return "zip";
   if (/^text\//.test(type) || type === "application/json" || TEXT_EXT.test(n)) return "text";
   return null;
 }
@@ -45,7 +53,7 @@ export default function Viewer({ file, name, failed, thumb, onClose, onDownload 
   };
   const copyAll = async () => {
     try {
-      const text = kind === "pdf" ? await pdfText.current?.() : await file?.text();
+      const text = kind === "pdf" ? await pdfText.current?.() : kind === "text" ? await file?.text() : (document.querySelector(".viewer-office") as HTMLElement | null)?.innerText;
       if (!text) return flash("No text in this file");
       await navigator.clipboard.writeText(text);
       flash("All text copied ✓");
@@ -86,7 +94,7 @@ export default function Viewer({ file, name, failed, thumb, onClose, onDownload 
           <span className="mono">{formatBytes(file.size)}{kind === "pdf" ? " · select text to copy" : ""}</span>
         </div>
         <div className="viewer-acts">
-          {(kind === "pdf" || kind === "text") && (
+          {(kind === "pdf" || kind === "text" || kind === "doc" || kind === "slides" || kind === "table" || kind === "sheet") && (
             <button type="button" className="pill lg-press" onClick={copyAll}>{copied ?? "Copy all text"}</button>
           )}
           {onDownload ? (
@@ -108,11 +116,13 @@ export default function Viewer({ file, name, failed, thumb, onClose, onDownload 
           <div className="viewer-audio"><b className="wide">{file.name.replace(/\.[^.]+$/, "")}</b><audio src={url} controls autoPlay /></div>
         ) : kind === "text" ? (
           <TextView file={file} />
+        ) : kind === "table" || kind === "sheet" || kind === "doc" || kind === "slides" || kind === "zip" ? (
+          <OfficeView file={file} kind={kind as OfficeKind} />
         ) : (
           <div className="viewer-none mono">No preview for this type of file · download it to open</div>
         )}
       </div>
-      {copied && kind !== "pdf" && kind !== "text" && <div className="viewer-toast mono">{copied}</div>}
+      {copied && kind !== "pdf" && kind !== "text" && kind !== "doc" && kind !== "slides" && kind !== "table" && kind !== "sheet" && <div className="viewer-toast mono">{copied}</div>}
     </div>,
     document.body,
   );
@@ -333,6 +343,56 @@ function PdfPage({ doc, n, pdfjs, fitWidth, scale }: { doc: PdfDoc; n: number; p
       <canvas ref={canvas} style={size ? { width: size.w, height: size.h } : undefined} />
       <div className="textLayer" ref={textBox} />
       <span className="pdf-num mono">{n}</span>
+    </div>
+  );
+}
+
+function OfficeView({ file, kind }: { file: File; kind: OfficeKind }) {
+  const [o, setO] = useState<Office | null>(null);
+  const [err, setErr] = useState(false);
+  const [tab, setTab] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    readOffice(file, kind).then((x) => alive && setO(x), () => alive && setErr(true));
+    return () => {
+      alive = false;
+    };
+  }, [file, kind]);
+  if (err) return <div className="viewer-none mono">This file could not be opened here · download it instead</div>;
+  if (!o) return <div className="viewer-none mono">Opening…</div>;
+  if (o.kind === "doc")
+    return (
+      <div className="viewer-office viewer-doc">
+        {o.paras.map((p, i) => (p.h ? <h3 key={i} className={`h${Math.min(3, p.h)}`}>{p.t}</h3> : p.t ? <p key={i}>{p.t}</p> : <br key={i} />))}
+      </div>
+    );
+  if (o.kind === "slides")
+    return (
+      <div className="viewer-office viewer-slides">
+        {o.slides.map((s, i) => (
+          <section key={i} className="slide"><span className="mono">Slide {i + 1}</span>{s.map((t, j) => (j ? <p key={j}>{t}</p> : <h3 key={j}>{t}</h3>))}</section>
+        ))}
+      </div>
+    );
+  if (o.kind === "zip")
+    return (
+      <div className="viewer-office viewer-zip">
+        <p className="mono">{o.files.length} file{o.files.length === 1 ? "" : "s"} inside</p>
+        <ul>{o.files.map((f, i) => <li key={i}><span className="ellip">{f.name}</span><span className="mono">{formatBytes(f.size)}</span></li>)}</ul>
+      </div>
+    );
+  const sh = o.sheets[Math.min(tab, o.sheets.length - 1)];
+  return (
+    <div className="viewer-office viewer-sheet">
+      {o.sheets.length > 1 && (
+        <div className="sheet-tabs">{o.sheets.map((s, i) => <button type="button" key={i} className={`pill lg-press${i === tab ? " on" : ""}`} onClick={() => setTab(i)}>{s.name}</button>)}</div>
+      )}
+      <div className="sheet-scroll">
+        <table>
+          <tbody>{sh?.rows.map((r, i) => <tr key={i}><th className="mono">{i + 1}</th>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>)}</tbody>
+        </table>
+      </div>
+      {sh && sh.rows.length >= ROWS_MAX && <p className="mono">first {ROWS_MAX} rows shown</p>}
     </div>
   );
 }

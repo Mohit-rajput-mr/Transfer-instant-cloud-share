@@ -20,6 +20,21 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- FIXED 2026-10-25 (H) — Downloads counted at "Unlocking" (owner screenshot: Lärm.m4a showed 6 downloads while nobody
+  had it). orbit_unlock counted before a byte moved. Now unlock → orbit_unlock_check (passcode only, wrong tries still
+  lock) and the page calls POST /api/transfers/<id>/received (orbit_received, needs the same auth proof) once the file
+  is complete (receive(), and the pre-fetched hand-over in Panels). Objects with a download limit still count at unlock
+  so the limit holds. Migration 031 applied.
+- FIXED 2026-10-25 (H) — Barcelona ← Hannover, Lärm.m4a (40 MB from Chrome·Android) couldn't be downloaded. Root cause:
+  its stored copy never completed (R2 404; the Android tab was frozen in the background), so only the sender's phone
+  had it; when that page sleeps neither path answers, and the receiver gave up after one direct try + 3 min. Now
+  firstSource retries the direct path every 15 s and watches the stored copy for 30 min; the card says "Sender's phone
+  is away · starts by itself when it's back" (new stage "waiting"). Test added (firstsource.test.ts).
+  OPEN: sender side on Android still can't upload while its tab is in the background (browser limit).
+- DONE 2026-10-25 (M, owner) — Previews for more types: Word (docx/odt), Excel (xlsx/ods), PowerPoint (pptx/odp) as
+  text, CSV/TSV as a table, ZIP/APK/EPUB file lists, svg/ico pictures, mkv/3gp video, opus/amr/m4b audio, more code
+  files. Parsed on the device (lib/office.ts, fflate + DOMParser), only text put on the page. Verified in Chromium
+  with python-docx/openpyxl/python-pptx files. Old binary .doc/.xls/.ppt: no preview (download).
 - FIXED 2026-10-24 (M) — HQ "From" filter (owner: too much live info to track daily traffic). Header: date+time picker,
   1 h / Today / Now / All. With a time set, /api/admin/overview?since= calls orbit_admin_overview_since (migration 030,
   applied): devices, new devices, visits, GPS on vs no GPS, uploads/downloads/bytes/views, countries, cities, browsers,

@@ -43,6 +43,15 @@ describe("firstSource: direct connection vs stored copy, the first ready wins", 
     ctl.stored = () => later(40, true);
     expect((await firstSource("x", "u", 1, undefined)).stored).toBe(true);
   });
+  it("the sender's phone was asleep: the direct path is asked again and serves when it answers", async () => {
+    let n = 0, waited = 0;
+    ctl.pull = () => (++n < 3 ? fail(5, "The sender is offline") : later(5, direct()));
+    ctl.stored = (stop) => new Promise((r) => { const t = setInterval(() => stop() && (clearInterval(t), r(false)), 5); });
+    const s = await firstSource("x", "u", 1, undefined, undefined, () => waited++, 10);
+    expect(s.stored).toBe(false);
+    expect(n).toBe(3);
+    expect(waited).toBe(2);
+  });
   it("both give up: the direct path's reason is the one shown", async () => {
     ctl.pull = () => fail(5, "The sender is offline");
     ctl.stored = () => later(20, false);
