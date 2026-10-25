@@ -87,6 +87,10 @@ When the owner says "new version" / "next", make the next film from the story li
 ## Continuous loop (owner 2026-10-19, wins over older notes)
 - Keep making videos until the owner says stop: finish one, research 2–3 minutes (what's trending now: tech news, AI,
   launches like the Tesla Roadster, viral "how does X work" explainers, competitor channels), pick the strongest topic, make it.
+- **Name the apps people know** (owner 2026-10-25): when the topic is a service or technology, say the popular apps in the
+  voice and show them on screen (song recognition → Shazam; maps → Google Maps / Apple Maps; login codes → Google /
+  Microsoft Authenticator; night photos → iPhone Night mode, Pixel Night Sight). Familiar names keep people watching.
+  Only say what is true about them; use their names, not their logos.
 - **First line is always the question** (owner 2026-10-20): "Do you know how X works?" ("Do you know how Wi-Fi works?", "Do you know how Starship works?"). Never open with a scene-setting statement ("A hundred miles out at sea…"); the setup comes after the question.
 - Max length **1:30**. Hook in the first second. Same house look, voice and subtitles. Reuse engines
   (`pw-film`, `candle2-film`, `ob-film`, `nfc-film`, `starlink-film`, `roadster-film`), never rebuild from scratch.

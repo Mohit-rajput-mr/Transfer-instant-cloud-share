@@ -9,8 +9,8 @@ from faster_whisper import WhisperModel
 
 # (key, subtitle text, emotion 0..1, pause after in s). "Orbi" is spoken "Orbee".
 LINES = [
-    ("hook",    "Do you know how that six-digit login code works, even with no signal?",                              1.05, 0.45),
-    ("scene",   "Your app makes a new code every thirty seconds. The website somehow knows it too. And they never talk!", 1.05, 0.30),
+    ("hook",    "Do you know how the codes in Google Authenticator work, even with no signal?",                              1.05, 0.45),
+    ("scene",   "Google Authenticator, Microsoft Authenticator, they all make a new code every thirty seconds. The website somehow knows it too. And they never talk!", 1.05, 0.30),
     ("secret",  "When you scanned that QR code, your phone and the website got the same secret key. Just once.",     0.95, 0.30),
     ("clock",   "Now both sides take that secret, plus the time, rounded to thirty seconds.",                         0.95, 0.30),
     ("blend",   "They drop both into the same mathematical blender, and keep six digits of what comes out.",         1.05, 0.30),

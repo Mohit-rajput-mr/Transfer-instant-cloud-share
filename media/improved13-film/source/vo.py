@@ -9,8 +9,8 @@ from faster_whisper import WhisperModel
 
 # (key, subtitle text, emotion 0..1, pause after in s). "Orbi" is spoken "Orbee".
 LINES = [
-    ("hook",    "Do you know how your phone finds you indoors, where GPS can't reach?",                               1.05, 0.45),
-    ("scene",   "Deep inside a shopping mall, the satellite signals hit concrete. And yet the blue dot still knows where you are.", 1.00, 0.30),
+    ("hook",    "Do you know how Google Maps finds you indoors, where GPS can't reach?",                               1.05, 0.45),
+    ("scene",   "Deep inside a shopping mall, the satellite signals hit concrete. And yet the blue dot in Google Maps or Apple Maps still knows where you are.", 1.00, 0.30),
     ("listen",  "Your phone listens for every Wi-Fi network around. It doesn't join them. It just hears their names, and how loud they are.", 0.95, 0.30),
     ("map",     "Mapping cars, and millions of phones, have already noted where those routers sit.",                  1.00, 0.30),
     ("circles", "Loud means close. Quiet means far. Draw a circle around each one, and where the circles cross, that's you!", 1.10, 0.35),
