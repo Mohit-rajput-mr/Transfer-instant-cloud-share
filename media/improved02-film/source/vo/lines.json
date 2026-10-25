@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how an AI data center keeps from melting?",
+   "dur": 3.458,
+   "at": 0.35
+  },
+  {
+   "key": "scene",
+   "text": "Every time you ask an AI something, a chip somewhere gets hot. Really hot.",
+   "dur": 4.755,
+   "at": 4.26
+  },
+  {
+   "key": "rack",
+   "text": "One modern AI rack can pull about a hundred and twenty kilowatts. That's roughly a hundred homes, in one cabinet.",
+   "dur": 7.076,
+   "at": 9.31
+  },
+  {
+   "key": "air",
+   "text": "Old server rooms just blew cold air down the aisles. At this heat, fans alone can't keep up.",
+   "dur": 5.751,
+   "at": 16.74
+  },
+  {
+   "key": "plate",
+   "text": "So engineers bolt a metal cold plate right onto each chip, with liquid running through tiny channels inside.",
+   "dur": 6.512,
+   "at": 22.79
+  },
+  {
+   "key": "loop",
+   "text": "The liquid soaks up the heat, carries it out of the rack, and hands it to a second loop of water.",
+   "dur": 5.007,
+   "at": 29.6
+  },
+  {
+   "key": "tower",
+   "text": "Up on the roof, that warm water dumps its heat into the air, comes back cold, and round it goes.",
+   "dur": 5.701,
+   "at": 34.91
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer keeps its server cool another way. It never carries your file. It just signs a ticket, and the bytes fly straight to storage.",
+   "dur": 7.738,
+   "at": 41.06
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 49.2
+  }
+ ],
+ "duration": 53.75
+}

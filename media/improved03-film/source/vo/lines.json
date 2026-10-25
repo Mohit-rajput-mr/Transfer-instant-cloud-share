@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how an AI actually reads your message?",
+   "dur": 3.636,
+   "at": 0.35
+  },
+  {
+   "key": "type",
+   "text": "You type: my cat stole my sandwich. To you, that's a sentence. To the AI, it's a pile of pieces.",
+   "dur": 6.62,
+   "at": 4.44
+  },
+  {
+   "key": "tokens",
+   "text": "First, the words get chopped into tokens. Little chunks, and each chunk becomes a number.",
+   "dur": 4.989,
+   "at": 11.36
+  },
+  {
+   "key": "map",
+   "text": "Every number is a spot on a giant map of meaning. Cat lands near dog and kitten. Sandwich lands near lunch.",
+   "dur": 6.803,
+   "at": 16.64
+  },
+  {
+   "key": "attend",
+   "text": "Then each word looks at every other word, to work out who did what. Stole links cat to sandwich.",
+   "dur": 6.677,
+   "at": 23.75
+  },
+  {
+   "key": "guess",
+   "text": "And then it guesses. One word at a time, it picks the most likely next piece, again and again, until it has an answer.",
+   "dur": 7.523,
+   "at": 30.72
+  },
+  {
+   "key": "orbi",
+   "text": "So an AI reads whatever you give it. Orbi Transfer is the opposite. Your file is locked on your phone before it leaves, so nobody on the way can read it.",
+   "dur": 8.899,
+   "at": 38.7
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 48.0
+  }
+ ],
+ "duration": 52.55
+}
