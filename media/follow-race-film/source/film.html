@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Which file reaches the phone first?</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; } html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; } canvas { position: absolute; inset: 0; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Marble race, three rounds: six file types race through pegs, spinners and ramps into a phone. 3-2-1 points per round.
+const W = 1080, H = 1920, g = document.getElementById("c").getContext("2d");
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k, back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const K = { photo: ["📸", "#2f8fff"], video: ["🎬", "#ff4a4a"], song: ["🎵", "#ff4ab4"], pdf: ["📄", "#ffb03a"], folder: ["📁", "#3dff8c"], note: ["📝", "#b48aff"] };
+const INTRO = 3.2, GAP = 1.6; let R = [], START = [], EMB, TOTAL;
+function text(s, x, y, size, col = "#fff", w = 900, alpha = 1, stroke = 0, font = "D", align = "center") { g.save(); g.globalAlpha = alpha; g.font = `${w} ${size}px ${font}`; g.textAlign = align; g.textBaseline = "middle"; if (stroke) { g.lineWidth = stroke; g.strokeStyle = "#000"; g.strokeText(s, x, y); } g.fillStyle = col; g.fillText(s, x, y); g.restore(); }
+function ball(k, x, y, a, s = 1) { const [e, c] = K[k], r = 30 * s; g.save(); g.translate(x, y); g.shadowBlur = 20; g.shadowColor = c; const rg = g.createRadialGradient(-9, -10, 3, 0, 0, r); rg.addColorStop(0, "#fff"); rg.addColorStop(0.25, c); rg.addColorStop(1, c); g.fillStyle = rg; g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill(); g.shadowBlur = 0; g.rotate(a * 0.3); g.font = `${r * 1.1}px "Noto Color Emoji"`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(e, 0, 2); g.restore(); }
+function points(upTo) { const p = {}; for (const k in K) p[k] = 0; R.forEach((s, i) => { if (i >= upTo.round) return; s.order.forEach((k, j) => (p[k] += [3, 2, 1][j] ?? 0)); }); if (upTo.partial) upTo.partial.forEach((k, j) => (p[k] += [3, 2, 1][j] ?? 0)); return p; }
+window.render = async function (t) {
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = "#06070c"; g.fillRect(0, 0, W, H);
+  let ri = R.length - 1; for (let i = 0; i < R.length; i++) if (t < START[i] + R[i].frames.length / 30) { ri = i; break; }
+  const S = R[ri], lt = t - START[ri], fi = clamp(Math.round(lt * 30), 0, S.frames.length - 1), F = S.frames[fi];
+  const hue = (t * 40) % 360;
+  // the course: neon walls, pegs, spinners, ramps
+  g.save(); g.lineCap = "round"; g.shadowBlur = 18;
+  g.strokeStyle = `hsl(${hue},100%,62%)`; g.shadowColor = g.strokeStyle; g.lineWidth = 8; g.beginPath(); g.moveTo(S.X0, 160); g.lineTo(S.X0, 1820); g.moveTo(S.X1, 160); g.lineTo(S.X1, 1820); g.stroke();
+  for (const [A, B] of [...S.walls, ...S.ramps]) { g.strokeStyle = `hsl(${(hue + 120) % 360},100%,62%)`; g.shadowColor = g.strokeStyle; g.lineWidth = 12; g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(B[0], B[1]); g.stroke(); }
+  for (const [x, y, r] of S.pegs) { g.fillStyle = "#e6f0ff"; g.shadowColor = "#7fb2ff"; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }
+  for (const sp of S.spinners) { const an = Math.max(0, lt) * sp.w, cx = Math.cos(an) * sp.len / 2, cy = Math.sin(an) * sp.len / 2; g.strokeStyle = "#ffd04a"; g.shadowColor = "#ffd04a"; g.lineWidth = 12; g.beginPath(); g.moveTo(sp.x - cx, sp.y - cy); g.lineTo(sp.x + cx, sp.y + cy); g.stroke(); g.fillStyle = "#fff"; g.beginPath(); g.arc(sp.x, sp.y, 8, 0, 7); g.fill(); }
+  g.restore();
+  // the finish: a phone screen
+  g.save(); g.fillStyle = "#15171c"; g.strokeStyle = "#3a3f4a"; g.lineWidth = 6; g.beginPath(); g.roundRect(330, 1795, 420, 140, 30); g.fill(); g.stroke(); g.fillStyle = "#0b2a1a"; g.fillRect(350, 1812, 380, 110); text("FINISH", 540, 1850, 34, "#3dff8c", 900, 1, 0, "M"); g.restore();
+  // pings on hits
+  for (const e of S.events) { const d = lt - e.t; if (e.k !== "hit" || d < 0 || d > 0.3) continue; const k = S.kinds.indexOf(e.b), [x, y] = S.frames[clamp(Math.round(e.t * 30), 0, S.frames.length - 1)][k]; g.save(); g.globalAlpha = 1 - d / 0.3; g.strokeStyle = K[e.b][1]; g.lineWidth = 3; g.beginPath(); g.arc(x, y, 32 + d * 80, 0, 7); g.stroke(); g.restore(); }
+  // balls (waiting at the top during the round intro)
+  S.kinds.forEach((k, i) => { const [x, y, a] = F[i]; if (S.finish[i] !== null && lt > S.finish[i] + 0.2) return; ball(k, x, lt < 0 ? lerp(S.frames[0][i][1] - 400, S.frames[0][i][1], clamp((lt + INTRO) / INTRO)) : y, a); });
+  // header: title, round, standings
+  text("Which file reaches", 540, 42, 40, "#fff", 800); text("the phone first?", 540, 92, 52, "#3dff8c", 900);
+  const done = S.events.filter((e) => e.k === "fin" && e.t <= lt).map((e) => e.b);
+  const P = points({ round: ri, partial: done }); const rank = Object.entries(P).sort((a, b) => b[1] - a[1]);
+  rank.forEach(([k, p], j) => { const x = 120 + j * 168, y = 160; ball(k, x - 34, y, 0, 0.7); text(String(p), x + 18, y, 40, "#fff", 900, 1, 0, "M"); });
+  if (lt < 0.6) { const k = clamp((lt + INTRO) / 0.5); g.save(); g.translate(540, 700); g.scale(lerp(2, 1, back(k)), lerp(2, 1, back(k))); text("PICK ONE!", 0, -40, 130, "#ffd04a", 900, clamp(1 - (lt - 0.2) / 0.4), 12); text("comment your ball 👇", 0, 90, 56, "#fff", 800, clamp(1 - (lt - 0.2) / 0.4), 8); g.restore(); }
+  // place badges as they finish
+  for (const e of S.events) { if (e.k !== "fin") continue; const d = lt - e.t; if (d < 0 || d > 1.2) continue; text(["1ST!", "2ND", "3RD", "4TH", "5TH", "6TH"][e.place - 1], 540, 1700 - (e.place - 1) * 0, 90 + (e.place === 1 ? 40 : 0), e.place === 1 ? "#ffd04a" : "#fff", 900, 1 - clamp((d - 0.8) / 0.4), 10); ball(e.b, 540, 1600, 0, 1.6 * back(clamp(d / 0.25))); }
+  // the champion, then the end card
+  const end = START[0] + R[0].frames.length / 30, ae = t - end + 0.5;
+  if (ae > 0) { const fp = points({ round: 1 }); const champ = Object.entries(fp).sort((a, b) => b[1] - a[1])[0][0]; const k = clamp(ae / 0.4);
+    g.fillStyle = `rgba(0,0,0,${0.75 * k})`; g.fillRect(0, 0, W, H); ball(champ, 540, 820, t * 2, 4 * back(k)); text("WINNER", 540, 520, 120, "#ffd04a", 900, k, 10); text(champ.toUpperCase(), 540, 1100, 120, K[champ][1], 900, k, 10);
+    const e2 = clamp((ae - 2.8) / 0.6); if (e2 > 0) { g.fillStyle = `rgba(0,0,0,${e2 * 0.92})`; g.fillRect(0, 0, W, H); g.save(); g.globalAlpha = e2; g.translate(540, 760); g.rotate((ae - 2.8) * 0.4); if (EMB) g.drawImage(EMB, -130, -130, 260, 260); g.restore(); text("ORBI TRANSFER", 540, 1010, 96, "#fff", 900, e2); text("Follow for the rematch", 540, 1110, 44, "#3dff8c", 700, e2, 0, "M"); text("@orbitransfer", 540, 1200, 46, "#fff", 600, e2, 0, "M"); } }
+  const fade = Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)); if (fade > 0) { g.fillStyle = `rgba(0,0,0,${fade})`; g.fillRect(0, 0, W, H); }
+};
+(async () => { for (const s of [11]) R.push(await (await fetch(`sim_${s}.json`)).json());
+  let t = INTRO; R.forEach((s) => { START.push(t); const last = Math.max(...s.finish); s.frames = s.frames.slice(0, Math.round((last + 1.2) * 30)); t += s.frames.length / 30 + INTRO + GAP; });
+  TOTAL = START[0] + R[0].frames.length / 30 + 5.5; window.DURATION = TOTAL; EMB = new Image(); EMB.src = "emblem.svg"; await EMB.decode().catch(() => (EMB = null)); await document.fonts.load("900 50px D"); await document.fonts.load("700 30px M"); window.ready = true; })();
+</script>
+</body>
+</html>
