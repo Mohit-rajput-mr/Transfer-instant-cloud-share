@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how your phone charges without a cable?",
+   "dur": 3.349,
+   "at": 0.35
+  },
+  {
+   "key": "scene",
+   "text": "You drop it on the pad at night. No plug, no pins. And yet, by morning, the battery is full.",
+   "dur": 6.093,
+   "at": 4.15
+  },
+  {
+   "key": "xray",
+   "text": "Look through both. A flat coil of copper in the pad, and another one hiding inside the phone.",
+   "dur": 4.73,
+   "at": 10.54
+  },
+  {
+   "key": "field",
+   "text": "The pad pushes current back and forth through its coil, over a hundred thousand times a second.",
+   "dur": 5.572,
+   "at": 15.57
+  },
+  {
+   "key": "magnet",
+   "text": "That makes an invisible magnetic field, flipping just as fast, reaching right up through the glass.",
+   "dur": 5.919,
+   "at": 21.44
+  },
+  {
+   "key": "induce",
+   "text": "The field sweeps through the phone's coil and shoves its electrons along. Current, out of thin air!",
+   "dur": 6.119,
+   "at": 27.66
+  },
+  {
+   "key": "align",
+   "text": "That's why the spot matters. Slide the phone off center, and most of the field misses.",
+   "dur": 5.138,
+   "at": 34.13
+  },
+  {
+   "key": "heat",
+   "text": "And some energy always turns into heat. That's why your phone feels warm in the morning.",
+   "dur": 5.833,
+   "at": 39.57
+  },
+  {
+   "key": "end",
+   "text": "Two coils, one invisible field. Now you know!",
+   "dur": 3.846,
+   "at": 45.8
+  }
+ ],
+ "duration": 51.45
+}
