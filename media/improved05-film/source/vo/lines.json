@@ -1,0 +1,54 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a lost AirTag finds its way home, with no GPS and no SIM?",
+   "dur": 4.324,
+   "at": 0.35
+  },
+  {
+   "key": "scene",
+   "text": "You leave your bag on a train. Inside, a tiny tag keeps whispering one thing. I'm here.",
+   "dur": 6.101,
+   "at": 5.12
+  },
+  {
+   "key": "beacon",
+   "text": "It's a Bluetooth beacon. A short ping every couple of seconds, with a code that keeps changing.",
+   "dur": 4.626,
+   "at": 11.52
+  },
+  {
+   "key": "relay",
+   "text": "Any iPhone passing by quietly adds its own location, locks it with the tag's key, and sends it up.",
+   "dur": 5.61,
+   "at": 16.45
+  },
+  {
+   "key": "lock",
+   "text": "Only your phone can open it. Apple can't read where your bag is, and neither can the stranger who walked past.",
+   "dur": 6.362,
+   "at": 22.36
+  },
+  {
+   "key": "find",
+   "text": "You open the app, and a dot pops up on the map. Your bag, three stops down the line.",
+   "dur": 4.589,
+   "at": 29.02
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer works with the people around you too. Files pop up on nearby screens, locked on the sender's phone, and only the right code opens them.",
+   "dur": 8.313,
+   "at": 34.06
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 42.77
+  }
+ ],
+ "duration": 47.33
+}
