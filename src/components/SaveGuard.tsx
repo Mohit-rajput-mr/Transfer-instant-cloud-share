@@ -53,11 +53,11 @@ export default function SaveGuard() {
   return (
     <div className={`save-guard lg${done ? " ok" : ""}`} role="status" aria-live="polite">
       {done ? (
-        <b>✓ Saved online · safe to close Orbi</b>
+        <b>✓ Saved online · everyone can get it · safe to close Orbi</b>
       ) : (
         <>
           <b>{back ? "Paused while Orbi was in the background · continuing" : `Saving online · ${pct}%`}</b>
-          <span className="mono">Keep Orbi open until ✓, so people far away can still get it after you leave</span>
+          <span className="mono">Others see it once it is saved. If you leave now, it finishes next time you open Orbi here</span>
           <i className="save-guard-bar"><i style={{ transform: `scaleX(${Math.max(0.03, frac)})` }} /></i>
         </>
       )}

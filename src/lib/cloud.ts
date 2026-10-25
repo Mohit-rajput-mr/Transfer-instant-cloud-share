@@ -144,6 +144,11 @@ class Gone extends Error {}
 const resumables = new Set<string>();
 export const isResumable = (id: string) => resumables.has(id);
 
+/** ids whose copy can't be stored at all (no storage, this month's free storage used up, bucket unreachable): the
+ *  launch then falls back to sending directly while the page is open (lib/outbox.ts) */
+const noStore = new Set<string>();
+export const storeUnavailable = (id: string) => noStore.has(id);
+
 /** Uploads the encrypted copy. Never throws: on any failure the direct path still serves the file.
  *  Resolves true only when the copy is saved (anonymous sends wait for that: they have no direct path). */
 export async function storeCopy(
@@ -159,18 +164,21 @@ export async function storeCopy(
     // can this page reach the bucket at all (its CORS rule)? If not, don't send a byte: the direct path serves it
     const pr = await call(id, { owner, action: "start", probe: true });
     if (!pr.ok) {
+      if (pr.status === 501) noStore.add(id);
       set(id, pr.status === 501 ? null : { state: "failed", frac: 0 });
       return false;
     }
     const { probe } = (await pr.json()) as { probe: string };
     const reach = await fetch(probe, { headers: { Range: "bytes=0-0" }, cache: "no-store", signal: ac.signal }).catch(() => null);
     if (!reach) {
+      noStore.add(id);
       set(id, null);
       return false;
     }
     const r = await call(id, { owner, action: "start" });
     if (!r.ok) {
       // 501: no storage; 507: this month's free storage is used up. Either way it still sends directly
+      if (r.status === 501 || r.status === 507) noStore.add(id);
       set(id, r.status === 501 || r.status === 507 ? null : { state: "failed", frac: 0 });
       return false;
     }

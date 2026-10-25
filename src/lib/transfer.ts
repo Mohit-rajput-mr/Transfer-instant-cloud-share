@@ -11,8 +11,9 @@ import { FOLDER_MIME, directoryOutput, folderSink, zipOutput, type DirHandle, ty
 import { autoDownload, safeMime, saveName } from "./save";
 import { spaceBody, spaceOpenPass } from "./space";
 import { bubbleName } from "./bubbles";
-import { P2P_PREFIX, hold, holding, isP2P, pull } from "./p2p";
-import { fetchStored, isStored, openStored, storeCopy, waitStored } from "./cloud";
+import { P2P_PREFIX, holding, isP2P, pull } from "./p2p";
+import { fetchStored, isStored, openStored, stopCopy, storeCopy, storeUnavailable, waitStored } from "./cloud";
+import { KEEP_MAX, keep, publish, unkeep } from "./outbox";
 import { stayAwake } from "./wake";
 
 /** A POST that survives a dropped or stuck connection (a phone switching networks, a cold server, a choked line): up to 3 tries of 20 s, then a clear message. */
@@ -85,6 +86,7 @@ export async function launch(opts: {
     // never in the way of the launch: on a weak line this upload could hang for minutes with the ball stuck at "Locking"
     void fetch(`/api/transfers/${id}/thumb`, { method: "POST", headers: { "x-owner": owner, "Content-Type": "image/jpeg" }, body: preview, signal: AbortSignal.timeout(15_000) }).catch(() => null);
 
+  const url = `${P2P_PREFIX}${id}`;
   if (anon) {
     // never device to device: the encrypted cloud copy must be complete before anyone sees the object
     onProgress("uploading", 0);
@@ -94,24 +96,43 @@ export async function launch(opts: {
       dropOwnerKey(id);
       throw new Error("Not sent: the encrypted cloud copy is unavailable right now. Anonymous mode never sends device to device.");
     }
+    onProgress("finalizing", 1);
+    const fin = await sendRetry(`/api/transfers/${id}/finalize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ owner, url }),
+    });
+    if (!fin.ok) throw new Error("Could not place the object in orbit");
+    onProgress("done", 1);
+    return (await fin.json()) as Orb;
   }
-  // Nothing is uploaded first: this device keeps the file and sends it, encrypted, straight to whoever
-  // opens it (lib/p2p.ts) until it burns.
-  else hold(id, file, key, nonce, CHUNK, (opts.life ?? 30) * 60_000 + 60_000);
-  const url = `${P2P_PREFIX}${id}`;
 
+  // Visible = downloadable (owner 2026-10-25): the object appears for others only once its encrypted copy is saved
+  // online, so everyone who sees it can download it, sender's page open or not. Before, it appeared at once and was
+  // served from this device until the copy landed; a sender who closed the tab or locked the phone left a ball on
+  // every screen that nobody could open. The file is kept in this browser meanwhile (lib/outbox.ts): if the page
+  // closes before the copy is saved, the next visit finishes it and only then shows it.
+  const life = opts.life ?? 30;
+  const kept = file.size <= KEEP_MAX && (await keep({ id, owner, url, file, key, nonce, label: name, life, at: Date.now() }));
+  onProgress("uploading", 0);
+  const stop = () => stopCopy(id);
+  signal?.addEventListener("abort", stop, { once: true });
+  // a folder is packed on the fly, so it can't be picked again after a reload: only real files resume by re-picking
+  const saved = await storeCopy(id, owner, file, key, nonce, name, !kept && file.type !== FOLDER_MIME, { onFrac: (f) => onProgress("uploading", f) });
+  signal?.removeEventListener("abort", stop);
+  if (signal?.aborted || (!saved && !storeUnavailable(id))) {
+    void unkeep(id);
+    await fetch(`/api/transfers/${id}`, { method: "DELETE", headers: { "x-owner": owner } }).catch(() => null);
+    dropOwnerKey(id);
+    if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+    throw new Error("Not sent: the upload didn't go through. Check the connection and send it again.");
+  }
+  // !saved here: no online storage at all right now (none set up, or this month's free storage is used up): then it
+  // is the old way, sent straight from this page while it stays open (and removed from orbit when it closes)
   onProgress("finalizing", 1);
-  const fin = await sendRetry(`/api/transfers/${id}/finalize`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ owner, url }),
-  });
-  if (!fin.ok) throw new Error("Could not place the object in orbit");
-  // and an encrypted copy into storage, so it stays downloadable after this page closes
-  // a folder is packed on the fly, so it can't be picked again after a reload: only real files resume
-  if (!anon) void storeCopy(id, owner, file, key, nonce, name, file.type !== FOLDER_MIME);
+  const orb = await publish({ id, owner, url, file, key, nonce, label: name, life });
   onProgress("done", 1);
-  return (await fin.json()) as Orb;
+  return orb;
 }
 
 export class UnlockError extends Error {

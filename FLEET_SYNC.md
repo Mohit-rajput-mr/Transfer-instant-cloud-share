@@ -20,6 +20,13 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- FIXED 2026-10-25 (C, owner: "if it's visible on someone's phone it must be downloadable") — Objects appeared at
+  once and were served from the sender's page until the online copy landed; a sender who closed the tab / locked the
+  phone left balls nobody could open. Now (lib/transfer.ts launch): the encrypted copy is saved FIRST, then finalize
+  makes it visible (status ready). Other screens no longer get the in-flight "launch" stand-in (FLY_TO_OTHERS=false).
+  The file waits in this browser's IndexedDB (lib/outbox.ts, ≤500 MB): page closed mid-upload → the next visit uploads
+  it again by itself (resumeOutbox on Void mount / back online) and then shows it (+ pulse). No online storage at all
+  (501/507/bucket unreachable) → old direct-only way while the page is open. Anonymous already worked this way.
 - DONE 2026-10-25 (H, owner: "make sending work when the sender closes or switches") — Web pages can't upload while a
   phone has them in the background (browser rule). So: (1) SaveGuard bar on top while a copy saves: "Saving online 37%
   · keep Orbi open until ✓", then "✓ Saved online · safe to close" + buzz; coming back after leaving early says it goes

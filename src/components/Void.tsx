@@ -9,6 +9,7 @@ import MapWorld, { type Band } from "./MapWorld";
 import { pin, place, worldSize, type Thing } from "@/lib/map";
 import { ComposePanel, GroupPanel, OwnerPanel, SendPanel, UnlockPanel, setCardOrigin, type LaunchJob } from "./Panels";
 import SaveGuard from "./SaveGuard";
+import { resumeOutbox } from "@/lib/outbox";
 import LaunchDock, { isPending, pendingId, pendingOrb, type Launch } from "./LaunchDock";
 import { launch, type Stage } from "@/lib/transfer";
 import { folderFromInput, fromDrop, textToFile, type Item } from "@/lib/bundle";
@@ -173,6 +174,7 @@ function setLine(l: Line | null) {
 // This page's launches in flight, all in one "launch" message: at once for a new one (a "Separate" send of twelve is
 // one message), progress at most every 2 s, else every 6 s (a receiver forgets a launch that is quiet for 20 s).
 const FLY_PROGRESS = 2000, FLY_KEEP = 6000, FLY_PER_MSG = 20;
+const FLY_TO_OTHERS = false;
 const flying = new Map<string, { info: Record<string, unknown>; place: string }>();
 let flyT: ReturnType<typeof setTimeout> | undefined;
 let flyDue = 0, flyLast = 0, flyTurn = 0;
@@ -813,12 +815,14 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     // Every other open tab sees the ball right now, and watches it fill up, instead of after the upload. Said from
     // module level (flyStart…sayLanded) into the place it was launched in, even if this Void is gone by then.
     const place = spaceRef.current?.slug ?? "";
-    flyStart(key, { name: l.name, size: l.size, files: l.files, hue: l.hue, at: l.createdAt, life: job.life, o: job.open, net: isAnon() ? null : netRef.current, f: 0, by: spaceRef.current?.handle ?? null }, place);
+    // (owner 2026-10-25: visible = downloadable) other screens are no longer told about a launch in flight: they see the
+    // object when its online copy is saved and it lands, never a ball that can't be opened yet
+    if (FLY_TO_OTHERS) flyStart(key, { name: l.name, size: l.size, files: l.files, hue: l.hue, at: l.createdAt, life: job.life, o: job.open, net: isAnon() ? null : netRef.current, f: 0, by: spaceRef.current?.handle ?? null }, place);
     const onProgress = (st: Stage, f: number) => {
       report(key, st, f);
       const frac = st === "uploading" ? f : st === "finalizing" || st === "done" ? 1 : 0;
       // (the network's id may arrive after the launch started)
-      flyUpdate(key, { f: Math.round(frac * 100) / 100, net: isAnon() ? null : netRef.current });
+      if (FLY_TO_OTHERS) flyUpdate(key, { f: Math.round(frac * 100) / 100, net: isAnon() ? null : netRef.current });
     };
     // anonymous "hide file names": the name it goes by says only what kind of thing it is
     const fileName = job.hideNames ? genericFileName(job.file) : undefined;
@@ -1884,6 +1888,18 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       fetch(`/api/transfers/${o.id}`, { method: "DELETE", headers: { "x-owner": key } }).finally(() => dropOwnerKey(o.id));
     }
   }, [orbs, serverNow]);
+  // uploads a closed page left unfinished (lib/outbox.ts): finished now, then they appear
+  useEffect(() => {
+    const go = () => void resumeOutbox(() => (refresh(), broadcast()));
+    const t = setTimeout(go, 1500);
+    window.addEventListener("online", go);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("online", go);
+    };
+    // refresh is stable
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // A file whose stored copy finished stays in orbit after this page closes (receivers fetch the copy).
   // One that only lives on this device goes with the page, so nobody waits on a file that can no longer
   // be sent; keepalive lets the requests finish after unload. While a copy is still saving, the browser
