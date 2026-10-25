@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how an email finds the right inbox, out of billions?",
+   "dur": 4.004,
+   "at": 0.35
+  },
+  {
+   "key": "send",
+   "text": "You hit send to sam at bakery dot com. Your email leaves for your own mail server first.",
+   "dur": 6.482,
+   "at": 4.8
+  },
+  {
+   "key": "dns",
+   "text": "Your server only knows the name after the at sign, so it asks the internet's phone book, called DNS: who handles mail for bakery dot com?",
+   "dur": 8.708,
+   "at": 11.59
+  },
+  {
+   "key": "mx",
+   "text": "DNS points to a signpost called an MX record, with the address of the bakery's mail server.",
+   "dur": 5.878,
+   "at": 20.59
+  },
+  {
+   "key": "hop",
+   "text": "Your server hands the email over, and these days that hop is usually encrypted.",
+   "dur": 5.15,
+   "at": 26.77
+  },
+  {
+   "key": "spam",
+   "text": "At the door, filters check it's really from you, and sniff it for spam.",
+   "dur": 4.52,
+   "at": 32.22
+  },
+  {
+   "key": "inbox",
+   "text": "Then the name before the at sign picks the inbox. Ding! Sam's got mail.",
+   "dur": 4.263,
+   "at": 37.04
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer skips all of that. No address, no inbox, no account. Your file just pops up on screens nearby, locked with a code.",
+   "dur": 7.541,
+   "at": 41.76
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 49.7
+  }
+ ],
+ "duration": 54.25
+}
