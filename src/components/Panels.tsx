@@ -338,7 +338,7 @@ const STAGE_LABEL: Record<Stage, string> = {
   encrypting: "Encrypting in your browser",
   uploading: "Encrypting + beaming into orbit",
   finalizing: "Stabilising orbit",
-  waiting: "Sender's phone is away · starts by itself when it's back",
+  waiting: "Can't reach the file right now · keeps trying, starts by itself",
   decrypting: "Receiving + decrypting",
   done: "Done",
 };
