@@ -31,12 +31,12 @@ function icon(tier, r) { // the animal itself
   g.save(); g.font = `${r * 1.15}px "Noto Color Emoji"`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(T[tier].e, 0, r * 0.06); g.restore();
 }
 function ball(tier, x, y, a, age, scale = 1) {
-  const r = S.R[tier] * scale * (age < 0.25 ? back(clamp(age / 0.25)) : 1), t = T[tier];
+  const r = Math.max(0.5, S.R[tier] * scale * (age < 0.25 ? back(clamp(age / 0.25)) : 1)), t = T[tier];
   g.save(); g.translate(x, y);
   g.shadowColor = t.c2; g.shadowBlur = tier === 8 ? 80 : 26;
   const rg = g.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.1, 0, 0, r); rg.addColorStop(0, t.c1); rg.addColorStop(1, t.c2);
   g.fillStyle = rg; g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill(); g.shadowBlur = 0;
-  g.lineWidth = Math.max(2, r * 0.06); g.strokeStyle = "rgba(255,255,255,0.75)"; g.beginPath(); g.arc(0, 0, r - g.lineWidth / 2, 0, 7); g.stroke();
+  g.lineWidth = Math.max(2, r * 0.06); g.strokeStyle = "rgba(255,255,255,0.75)"; g.beginPath(); g.arc(0, 0, Math.max(0.1, r - g.lineWidth / 2), 0, 7); g.stroke();
   g.fillStyle = "rgba(255,255,255,0.35)"; g.beginPath(); g.ellipse(-r * 0.32, -r * 0.42, r * 0.32, r * 0.16, -0.6, 0, 7); g.fill(); // shine
   g.rotate(Math.sin(a) * 0.5); icon(tier, r); g.restore();
 }
