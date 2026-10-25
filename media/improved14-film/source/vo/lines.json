@@ -1,0 +1,60 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how the codes in Google Authenticator work, even with no signal?",
+   "dur": 4.457,
+   "at": 0.35
+  },
+  {
+   "key": "scene",
+   "text": "Google Authenticator, Microsoft Authenticator, they all make a new code every thirty seconds. The website somehow knows it too. And they never talk!",
+   "dur": 9.976,
+   "at": 5.26
+  },
+  {
+   "key": "secret",
+   "text": "When you scanned that QR code, your phone and the website got the same secret key. Just once.",
+   "dur": 5.436,
+   "at": 15.53
+  },
+  {
+   "key": "clock",
+   "text": "Now both sides take that secret, plus the time, rounded to thirty seconds.",
+   "dur": 4.073,
+   "at": 21.27
+  },
+  {
+   "key": "blend",
+   "text": "They drop both into the same mathematical blender, and keep six digits of what comes out.",
+   "dur": 4.733,
+   "at": 25.64
+  },
+  {
+   "key": "match",
+   "text": "Same secret, same time, same blender. Same six digits! Nothing had to be sent.",
+   "dur": 5.817,
+   "at": 30.68
+  },
+  {
+   "key": "steal",
+   "text": "And if someone peeks at your code? Thirty seconds later, it's useless.",
+   "dur": 4.004,
+   "at": 36.84
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer keeps a secret the same way. Your passcode never leaves your phone. Only locked pieces travel.",
+   "dur": 6.191,
+   "at": 41.25
+  },
+  {
+   "key": "end",
+   "text": "orbitransfer.com. Now you know!",
+   "dur": 2.751,
+   "at": 47.84
+  }
+ ],
+ "duration": 52.39
+}

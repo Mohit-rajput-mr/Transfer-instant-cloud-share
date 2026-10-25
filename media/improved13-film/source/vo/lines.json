@@ -3,52 +3,52 @@
  "lines": [
   {
    "key": "hook",
-   "text": "Do you know how your phone finds you indoors, where GPS can't reach?",
-   "dur": 3.982,
+   "text": "Do you know how Google Maps finds you indoors, where GPS can't reach?",
+   "dur": 4.03,
    "at": 0.35
   },
   {
    "key": "scene",
-   "text": "Deep inside a shopping mall, the satellite signals hit concrete. And yet the blue dot still knows where you are.",
-   "dur": 6.641,
-   "at": 4.78
+   "text": "Deep inside a shopping mall, the satellite signals hit concrete. And yet the blue dot in Google Maps or Apple Maps still knows where you are.",
+   "dur": 7.77,
+   "at": 4.83
   },
   {
    "key": "listen",
    "text": "Your phone listens for every Wi-Fi network around. It doesn't join them. It just hears their names, and how loud they are.",
    "dur": 6.554,
-   "at": 11.72
+   "at": 12.9
   },
   {
    "key": "map",
    "text": "Mapping cars, and millions of phones, have already noted where those routers sit.",
    "dur": 5.006,
-   "at": 18.58
+   "at": 19.75
   },
   {
    "key": "circles",
    "text": "Loud means close. Quiet means far. Draw a circle around each one, and where the circles cross, that's you!",
    "dur": 8.128,
-   "at": 23.88
+   "at": 25.06
   },
   {
    "key": "cell",
    "text": "No Wi-Fi? Cell towers do the same trick, only rougher.",
    "dur": 3.558,
-   "at": 32.36
+   "at": 33.54
   },
   {
    "key": "orbi",
    "text": "Orbi Transfer goes the other way. Other people only ever see your rough area, a big patch of the map. Never your spot.",
    "dur": 7.976,
-   "at": 36.32
+   "at": 37.5
   },
   {
    "key": "end",
    "text": "orbitransfer.com. Now you know!",
    "dur": 2.751,
-   "at": 44.69
+   "at": 45.87
   }
  ],
- "duration": 49.25
+ "duration": 50.42
 }
