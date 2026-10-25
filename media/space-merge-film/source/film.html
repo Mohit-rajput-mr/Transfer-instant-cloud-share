@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Will the rock merge into its final form?</title>
+<style>
+  @font-face { font-family: "D"; src: url(fonts/archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "M"; src: url(fonts/jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; } html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+  canvas { position: absolute; inset: 0; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Animal merge film: draws one frame of the precomputed simulation (sim.json) with neon, glow and merge effects.
+const W = 1080, H = 1920, cv = document.getElementById("c"), g = cv.getContext("2d");
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, k) => a + (b - a) * k, out = (x) => 1 - Math.pow(1 - x, 3);
+const back = (x) => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+// the tiers: a file grows up into Orbi
+const T = [
+  { name: "ROCK", e: "🪨", c1: "#d8d2c8", c2: "#6a625a" }, { name: "COMET", e: "☄️", c1: "#bfe6ff", c2: "#2a7ad6" }, { name: "MOON", e: "🌑", c1: "#e8e8ee", c2: "#5a5a6a" },
+  { name: "EARTH", e: "🌍", c1: "#a6e4ff", c2: "#1f86d6" }, { name: "SATURN", e: "🪐", c1: "#ffe2a8", c2: "#c08a2a" }, { name: "SUN", e: "☀️", c1: "#fff2a0", c2: "#ff9a1a" },
+  { name: "GIANT STAR", e: "🌟", c1: "#ffd0a0", c2: "#e0451a" }, { name: "SUPERNOVA", e: "💥", c1: "#ffb3e1", c2: "#b3127a" }, { name: "BLACK HOLE", e: "🕳️", c1: "#b48aff", c2: "#14002a" },
+];
+let S, EMB, STARS = [];
+let seed = 3; const rnd = () => ((seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296);
+for (let i = 0; i < 260; i++) STARS.push([rnd() * W, rnd() * H, rnd() * 1.6 + 0.3, rnd()]);
+
+function icon(tier, r) { // the animal itself
+  g.save(); g.font = `${r * 1.15}px "Noto Color Emoji"`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(T[tier].e, 0, r * 0.06); g.restore();
+}
+function ball(tier, x, y, a, age, scale = 1) {
+  const r = Math.max(0.5, S.R[tier] * scale * (age < 0.25 ? back(clamp(age / 0.25)) : 1)), t = T[tier];
+  g.save(); g.translate(x, y);
+  g.shadowColor = t.c2; g.shadowBlur = tier === 8 ? 80 : 26;
+  const rg = g.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.1, 0, 0, r); rg.addColorStop(0, t.c1); rg.addColorStop(1, t.c2);
+  g.fillStyle = rg; g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill(); g.shadowBlur = 0;
+  g.lineWidth = Math.max(2, r * 0.06); g.strokeStyle = "rgba(255,255,255,0.75)"; g.beginPath(); g.arc(0, 0, Math.max(0.1, r - g.lineWidth / 2), 0, 7); g.stroke();
+  g.fillStyle = "rgba(255,255,255,0.35)"; g.beginPath(); g.ellipse(-r * 0.32, -r * 0.42, r * 0.32, r * 0.16, -0.6, 0, 7); g.fill(); // shine
+  g.rotate(Math.sin(a) * 0.5); icon(tier, r); g.restore();
+}
+function ring(t, k = 1) {
+  const C = S.C, TB = S.TUBE, top = C.y - Math.sqrt(C.r * C.r - TB * TB);
+  g.save(); g.lineWidth = 9; g.shadowBlur = 30;
+  const n = 90, a0 = -Math.PI / 2 + Math.asin(TB / C.r), a1 = -Math.PI / 2 - Math.asin(TB / C.r) + Math.PI * 2;
+  for (let i = 0; i < n; i++) { const a = lerp(a0, a1, i / n), b = lerp(a0, a1, (i + 1) / n), hue = (i / n) * 360 + t * 60; g.strokeStyle = `hsla(${hue},100%,62%,${k})`; g.shadowColor = `hsl(${hue},100%,55%)`; g.beginPath(); g.arc(C.x, C.y, C.r + 5, a, b + 0.01); g.stroke(); }
+  g.shadowBlur = 16; g.shadowColor = "#fff"; g.strokeStyle = `rgba(255,255,255,${0.95 * k})`; g.lineWidth = 7;
+  for (const s of [-1, 1]) { g.beginPath(); g.moveTo(540 + s * (TB + 4), top + 2); g.lineTo(540 + s * (TB + 4), 0); g.stroke(); }
+  g.restore();
+}
+function text(s, x, y, size, col = "#fff", font = "D", w = 900, alpha = 1, stroke = 0) {
+  g.save(); g.globalAlpha = alpha; g.font = `${w} ${size}px ${font}`; g.textAlign = "center"; g.textBaseline = "middle";
+  if (stroke) { g.lineWidth = stroke; g.strokeStyle = "#000"; g.strokeText(s, x, y); } g.fillStyle = col; g.fillText(s, x, y); g.restore();
+}
+
+window.render = async function (t) {
+  const fi = Math.min(S.frames.length - 1, Math.round(t * S.fps)), F = S.frames[fi], fin = S.final ?? 1e9, af = t - fin;
+  // shake from recent merges (bigger kinds shake harder)
+  let sx = 0, sy = 0; for (const e of S.events) { const d = t - e.t; if (d >= 0 && d < 0.35) { const m = (1 - d / 0.35) * (e.tier * e.tier * 0.35 + 1); sx += Math.sin(t * 90 + e.id) * m; sy += Math.cos(t * 77 + e.id) * m; } }
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+  for (const [x, y, r, p] of STARS) { g.fillStyle = `rgba(255,255,255,${0.25 + 0.35 * Math.abs(Math.sin(t * 1.3 + p * 9))})`; g.fillRect(x, y, r, r); }
+  // the final form zooms the camera in a little
+  const z = af > 0 ? 1 + 0.12 * out(clamp(af / 2)) : 1, fx = af > 0 ? S.events.find((e) => e.tier === 8) : null;
+  const px = fx ? fx.x : 540, py = fx ? fx.y : 1060; g.setTransform(z, 0, 0, z, sx + px * (1 - z), sy + py * (1 - z));
+  ring(t);
+  // merge waves + sparks behind the balls
+  for (const e of S.events) { const d = t - e.t; if (d < 0 || d > 0.7) continue; const k = d / 0.7, R = S.R[e.tier];
+    g.save(); g.strokeStyle = T[e.tier].c1; g.globalAlpha = (1 - k) * 0.9; g.lineWidth = 6 * (1 - k) + 1; g.shadowBlur = 20; g.shadowColor = T[e.tier].c2;
+    g.beginPath(); g.arc(e.x, e.y, R * (1 + k * (1.4 + e.tier * 0.15)), 0, 7); g.stroke();
+    for (let i = 0; i < 10 + e.tier * 2; i++) { const a = (i / (10 + e.tier * 2)) * Math.PI * 2 + e.id, rr = R + k * (80 + e.tier * 20); g.fillStyle = T[e.tier].c1; g.fillRect(e.x + Math.cos(a) * rr, e.y + Math.sin(a) * rr, 6, 6); }
+    g.restore(); }
+  for (const [id, tier, x, y, a, age] of F) ball(tier, x, y, a, age, tier === 8 && af > 0 ? 1 + 0.05 * Math.sin(af * 4) : 1);
+  // the name pops above each merge
+  for (const e of S.events) { const d = t - e.t; if (d < 0 || d > 0.9 || e.tier === 8) continue; text(T[e.tier].name, e.x, e.y - S.R[e.tier] - 30 - d * 50, 34 + e.tier * 6, T[e.tier].c1, "D", 900, 1 - clamp((d - 0.5) / 0.4), 6); }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  // the ladder: every kind, lit once it has appeared
+  const seen = new Set([0, ...S.events.filter((e) => e.t <= t).map((e) => e.tier)]);
+  for (let i = 0; i < 9; i++) { const x = 92 + i * 112, y = 1690, on = seen.has(i), r = 34 + i * 1.5;
+    g.save(); g.globalAlpha = on ? 1 : 0.25; ball(i, x, y, 0, 9, (r) / S.R[i]); g.restore();
+    if (i < 8) text("›", x + 56, y, 40, on && seen.has(i + 1) ? "#3dff8c" : "#444", "D", 900); }
+  text("FINAL FORM →", 868, 1625, 26, "#3dff8c", "M", 800, 0.9);
+  // the question, and the handle
+  text("Will the rock merge into its", 540, 1790, 50, "#fff", "D", 800);
+  text("FINAL FORM?", 540, 1852, 60, "#3dff8c", "D", 900);
+  text("@orbitransfer", 900, 545, 26, "rgba(255,255,255,0.75)", "M", 700);
+  // big callouts on each new kind's first appearance
+  const firsts = {}; for (const e of S.events) if (!(e.tier in firsts)) firsts[e.tier] = e.t;
+  for (const [k, ft] of Object.entries(firsts)) { const d = t - ft, i = +k; if (d < 0 || d > 1.2 || i === 8) continue; const kk = clamp(d / 0.2);
+    g.save(); g.translate(540, 470); g.scale(lerp(1.6, 1, back(kk)), lerp(1.6, 1, back(kk))); g.rotate(-0.05); text(`${T[i].name}!`, 0, 0, 110 + i * 6, T[i].c1, "D", 900, 1 - clamp((d - 0.9) / 0.3), 10); g.restore(); }
+  if (af > 0) { // the final form: flash, title, then the end card
+    g.fillStyle = `rgba(255,255,255,${clamp(1 - af / 0.5) * 0.9})`; g.fillRect(0, 0, W, H);
+    g.save(); g.translate(540, 420); const kk = clamp((af - 0.2) / 0.35); g.scale(lerp(2, 1, back(kk)), lerp(2, 1, back(kk))); text("FINAL FORM", 0, -70, 120, "#fff", "D", 900, kk, 10); text("BLACK HOLE", 0, 60, 118, "#b48aff", "D", 900, kk, 12); g.restore();
+    const e = clamp((af - 4.2) / 0.6); if (e > 0) { g.fillStyle = `rgba(0,0,0,${e * 0.92})`; g.fillRect(0, 0, W, H); g.save(); g.globalAlpha = e;
+      g.translate(540, 760); g.rotate((af - 4.2) * 0.4); if (EMB) g.drawImage(EMB, -130, -130, 260, 260); g.restore();
+      text("ORBI TRANSFER", 540, 1010, 96, "#fff", "D", 900, e); text("Follow for the next one", 540, 1110, 44, "#3dff8c", "M", 700, e); text("@orbitransfer", 540, 1200, 46, "#fff", "M", 600, e); }
+  }
+  // fade in / out
+  const fade = Math.max(1 - clamp(t / 0.3), clamp((t - (window.DURATION - 0.5)) / 0.5)); if (fade > 0) { g.fillStyle = `rgba(0,0,0,${fade})`; g.fillRect(0, 0, W, H); }
+};
+(async () => {
+  S = await (await fetch("sim.json")).json(); window.DURATION = S.frames.length / S.fps;
+  EMB = new Image(); EMB.src = "emblem.svg"; await EMB.decode().catch(() => (EMB = null));
+  await document.fonts.load("900 50px D"); await document.fonts.load("700 30px M"); await document.fonts.ready;
+  window.ready = true;
+})();
+</script>
+</body>
+</html>
