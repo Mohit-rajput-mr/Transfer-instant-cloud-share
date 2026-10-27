@@ -402,7 +402,6 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
             <div className="tb-top">
             <button className="tb-head" onClick={() => (narrow && gi === 0 && groups.length === 1 ? setOpen((o) => !o) : setShut((x) => { const n = new Set(x); if (n.has(g.key)) n.delete(g.key); else n.add(g.key); if (!open) setOpen(true); return n; }))} aria-expanded={isOpen}>
               <i className="task-dot" aria-hidden />
-              <b>{g.mine ? "Tasks" : g.name}</b>
               <span className="mono dim">{gDone}/{g.tasks.length} done</span>
               <span className="tb-bar" aria-hidden><i style={{ transform: `scaleX(${g.tasks.length ? gDone / g.tasks.length : 0})` }} /></span>
               <LuChevronDown className={`tb-chev${isOpen ? " up" : ""}`} aria-hidden />

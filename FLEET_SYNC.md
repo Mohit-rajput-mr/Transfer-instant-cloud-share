@@ -22,7 +22,7 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
 - 2026-10-27 task panel (owner, screenshots): DONE name on its own line, task text under it, both wrap in full (no "…");
   a task without a name shows its line as the title (TaskBoard hasLabel, .tb-title/.tb-text). Upload pill → small "+".
-  Header icons: Archive → eye-off ("Hide tasks"), Arrange → gantt-chart lanes icon. Panel compact + wider (384 px):
+  Header: no "MO's tasks" name any more (owner). Icons: Archive → eye-off ("Hide tasks"), Arrange → gantt-chart lanes icon. Panel compact + wider (384 px):
   shorter rows, Work header no longer reserves 112 px (name "MO's tasks" was cut to "MO'…"), phone rows hide their tools
   until tapped. Lanes (Arranged, spaces only) capped at 84 px (was up to 150 px → the tall empty row); balls now size by
   the real gap between lanes (Void grid k). Verified: npm run check, next dev + Playwright 1440 and 390 (map view).
