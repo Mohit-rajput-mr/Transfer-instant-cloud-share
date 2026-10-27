@@ -20,6 +20,13 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- 2026-10-27 task panel (owner, screenshots): DONE name on its own line, task text under it, both wrap in full (no "…");
+  a task without a name shows its line as the title (TaskBoard hasLabel, .tb-title/.tb-text). Upload pill → small "+".
+  Header icons: Archive → eye-off ("Hide tasks"), Arrange → gantt-chart lanes icon. Panel compact + wider (384 px):
+  shorter rows, Work header no longer reserves 112 px (name "MO's tasks" was cut to "MO'…"), phone rows hide their tools
+  until tapped. Lanes (Arranged, spaces only) capped at 84 px (was up to 150 px → the tall empty row); balls now size by
+  the real gap between lanes (Void grid k). Verified: npm run check, next dev + Playwright 1440 and 390 (map view).
+  RISK: Arranged lanes inside a real space not checked in a browser (needs a space; mock can't enter one).
 - 2026-10-27 big pass (owner report: uploads stuck "uploading", other countries never see files, slow, "0%" on
   download, extra "Landed" step, void freezes when a card opens). Commit on claude/focused-newton-dsxsd0 → live branch.
   - FIXED (C) Uploads stuck forever. Evidence: zecsa2 (Mumbai, 20 MB) "uploading" for 1 h in the DB, nothing failed.

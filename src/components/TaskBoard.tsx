@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { LuArchive, LuArrowDown, LuArrowUp, LuRows3, LuCheck, LuChevronDown, LuFolderUp, LuLock, LuPaperclip, LuPencil, LuPlus, LuRoute, LuSettings2, LuTrash2, LuUpload, LuUserCheck, LuX } from "react-icons/lu";
+import { LuArrowDown, LuArrowUp, LuChartGantt, LuCheck, LuEyeOff, LuChevronDown, LuFolderUp, LuLock, LuPaperclip, LuPencil, LuPlus, LuRoute, LuSettings2, LuTrash2, LuUpload, LuUserCheck, LuX } from "react-icons/lu";
 import { PRO_FOR_ALL, STAGES, STEP_COLORS, TASK_LIVES, TASK_MAX, dropPro, forMe, isCancel, isMyTask, joinTask, parseTask, proCode, redeemPro, stageName, stepHex, stepKey, taskLabel, taskLine, withColor, type Task } from "@/lib/tasks";
 import { hueFor } from "@/lib/bubbles";
 import { formatBytes, type Orb } from "@/lib/client";
@@ -261,8 +261,15 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                     onDoubleClick={() => (setHover(null), setRouting(t.id))}
                     title={`${props.focus === t.id ? "Show everything" : "Show only this task's files"} · double-click: route and colours`}
                   >
-                    <span className="tb-num mono">{taskLabel(t)}</span>
-                    <span className="tb-text">{taskLine(t)}</span>
+                    {/* the name on its own line, the task under it: both wrap in full, never cut off */}
+                    {hasLabel(t) ? (
+                      <>
+                        <span className="tb-title">{taskLabel(t)}</span>
+                        <span className="tb-text">{taskLine(t)}</span>
+                      </>
+                    ) : (
+                      <span className="tb-title">{taskLine(t)}</span>
+                    )}
                     <span className="tb-meta mono">
                       {t.stage >= 0 && t.route[t.stage] && <em className="tb-stage" style={hexStyle(taskHex(t))}>{stageName(t.route[t.stage])} · {t.stage + 1}/{t.route.length}</em>}
                       {stepOf(t) === 4 ? "cancelled" : t.doneAt ? `done${t.doneBy ? ` · ${t.doneBy}` : ""}` : t.assignee ? (mine ? "for you" : `@${t.assignee}`) : t.by ? `from ${t.by}` : "open"}
@@ -281,7 +288,7 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                     {n > 0 && <b className="mono">{n}</b>}
                   </span>
                   {!t.doneAt && stepOf(t) !== 4 && (
-                    <button className="tb-up" onClick={() => props.onAttach(t, "files")} aria-label={`Upload files to ${taskLabel(t)}`} title="Upload files to this task"><LuUpload aria-hidden /><span>Upload</span></button>
+                    <button className="tb-up" onClick={() => props.onAttach(t, "files")} aria-label={`Upload files to ${taskLabel(t)}`} title="Add files to this task"><LuPlus aria-hidden /></button>
                   )}
                   {narrow ? <span className="tb-acts">{acts(t, i)}</span> : null}
                   {files.get(t.id)?.length ? (
@@ -401,11 +408,11 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
               <LuChevronDown className={`tb-chev${isOpen ? " up" : ""}`} aria-hidden />
             </button>
             {gi === 0 && props.onArchive && (
-              <button className="tb-archive" onClick={props.onArchive} aria-label="Archive tasks" title="Archive: hide the tasks and their files (Tasks in the bar brings them back)"><LuArchive /></button>
+              <button className="tb-archive" onClick={props.onArchive} aria-label="Hide tasks" title="Hide the tasks and their files (Tasks in the bar brings them back)"><LuEyeOff /></button>
             )}
             {gi === 0 && props.onArrange && (
-              <button className={`tb-arrange mono${props.arranged ? " on" : ""}`} onClick={props.onArrange} aria-pressed={!!props.arranged} title={props.arranged ? "Back to the free-floating void" : "Line every file up in its task's lane"}>
-                <LuRows3 aria-hidden />{props.arranged ? "Arranged" : "Arrange"}
+              <button className={`tb-arrange mono${props.arranged ? " on" : ""}`} onClick={props.onArrange} aria-pressed={!!props.arranged} title={props.arranged ? "Lanes on · back to the free-floating void" : "Lanes: line every file up beside its task"}>
+                <LuChartGantt aria-hidden />{props.arranged ? "Arranged" : "Arrange"}
               </button>
             )}
             </div>
@@ -430,6 +437,8 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
   );
 }
 
+/** the writer gave the task a name (else the task line is its title) */
+const hasLabel = (t: Task) => taskLabel(t) !== `Task ${t.num}`;
 /** on the map a panel sits centred on its spot (hidden until it has one) */
 const spotStyle = (p?: { x: number; y: number }): CSSProperties => (p ? { left: p.x, top: p.y } : { visibility: "hidden" });
 /** the new-task box floats over the map (it is not a place in the world) */

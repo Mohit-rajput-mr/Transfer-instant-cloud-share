@@ -2590,15 +2590,16 @@ em.hq-tag { font-style: normal; }
 .tr-line li.now[data-step="4"] > i, .tr-line li.now[data-step="4"] > button > i { background: #e02424; border-color: #ff8a8a; }
 .tr-cancel { color: #ff7b7b !important; }
 .tr-cancel:hover { color: #ff4d4d !important; }
-.tb-row.cancel .tb-text { text-decoration: line-through; text-decoration-color: #e53935; color: #bbb; }
+.tb-row.cancel :is(.tb-title, .tb-text) { text-decoration: line-through; text-decoration-color: #e53935; color: #bbb; }
 .tb-row .task-dot.big[data-step="1"] svg, .tb-row .task-dot.big[data-step="2"] svg, .tb-row .task-dot.big[data-step="3"] svg { color: #fff; filter: drop-shadow(0 1px 0 rgba(0,0,0,.45)); }
-.tb-main { min-width: 0; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 8px; text-align: left; padding: 2px 0; }
-.tb-num { grid-row: 1; font-size: 10px; color: #c3c9d0; letter-spacing: 0.12em; align-self: center; }
-.tb-text { grid-row: 1; font-size: 14px; color: #f2f2f2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* a task: its name on top, the task under it (both wrap in full), then one small meta line */
+.tb-main { min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 1px; text-align: left; padding: 1px 0; }
+.tb-title { font-size: 13.5px; font-weight: 650; color: #f4f4f4; line-height: 1.3; overflow-wrap: anywhere; }
+.tb-text { font-size: 12.5px; color: #b9bec4; line-height: 1.35; overflow-wrap: anywhere; }
 .tb-meta { grid-column: 1 / -1; font-size: 9px; color: #8d8d8d; text-transform: none; letter-spacing: 0.04em; margin-top: 2px; }
 .tb-row.forme .tb-meta { color: #e2e6ea; }
-.tb-row.done .tb-text { color: #8a8f95; text-decoration: line-through; text-decoration-color: rgba(200,205,212,0.6); }
-.tb-row.done .tb-num { color: #7d848c; }
+.tb-row.done .tb-text { color: #6f747a; text-decoration: line-through; text-decoration-color: rgba(200,205,212,0.6); }
+.tb-row.done .tb-title { color: #7d848c; text-decoration: line-through; text-decoration-color: rgba(200,205,212,0.6); }
 .tb-wired { display: flex; align-items: center; gap: 3px; padding-right: 4px; }
 .tb-wired i { width: 10px; height: 10px; border-radius: 50%; background: hsl(var(--wh) 85% 62%); box-shadow: 0 0 0 1.5px rgba(0,0,0,0.6); margin-left: -4px; }
 .tb-wired i:first-child { margin-left: 0; }
@@ -2677,7 +2678,9 @@ em.hq-tag { font-style: normal; }
   .void.has-tasks.has-bubbles:not(.flow) .orb-anchor { top: clamp(calc(395px + var(--safe-t)), var(--y), calc(100% - 178px - var(--safe-b))); }
   .void.flow.has-tasks { --flow-min: calc(215px + var(--safe-t)); }
   .void.flow.has-tasks.has-bubbles { --flow-min: calc(385px + var(--safe-t)); }
-  .tb-acts { display: flex; position: static; transform: none; background: none; box-shadow: none; grid-column: 1 / -1; justify-content: flex-end; padding: 0; }
+  .tb-acts { display: none; position: static; transform: none; background: none; box-shadow: none; grid-column: 1 / -1; justify-content: flex-end; padding: 0; }
+  /* a phone row stays one short line: its tools show under the task you tapped */
+  .tb-row.focus .tb-acts, .tb-row:focus-within .tb-acts { display: flex; }
   .tb-wired { padding-right: 2px; }
 }
 
@@ -2883,7 +2886,8 @@ em.hq-tag { font-style: normal; }
 .task-board.lanes .tb-list { overflow: visible; }
 /* arranged: each row is exactly one lane (its files are the balls on that lane, so the chips step aside) */
 .task-board.lanes .tb-files { display: none; }
-.task-board.lanes .tb-row:not(:has(.tb-route, .tb-edit, .tb-take)) { height: var(--lane-h); overflow: hidden; padding-top: 2px; padding-bottom: 2px; }
+/* (a long name still wraps in full: the row grows, the lane follows its dot) */
+.task-board.lanes .tb-row:not(:has(.tb-route, .tb-edit, .tb-take)) { padding-top: 2px; padding-bottom: 2px; }
 .task-boards.lanes { scrollbar-width: none; }
 .task-board.lanes.tight .tb-rbar { display: none; }
 .task-board.lanes.tight .tb-meta { font-size: 9px; }
@@ -2947,7 +2951,7 @@ html[data-theme="light"] .world.framed::after {
 /* every ball sits exactly on its spot (no sky bands, no side columns) */
 .void.map .orb-anchor { left: var(--x) !important; top: var(--y) !important; }
 .void.map .task-boards.mapped { position: absolute; inset: 0; width: auto; max-height: none; overflow: visible; display: block; pointer-events: none; }
-.task-boards.mapped > .task-board { position: absolute; width: 344px; translate: -50% -50%; pointer-events: auto; transition: left 0.7s var(--ease-out), top 0.7s var(--ease-out); }
+.task-boards.mapped > .task-board { position: absolute; width: 384px; translate: -50% -50%; pointer-events: auto; transition: left 0.7s var(--ease-out), top 0.7s var(--ease-out); }
 .task-boards.mapped .tb-list { max-height: none; overflow: visible; }
 .bub-stack.on-map { position: absolute; z-index: 6; width: 300px; translate: -50% -50%; transition: left 0.7s var(--ease-out), top 0.7s var(--ease-out); }
 /* the new-task box floats over the map, where the board used to start */
@@ -4019,3 +4023,12 @@ html:not(#_) .pop.anon-portal .ap-search input::placeholder { color: rgba(255,25
 .hqa-th.on { color: #fff; }
 .hq-times { display: block; line-height: 1.5; }
 .hqa .pill.on { background: #fff; color: #000; border-color: #fff; }
+
+/* task panel, compact (owner 2026-10-27): a wide, short rectangle; add files is a small + beside the task */
+.tb-row { padding: 4px 4px 4px 2px; gap: 4px; }
+.tb-tick { width: 30px; height: 30px; }
+.tb-up { width: 26px; height: 26px; padding: 0; justify-content: center; border-radius: 8px; }
+.tb-up svg { width: 15px; height: 15px; stroke-width: 2.6; }
+.tb-top > .tb-head { padding-top: 9px; padding-bottom: 8px; }
+.tb-archive svg, .tb-arrange svg { width: 14px; height: 14px; }
+@media (min-width: 721px) { .task-boards { width: 384px; } }

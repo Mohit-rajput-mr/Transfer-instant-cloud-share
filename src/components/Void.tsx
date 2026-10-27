@@ -2108,7 +2108,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const loose = laneTasks ? visible.filter((o) => !taskOf(o) || !tasks.some((t) => t.id === taskOf(o))) : [];
   const laneCount = tasks.length + (loose.length ? 1 : 0);
   // every lane fits on screen (the board never scrolls in Arranged): its height is the board's room split by the lanes
-  const laneH = Math.round(Math.max(44, Math.min(150, (vw.h - 118 - 150 - 60) / Math.max(1, laneCount))));
+  // (capped low so the task panel stays a short, wide strip; the balls size by the real gap between lanes instead)
+  const laneH = Math.round(Math.max(44, Math.min(84, (vw.h - 118 - 150 - 60) / Math.max(1, laneCount))));
   const [lanes, setLanes] = useState<{ y: Map<string, number>; x0: number; x1: number; W: number; H: number; last: number; off: number; offs: Map<string, number> } | null>(null);
   const voidRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
@@ -2173,13 +2174,16 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     const rows: { y: number; list: Orb[] }[] = tasks
       .filter((t) => lanes.y.has(t.id))
       .map((t) => ({ y: lanes.y.get(t.id)!, list: visible.filter((o) => taskOf(o) === t.id).sort(bySender) }));
-    if (loose.length) rows.push({ y: lanes.last + laneH / 2 + 8, list: [...loose].sort(bySender) });
+    if (loose.length) rows.push({ y: lanes.last + Math.max(laneH / 2 + 8, 64), list: [...loose].sort(bySender) });
     const span = Math.max(160, lanes.x1 - lanes.x0);
     const most = Math.max(1, ...rows.map((r) => r.list.length));
     // packed close to the board: a fixed comfortable step, tighter only when a lane is crowded
     const cell = Math.min(span / most, 168);
-    // a ball with its name needs ~170 px wide and ~175 px tall at full size
-    const k = Math.max(0.24, Math.min(1, cell / 170, laneH / 175));
+    // a ball with its name needs ~170 px wide and ~175 px tall at full size; its height room is the gap to the
+    // nearest other lane (a lone lane has the whole height)
+    const ys = rows.map((r) => r.y).sort((a, b) => a - b);
+    const gap = ys.length > 1 ? Math.min(...ys.slice(1).map((y, i) => y - ys[i])) : 175;
+    const k = Math.max(0.24, Math.min(1, cell / 170, gap / 175));
     const pos = new Map<string, { x: number; y: number }>();
     for (const r of rows) r.list.forEach((o, i) => pos.set(o.id, { x: ((lanes.x0 + cell * (i + 0.5)) / lanes.W) * 100, y: ((r.y - (lanes.offs.get(o.id) ?? lanes.off)) / lanes.H) * 100 }));
     return { pos, k, tight: k < 0.62, cell: Math.round(cell) };
@@ -2219,7 +2223,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     if (showTasks)
       for (const g of tGroups) {
         const k = `t:${g.key}`;
-        things.push({ key: k, ...sz(k, 344, 58 + 52 * g.tasks.length), born: Math.min(...g.tasks.map((t) => Date.parse(t.createdAt))) });
+        things.push({ key: k, ...sz(k, 384, 48 + 60 * g.tasks.length), born: Math.min(...g.tasks.map((t) => Date.parse(t.createdAt))) });
       }
     for (const st of stacks) {
       const k = `b:${st.key}`;
