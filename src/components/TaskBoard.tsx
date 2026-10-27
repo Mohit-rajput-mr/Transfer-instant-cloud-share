@@ -121,14 +121,14 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
     if (resizing.current && tbH) try { localStorage.setItem("orbit:tb-h", String(Math.round(tbH))); } catch {}
     resizing.current = null;
   };
-  const [hover, setHover] = useState<{ id: string; x: number; y: number; rx: number; ry: number; rw: number } | null>(null);
+  const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null);
   const hideT = useRef<ReturnType<typeof setTimeout> | null>(null);
   const keep = () => hideT.current && (clearTimeout(hideT.current), (hideT.current = null));
   const showFor = (id: string, el: HTMLElement) => {
     keep();
     const r = el.getBoundingClientRect();
     const board = el.closest(".task-board")?.getBoundingClientRect();
-    setHover({ id, x: (board?.right ?? r.right) + 8, y: r.top + 6, rx: r.left, ry: r.top, rw: r.width });
+    setHover({ id, x: (board?.right ?? r.right) + 8, y: r.top + 6 });
   };
   const hideSoon = () => {
     keep();
@@ -421,8 +421,8 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
             const t = props.tasks[i], w = wired.get(t.id) ?? [];
             return createPortal(
               <>
-                {/* who sent / assigned it, its step and what is wired, popped just above the row */}
-                <div className="tb-who" style={{ left: hover.rx, top: hover.ry, maxWidth: Math.max(220, hover.rw), "--rh": w[0]?.hue ?? hueFor(t.from || t.by || t.id) } as CSSProperties} aria-hidden>
+                {/* who sent / assigned it, its step and what is wired: outside the panel, under the row's tools */}
+                <div className="tb-who" style={{ left: hover.x, top: hover.y + 44, "--rh": w[0]?.hue ?? hueFor(t.from || t.by || t.id) } as CSSProperties} aria-hidden>
                   {whoOf(t, w, w.reduce((a, x) => a + x.n, 0), forMe(t, props.me))}
                 </div>
                 <span className="tb-acts float" style={{ left: hover.x, top: hover.y }} onPointerEnter={keep} onPointerLeave={hideSoon}>

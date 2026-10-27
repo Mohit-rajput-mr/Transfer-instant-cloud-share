@@ -83,6 +83,8 @@ export const setUpSpeed = (v: UpSpeed) => {
   } catch {}
   grant();
 };
+/** the round trip is well above this line's quiet level (only measured while something watches it: watchNet) */
+export const lineBusy = () => st.busy;
 /** the line is choking and this device is set to be gentle: uploads (and device-to-device sends) hold back */
 export const netCongested = () => st.busy && upSpeed() === "gentle";
 /** bulk bytes move on this device (an upload, a device-to-device send), or the line was seen choking: a round trip may
@@ -111,7 +113,10 @@ const limit = (k: NetKind) => {
   // (2026-10-27: desktops were held to 1–2 parts at a time with a pause after each, which made every upload far slower
   // than the line: a long, far route (India → the bucket in Europe) needs several parts in flight to fill it. Now 4, and
   // 2 while the round trip is up or someone is served directly; one at a time only after parts actually failed)
-  if (k === "up") return upSpeed() === "full" ? 6 : netShaky() && busy ? 1 : busy || (!phone && runs.serve > 0) ? 2 : 4; // (never 0: nothing stalls for good on a wrong probe)
+  // (2026-10-27 later, owner: "the internet disconnects / Failed to fetch while I work"): busy means the round trip already
+  // grew 4× (and 400 ms+) over the quiet line: the router's queue is full and every other page on this network suffers.
+  // Then ONE part at a time until it calms, not two
+  if (k === "up") return upSpeed() === "full" ? 6 : busy ? 1 : !phone && runs.serve > 0 ? 2 : 4; // (never 0: nothing stalls for good on a wrong probe)
   if (k === "serve") return busy || (phone && runs.up > 0) ? 1 : 2;
   return st.busy || runs.up || runs.serve || waits.some((w) => w.kind !== "peek") ? 0 : 1;
 };

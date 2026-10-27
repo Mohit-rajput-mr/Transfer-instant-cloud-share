@@ -113,6 +113,22 @@ export const markAsked = () => {
   } catch {}
 };
 
+/** the person switched location off here (the pin's switch): never located again until they switch it back on */
+const OFF = "orbit:loc-off";
+export const locOff = () => {
+  try {
+    return localStorage.getItem(OFF) === "1";
+  } catch {
+    return false;
+  }
+};
+export const setLocOff = (off: boolean) => {
+  try {
+    if (off) localStorage.setItem(OFF, "1");
+    else localStorage.removeItem(OFF);
+  } catch {}
+};
+
 /** what the browser says about location: granted, denied (blocked in settings), or it will ask */
 export async function permission(): Promise<PermissionState | "unknown"> {
   try {

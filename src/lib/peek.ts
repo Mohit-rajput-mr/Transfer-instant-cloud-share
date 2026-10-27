@@ -5,7 +5,7 @@ import { viewKind } from "@/components/Viewer";
 import { isLow } from "./perf";
 import { cloudSaving } from "./cloud";
 import { downloading } from "./downloads";
-import { tryAcquire } from "./net";
+import { lineBusy, tryAcquire, watchNet } from "./net";
 
 // Previews that are ready before anyone asks: small no-password files in sight are fetched and decrypted quietly in
 // the background (smallest first, one at a time), on the assumption that they will be opened, so a tap shows them at
@@ -29,8 +29,8 @@ const HOVER_MAX = 400 * MB; // fetched when the card opens
 // memory kept for ready previews (oldest dropped first)
 const budget = () => (low() ? 160 : 600) * MB;
 // background bytes per 10 minutes, at most
-const guessCap = () => (low() ? 60 : 300) * MB;
-const lanes = () => (low() ? 1 : 3);
+const guessCap = () => (low() ? 40 : 150) * MB;
+const lanes = () => (low() ? 1 : 2);
 
 const cache = new Map<string, Promise<File>>();
 const sizes = new Map<string, number>();
@@ -42,6 +42,8 @@ const guessStop = new Map<string, AbortController>();
 const skip = new Map<string, number>();
 const misses = new Map<string, number>();
 const spent: { at: number; n: number }[] = [];
+/** a guess choked the line (round trip climbed): no guesses until then */
+let pauseUntil = 0;
 let running = 0;
 const queue: (() => void)[] = [];
 /** the files in sight at the last warm(): the next one is guessed when one is done */
@@ -119,6 +121,7 @@ function quiet() {
   if (c?.saveData || /2g|3g/.test(c?.effectiveType ?? "")) return false;
   const since = Date.now() - 10 * 60_000;
   while (spent.length && spent[0].at < since) spent.shift();
+  if (Date.now() < pauseUntil) return false;
   return !running && !receiving() && !downloading() && !cloudSaving() && spent.reduce((a, b) => a + b.n, 0) < guessCap();
 }
 
@@ -134,6 +137,16 @@ function guess(o: Orb) {
   if (!done) return false;
   const ac = new AbortController();
   guessStop.set(o.id, ac);
+  // a background download fills the line just like an upload (owner 2026-10-27: "internet disconnects / Failed to fetch
+  // while I work in a space"): its round trip is watched too, and the moment the line chokes the guess is called off and
+  // guesses rest for 3 minutes. A guess must never cost the person's own browsing anything
+  void watchNet(true);
+  const choke = setInterval(() => {
+    if (!lineBusy()) return;
+    pauseUntil = Date.now() + 3 * 60_000;
+    skip.set(o.id, pauseUntil);
+    ac.abort();
+  }, 1000);
   const p = fetchPeek(o, true, ac.signal);
   keep(o.id, p, true);
   p.then(
@@ -148,6 +161,8 @@ function guess(o: Orb) {
       skip.set(o.id, Date.now() + Math.min(10 * 60_000, (e instanceof NotYet ? 5_000 : 60_000) * 2 ** (n - 1)));
     },
   ).finally(() => {
+    clearInterval(choke);
+    void watchNet(false);
     if (guessStop.get(o.id) === ac) guessStop.delete(o.id);
     done();
     // then the next one in sight (each file is tried once, then cached or set aside: this ends)
@@ -158,8 +173,8 @@ function guess(o: Orb) {
 
 // inside a space the people who see a file are the few it was sent to, so files up to this size are on their device
 // before they tap (like a chat app); the worldwide void stays at WARM_MAX
-const SPACE_WARM_MAX = 100 * MB;
-const spaceWarmMax = () => (low() ? 15 : 100) * MB;
+const SPACE_WARM_MAX = 30 * MB;
+const spaceWarmMax = () => (low() ? 10 : 30) * MB;
 
 /** Warm small previews as they appear in the void (in a space: up to SPACE_WARM_MAX): the smallest first (most ready
  *  soonest), newest first among equals. */

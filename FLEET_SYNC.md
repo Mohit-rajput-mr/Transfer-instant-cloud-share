@@ -20,6 +20,18 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- 2026-10-27 (owner: "internet disconnects / slow / Failed to fetch while I work in a space"; location pin can't be turned off)
+  - FIXED? (H) Line choking. Root cause found in code (not reproduced on the owner's line): background preview downloads
+    (lib/peek.ts) took files up to 100 MB in a space, 3 at a time, 300 MB/10 min, with NO round-trip watch (only uploads
+    ran the RTT probe), so a space full of files filled the downlink → router queue full → other pages / API calls time
+    out ("Failed to fetch"), Windows flips connectivity. And uploads kept 2 parallel 8 MB parts even when the probe said
+    the line was choking. Now: guesses run the RTT watch and are called off the moment it climbs (then rest 3 min); space
+    guesses ≤30 MB, 2 lanes, 150 MB/10 min; uploads drop to 1 part while busy (4 when calm, unchanged). OPEN: confirm on
+    the owner's real Wi-Fi.
+  - DONE Location pin opens a menu with an on/off switch. Off = `orbit:loc-off` (lib/where.ts locOff/setLocOff): GPS
+    forgotten, no follow, no auto-locate or ask on load, Nearby falls back to Open. On = asks the browser again.
+    Verified Playwright: on → off → reload stays off → on.
+  - DONE Task hover card now sits outside the panel (under the row tools on the right). Verified Playwright.
 - 2026-10-27 task panel (owner, screenshots): DONE name on its own line, task text under it, both wrap in full (no "…");
   a task without a name shows its line as the title (TaskBoard hasLabel, .tb-title/.tb-text). Upload pill → small "+".
   Header: no "MO's tasks" name any more (owner). Icons: Archive → eye-off ("Hide tasks"), Arrange → gantt-chart lanes icon. Panel compact + wider (384 px):

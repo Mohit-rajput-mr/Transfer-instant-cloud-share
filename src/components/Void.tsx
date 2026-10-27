@@ -43,7 +43,7 @@ import { addTask, assignTask, burnTask, carryTasks, wireObject, editTask, isMyTa
 import { cleanOrb, ORB_ID, readSync, type SyncMsg } from "@/lib/sync";
 import { joinLive, liveOn, roomsFor, type Chan, type Live } from "@/lib/live";
 import { around } from "@/lib/area";
-import { anonCellNow, asked, dropGps, fixNow, follow, forgetFix, fromIp, locate, markAsked, markSent, permission, setAnonCell, where } from "@/lib/where";
+import { anonCellNow, asked, dropGps, fixNow, follow, forgetFix, fromIp, locate, locOff, markAsked, markSent, permission, setAnonCell, setLocOff, where } from "@/lib/where";
 import LocationAsk, { LocationBlocked } from "./LocationAsk";
 import { ArchiveRestore, ArchiveRoom, TrashZone } from "./Trash";
 import { trashedAt, trashLabel, useTrash } from "@/lib/trash";
@@ -356,6 +356,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const [gps, setGps] = useState(false);
   const [areaReady, setAreaReady] = useState(false);
   const [geoAsk, setGeoAsk] = useState(false);
+  // the location pin's menu (an on/off switch), anchored under the pin
+  const [pinMenu, setPinMenu] = useState<{ x: number; y: number } | null>(null);
   // location refused or failed: how to fix it (null: not shown)
   const [geoFail, setGeoFail] = useState<"denied" | "failed" | null>(null);
   const [skew, setSkew] = useState(0);
@@ -1662,6 +1664,11 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     const t = setTimeout(() => setAreaReady(true), 2500);
     // anonymous: no location at all (not even the last one this browser kept); the heartbeat's IP area only
     if (isAnon()) return () => clearTimeout(t);
+    // switched off with the pin: no location at all, no asking (the IP's rough area only)
+    if (locOff()) {
+      dropGps();
+      return () => clearTimeout(t);
+    }
     const w = where();
     if (w) {
       setHome(w.area);
@@ -1707,6 +1714,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     setGeoAsk(false);
     // anonymous: location can't be on; the card says why
     if (isAnon()) return (setPanel({ kind: "anon", mode: "status" }), false);
+    setLocOff(false);
     try {
       const w = await locate();
       setGps(true);
@@ -2084,7 +2092,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // small open files in sight: decrypted quietly in the background (lib/peek.ts) so a tap previews them at once. Only
   // from a complete stored copy and only while nothing else moves on this device: warm() itself says no otherwise
   useEffect(() => {
-    // (open files up to 25 MB, in a space up to 100 MB: on this device before anyone taps)
+    // (open files up to 25 MB, in a space up to 30 MB: on this device before anyone taps; called off if the line chokes)
     const go = () => warm(visible.filter((o) => !isPending(o.id) && !isIncoming(o.id)), !!space);
     const t = setTimeout(go, 400);
     // and again now and then: a file whose stored copy wasn't complete yet (or a busy moment) gets another try
@@ -2491,12 +2499,50 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const pinButton = (cls: string) => anonNow ? anonOnButton(`${cls} anon-chip on`) : (
     <button
       className={`${cls} geo-pin${gps ? " on" : " off"}`}
-      onClick={() => (gps ? toast("Location on: Nearby shows only your area (about 20 to 40 km). The Open void stays worldwide") : shareLocation())}
-      aria-label={gps ? "Location on" : "Location off: tap to share it for the Nearby filter"}
-      title={gps ? "Location on" : "Location off: tap to turn it on"}
+      onClick={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        setPinMenu((m) => (m ? null : { x: Math.min(window.innerWidth - 276, Math.max(8, r.right - 268)), y: r.bottom + 8 }));
+      }}
+      aria-haspopup="dialog"
+      aria-expanded={!!pinMenu}
+      aria-label={gps ? "Location on: tap to turn it off" : "Location off: tap to turn it on"}
+      title={gps ? "Location on" : "Location off"}
     >
       {gps ? <LuMapPin aria-hidden /> : <LuMapPinOff aria-hidden />}
     </button>
+  );
+  const locationOff = () => {
+    setLocOff(true);
+    dropGps();
+    setGps(false);
+    setScope((sc) => (sc === "near" || sc === "area" ? "all" : sc));
+    toast("Location off: Orbi won't use it until you turn it back on");
+  };
+  // the pin's menu: one switch (on asks the browser; off stops following the device and forgets the GPS spot)
+  const pinMenuEl = pinMenu && !anonNow && (
+    <>
+      <div className="pin-menu-scrim" onPointerDown={() => setPinMenu(null)} />
+      <div className="pin-menu" role="dialog" aria-label="Location" style={{ left: pinMenu.x, top: pinMenu.y }} onKeyDown={(e) => e.key === "Escape" && setPinMenu(null)}>
+        <div className="pin-menu-row">
+          {gps ? <LuMapPin aria-hidden className="on" /> : <LuMapPinOff aria-hidden className="off" />}
+          <span>
+            <b>Location</b>
+            <em>{gps ? "On · Nearby shows your area (20–40 km)" : "Off · only a rough area from your network"}</em>
+          </span>
+          <button
+            role="switch"
+            aria-checked={gps}
+            className={`pin-switch${gps ? " on" : ""}`}
+            autoFocus
+            onClick={() => (gps ? locationOff() : void shareLocation())}
+            aria-label={gps ? "Turn location off" : "Turn location on"}
+          >
+            <i />
+          </button>
+        </div>
+        <p>The Open void stays worldwide either way. Your exact spot is never shown to other people.</p>
+      </div>
+    </>
   );
   // the name sent with what this device posts (never while anonymous: the space gives an alias), and the one it
   // knows itself by on this screen ("for you" toasts, the board's "me")
@@ -3221,6 +3267,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         />
       )}
 
+      {pinMenuEl}
       <div className="toast" aria-live="polite">
         {toasts.map((t) => (
           // a tap or a swipe (any direction) sends it away
