@@ -2109,7 +2109,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const laneCount = tasks.length + (loose.length ? 1 : 0);
   // every lane fits on screen (the board never scrolls in Arranged): its height is the board's room split by the lanes
   // (capped low so the task panel stays a short, wide strip; the balls size by the real gap between lanes instead)
-  const laneH = Math.round(Math.max(44, Math.min(84, (vw.h - 118 - 150 - 60) / Math.max(1, laneCount))));
+  const laneH = Math.round(Math.max(44, Math.min(68, (vw.h - 118 - 150 - 60) / Math.max(1, laneCount))));
   const [lanes, setLanes] = useState<{ y: Map<string, number>; x0: number; x1: number; W: number; H: number; last: number; off: number; offs: Map<string, number> } | null>(null);
   const voidRef = useRef<HTMLElement | null>(null);
   useEffect(() => {

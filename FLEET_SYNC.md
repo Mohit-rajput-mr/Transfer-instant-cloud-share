@@ -24,8 +24,11 @@ Severity: C critical · H high · M medium · L low. Status: FIXED (verified how
   a task without a name shows its line as the title (TaskBoard hasLabel, .tb-title/.tb-text). Upload pill → small "+".
   Header: no "MO's tasks" name any more (owner). Icons: Archive → eye-off ("Hide tasks"), Arrange → gantt-chart lanes icon. Panel compact + wider (384 px):
   shorter rows, Work header no longer reserves 112 px (name "MO's tasks" was cut to "MO'…"), phone rows hide their tools
-  until tapped. Lanes (Arranged, spaces only) capped at 84 px (was up to 150 px → the tall empty row); balls now size by
+  until tapped. Lanes (Arranged, spaces only) capped at 68 px (was up to 150 px → the tall empty row); balls now size by
   the real gap between lanes (Void grid k). Verified: npm run check, next dev + Playwright 1440 and 390 (map view).
+  Then (owner): a row shows only name + task; its edge is tinted with its balls' colour (first wired sender, else the
+  writer); hovering pops a card above it (who posted / assigned to whom, step, "X sent N", time left); phones show the
+  same line with the row tools when a task is tapped. Verified Playwright 1440 hover + 390 tap.
   RISK: Arranged lanes inside a real space not checked in a browser (needs a space; mock can't enter one).
 - 2026-10-27 big pass (owner report: uploads stuck "uploading", other countries never see files, slow, "0%" on
   download, extra "Landed" step, void freezes when a card opens). Commit on claude/focused-newton-dsxsd0 → live branch.

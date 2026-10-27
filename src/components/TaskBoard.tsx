@@ -121,14 +121,14 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
     if (resizing.current && tbH) try { localStorage.setItem("orbit:tb-h", String(Math.round(tbH))); } catch {}
     resizing.current = null;
   };
-  const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [hover, setHover] = useState<{ id: string; x: number; y: number; rx: number; ry: number; rw: number } | null>(null);
   const hideT = useRef<ReturnType<typeof setTimeout> | null>(null);
   const keep = () => hideT.current && (clearTimeout(hideT.current), (hideT.current = null));
   const showFor = (id: string, el: HTMLElement) => {
     keep();
     const r = el.getBoundingClientRect();
     const board = el.closest(".task-board")?.getBoundingClientRect();
-    setHover({ id, x: (board?.right ?? r.right) + 8, y: r.top + 6 });
+    setHover({ id, x: (board?.right ?? r.right) + 8, y: r.top + 6, rx: r.left, ry: r.top, rw: r.width });
   };
   const hideSoon = () => {
     keep();
@@ -236,12 +236,15 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
               const w = wired.get(t.id) ?? [];
               const n = w.reduce((a, x) => a + x.n, 0);
               const mine = forMe(t, props.me);
+              // the row's edge takes the colour of its balls (the first sender's), else its writer's
+              const rh = w[0]?.hue ?? hueFor(t.from || t.by || t.id);
               return (
                 <li
                   key={t.id}
                   data-task-row={t.id}
                   onPointerEnter={(e) => !narrow && editing !== t.id && routing !== t.id && showFor(t.id, e.currentTarget)}
                   onPointerLeave={() => !narrow && hideSoon()}
+                  style={{ "--rh": rh } as CSSProperties}
                   className={`tb-row${stepOf(t) === 3 ? " done" : stepOf(t) === 4 ? " cancel" : ""}${props.focus === t.id ? " focus" : ""}${mine && !t.doneAt ? " forme" : ""}`}
                 >
                   <button className="tb-tick" disabled={!isMyTask(t.id)} onClick={() => tap(t)} aria-label={t.doneAt ? `Untick task ${t.num}` : `Move task ${t.num} to its next step`} title={!isMyTask(t.id) ? `${t.stage >= 0 && t.route[t.stage] ? stageName(t.route[t.stage]) : t.doneAt ? "Done" : "Not started"} · only its writer moves it` : t.doneAt ? `Done${t.doneBy ? ` by ${t.doneBy}` : ""}` : t.stage >= 0 && t.route[t.stage] ? `${stageName(t.route[t.stage])} · tap for the next step` : "Tap: first step"}>
@@ -270,12 +273,6 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                     ) : (
                       <span className="tb-title">{taskLine(t)}</span>
                     )}
-                    <span className="tb-meta mono">
-                      {t.stage >= 0 && t.route[t.stage] && <em className="tb-stage" style={hexStyle(taskHex(t))}>{stageName(t.route[t.stage])} · {t.stage + 1}/{t.route.length}</em>}
-                      {stepOf(t) === 4 ? "cancelled" : t.doneAt ? `done${t.doneBy ? ` · ${t.doneBy}` : ""}` : t.assignee ? (mine ? "for you" : `@${t.assignee}`) : t.by ? `from ${t.by}` : "open"}
-                      {t.editedAt && " · edited"}
-                      {Date.parse(t.expiresAt) - Date.parse(t.createdAt) > 31 * 60_000 && ` · ${left(t.expiresAt)}`}
-                    </span>
                     {t.route.length > 0 && (
                       <span className="tb-rbar" aria-hidden>
                         {t.route.map((r, i) => <i key={i} className={i < t.stage ? "past" : i === t.stage ? "now" : ""} style={i <= t.stage ? hexStyle(stepHex(t.route, i)) : undefined} />)}
@@ -283,14 +280,10 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
                     )}
                   </button>
                   )}
-                  <span className="tb-wired" title={n ? `${n} wired: ${w.map((x) => `${x.name || "someone"} ${x.n}`).join(", ")}` : "Nothing wired yet"}>
-                    {w.slice(0, 4).map((x, i) => <i key={i} style={{ "--wh": x.hue } as CSSProperties} />)}
-                    {n > 0 && <b className="mono">{n}</b>}
-                  </span>
                   {!t.doneAt && stepOf(t) !== 4 && (
                     <button className="tb-up" onClick={() => props.onAttach(t, "files")} aria-label={`Upload files to ${taskLabel(t)}`} title="Add files to this task"><LuPlus aria-hidden /></button>
                   )}
-                  {narrow ? <span className="tb-acts">{acts(t, i)}</span> : null}
+                  {narrow ? <span className="tb-acts"><span className="tb-who-in">{whoOf(t, w, n, mine)}</span>{acts(t, i)}</span> : null}
                   {files.get(t.id)?.length ? (
                     <div className="tb-files">
                       {files.get(t.id)!.map((o) => (
@@ -425,10 +418,17 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
           {!narrow && hover && editing !== hover.id && routing !== hover.id && (() => {
             const i = props.tasks.findIndex((x) => x.id === hover.id);
             if (i < 0) return null;
+            const t = props.tasks[i], w = wired.get(t.id) ?? [];
             return createPortal(
-              <span className="tb-acts float" style={{ left: hover.x, top: hover.y }} onPointerEnter={keep} onPointerLeave={hideSoon}>
-                {acts(props.tasks[i], i)}
-              </span>,
+              <>
+                {/* who sent / assigned it, its step and what is wired, popped just above the row */}
+                <div className="tb-who" style={{ left: hover.rx, top: hover.ry, maxWidth: Math.max(220, hover.rw), "--rh": w[0]?.hue ?? hueFor(t.from || t.by || t.id) } as CSSProperties} aria-hidden>
+                  {whoOf(t, w, w.reduce((a, x) => a + x.n, 0), forMe(t, props.me))}
+                </div>
+                <span className="tb-acts float" style={{ left: hover.x, top: hover.y }} onPointerEnter={keep} onPointerLeave={hideSoon}>
+                  {acts(t, i)}
+                </span>
+              </>,
               document.body,
             );
           })()}
@@ -436,6 +436,23 @@ export default function TaskBoard(props: { tasks: Task[]; orbs: Orb[]; me: strin
   );
 }
 
+/** a task's people and state: who wrote it, who it is for, its step, the files wired to it, time left */
+function whoOf(t: Task, w: { hue: number; n: number; name: string }[], n: number, mine: boolean) {
+  const step = stepOf(t);
+  return (
+    <>
+      <span><b>{t.by || "Someone"}</b> {t.assignee ? <>assigned it to <b>{mine ? "you" : t.assignee}</b></> : "posted it"}</span>
+      {step === 4 ? <span>Cancelled</span> : t.doneAt ? <span>Done{t.doneBy ? <> by <b>{t.doneBy}</b></> : null}</span> : t.stage >= 0 && t.route[t.stage] ? <span>{stageName(t.route[t.stage])} · {t.stage + 1}/{t.route.length}</span> : null}
+      {n > 0 && (
+        <span className="tb-who-files">
+          {w.slice(0, 4).map((x, i) => <i key={i} style={{ "--wh": x.hue } as CSSProperties} />)}
+          {w.map((x) => `${x.name || "someone"} sent ${x.n}`).join(" · ")}
+        </span>
+      )}
+      <span className="dim">{t.editedAt ? "edited · " : ""}{left(t.expiresAt)}</span>
+    </>
+  );
+}
 /** the writer gave the task a name (else the task line is its title) */
 const hasLabel = (t: Task) => taskLabel(t) !== `Task ${t.num}`;
 /** on the map a panel sits centred on its spot (hidden until it has one) */

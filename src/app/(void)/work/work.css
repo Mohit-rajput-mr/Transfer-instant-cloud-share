@@ -1109,3 +1109,9 @@ html[data-ui="work"] .ghost-mid.over { top: calc(64px + var(--safe-t)); backgrou
 html[data-ui="work"] .ghost-mid.over .ghost-title { color: var(--w-text) !important; }
 html[data-ui="work"] .ghost-mid.over .ghost-mask { color: var(--w-text); }
 @media (max-width: 720px) { html[data-ui="work"][data-anon] .ghost-mid.over { top: auto; bottom: calc(140px + var(--safe-b)); } }
+
+/* task row edge + hover card in Work */
+html[data-ui="work"] .task-board:not(.wiring) .tb-row:not(.focus) { box-shadow: inset 0 0 0 1px hsl(var(--rh, 210) 65% 58% / 0.35); }
+html[data-ui="work"] .task-board:not(.wiring) .tb-row:not(.focus):hover { box-shadow: inset 0 0 0 1px hsl(var(--rh, 210) 70% 60% / 0.65); }
+html[data-ui="work"] .tb-who { background: var(--w-surface); color: var(--w-text-2); font-family: var(--w-font); box-shadow: var(--w-shadow); }
+html[data-ui="work"] .tb-who b, html[data-ui="work"] .tb-who-in b { color: var(--w-text); }
