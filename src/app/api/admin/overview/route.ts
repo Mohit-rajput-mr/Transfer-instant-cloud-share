@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   // ?since=<time>: every number, list and globe layer only from that moment on (migration 030)
   const raw = req.nextUrl.searchParams.get("since");
   const since = raw && !Number.isNaN(Date.parse(raw)) ? new Date(raw).toISOString() : null;
-  const [data, cloud, anon, anonSessions] = await Promise.all([
+  const [data, cloud, anon, anonSessions, pins] = await Promise.all([
     since
       ? rpc<{ transfers?: { name?: unknown; expiresAt?: unknown }[]; cloud?: unknown; anon?: unknown; anonSessions?: unknown }>("orbit_admin_overview_since", { p_since: since })
       : rpc<{ transfers?: { name?: unknown; expiresAt?: unknown }[]; cloud?: unknown; anon?: unknown; anonSessions?: unknown }>("orbit_admin_overview", {}),
@@ -19,9 +19,13 @@ export async function GET(req: NextRequest) {
     rpc("orbit_admin_anon", {}).catch(() => []),
     // each anonymous session: alias, start / end (UTC + the device's time zone), how it ended (migration 021)
     rpc("orbit_admin_anon_sessions", {}).catch(() => []),
+    // pins with their first / last time, and every route with its own upload and download times (migration 032):
+    // with a "From" time the routes are exactly the ones since then (route_daily was per day)
+    rpc<{ points?: unknown; visitors?: unknown; routes?: unknown; uploads?: unknown }>("orbit_admin_pins", { p_since: since }).catch(() => null),
   ]);
   const after = (v: unknown) => !since || (typeof v === "string" && Date.parse(v) >= Date.parse(since));
   if (data) {
+    if (pins) Object.assign(data, { points: pins.points ?? (data as { points?: unknown }).points, visitors: pins.visitors ?? (data as { visitors?: unknown }).visitors, routes: pins.routes ?? [], uploads: pins.uploads ?? null });
     data.cloud = cloud;
     data.anon = since && Array.isArray(anon) ? anon.filter((a: { last?: unknown }) => after(a.last)) : anon;
     data.anonSessions = since && Array.isArray(anonSessions) ? anonSessions.filter((a: { start?: unknown; ended?: unknown }) => after(a.start) || after(a.ended) || a.ended === null) : anonSessions;

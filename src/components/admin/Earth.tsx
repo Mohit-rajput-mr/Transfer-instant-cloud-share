@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import maplibregl, { type GeoJSONSource, type Map as MLMap } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { AnonSessionRec, Overview, Pt } from "./types";
+import { took, when } from "./fmt";
 
 export type Layer = "live" | "exact" | "exactSeen" | "anon" | "visitors" | "uploads" | "downloads" | "routes";
 
@@ -99,7 +100,34 @@ function gray(c: unknown, lift = 1): unknown {
 }
 const COLOR_PROPS = ["background-color", "fill-color", "fill-outline-color", "line-color", "text-color", "text-halo-color", "icon-color", "fill-extrusion-color"];
 
-export type RouteLine = { a: number; b: number; c: number; d: number; n?: number; label?: string };
+export type RouteLine = {
+  a: number; b: number; c: number; d: number; n?: number; label?: string;
+  /** one transfer (migration 032): uploaded when / how long, downloaded when / how long, size, who on each side */
+  up?: string | null; upMs?: number | null; down?: string | null; downMs?: number | null; bytes?: number | null; fromDev?: string | null; toDev?: string | null;
+  /** a group of days (History): first and last day */
+  first?: string | null; last?: string | null;
+};
+
+const mb = (b?: number | null) => (b == null ? "" : b >= 1e9 ? `${(b / 1e9).toFixed(2)} GB` : b >= 1e6 ? `${(b / 1e6).toFixed(1)} MB` : b >= 1e3 ? `${Math.round(b / 1e3)} KB` : `${b} B`);
+/** the route's tooltip: its times (one transfer) or its count and days (a group) */
+export function routeTip(p: Record<string, unknown>) {
+  const s = (k: string) => (typeof p[k] === "string" && p[k] ? (p[k] as string) : null);
+  const n = (k: string) => (p[k] == null || p[k] === "" ? null : Number(p[k]));
+  const head = `<b>${esc(s("label") ?? "route")}</b>`;
+  if (s("down")) {
+    const wait = s("up") ? Date.parse(s("down")!) - Date.parse(s("up")!) : null;
+    return [
+      head,
+      mb(n("bytes")) ? `<div><span>${mb(n("bytes"))}</span></div>` : "",
+      s("up") ? `<div>↑ Uploaded <b>${when(s("up"))}</b>${n("upMs") != null ? ` · took ${took(n("upMs"))}` : ""}${s("fromDev") ? `<br/><span>${esc(s("fromDev")!)}</span>` : ""}</div>` : `<div><span>upload time not recorded</span></div>`,
+      `<div>↓ Downloaded <b>${when(s("down"))}</b>${n("downMs") != null ? ` · took ${took(n("downMs"))}` : ""}${s("toDev") ? `<br/><span>${esc(s("toDev")!)}</span>` : ""}</div>`,
+      wait != null && wait >= 0 ? `<div><span>${took(wait)} from upload to download</span></div>` : "",
+    ].join("");
+  }
+  const count = Number(p.n ?? 1);
+  const days = s("first") ? `<br/><span>${new Date(s("first")!).toLocaleDateString()}${s("last") && s("last") !== s("first") ? ` – ${new Date(s("last")!).toLocaleDateString()}` : ""}</span>` : "";
+  return `<b>${count}</b> transfer${count === 1 ? "" : "s"}<br/><span>${esc(s("label") ?? "") || "route"}</span>${days}`;
+}
 
 // lucide "venetian-mask", for the anonymous pins
 const MASK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11c-1.5 0-2.5.5-3 2"/><path d="M4 6a2 2 0 0 0-2 2v4a5 5 0 0 0 5 5 8 8 0 0 1 5 2 8 8 0 0 1 5-2 5 5 0 0 0 5-5V8a2 2 0 0 0-2-2h-3a8 8 0 0 0-5 2 8 8 0 0 0-5-2z"/><path d="M6 11c1.5 0 2.5.5 3 2"/></svg>';
@@ -154,6 +182,19 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
     const any = [...(d?.visitors ?? []), ...pts, ...(d?.live ?? []), ...gps, ...ghosts].find((p) => near(p) && (p.city || p.cc));
     const where = any ? [any.city, any.cc].filter(Boolean).join(", ") : "";
     const row = (n: number, one: string, many = one + "s") => (n ? `<div><b>${n}</b> ${n === 1 ? one : many}</div>` : "");
+    // the first and last time of each kind here (migration 032)
+    const span = (l: Pt[], what: string) => {
+      const f = l.filter(near).map((p) => p.first).filter(Boolean).sort()[0];
+      const t = l.filter(near).map((p) => p.last).filter(Boolean).sort().pop();
+      return f || t ? `<div><span>${what}: ${f ? `first ${when(f)}` : ""}${f && t && t !== f ? ` · last ${when(t)}` : ""}</span></div>` : "";
+    };
+    const times =
+      span(pts.filter((p) => p.k === "upload"), "Uploads") +
+      span(pts.filter((p) => p.k === "download"), "Downloads") +
+      span(d?.visitors ?? [], "Devices (registered · last seen)") +
+      gps.slice(0, 3).map((g) => `<div><span>GPS ${esc(g.label || "device")}: ${when(g.at)}</span></div>`).join("");
+    const here = lines.filter((r) => r.down && (near({ lat: r.a, lon: r.b }) || near({ lat: r.c, lon: r.d }))).slice(0, 5);
+    const recent = here.map((r) => `<div><span>${esc(r.label ?? "")}: ↑ ${when(r.up)}${r.upMs != null ? ` (${took(r.upMs)})` : ""} · ↓ ${when(r.down)}${r.downMs != null ? ` (${took(r.downMs)})` : ""}</span></div>`).join("");
     const body =
       row(sum(pts.filter((p) => p.k === "upload")), "upload") +
       row(sum(pts.filter((p) => p.k === "download")), "download") +
@@ -165,7 +206,9 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
       row(gps.length, "device with GPS", "devices with GPS") +
       row(ghosts.reduce((t, p) => t + p.n, 0), "anonymous device", "anonymous devices") +
       (ghosts.some((p) => p.ips?.length) ? `<div><span>IP ${ghosts.flatMap((p) => p.ips ?? []).slice(0, 8).map(esc).join(", ")}</span></div>` : "") +
-      sessions.map(sessionRow).join("");
+      sessions.map(sessionRow).join("") +
+      times +
+      recent;
     return [
       head ? `<div>${esc(head)}</div>` : "",
       `<span>${esc(where) || "here"} · ${lat.toFixed(2)}, ${lon.toFixed(2)}</span>`,
@@ -272,7 +315,14 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
           popup.remove();
         });
       };
-      tip("routes", (p, e) => [e.lngLat.lng, e.lngLat.lat, `<b>${p.n}</b> transfer${p.n === 1 ? "" : "s"}<br/><span>${esc(p.label) || "route"}</span>`]);
+      tip("routes", (p, e) => [e.lngLat.lng, e.lngLat.lat, routeTip(p)]);
+      // tap / click: keep it open (phones have no hover)
+      m.on("click", "routes", (e) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        popup.remove();
+        pinned.setLngLat(e.lngLat).setHTML(routeTip(f.properties as Record<string, unknown>)).addTo(m);
+      });
       for (const k of Object.keys(DOT) as (keyof typeof DOT)[]) {
         m.addSource(k, { type: "geojson", data: empty });
         m.addLayer({
@@ -371,7 +421,7 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
       features: lines.filter((a) => !same(a)).map((a) => ({
         type: "Feature",
         geometry: { type: "LineString", coordinates: route([a.b, a.a], [a.d, a.c]) },
-        properties: { n: a.n ?? 1, label: a.label ?? "" },
+        properties: { n: a.n ?? 1, label: a.label ?? "", up: a.up ?? "", upMs: a.upMs ?? "", down: a.down ?? "", downMs: a.downMs ?? "", bytes: a.bytes ?? "", fromDev: a.fromDev ?? "", toDev: a.toDev ?? "", first: a.first ?? "", last: a.last ?? "" },
       })),
     });
     for (const id of ["visitors", "uploads", "downloads", "routes"] as Layer[]) {

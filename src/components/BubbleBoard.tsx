@@ -4,6 +4,7 @@ import { LuCopy, LuLayoutDashboard, LuMaximize, LuMessageCircle, LuMinus, LuPenc
 import { createPortal } from "react-dom";
 import { Pop } from "./Spaces";
 import EmojiPicker from "./EmojiPicker";
+import { ExpandText } from "./Notepad";
 import { BUBBLE_MAX, bubbleName, hueFor, isMine, looksLikeName, senderOf, splitLinks, type Bubble } from "@/lib/bubbles";
 import { formatClock } from "@/lib/client";
 import { BUBBLE_LIFE as LIFE_MIN, BUBBLE_LIVES } from "@/lib/limits";
@@ -150,6 +151,7 @@ export function BubbleItem({ b, now, toast, onBurn, onChange }: { b: Bubble } & 
         <span className="bub-acts">
           {mine && <button onClick={() => onChange({ id: b.id, mode: "append" })} aria-label="Add more" title="Add more"><LuPlus /></button>}
           {mine && <button onClick={() => onChange({ id: b.id, mode: "edit" })} aria-label="Edit" title="Edit"><LuPencil /></button>}
+          <ExpandText text={b.text} title={b.by ? `Bubble from ${b.by}` : "Bubble"} className="bub-np" />
           <button onClick={() => copyText(b.text, toast)} aria-label="Copy" title="Copy"><LuCopy /></button>
           <button onClick={() => shareText(b.text, toast)} aria-label="Share" title="Share"><LuShare2 /></button>
           {mine && <button className="kill" onClick={() => onBurn(b.id)} aria-label="Burn this bubble" title="Burn"><LuTrash2 /></button>}

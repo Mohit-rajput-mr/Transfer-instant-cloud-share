@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 // The admin's pages: one switcher in every page's top bar.
 const PAGES = [
   { href: "/admin", label: "HQ" },
+  { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/spaces", label: "Spaces" },
 ] as const;
 

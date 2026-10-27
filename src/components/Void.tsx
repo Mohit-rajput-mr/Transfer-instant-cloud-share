@@ -118,8 +118,9 @@ const iso = (ms: number) => new Date(ms).toISOString();
 type Incoming = { key: string; by: string | null; life: number; open: boolean; name: string; size: number; files: number; hue: number; createdAt: string; net: string | null; frac: number; seen: number; a: string | null };
 const incomingId = (k: string) => `in-${k}`;
 const isIncoming = (id: string) => id.startsWith("in-");
-// a launch that stops announcing itself (tab closed, network gone) fades out after this
-const INCOMING_TTL = 20_000;
+// a launch that stops announcing itself (tab closed, network gone) fades out after this (a sender's tab in the
+// background still says it every 6 s, slowed to a few times a minute at worst)
+const INCOMING_TTL = 45_000;
 const INCOMING_MAX = 8;
 const validKey = (k: unknown): k is string => typeof k === "string" && /^[a-z0-9]{1,16}$/.test(k);
 const num = (v: unknown, lo: number, hi: number, d: number) => (typeof v === "number" && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d);
@@ -174,7 +175,11 @@ function setLine(l: Line | null) {
 // This page's launches in flight, all in one "launch" message: at once for a new one (a "Separate" send of twelve is
 // one message), progress at most every 2 s, else every 6 s (a receiver forgets a launch that is quiet for 20 s).
 const FLY_PROGRESS = 2000, FLY_KEEP = 6000, FLY_PER_MSG = 20;
-const FLY_TO_OTHERS = false;
+// On again (owner 2026-10-27: "it never shows on the other side"): other screens see a launch the moment it starts,
+// as an "arriving" ball that fills with the upload; it can't be opened until it lands (visible = downloadable still holds
+// for real objects), a tap there opens it the moment it lands, and it fades out if its sender goes quiet (INCOMING_TTL),
+// so a closed tab never leaves a ball behind. Before, a far sender's slow upload was simply invisible for minutes.
+const FLY_TO_OTHERS = true;
 const flying = new Map<string, { info: Record<string, unknown>; place: string }>();
 let flyT: ReturnType<typeof setTimeout> | undefined;
 let flyDue = 0, flyLast = 0, flyTurn = 0;
@@ -2079,7 +2084,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // small open files in sight: decrypted quietly in the background (lib/peek.ts) so a tap previews them at once. Only
   // from a complete stored copy and only while nothing else moves on this device: warm() itself says no otherwise
   useEffect(() => {
-    // (in a space: files up to 50 MB, so they are on this device before anyone taps)
+    // (open files up to 25 MB, in a space up to 100 MB: on this device before anyone taps)
     const go = () => warm(visible.filter((o) => !isPending(o.id) && !isIncoming(o.id)), !!space);
     const t = setTimeout(go, 400);
     // and again now and then: a file whose stored copy wasn't complete yet (or a busy moment) gets another try
@@ -2383,7 +2388,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const open = useCallback((o: Orb) => {
     if (isIncoming(o.id)) {
       waitFor.current = o.id.slice(3);
-      return toast(`${o.name} is still launching. It opens here the moment it lands`);
+      const f = incomingRef.current[o.id.slice(3)]?.frac ?? 0;
+      return toast(`${o.name} is arriving (${Math.round(f * 100)}%). It opens here the moment it lands`);
     }
     if (isPending(o.id)) return setLaunches((ls) => ls.map((l) => (pendingId(l.key) === o.id ? { ...l, open: true } : l)));
     if (isGroup(o.id)) {
@@ -2393,7 +2399,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     lastOpen.current = { id: o.id, at: Date.now() };
     setPanel(ownerKey(o.id) ? { kind: "owner", id: o.id } : { kind: "unlock", id: o.id });
   }, [toast]);
-  // double-click: straight into the full-screen preview (open objects), or after the passcode (locked ones)
+  // double-click: straight into the full-screen preview (open objects; a locked one just opens its card, no preview)
   const preview = useCallback((id: string) => {
     if (isIncoming(id) || isPending(id) || isGroup(id)) return;
     setPanel({ kind: "unlock", id, preview: true });

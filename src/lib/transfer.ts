@@ -2,7 +2,7 @@
 import { pickedSkin } from "./skins";
 import { makePreview } from "./preview";
 import {
-  CHUNK, ITERATIONS, deriveKeys, fromB64, randomBytes, streamDecrypt, toB64, toHex,
+  CHUNK, ITERATIONS, deriveKeys, encryptedSize, fromB64, randomBytes, streamDecrypt, toB64, toHex,
   type DownloadSink,
 } from "./crypto";
 import { deviceLabel, dropOwnerKey, senderKey, setOwnerKey, type Orb } from "./client";
@@ -113,12 +113,16 @@ export async function launch(opts: {
   // every screen that nobody could open. The file is kept in this browser meanwhile (lib/outbox.ts): if the page
   // closes before the copy is saved, the next visit finishes it and only then shows it.
   const life = opts.life ?? 30;
-  const kept = file.size <= KEEP_MAX && (await keep({ id, owner, url, file, key, nonce, label: name, life, at: Date.now() }));
+  // kept side by side with the upload, not before it: copying a big file into the browser's storage took seconds with
+  // the card on 0% and nothing sent yet
+  const kept = file.size <= KEEP_MAX ? keep({ id, owner, url, file, key, nonce, label: name, life, at: Date.now() }) : Promise.resolve(false);
   onProgress("uploading", 0);
   const stop = () => stopCopy(id);
   signal?.addEventListener("abort", stop, { once: true });
-  // a folder is packed on the fly, so it can't be picked again after a reload: only real files resume by re-picking
-  const saved = await storeCopy(id, owner, file, key, nonce, name, !kept && file.type !== FOLDER_MIME, { onFrac: (f) => onProgress("uploading", f) });
+  // a folder is packed on the fly, so it can't be picked again after a reload: only real files too big to keep here
+  // resume by re-picking
+  const saved = await storeCopy(id, owner, file, key, nonce, name, file.size > KEEP_MAX && file.type !== FOLDER_MIME, { onFrac: (f) => onProgress("uploading", f) });
+  await kept;
   signal?.removeEventListener("abort", stop);
   if (signal?.aborted || (!saved && !storeUnavailable(id))) {
     void unkeep(id);
@@ -190,7 +194,7 @@ export type Received =
 
 type UnlockReply = { /** already counted at unlock (objects with a download limit) */ counted?: boolean; url: string; nonce: string; size: number; chunkSize: number; fileName: string; mime: string; store?: string; /** the same copy through Cloudflare's edge (lib/edge.ts) */ edge?: string };
 /** Checked passcode: the key plus where the ciphertext lives. Nothing is saved or picked before this succeeds. */
-export type Unlocked = { key: Awaited<ReturnType<typeof deriveKeys>>["key"]; r: UnlockReply; /** the passcode proof, to say "received" */ auth?: string };
+export type Unlocked = { key: Awaited<ReturnType<typeof deriveKeys>>["key"]; r: UnlockReply; /** the passcode proof, to say "received" */ auth?: string; /** when the download was asked for (performance.now) */ at?: number };
 
 /** the code an open object was encrypted with: its anonymous space's key, or the well-known one */
 function openPassFor(o: Orb) {
@@ -236,12 +240,12 @@ const keyFor = (orb: Orb, pass: string) => {
 /** a no-password object's card is open: get its key ready now */
 export const warmKey = (orb: Orb) => void (orb.open && keyFor(orb, "").catch(() => {}));
 
-export async function unlockOrb(orb: Orb, passcode: string, signal?: AbortSignal): Promise<Unlocked> {
+export async function unlockOrb(orb: Orb, passcode: string, signal?: AbortSignal, at = performance.now()): Promise<Unlocked> {
   const { key, auth } = await keyFor(orb, passcode);
   const res = await quickPost(`/api/transfers/${orb.id}/unlock`, { auth, device: deviceLabel(), ...spaceBody() }, signal);
   const r = await res.json().catch(() => ({ ok: false, reason: "gone" }));
   if (!r.ok) throw new UnlockError(r.reason, r.left);
-  return { key, r, auth };
+  return { key, r, auth, at };
 }
 
 /**
@@ -256,7 +260,7 @@ export function markReceived(orb: Orb, un: Unlocked) {
   told.add(un);
   void fetch(`/api/transfers/${orb.id}/received`, {
     method: "POST", keepalive: true, headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ auth: un.auth, device: deviceLabel(), anon: isAnon() || !!orb.anon, ...spaceBody() }),
+    body: JSON.stringify({ auth: un.auth, device: deviceLabel(), anon: isAnon() || !!orb.anon, ms: un.at != null ? Math.round(performance.now() - un.at) : undefined, ...spaceBody() }),
   }).catch(() => {});
 }
 
@@ -276,28 +280,28 @@ export async function peekOrb(orb: Orb, signal?: AbortSignal): Promise<Unlocked>
  * A guess (a background preview nobody asked for yet) takes only a stored copy that is complete now, and fetches it
  * gently: it never adds a pull on the sender's line (often still uploading that very file), and never waits.
  */
-async function source(r: UnlockReply, signal: AbortSignal | undefined, cloudOnly: boolean, guess = false, onWait?: () => void) {
+async function source(r: UnlockReply, signal: AbortSignal | undefined, cloudOnly: boolean, guess = false, onWait?: () => void, onBytes?: (n: number) => void) {
   if (guess) {
     // this tab sent it: read here, no network at all (not downloaded back from storage)
     const id = r.url.slice(P2P_PREFIX.length);
     if (!cloudOnly && holding(id)) return { body: await pull(id, signal), stored: false };
-    if (r.store && (await isStored(r.store, signal))) return { body: fetchStored(r.store, r.size, signal, 1), stored: true };
+    if (r.store && (await isStored(r.store, signal))) return { body: fetchStored(r.store, r.size, signal, 1, undefined, onBytes), stored: true };
     throw new NotYet("not stored yet");
   }
   if (cloudOnly) {
     // anonymous: only the stored copy (a direct connection would show each side the other's IP)
-    const now = r.store ? await openStored(r.store, r.size, signal, undefined, r.edge) : null;
+    const now = r.store ? await openStored(r.store, r.size, signal, undefined, r.edge, onBytes) : null;
     if (now) return { body: now, stored: true };
-    if (r.store && (await waitStored(r.store, 3 * 60_000, signal))) return { body: fetchStored(r.store, r.size, signal), stored: true };
+    if (r.store && (await waitStored(r.store, 3 * 60_000, signal))) return { body: fetchStored(r.store, r.size, signal, undefined, undefined, onBytes), stored: true };
     throw new Error("This file is only on the sender's device. Receiving it directly would show them your IP, so anonymous mode doesn't. Turn off Anonymous to receive it.");
   }
   const id = r.url.slice(P2P_PREFIX.length);
   if (holding(id)) return { body: await pull(id, signal), stored: false };
   const store = r.store;
   if (!store) return { body: await pull(id, signal), stored: false };
-  const now = await openStored(store, r.size, signal, undefined, r.edge);
+  const now = await openStored(store, r.size, signal, undefined, r.edge, onBytes);
   if (now) return { body: now, stored: true };
-  return firstSource(id, store, r.size, signal, r.edge, onWait);
+  return firstSource(id, store, r.size, signal, r.edge, onWait, undefined, onBytes);
 }
 
 type Src = { body: ReadableStream<Uint8Array>; stored: boolean };
@@ -312,7 +316,7 @@ type Src = { body: ReadableStream<Uint8Array>; stored: boolean };
  * watched for the whole life of a file (30 min), so the download starts by itself the moment either one is there;
  * `onWait` tells the card it is waiting for the sender. Closing the card (signal) stops it.
  */
-export function firstSource(id: string, store: string, size: number, signal?: AbortSignal, edge?: string, onWait?: () => void, retryMs = 15_000): Promise<Src> {
+export function firstSource(id: string, store: string, size: number, signal?: AbortSignal, edge?: string, onWait?: () => void, retryMs = 15_000, onBytes?: (n: number) => void): Promise<Src> {
   let won = false;
   let over = false;
   return new Promise<Src>((resolve, reject) => {
@@ -348,7 +352,7 @@ export function firstSource(id: string, store: string, size: number, signal?: Ab
       async (ok) => {
         if (!ok) return giveUp(signal?.aborted ? signal.reason : new Error("The file isn't stored yet"));
         // stored now: read it near the reader if the edge can, else from the bucket
-        const body = (await openStored(store, size, signal, undefined, edge).catch(() => null)) ?? fetchStored(store, size, signal);
+        const body = (await openStored(store, size, signal, undefined, edge, onBytes).catch(() => null)) ?? fetchStored(store, size, signal, undefined, undefined, onBytes);
         take({ body, stored: true });
       },
       giveUp,
@@ -422,17 +426,28 @@ async function receiveNow(opts: {
     return got.mem;
   };
   let sink = await makeSink();
+  // progress = whichever is further: what is decrypted, or what has arrived from storage (parallel ranges come in
+  // ahead of the decrypt, and this way the bar moves from the first kilobyte). Said at most every 120 ms
+  let dec = 0, net = 0, saidAt = 0;
+  const enc = Math.max(1, encryptedSize(r.size, r.chunkSize));
+  const tell = (force = false) => {
+    const t = performance.now();
+    if (!force && t - saidAt < 120) return;
+    saidAt = t;
+    onProgress("decrypting", Math.min(1, Math.max(dec / Math.max(1, r.size), net / enc)));
+  };
+  const onBytes = (n: number) => ((net = Math.max(0, net + n)), tell());
   const decrypt = (body?: ReadableStream<Uint8Array>) =>
     streamDecrypt({
       url: r.url, body, key, nonce: fromB64(r.nonce), size: r.size, chunkSize: r.chunkSize, sink, signal,
-      onProgress: (d) => onProgress("decrypting", d / Math.max(1, r.size)),
+      onProgress: (d) => ((dec = d), tell(d >= r.size)),
     });
 
   onProgress("decrypting", 0);
   try {
     if (!isP2P(r.url)) await decrypt();
     else {
-      const src = await source(r, signal, isAnon() || !!opts.orb.anon, !!opts.guess, () => onProgress("waiting", 0));
+      const src = await source(r, signal, isAnon() || !!opts.orb.anon, !!opts.guess, () => onProgress("waiting", 0), onBytes);
       try {
         await decrypt(src.body);
       } catch (e) {
@@ -440,10 +455,11 @@ async function receiveNow(opts: {
         // the stored copy if there is one (or one finishing), instead of failing
         if (src.stored || !r.store || signal?.aborted) throw e;
         await sink.abort().catch(() => {});
+        dec = net = 0;
         onProgress("decrypting", 0);
         if (!(await waitStored(r.store, 3 * 60_000, signal))) throw e;
         sink = await makeSink();
-        await decrypt(fetchStored(r.store, r.size, signal));
+        await decrypt(fetchStored(r.store, r.size, signal, undefined, undefined, onBytes));
       }
     }
   } catch (e) {

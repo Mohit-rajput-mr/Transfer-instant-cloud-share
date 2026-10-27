@@ -5,10 +5,10 @@
 // parallel byte ranges. Until then the direct (peer-to-peer) path serves it, so nothing waits on this.
 import { useSyncExternalStore } from "react";
 import { encryptChunk } from "./crypto";
-import { ALIVE_EVERY_MS, PART_CHUNKS, STORE_CHUNK, STORE_TAG, storeChunks } from "./limits";
+import { ALIVE_EVERY_MS, LEGACY_PART_CHUNKS, PART_CHUNKS, STORE_CHUNK, STORE_TAG, storeChunks } from "./limits";
 import { stayAwake } from "./wake";
 import { Meter } from "./rate";
-import { acquire, netCongested, netHiccup, nudgeNet, tryAcquire, watchNet } from "./net";
+import { acquire, netCongested, netHiccup, netShaky, nudgeNet, tryAcquire, watchNet } from "./net";
 
 export type CloudState = { state: "saving" | "paused" | "saved" | "failed"; frac: number; speed?: string };
 const states = new Map<string, CloudState>();
@@ -27,6 +27,8 @@ const set = (id: string, s: CloudState | null) => {
 };
 
 export const cloudSaved = (id: string) => states.get(id)?.state === "saved";
+/** this page is uploading that copy right now */
+export const copying = (id: string) => aborts.has(id);
 export const cloudSaving = () => [...states.values()].some((s) => s.state === "saving" || s.state === "paused");
 export function useCloud() {
   return useSyncExternalStore(
@@ -52,7 +54,8 @@ export { netCongested, setUpSpeed, upSpeed, type UpSpeed } from "./net";
  *  upload, goes ahead of them: see single) */
 let picked = 0;
 /** after a part on a busy line: let the queue drain for half as long as the part took (capped) */
-const breather = (ms: number, signal: AbortSignal) => (netCongested() ? sleep(Math.min(30_000, Math.max(800, ms / 2)), signal) : Promise.resolve());
+// (only once parts have really failed on this line: a slow round trip alone is no reason to stop sending)
+const breather = (ms: number, signal: AbortSignal) => (netCongested() && netShaky() ? sleep(Math.min(30_000, Math.max(800, ms / 2)), signal) : Promise.resolve());
 
 // ---- uploads that resume -------------------------------------------------------------------------
 // A big upload is remembered on this device (IndexedDB: the object, its owner key, R2's upload id and
@@ -62,6 +65,8 @@ const breather = (ms: number, signal: AbortSignal) => (netCongested() ? sleep(Ma
 export type PendingUpload = {
   id: string; owner: string; uploadId: string; fileName: string; size: number; lastModified: number;
   key: CryptoKey; nonce: Uint8Array; label: string; at: number;
+  /** chunks per part this upload was started with (missing: from before parts of 1 chunk, so 4) */
+  pc?: number;
 };
 const DB = "orbit-uploads";
 const idb = () =>
@@ -96,17 +101,33 @@ export const dropPending = (id: string) => forgetUpload(id);
 /** Is this the same file the upload started with? */
 export const sameFile = (u: PendingUpload, f: File) => f.size === u.size && f.name === u.fileName && (!u.lastModified || f.lastModified === u.lastModified);
 
-/** PUT one part with progress; resolves to its ETag. */
+/** a PUT that moved no byte for this long is dead (a half-open connection after a network switch, a stuck proxy) */
+const STALL_MS = 30_000;
+
+/** PUT one part with progress; resolves to its ETag. A stalled request is cut and fails as a network error, so the
+ *  caller tries it again: before (owner 2026-10-27, Mumbai, 20 MB) one stuck request left an upload at "uploading"
+ *  for an hour with nothing failing and nothing retried. */
 function put(url: string, body: Blob, onSent: (n: number) => void, signal: AbortSignal) {
   return new Promise<string>((res, rej) => {
     if (signal.aborted) return rej(new DOMException("Aborted", "AbortError"));
     const x = new XMLHttpRequest();
+    let stalled = false;
+    let watch = 0 as ReturnType<typeof setTimeout> | 0;
+    const arm = () => {
+      clearTimeout(watch);
+      watch = setTimeout(() => ((stalled = true), x.abort()), STALL_MS);
+    };
+    const stop = () => x.abort();
+    const end = () => (clearTimeout(watch), signal.removeEventListener("abort", stop));
     x.open("PUT", url);
-    x.upload.onprogress = (e) => (onSent(e.loaded), nudgeNet());
-    x.onload = () => (x.status >= 200 && x.status < 300 ? res((x.getResponseHeader("ETag") ?? "").trim()) : rej(new Error(`upload ${x.status}`)));
-    x.onerror = () => rej(new Error("upload network"));
-    x.onabort = () => rej(new DOMException("Aborted", "AbortError"));
-    signal.addEventListener("abort", () => x.abort(), { once: true });
+    x.upload.onprogress = (e) => (arm(), onSent(e.loaded), nudgeNet());
+    // the last byte is sent: the answer (ETag) may take a moment, but not forever
+    x.upload.onload = arm;
+    x.onload = () => (end(), x.status >= 200 && x.status < 300 ? res((x.getResponseHeader("ETag") ?? "").trim()) : rej(new Error(`upload ${x.status}`)));
+    x.onerror = () => (end(), rej(new Error("upload network")));
+    x.onabort = () => (end(), rej(stalled ? new Error("upload network stalled") : new DOMException("Aborted", "AbortError")));
+    signal.addEventListener("abort", stop, { once: true });
+    arm();
     x.send(body);
   });
 }
@@ -120,8 +141,11 @@ async function sealRange(file: File, key: CryptoKey, nonce: Uint8Array, from: nu
   return new Blob(out);
 }
 
-const call = (id: string, body: object) =>
-  fetch(`/api/transfers/${id}/store`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+// (a hung request on a dead line fails after 25 s like any other network error, and is asked again: never waited on forever)
+// pc: the part layout of this upload (lib/limits.ts), so the server signs and checks the same parts
+const callStore = (id: string, body: object, pc = PART_CHUNKS) =>
+  fetch(`/api/transfers/${id}/store`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...body, pc }), signal: within(undefined, 25_000) });
+const call = (id: string, body: object) => callStore(id, body);
 
 const sleep = (ms: number, signal: AbortSignal) =>
   new Promise<void>((res) => {
@@ -139,6 +163,17 @@ const backOnline = (ms: number, signal: AbortSignal) =>
   });
 
 class Gone extends Error {}
+
+/** `signal`, or `ms` passed: whichever first (AbortSignal.any is missing on older iPhones) */
+export function within(signal: AbortSignal | undefined, ms: number): AbortSignal {
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(new DOMException("Timed out", "TimeoutError")), ms);
+  if (signal) {
+    if (signal.aborted) ac.abort(signal.reason);
+    else signal.addEventListener("abort", () => (clearTimeout(t), ac.abort(signal.reason)), { once: true });
+  }
+  return ac.signal;
+}
 
 /** Big uploads under way on this page: closing it keeps them in orbit, to be finished on the next visit. */
 const resumables = new Set<string>();
@@ -169,7 +204,7 @@ export async function storeCopy(
       return false;
     }
     const { probe } = (await pr.json()) as { probe: string };
-    const reach = await fetch(probe, { headers: { Range: "bytes=0-0" }, cache: "no-store", signal: ac.signal }).catch(() => null);
+    const reach = await fetch(probe, { headers: { Range: "bytes=0-0" }, cache: "no-store", signal: within(ac.signal, 20_000) }).catch(() => null);
     if (!reach) {
       noStore.add(id);
       set(id, null);
@@ -186,10 +221,10 @@ export async function storeCopy(
     if (s.put) await single(id, owner, file, key, nonce, s.put, ac);
     else if (s.uploadId && s.urls) {
       if (canResume) {
-        await remember({ id, owner, uploadId: s.uploadId, fileName: file.name, size: file.size, lastModified: file.lastModified, key, nonce, label, at: Date.now() });
+        await remember({ id, owner, uploadId: s.uploadId, fileName: file.name, size: file.size, lastModified: file.lastModified, key, nonce, label, at: Date.now(), pc: PART_CHUNKS });
         resumables.add(id);
       }
-      await multi(id, owner, file, key, nonce, s.uploadId, s.urls.map((url, i) => ({ n: i + 1, url })), [], ac, rank);
+      await multi(id, owner, file, key, nonce, s.uploadId, s.urls.map((url, i) => ({ n: i + 1, url })), [], ac, rank, PART_CHUNKS);
     } else throw new Error("start");
     set(id, { state: "saved", frac: 1 });
     forgetUpload(id);
@@ -215,7 +250,7 @@ export async function resumeCopy(u: PendingUpload, file: File) {
     set(u.id, { state: "saving", frac: 0 });
     await remember({ ...u, at: Date.now() });
     resumables.add(u.id);
-    await multi(u.id, u.owner, file, u.key, u.nonce, u.uploadId, null, null, ac, rank);
+    await multi(u.id, u.owner, file, u.key, u.nonce, u.uploadId, null, null, ac, rank, u.pc ?? LEGACY_PART_CHUNKS);
     set(u.id, { state: "saved", frac: 1 });
     forgetUpload(u.id);
     return true;
@@ -292,7 +327,10 @@ async function single(id: string, owner: string, file: File, key: CryptoKey, non
 async function multi(
   id: string, owner: string, file: File, key: CryptoKey, nonce: Uint8Array, uploadId: string,
   todo: { n: number; url: string }[] | null, have: { n: number; etag: string }[] | null, ac: AbortController, rank: number,
+  pc: number,
 ) {
+  const PART_CHUNKS = pc;
+  const call = (i: string, body: object) => callStore(i, body, pc);
   const total = storeChunks(file.size);
   const enc = file.size + total * STORE_TAG;
   const partBytes = (n: number) => {
@@ -463,32 +501,73 @@ const PARALLEL_DOWN = 4;
 
 /** The stored copy, if it is complete: its first range is read right away and IS the check (no separate tiny read
  *  first, one round trip less to R2 per download). null: not there (yet). The other lanes start the moment it is. */
-export async function openStored(url: string, size: number, signal?: AbortSignal, lanes = PARALLEL_DOWN, edge?: string): Promise<ReadableStream<Uint8Array> | null> {
+export async function openStored(url: string, size: number, signal?: AbortSignal, lanes = PARALLEL_DOWN, edge?: string, onBytes?: (n: number) => void): Promise<ReadableStream<Uint8Array> | null> {
   const enc = size + storeChunks(size) * STORE_TAG;
   const to = Math.min(enc, RANGE_CHUNKS * (STORE_CHUNK + STORE_TAG)) - 1;
   const first = async (u: string) => {
-    const r = await fetch(u, { headers: { Range: `bytes=0-${to}` }, cache: "no-store", signal }).catch(() => null);
-    if (!r) return { missing: false, b: null };
-    // the bucket's 404, or the edge worker's own "not uploaded yet" (an edge without that mark isn't serving files)
-    if (r.status === 404) return { missing: u === url || r.headers.get("X-Edge-Missing") === "1", b: null };
-    if (r.status !== 206 && r.status !== 200) return { missing: false, b: null };
-    const b = new Uint8Array(await r.arrayBuffer().catch(() => new ArrayBuffer(0)));
-    return { missing: false, b: b.length === to + 1 ? b : null };
+    // an answer (its headers) within 12 s, or this way is given up: an edge that hung used to hold the download at 0%
+    const ac = new AbortController();
+    const stop = () => ac.abort();
+    signal?.addEventListener("abort", stop, { once: true });
+    const t = setTimeout(stop, 12_000);
+    try {
+      const r = await fetch(u, { headers: { Range: `bytes=0-${to}` }, cache: "no-store", signal: ac.signal }).catch(() => null);
+      clearTimeout(t);
+      if (!r) return { missing: false, b: null };
+      // the bucket's 404, or the edge worker's own "not uploaded yet" (an edge without that mark isn't serving files)
+      if (r.status === 404) return { missing: u === url || r.headers.get("X-Edge-Missing") === "1", b: null };
+      if (r.status !== 206 && r.status !== 200) return { missing: false, b: null };
+      const b = await readAll(r, to + 1, onBytes).catch(() => null);
+      return { missing: false, b };
+    } finally {
+      clearTimeout(t);
+      signal?.removeEventListener("abort", stop);
+    }
   };
   // through Cloudflare's edge first (the location near the reader, cached there for the next one: live/ worker);
   // not stored yet there means not stored yet at all; any other trouble (the worker's allowance, a hiccup) falls
   // back to the bucket's own signed link
   if (edge) {
     const e = await first(edge);
-    if (e.b) return fetchStored(edge, size, signal, lanes, e.b);
+    if (e.b) return fetchStored(edge, size, signal, lanes, e.b, onBytes);
     if (e.missing) return null;
   }
   const d = await first(url);
-  return d.b ? fetchStored(url, size, signal, lanes, d.b) : null;
+  return d.b ? fetchStored(url, size, signal, lanes, d.b, onBytes) : null;
+}
+
+/** A response body of exactly `len` bytes, read as it streams in (each piece counted by onBytes; a failed read takes
+ *  its count back, so a retried range isn't counted twice). Short or long: an error. */
+async function readAll(r: Response, len: number, onBytes?: (n: number) => void): Promise<Uint8Array> {
+  if (!r.body) {
+    const b = new Uint8Array(await r.arrayBuffer());
+    if (b.length !== len) throw new Error("short read");
+    onBytes?.(len);
+    return b;
+  }
+  const b = new Uint8Array(len);
+  const rd = r.body.getReader();
+  let at = 0;
+  try {
+    for (;;) {
+      const { value, done } = await rd.read();
+      if (done) break;
+      if (at + value.length > len) throw new Error("long read");
+      b.set(value, at);
+      at += value.length;
+      onBytes?.(value.length);
+    }
+    if (at !== len) throw new Error("short read");
+    return b;
+  } catch (e) {
+    onBytes?.(-at);
+    rd.cancel().catch(() => {});
+    throw e;
+  }
 }
 
 /** The stored ciphertext as a stream, fetched in parallel byte ranges (`lanes`; background previews take 1) and handed out in order. */
-export function fetchStored(url: string, size: number, signal?: AbortSignal, lanes = PARALLEL_DOWN, first?: Uint8Array): ReadableStream<Uint8Array> {
+export function fetchStored(url: string, size: number, signal?: AbortSignal, lanes = PARALLEL_DOWN, first?: Uint8Array, onBytes?: (n: number) => void): ReadableStream<Uint8Array> {
   const chunks = storeChunks(size);
   const enc = size + chunks * STORE_TAG;
   const step = RANGE_CHUNKS * (STORE_CHUNK + STORE_TAG);
@@ -504,9 +583,7 @@ export function fetchStored(url: string, size: number, signal?: AbortSignal, lan
       try {
         const r = await fetch(url, { headers: { Range: `bytes=${from}-${to}` }, cache: "no-store", signal });
         if (r.status !== 206 && !(r.status === 200 && from === 0 && to === enc - 1)) throw new Error(`Download failed (${r.status})`);
-        const b = new Uint8Array(await r.arrayBuffer());
-        if (b.length !== to - from + 1) throw new Error("short read");
-        return b;
+        return await readAll(r, to - from + 1, onBytes);
       } catch (e) {
         if (signal?.aborted || attempt >= 4) throw e;
         await new Promise((res) => setTimeout(res, 700 * attempt));

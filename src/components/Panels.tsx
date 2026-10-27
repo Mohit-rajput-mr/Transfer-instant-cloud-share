@@ -20,7 +20,8 @@ import Viewer, { viewKind } from "./Viewer";
 import { canPeek, peekFile } from "@/lib/peek";
 import { Meter } from "@/lib/rate";
 import { taskLabel, taskLine, type Task } from "@/lib/tasks";
-import { LuArrowRight, LuCheck, LuChevronDown, LuFlag, LuInfinity } from "react-icons/lu";
+import { LuArrowRight, LuCheck, LuChevronDown, LuFlag, LuInfinity, LuMaximize2 } from "react-icons/lu";
+import { ExpandText, RichText } from "./Notepad";
 import { BsIncognito } from "react-icons/bs";
 import { isAnon } from "@/lib/anon";
 import { genericTitle } from "@/lib/scrub";
@@ -809,38 +810,6 @@ const kindOf = (f: File) =>
 const nFiles = (n: number) => `${n} file${n === 1 ? "" : "s"}`;
 const errName = (e: unknown) => (e as { name?: string } | null)?.name;
 
-// links, emails, phone numbers and long codes in a received note: highlighted, each with its own copy
-const RICH = /(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)\]]|www\.[^\s<>"']+[^\s<>"'.,;:!?)\]]|[\w.+-]+@[\w-]+(?:\.[\w-]+)+|\+?\d[\d\s().-]{7,}\d|\b[A-Z0-9]{6,}\b)/g;
-const kindOfChunk = (t: string) =>
-  /^(https?:|www\.)/.test(t) ? "link" : t.includes("@") ? "email" : /^\+?\d[\d\s().-]+$/.test(t) ? "phone" : "code";
-
-function RichText({ text }: { text: string }) {
-  const [copied, setCopied] = useState<number | null>(null);
-  const parts = text.split(RICH);
-  const copy = async (t: string, i: number) => {
-    try {
-      await navigator.clipboard.writeText(t);
-      setCopied(i);
-      setTimeout(() => setCopied((c) => (c === i ? null : c)), 1300);
-    } catch {}
-  };
-  return (
-    <pre className="note-out rich">
-      {parts.map((p, i) => {
-        if (i % 2 === 0) return p;
-        const k = kindOfChunk(p);
-        const href = k === "link" ? (p.startsWith("www.") ? `https://${p}` : p) : k === "email" ? `mailto:${p}` : k === "phone" ? `tel:${p.replace(/[^\d+]/g, "")}` : undefined;
-        return (
-          <span key={i} className={`rt rt-${k}`}>
-            {href ? <a href={href} target="_blank" rel="noopener noreferrer nofollow">{p}</a> : <b>{p}</b>}
-            <button type="button" className="rt-copy" onClick={() => copy(p, i)} aria-label={`Copy ${k}`}>{copied === i ? <LuCheck className="ic-inline" /> : "copy"}</button>
-          </span>
-        );
-      })}
-    </pre>
-  );
-}
-
 export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; onClose: () => void; onDownloaded: () => void; onViewed: () => void; preview?: boolean }) {
   const { orb, now, watchers, onClose } = props;
   // no password: its key is worked out while the card is read, so Download goes straight to the network
@@ -868,7 +837,8 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
   // full-screen preview: decrypt into memory (never auto-download), then look inside
   const [viewing, setViewing] = useState(false);
   const wantView = useRef(false);
-  const canView = !isFolder && !inline && !!viewKind(orb.fileName, orb.mime) && orb.size <= 400 * 1024 * 1024;
+  // only objects anyone may open have a preview (owner 2026-10-27: a passcode-locked file is download only)
+  const canView = !!orb.open && !isFolder && !inline && !!viewKind(orb.fileName, orb.mime) && orb.size <= 400 * 1024 * 1024;
   // open files preview straight from memory (fetched quietly, not counted): no progress, no saving
   const quick = canPeek(orb);
   const [peekF, setPeekF] = useState<File | null>(null);
@@ -1093,8 +1063,22 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
 
   // Step 1: the passcode is checked with the server FIRST. Nothing is picked or saved until it's right.
   const free = !!orb.open;
+  // One tap, one download (owner 2026-10-27). Phones keep the file to hand only on iPhone/iPad, where a save that
+  // isn't inside the tap is dropped; Android and computers save straight to Downloads like any download
+  const holdNow = () => env.ios || wantView.current;
   const go = async () => {
     if ((!free && !code) || busy) return;
+    // already here (fetched in the background, lib/peek.ts) and nothing to count first: saved inside this very tap
+    // (no wait at all, and iPhones too), then said to the server
+    if (peekF && free && orb.maxDownloads == null && !wantView.current && !isFolder && !inline && !asDir) {
+      const f = peekF;
+      const at = performance.now();
+      autoDownload(f);
+      tick("success");
+      landed({ kind: "file", file: f, held: false });
+      unlockOrb(orb, "", undefined, at).then((un) => markReceived(orb, un)).catch(() => {});
+      return;
+    }
     setErr(null);
     setNeedSpot(false);
     setBusy(true);
@@ -1121,7 +1105,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
       setBusy(false);
     }
     if (pre && !isFolder && !inline && !asDir) {
-      const held = env.mobile || wantView.current;
+      const held = holdNow();
       if (!held) autoDownload(pre);
       markReceived(orb, un);
       return landed({ kind: "file", file: pre, held });
@@ -1161,7 +1145,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     const meter = new Meter(orb.size);
     setSpeed("");
     receive({
-      orb, unlocked: un, target, folderTarget, signal: abort.current.signal, inline, hold: env.mobile || wantView.current,
+      orb, unlocked: un, target, folderTarget, signal: abort.current.signal, inline, hold: holdNow(),
       onProgress: (s, p) => {
         setStage(s);
         setFrac(p);
@@ -1286,7 +1270,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
             )}
           </div>
           {preview === "audio" && url && <audio src={url} controls preload="metadata" />}
-          {viewKind(file.name, file.type) && <button type="button" className="ghost-btn lg-press" onClick={() => setViewing(true)}>Preview full screen ⤢</button>}
+          {orb.open && viewKind(file.name, file.type) && <button type="button" className="ghost-btn lg-press" onClick={() => setViewing(true)}>Preview full screen ⤢</button>}
           <div className="save-meta">
             <span className="mono ellip">{parts && folder ? folder.name : file.name}</span>
             <span className="mono dim">{formatBytes(file.size)}</span>
@@ -1294,10 +1278,22 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
         </div>
       ) : (
         <div className="col" key="info">
-          {orb.thumb && orb.open && (
+          {/* the picture IS the preview button (owner 2026-10-27): pointer + a lit edge on hover, a click opens it full
+              screen. A file with no picture yet gets a tile that does the same */}
+          {canView ? (
+            <button type="button" className={`thumb-tile${orb.thumb ? "" : " bare"}`} onClick={startPreview} aria-label={`Preview ${orb.fileName}`} title="Click to preview">
+              {orb.thumb ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="card-thumb" src={previewUrl(orb.id)} alt="" draggable={false} onError={(e) => (e.currentTarget.style.display = "none")} />
+              ) : (
+                <span className="thumb-ext wide">{ext(orb.fileName)}</span>
+              )}
+              <span className="thumb-hint mono"><LuMaximize2 aria-hidden />Preview</span>
+            </button>
+          ) : orb.thumb && orb.open ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="card-thumb" src={previewUrl(orb.id)} alt={`Preview of ${orb.name}`} title={canView ? "Click to preview" : undefined} onClick={canView ? startPreview : undefined} style={canView ? { cursor: "zoom-in" } : undefined} onError={(e) => (e.currentTarget.style.display = "none")} />
-          )}
+            <img className="card-thumb" src={previewUrl(orb.id)} alt={`Preview of ${orb.name}`} onError={(e) => (e.currentTarget.style.display = "none")} />
+          ) : null}
           <div>
             <span className="mono dim ellip">{orb.fileName}</span>
             <div className="wide d-title">{orb.name}</div>
@@ -1317,7 +1313,10 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
       )}
       {got?.kind === "text" ? (
         <div className="col" key="text" ref={card}>
-          <span className="mono dim">{isLink ? "Decrypted link" : "Decrypted note"}</span>
+          <div className="note-head">
+            <span className="mono dim">{isLink ? "Decrypted link" : "Decrypted note"}</span>
+            <ExpandText text={got.text} title={orb.name || (isLink ? "Link" : "Note")} />
+          </div>
           {isLink ? (
             <a className="link-out" href={got.text} target="_blank" rel="noopener noreferrer nofollow">{got.text}</a>
           ) : (
@@ -1380,33 +1379,35 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
           </div>
         </div>
       ) : got ? (
+        // done: the same card, the badge says where it went (no separate "Landed" screen, owner 2026-10-27)
         <div className="col" key="landed" ref={card}>
-          <div className="wide d-title save-title">
-            Landed<svg className="save-check" viewBox="0 0 24 24" aria-hidden><path d="M3.5 12.5l5.5 5.5L20.5 6" /></svg>
+          <div className="open-badge done-badge">
+            <svg className="save-check" viewBox="0 0 24 24" aria-hidden><path d="M3.5 12.5l5.5 5.5L20.5 6" /></svg>
+            <b className="wide">Downloaded</b>
+            <span className="mono dim">
+              {got.kind === "dir" ? `in ${got.where}/${got.folder}` : got.kind === "picked" ? `saved as ${got.name}` : `in ${where}`}
+            </span>
           </div>
-          <p className="note">
-            {got.kind === "dir"
-              ? <>Folder <b>{got.folder}/</b> saved inside <b>{got.where}/</b> with all {got.files} files and subfolders, exactly as sent.</>
-              : got.kind === "picked"
-                ? <>Decrypted on this device and saved as <b>{got.name}</b> where you chose.</>
-                : folder && got.kind === "file" && got.parts?.length && loose
-                  ? <>All <b>{nFiles(got.parts.length)}</b> from <b>{folder.name}</b> saved to <b>{where}</b>, each as its own file.</>
-                : folder
-                  ? <>Your browser can&apos;t write folders, so <b>{folder.name}</b> ({nFiles(folder.files)}) was saved as <b>{file?.name}</b> to <b>{where}</b>.</>
-                  : <>Decrypted on this device and saved to <b>{where}</b> as <b>{file?.name}</b>.</>}
-          </p>
+          {(got.kind === "dir" || folder) && (
+            <p className="note">
+              {got.kind === "dir"
+                ? <>All {got.files} files and subfolders, exactly as sent.</>
+                : got.kind === "file" && got.parts?.length && loose
+                  ? <>All <b>{nFiles(got.parts.length)}</b>, each as its own file.</>
+                  : folder ? <>As <b>{file?.name}</b> (this browser can&apos;t write folders).</> : null}
+            </p>
+          )}
           {got.kind === "file" && shortcut && <span className="save-shortcut mono">Open downloads <kbd>{shortcut}</kbd></span>}
           <div className="grow" />
+          {got.kind === "file" && file && orb.open && viewKind(file.name, file.type) && (
+            <button type="button" className="ghost-btn lg-press" onClick={() => setViewing(true)}>{glyph("Preview ⤢")}</button>
+          )}
           {got.kind === "file" && file ? (
-            <div className="row-btns even">
-              {loose && got.kind === "file" && got.parts?.length ? (
-                <button type="button" className="ghost-btn lg-press" onClick={() => got.parts!.forEach((f, i) => setTimeout(() => autoDownload(f), i * 250))}>Download all again</button>
-              ) : (
-                <a className="ghost-btn lg-press" href={url ?? undefined} download={file.name}>Download again</a>
-              )}
-              {viewKind(file.name, file.type) && <button type="button" className="ghost-btn lg-press" onClick={() => setViewing(true)}>Preview ⤢</button>}
-              <BackBtn />
-            </div>
+            loose && got.parts?.length ? (
+              <button type="button" className="cta lg-press" onClick={() => got.parts!.forEach((f, i) => setTimeout(() => autoDownload(f), i * 250))}>{glyph("Download all again ↓")}</button>
+            ) : (
+              <a className="cta lg-press" href={url ?? undefined} download={file.name}>{glyph("Download again ↓")}</a>
+            )
           ) : (
             <BackBtn />
           )}
@@ -1459,7 +1460,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
               {err && <p className="err">{err}</p>}
               <p className="note">
                 {free ? "Encrypted end to end, unlocked on this device." : "The password never leaves this device."}
-                {env.mobile && !inline && !(asDir && canWriteFolders()) ? " After decrypting, you choose where to save it." : ""}
+                {env.ios && !inline && !(asDir && canWriteFolders()) ? " After it arrives, tap Save." : ""}
               </p>
               {env.inApp && (
                 <div className="spot-help">
@@ -1469,7 +1470,7 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
               )}
               <div className="grow" />
               {loose ? (
-                <p className="note">{env.mobile ? "Every file in this ball arrives together; then you choose where they go." : "Every file in this ball downloads at once, straight into your Downloads. If the browser asks, allow multiple downloads."}</p>
+                <p className="note">{env.ios ? "Every file in this ball arrives together; then you choose where they go." : "Every file in this ball downloads at once, straight into your Downloads. If the browser asks, allow multiple downloads."}</p>
               ) : asDir ? (
                 <p className="note">
                   {!canWriteFolders()
@@ -1483,13 +1484,13 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
                 <button type="button" className="ghost-btn lg-press" disabled={!free && !code} onClick={startPreview}>{glyph("Preview ⤢")}</button>
               )}
               <button className="cta lg-press" disabled={!free && !code} onClick={() => go()}>
-                {glyph(free ? (isLink || inline ? "Open ↗" : isFolder ? "Get it ↓" : "Download ↓") : isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : env.mobile && !(asDir && canWriteFolders()) ? "Decrypt →" : loose ? "Decrypt + download all ↓" : isFolder ? "Unlock folder →" : needsSavePicker(orb) ? "Unlock →" : "Decrypt + download ↓")}
+                {glyph(free ? (isLink || inline ? "Open ↗" : isFolder ? "Get it ↓" : "Download ↓") : isLink ? "Decrypt + open link ↗" : inline ? "Decrypt + read" : loose ? "Decrypt + download all ↓" : isFolder ? "Unlock folder →" : needsSavePicker(orb) ? "Unlock →" : "Decrypt + download ↓")}
               </button>
             </>
           )}
         </div>
       )}
-      {viewing && (file || peekMode) && (
+      {viewing && orb.open && (file || peekMode) && (
         <Viewer
           file={file ?? peekF}
           name={orb.fileName}

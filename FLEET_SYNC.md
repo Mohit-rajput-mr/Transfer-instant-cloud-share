@@ -20,6 +20,49 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- 2026-10-27 big pass (owner report: uploads stuck "uploading", other countries never see files, slow, "0%" on
+  download, extra "Landed" step, void freezes when a card opens). Commit on claude/focused-newton-dsxsd0 → live branch.
+  - FIXED (C) Uploads stuck forever. Evidence: zecsa2 (Mumbai, 20 MB) "uploading" for 1 h in the DB, nothing failed.
+    Root cause: the stored copy went up as ONE XHR PUT with no stall timeout (≤32 MB files were a single request) and
+    no timeout on /store calls; a half-open connection hung it for good. Fix (lib/cloud.ts): PUT stall watchdog (30 s
+    without progress → network error → retried), 25 s timeout on every /store call, 20 s on the CORS probe; parts are
+    8 MB now (lib/limits.ts PART_CHUNKS 1, was 4) so a 20 MB file is 3 parallel parts; pages send `pc`, the server
+    signs parts for that layout (old tabs without pc keep 4: no corruption across the deploy; resume records keep pc).
+    Tests: limits.test.ts. OPEN: real far-away (India) upload not measured from here.
+  - FIXED (H) Uploads slow. Desktops ran 1–2 parts with a pause after each whenever the RTT probe rose (it always
+    rises under upload). Now (lib/net.ts) 4 lanes, 2 when busy/serving, 1 + pauses only after real part failures in
+    the last 2 min (netShaky). Copying the file into IndexedDB (outbox) now runs beside the upload, not before it.
+    resumeOutbox skips a copy this page is already uploading (copying()) — "back online" mid-send started a 2nd upload.
+  - FIXED (H) "Other countries can't see files": same root cause as above (invisible until stored) + nothing shown
+    meanwhile. FLY_TO_OTHERS back on: others see an "arriving NN%" ball at once (not openable; a tap opens it when it
+    lands; fades 45 s after its sender goes quiet, so no dead balls). The public list itself is worldwide (checked SQL).
+  - FIXED (H) Download "0% for 10 s": progress only moved per decrypted 8 MB chunk and stored ranges were read whole.
+    Now ranges stream with byte counts (cloud.ts readAll/onBytes) and decrypt reports arriving bytes (crypto.ts);
+    the edge's first range has a 12 s header timeout before falling back to the bucket. Test: progress.test.ts.
+  - DONE (owner) One-click download: no "Landed" screen (same card, "✓ Downloaded · in Downloads", Download again);
+    a file already fetched in the background is saved INSIDE the tap (measured 180 ms click→download, Chromium), then
+    counted. Phones: only iPhone/iPad still get the "Save" step (iOS drops saves outside a tap); Android saves directly.
+  - DONE (owner) Passcode-locked files: no preview anywhere (button, double-click, viewer). Verified in Chromium.
+  - DONE (owner) Preview picture = button: pointer + lit border on hover, click opens the preview; a tile when there's
+    no picture. Verified (border 0.16→0.5 alpha, cursor pointer).
+  - DONE (owner) Notepad: notes and bubbles get an expand button → components/Notepad.tsx (full text, links/emails/
+    phones/codes detected + clickable, Copy all, Select all, list of what was found). Verified desktop + iPhone size.
+  - DONE (owner) Background download for live viewers (lib/peek.ts): open files ≤25 MB (8 MB low devices; spaces 100 MB)
+    newest arrivals first, cap 300 MB / 10 min per tab, visible tab + idle line + not data-saver only.
+  - FIXED (H) Void freezes with a card open. Measured: 54 fps → 7–9 fps with a card open. Cause: the full-screen
+    .scrim backdrop-filter blur re-rendered every frame over the moving void. Removed (darker scrim); now 48 fps.
+    Also `.orb:focus-visible` paused the ball, and closing a card hands focus back to it → that ball stopped moving.
+  - DONE (owner) HQ: with "From"/1 h the globe routes are exactly those since then (were per-day route_daily). Each
+    route/pin shows times: uploaded at + upload took, downloaded at + took, upload→download gap, pins first/last,
+    devices registered/last seen, GPS time; object list shows started / in orbit / each download. Migration 032
+    (orbit_admin_pins, geo_events.ms, orbit_received p_ms, finalize records ms).
+  - DONE (owner) HQ Analytics page /admin/analytics: per UTC day visitors, new devices, uploaders, downloaders, visits,
+    uploads, downloads, data, GPS, peak live, median upload/download time; range/custom dates/country/by day-week-month,
+    one unit per chart (People/Activity/Data/Live/Speed), sortable table. Per-device counts start with migration 032.
+  - OPEN (owner action) Migration 032 last step NOT applied: the Supabase tool asked for a confirmation that went
+    unanswered. Still to run: the `sessions_device_day` trigger + `cron.schedule('orbit-live-sample', …)`, and the new
+    'uploads' key of orbit_admin_pins (see the file). Until then Analytics has no visitors/GPS/peak-live per day.
+  - RISK: incoming "arriving" balls not re-tested with two live devices here (needs the worker; logic unchanged).
 - FIXED 2026-10-25 (C, owner: "if it's visible on someone's phone it must be downloadable") — Objects appeared at
   once and were served from the sender's page until the online copy landed; a sender who closed the tab / locked the
   phone left balls nobody could open. Now (lib/transfer.ts launch): the encrypted copy is saved FIRST, then finalize

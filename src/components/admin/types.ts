@@ -32,6 +32,10 @@ export interface Overview {
   visitors: Pt[];
   points: (Pt & { k: "upload" | "download" })[];
   arcs: { a: number; b: number; c: number; d: number }[];
+  /** every route (one download of one upload) with its own times, since the "From" time or the last 24 h (migration 032) */
+  routes?: RouteRec[];
+  /** when each object listed went up and how long that took (migration 032, once applied) */
+  uploads?: { id: string; at: string; ms: number | null }[] | null;
   feed: { kind: string; label: string | null; country: string | null; city: string | null; bytes: number | null; at: string }[];
   transfers: AdminTransfer[];
   /** objects with a complete copy in cloud storage (R2) */
@@ -67,6 +71,30 @@ export interface Pt {
   n: number;
   city?: string | null;
   cc?: string | null;
+  /** first and last time something happened at this pin (migration 032) */
+  first?: string | null;
+  last?: string | null;
+  bytes?: number | null;
+}
+
+/** One transfer route: the upload of a file and one download of it, each with when and how long (migration 032) */
+export interface RouteRec {
+  id: string;
+  bytes: number | null;
+  down_at: string;
+  down_ms: number | null;
+  to_label: string | null;
+  to_cc: string | null;
+  to_city: string | null;
+  to_lat: number;
+  to_lon: number;
+  from_lat: number;
+  from_lon: number;
+  up_at: string | null;
+  up_ms: number | null;
+  from_label: string | null;
+  from_cc: string | null;
+  from_city: string | null;
 }
 
 export interface AdminTransfer {

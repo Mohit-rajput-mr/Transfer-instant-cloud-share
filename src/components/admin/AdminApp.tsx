@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatBytes } from "@/lib/client";
 import type { Layer, RouteLine } from "./Earth";
+import { took, when } from "./fmt";
 import AdminVoid from "./AdminVoid";
 import AdminPages from "./Pages";
-import History, { loadHistory, routeLines } from "./History";
+import History, { loadHistory, recLines, routeLines } from "./History";
 import type { AdminSpace, AdminTransfer, AnonSessionRec, Overview } from "./types";
 import { country, flag, n } from "./fmt";
 import { PIN_KINDS, pinRows, type PinKind } from "./pins";
@@ -253,25 +254,20 @@ function Dashboard({ data, events, now, since, onSince, onRefresh, onLogout }: {
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  // with a "From" time, the globe's routes are only the ones since then
+  // with a "From" time, the globe's routes are exactly the transfers since then, each with its own times (they come
+  // with the overview every 5 s, migration 032). Before, they came from the per-DAY totals, so "1 h" showed the whole day
   useEffect(() => {
     if (!since) {
       routesLoaded.current = false;
       void allTime(true);
       return;
     }
-    let off = false;
-    const get = () => loadHistory(since, null).then((d) => {
-      if (!off && d && typeof d === "object") setHist({ lines: routeLines(d.routes), label: `Routes since ${sinceLabel(since)}` });
-    });
-    void get();
-    const t = setInterval(() => document.visibilityState === "visible" && void get(), 60_000);
-    return () => {
-      off = true;
-      clearInterval(t);
-    };
+    setHist(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [since]);
+  const times = useMemo(() => transferTimes(data), [data]);
+  const exactLines = useMemo(() => (data?.routes ? recLines(data.routes) : null), [data?.routes]);
+  const globeRoutes = since ? exactLines ?? [] : hist?.lines ?? exactLines;
   const toggle = (l: Layer) => setLayers((s) => {
     const x = new Set(s);
     if (x.has(l)) x.delete(l);
@@ -347,7 +343,7 @@ function Dashboard({ data, events, now, since, onSince, onRefresh, onLogout }: {
 
       <main className="hq-main">
         <section className="hq-globe">
-          <Earth data={data} layers={layers} spin={spin} routes={hist?.lines ?? null} />
+          <Earth data={data} layers={layers} spin={spin} routes={globeRoutes} />
           <div className="hq-globe-title">
             <span className="mono dim">Universe view</span>
             <div className="wide">{n(data?.online)} <small>live</small></div>
@@ -363,7 +359,11 @@ function Dashboard({ data, events, now, since, onSince, onRefresh, onLogout }: {
               </button>
             ))}
             <button className={`chip${spin ? " on" : ""}`} onClick={() => setSpin((s) => !s)}>⟳ Auto-spin</button>
-            <button className={`chip${hist ? " on" : ""}`} onClick={() => allTime()} title="Routes on the globe: every route ever, or only the last 24 hours">{hist ? `${hist.label} · ${hist.lines.length} ✕` : "Last 24 h routes · show all time"}</button>
+            {since ? (
+              <span className="chip on" title="Every transfer since the From time, each with its upload and download time">Routes since {sinceLabel(since)} · {globeRoutes?.length ?? 0}</span>
+            ) : (
+              <button className={`chip${hist ? " on" : ""}`} onClick={() => allTime()} title="Routes on the globe: every route ever, or only the last 24 hours (each with its times)">{hist ? `${hist.label} · ${hist.lines.length} ✕` : `Last 24 h routes · ${exactLines?.length ?? 0} · show all time`}</button>
+            )}
           </div>
           <p className="hq-hint mono">Drag to rotate · scroll to zoom to street level · right-drag to tilt · hover a dot</p>
         </section>
@@ -452,6 +452,7 @@ function Dashboard({ data, events, now, since, onSince, onRefresh, onLogout }: {
                     <b>{t.name}{t.space ? <span className="hq-tag">◎ {t.space}{t.by ? ` · ${t.by}` : ""}</span> : null}{t.open ? <span className="hq-tag open">open</span> : null}{cloudIds.has(t.id) ? <span className="hq-tag cloud">cloud</span> : null}</b>
                     <span className="mono dim">{t.id} · {formatBytes(t.size)} · {t.status} · {flag(t.country)} {t.city || ""}</span>
                     <span className="mono dim">👁 {t.views} · ↓ {t.downloads} · ● {t.watchers} live · ✕ {t.failed} wrong{t.reports ? ` · ⚑ ${t.reports}` : ""} · burns in {Math.max(0, Math.round((new Date(t.expiresAt).getTime() - now) / 60000))}m</span>
+                    <TransferTimes t={t} times={times.get(t.id)} />
                   </div>
                   <button className="danger-btn" onClick={() => destroy(t.id)}>Destroy</button>
                 </div>
@@ -1012,5 +1013,30 @@ function AnonSessions({ list }: { list: AnonSessionRec[] }) {
         </tbody>
       </table>
     </div>
+  );
+}
+
+type Times = { upAt?: string | null; upMs?: number | null; downs: { at: string; ms: number | null; where: string }[] };
+/** when each listed object went up, how long that took, and each download's time (migration 032) */
+function transferTimes(d: Overview | null) {
+  const m = new Map<string, Times>();
+  const get = (id: string) => m.get(id) ?? (m.set(id, { downs: [] }), m.get(id)!);
+  for (const u of d?.uploads ?? []) Object.assign(get(u.id), { upAt: u.at, upMs: u.ms });
+  for (const r of d?.routes ?? []) {
+    const x = get(r.id);
+    if (r.up_at && !x.upAt) Object.assign(x, { upAt: r.up_at, upMs: r.up_ms });
+    x.downs.push({ at: r.down_at, ms: r.down_ms, where: [r.to_city, r.to_cc].filter(Boolean).join(", ") });
+  }
+  return m;
+}
+function TransferTimes({ t, times }: { t: AdminTransfer; times?: Times }) {
+  const downs = [...(times?.downs ?? [])].sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+  return (
+    <span className="mono dim hq-times">
+      Started {when(t.createdAt)}
+      {times?.upAt ? <> · in orbit {when(times.upAt)}{times.upMs != null ? ` (upload took ${took(times.upMs)})` : ""}</> : t.status === "uploading" ? <> · still uploading ({took(Date.now() - Date.parse(t.createdAt))} so far)</> : null}
+      {downs.slice(0, 4).map((x, i) => <span key={i}><br />↓ {when(x.at)}{x.ms != null ? ` · took ${took(x.ms)}` : ""}{x.where ? ` · ${x.where}` : ""}</span>)}
+      {downs.length > 4 ? <><br />+{downs.length - 4} more downloads</> : null}
+    </span>
   );
 }

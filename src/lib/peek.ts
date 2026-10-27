@@ -19,15 +19,17 @@ import { tryAcquire } from "./net";
 
 const MB = 1024 * 1024;
 const low = () => isLow();
-// guessed as soon as the ball shows up / on hover
-// the void is worldwide: every open file would be pulled by every visible tab on Earth; only small ones are warmed
-const WARM_MAX = 1 * MB;
+// guessed as soon as the ball shows up / on hover. Owner 2026-10-27: "if a viewer is live, assume they will click it:
+// download it in the background so the click is instant". The void is worldwide, so this stays bounded per tab: open
+// files up to 25 MB (8 MB on a weak device), newest arrivals first, at most guessCap() per 10 minutes, only while the
+// tab is visible, nothing else moves and the connection isn't slow or saving data (quiet()). Reads are free on R2.
+const warmMax = () => (low() ? 8 : 25) * MB;
 const hoverMax = () => (low() ? 25 : 100) * MB;
 const HOVER_MAX = 400 * MB; // fetched when the card opens
 // memory kept for ready previews (oldest dropped first)
 const budget = () => (low() ? 160 : 600) * MB;
 // background bytes per 10 minutes, at most
-const guessCap = () => (low() ? 40 : 160) * MB;
+const guessCap = () => (low() ? 60 : 300) * MB;
 const lanes = () => (low() ? 1 : 3);
 
 const cache = new Map<string, Promise<File>>();
@@ -156,8 +158,8 @@ function guess(o: Orb) {
 
 // inside a space the people who see a file are the few it was sent to, so files up to this size are on their device
 // before they tap (like a chat app); the worldwide void stays at WARM_MAX
-const SPACE_WARM_MAX = 50 * MB;
-const spaceWarmMax = () => (low() ? 10 : 50) * MB;
+const SPACE_WARM_MAX = 100 * MB;
+const spaceWarmMax = () => (low() ? 15 : 100) * MB;
 
 /** Warm small previews as they appear in the void (in a space: up to SPACE_WARM_MAX): the smallest first (most ready
  *  soonest), newest first among equals. */
@@ -166,10 +168,12 @@ export function warm(orbs: Orb[], inSpace = false) {
   pool = orbs;
   poolSpace = inSpace;
   const now = Date.now();
-  const max = inSpace ? Math.min(SPACE_WARM_MAX, spaceWarmMax()) : WARM_MAX;
+  const max = inSpace ? Math.min(SPACE_WARM_MAX, spaceWarmMax()) : warmMax();
+  // what just arrived first (the likeliest to be opened next), then the smallest (most ready soonest)
+  const fresh = (o: Orb) => now - Date.parse(o.createdAt) < 5 * 60_000;
   const next = orbs
     .filter((o) => canPeek(o) && o.size <= max && !cache.has(o.id) && !((skip.get(o.id) ?? 0) > now))
-    .sort((a, b) => a.size - b.size || b.createdAt.localeCompare(a.createdAt))[0];
+    .sort((a, b) => Number(fresh(b)) - Number(fresh(a)) || a.size - b.size || b.createdAt.localeCompare(a.createdAt))[0];
   if (next) guess(next);
 }
 

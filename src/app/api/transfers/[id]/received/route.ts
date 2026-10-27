@@ -14,6 +14,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     p_device: anon ? anonEventId(id, clean(b.deviceId, 40)) : clean(b.deviceId, 40),
     p_label: anon ? "" : clean(b.device, 60),
     p_geo: anon ? {} : geo(req),
+    // how long the download took on the receiver (HQ shows it on the route, migration 032)
+    p_ms: Number.isSafeInteger(b.ms) && b.ms >= 0 && b.ms <= 86_400_000 ? b.ms : null,
   });
   return NextResponse.json(r ?? { ok: false }, { status: r?.ok ? 200 : 403 });
 }

@@ -4,21 +4,23 @@ import { acquire } from "./net";
 describe("turns on the line: someone waiting now goes first", () => {
   it("a waiting device-to-device send gets the next turn before a waiting upload part", async () => {
     const order: string[] = [];
-    // two uploads take the two upload turns
-    const a = await acquire("up"), b = await acquire("up");
+    // four upload parts take the four upload turns
+    const ups = [await acquire("up"), await acquire("up"), await acquire("up"), await acquire("up")];
     // while they run, an upload part and a send both wait
-    const up3 = acquire("up").then((r) => (order.push("up"), r));
+    const up5 = acquire("up").then((r) => (order.push("up"), r));
     const serve = acquire("serve").then((r) => (order.push("serve"), r));
     await new Promise((r) => setTimeout(r, 10));
     expect(order).toEqual(["serve"]); // serves don't queue behind uploads
-    a();
+    ups[0]();
+    ups[1]();
     await new Promise((r) => setTimeout(r, 10));
-    // one upload still runs and someone is being served: uploads keep to one at a time
+    // two uploads still run and someone is being served: uploads keep to two at a time
     expect(order).toEqual(["serve"]);
-    b();
+    ups[2]();
     await new Promise((r) => setTimeout(r, 10));
     expect(order).toEqual(["serve", "up"]);
+    ups[3]();
     (await serve)();
-    (await up3)();
+    (await up5)();
   });
 });

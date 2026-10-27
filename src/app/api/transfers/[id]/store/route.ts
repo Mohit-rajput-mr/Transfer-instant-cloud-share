@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isHex, rpc, sha256, validId } from "@/lib/server";
-import { CLOUD_LIVE_BYTES, CLOUD_MONTH_BYTES, storeParts } from "@/lib/limits";
+import { CLOUD_LIVE_BYTES, CLOUD_MONTH_BYTES, partChunks, storeParts } from "@/lib/limits";
 import { abortMultipart, completeMultipart, listParts, objectKey, presign, r2On, startMultipart, storedSize } from "@/lib/r2";
 import { LIFE_MIN, untag } from "@/lib/spaces";
 
@@ -24,7 +24,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const sign = (uploadId: string, ns: number[]) =>
     Promise.all(ns.map((n) => presign("PUT", key, { partNumber: String(n), uploadId }, 6 * 3600).then((url) => ({ n, url }))));
   const key = objectKey(id);
-  const parts = storeParts(item.size);
+  // (parts of 1 chunk for pages that say pc: 1, else the old 4: see lib/limits.ts)
+  const parts = storeParts(item.size, partChunks(b.pc));
 
   try {
     if (b.action === "start") {

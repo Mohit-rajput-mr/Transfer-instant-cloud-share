@@ -82,6 +82,15 @@ export async function streamDecrypt(opts: {
   let buf = new Uint8Array(expected(0));
   let filled = 0;
   let done = 0;
+  // bytes arriving count too (before, nothing moved until a whole 8 MB chunk was in and decrypted: a far or slow
+  // line sat at "0%" for many seconds). Said at most every 100 ms
+  let told = 0;
+  const arriving = () => {
+    const t = performance.now();
+    if (t - told < 100) return;
+    told = t;
+    onProgress(Math.min(size, done + Math.max(0, filled - TAG)));
+  };
 
   try {
     while (index < total) {
@@ -105,6 +114,7 @@ export async function streamDecrypt(opts: {
           }
         }
       }
+      arriving();
     }
   } catch (e) {
     // a bad chunk or a sink that can't write (a full disk): hang up too, or a peer connection stays open and the

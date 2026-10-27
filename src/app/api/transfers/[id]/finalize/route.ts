@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { isHex, rpc, sha256, validId } from "@/lib/server";
+import { after, NextRequest, NextResponse } from "next/server";
+import { clean, isHex, rpc, sha256, validId } from "@/lib/server";
 import { liveWithSpace, untag } from "@/lib/spaces";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -14,6 +14,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const item = await rpc<{ name?: unknown; expiresAt?: unknown } | null>("orbit_finalize", { p_id: id, p_owner_hash: sha256(b.owner), p_url: b.url });
   if (!item) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   const o = untag(item);
+  // HQ Analytics: who uploaded today (never for anonymous sends; migration 032)
+  const dev = clean(b.deviceId, 40);
+  if (dev && !o.anon) after(() => rpc("orbit_mark_upload", { p_device: dev }).catch(() => {}));
   // inside a named space it stays until the space closes (8 hours at most)
   if (o.space && !o.anon) {
     await liveWithSpace(o.space, "o", id);

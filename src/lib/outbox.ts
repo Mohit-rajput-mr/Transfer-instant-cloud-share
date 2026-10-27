@@ -4,10 +4,10 @@
 // waits here: the file itself (encrypted copy not yet saved) is kept in this browser (IndexedDB), so if the sender
 // closes the tab, switches apps or the phone sleeps, the next time Orbi opens in this browser the upload starts again
 // by itself and the object appears when it is done. Nothing has to be picked again.
-import { storeCopy } from "./cloud";
+import { copying, storeCopy } from "./cloud";
 import { CHUNK } from "./crypto";
 import { hold } from "./p2p";
-import { dropOwnerKey, type Orb } from "./client";
+import { deviceId, dropOwnerKey, type Orb } from "./client";
 
 /** files up to this size are kept in the browser for a restart; bigger ones resume through the multipart record
  *  (cloud.ts remember: pick the same file again) */
@@ -37,7 +37,7 @@ const kept = () => tx<Pending[]>("readonly", (s) => s.getAll() as IDBRequest<Pen
 
 /** make it visible: the object is placed in orbit (status ready) and this page also serves it directly */
 export async function publish(p: Omit<Pending, "at">): Promise<Orb> {
-  const fin = await fetch(`/api/transfers/${p.id}/finalize`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ owner: p.owner, url: p.url }) });
+  const fin = await fetch(`/api/transfers/${p.id}/finalize`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ owner: p.owner, url: p.url, deviceId: deviceId() }) });
   if (!fin.ok) throw new Error("Could not place the object in orbit");
   hold(p.id, p.file, p.key, p.nonce, CHUNK, p.life * 60_000 + 60_000);
   void unkeep(p.id);
@@ -51,6 +51,8 @@ export async function resumeOutbox(onDone?: () => void) {
   running = true;
   try {
     for (const p of await kept()) {
+      // (this page's own launch still uploading it: "back online" mid-send must not start a second upload)
+      if (copying(p.id)) continue;
       // still in orbit? (asking also keeps it alive while it uploads)
       const r = await fetch(`/api/transfers/${p.id}/store`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ owner: p.owner, action: "alive" }) }).catch(() => null);
       const alive = r?.ok ? (await r.json().catch(() => null))?.ok !== false : !r;

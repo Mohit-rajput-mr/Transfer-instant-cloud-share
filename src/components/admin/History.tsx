@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatBytes } from "@/lib/client";
 import type { RouteLine } from "./Earth";
+import type { RouteRec } from "./types";
 import { country, flag, n } from "./fmt";
 
 // HQ History: permanent totals from Supabase (supabase/migrations/003_history.sql) for any date range,
@@ -36,7 +37,18 @@ const place = (cc: string | null, city: string | null) => (city ? `${city}, ${co
 export function routeLines(routes: HistoryData["routes"]): RouteLine[] {
   return routes
     .filter((r) => r.from_lat != null && r.from_lon != null && r.to_lat != null && r.to_lon != null)
-    .map((r) => ({ a: r.from_lat!, b: r.from_lon!, c: r.to_lat!, d: r.to_lon!, n: r.n, label: r.from_city === r.to_city && r.from_cc === r.to_cc ? [r.from_city, r.from_cc].filter(Boolean).join(", ") : `${r.from_city || r.from_cc} → ${r.to_city || r.to_cc}` }));
+    .map((r) => ({ a: r.from_lat!, b: r.from_lon!, c: r.to_lat!, d: r.to_lon!, n: r.n, first: r.first_at, last: r.last_at, label: r.from_city === r.to_city && r.from_cc === r.to_cc ? [r.from_city, r.from_cc].filter(Boolean).join(", ") : `${r.from_city || r.from_cc} → ${r.to_city || r.to_cc}` }));
+}
+
+/** Single transfers (orbit_admin_pins, migration 032) as globe routes, each with its upload and download times. */
+export function recLines(routes: RouteRec[]): RouteLine[] {
+  return routes
+    .filter((r) => r.from_lat != null && r.from_lon != null && r.to_lat != null && r.to_lon != null)
+    .map((r) => ({
+      a: r.from_lat, b: r.from_lon, c: r.to_lat, d: r.to_lon, n: 1,
+      label: `${r.from_city || r.from_cc || "?"} → ${r.to_city || r.to_cc || "?"}`,
+      up: r.up_at, upMs: r.up_ms, down: r.down_at, downMs: r.down_ms, bytes: r.bytes, fromDev: r.from_label, toDev: r.to_label,
+    }));
 }
 
 export async function loadHistory(from: string | null, to: string | null): Promise<HistoryData | "setup" | null> {

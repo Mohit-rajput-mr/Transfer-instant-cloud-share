@@ -54,7 +54,11 @@ export function nudgeNet() {
 }
 /** A part failed on the network (often Chrome's ERR_NETWORK_CHANGED on a choked line): start again gently, and only
  *  speed up after 2 calm samples, instead of re-sending every lane at once into the same jam. */
+let hiccupAt = 0;
+/** a part failed on the network in the last 2 minutes: only then do uploads pause between parts (lib/cloud.ts breather) */
+export const netShaky = () => Date.now() - hiccupAt < 120_000;
 export function netHiccup() {
+  hiccupAt = Date.now();
   if (!st.timer) return; // (nothing watched: nothing would ever clear it)
   st.recent = [];
   st.busy = true;
@@ -104,7 +108,10 @@ let seq = 0;
 const phone = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 const limit = (k: NetKind) => {
   const busy = netCongested();
-  if (k === "up") return upSpeed() === "full" ? 6 : phone ? (busy ? 2 : 4) : busy || runs.serve > 0 ? 1 : 2; // (never 0: nothing stalls for good on a wrong probe)
+  // (2026-10-27: desktops were held to 1–2 parts at a time with a pause after each, which made every upload far slower
+  // than the line: a long, far route (India → the bucket in Europe) needs several parts in flight to fill it. Now 4, and
+  // 2 while the round trip is up or someone is served directly; one at a time only after parts actually failed)
+  if (k === "up") return upSpeed() === "full" ? 6 : netShaky() && busy ? 1 : busy || (!phone && runs.serve > 0) ? 2 : 4; // (never 0: nothing stalls for good on a wrong probe)
   if (k === "serve") return busy || (phone && runs.up > 0) ? 1 : 2;
   return st.busy || runs.up || runs.serve || waits.some((w) => w.kind !== "peek") ? 0 : 1;
 };
