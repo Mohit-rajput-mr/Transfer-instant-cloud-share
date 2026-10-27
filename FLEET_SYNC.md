@@ -20,6 +20,15 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- 2026-10-27 (C, owner: "opening Orbi makes the WHOLE computer's internet stop, other browsers too", desktop)
+  - FIXED? Prime suspect: desktops with location allowed ran watchPosition (maximumAge 60 s) → Chrome on Windows asks
+    for a fresh Wi-Fi position about every minute → each is a full Wi-Fi channel scan → the radio leaves its channel →
+    machine-wide stalls/drops. Now (lib/where.ts follow): computers never watch; one cached position (maximumAge 30 min)
+    every 30 min; locate() uses 30 min cache on computers; fix kept 40 min for the heartbeat. Phones unchanged.
+    Verified Playwright 15 s: desktop 1 getCurrentPosition, 0 watchPosition; iPhone UA 1 watch.
+  - Also: upload duty-cycle pause is back whenever the line is choking (lib/cloud.ts breather; was only after failures).
+  - OPEN: owner to confirm on the real PC. Quick test: location switch off (pin menu) → if the internet no longer dies,
+    the scan was it; if it still dies, next suspects: resumed outbox uploads on open (lib/outbox.ts), P2P serving.
 - 2026-10-27 (owner: "internet disconnects / slow / Failed to fetch while I work in a space"; location pin can't be turned off)
   - FIXED? (H) Line choking. Root cause found in code (not reproduced on the owner's line): background preview downloads
     (lib/peek.ts) took files up to 100 MB in a space, 3 at a time, 300 MB/10 min, with NO round-trip watch (only uploads

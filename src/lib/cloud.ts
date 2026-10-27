@@ -54,8 +54,9 @@ export { netCongested, setUpSpeed, upSpeed, type UpSpeed } from "./net";
  *  upload, goes ahead of them: see single) */
 let picked = 0;
 /** after a part on a busy line: let the queue drain for half as long as the part took (capped) */
-// (only once parts have really failed on this line: a slow round trip alone is no reason to stop sending)
-const breather = (ms: number, signal: AbortSignal) => (netCongested() && netShaky() ? sleep(Math.min(30_000, Math.max(800, ms / 2)), signal) : Promise.resolve());
+// (2026-10-27 later: back on whenever the line is choking, failures or not. "Busy" means the round trip is 4× and 400 ms+
+// over quiet: the router's queue is full and the whole house's internet stalls, other browsers included)
+const breather = (ms: number, signal: AbortSignal) => (netCongested() ? sleep(Math.min(30_000, Math.max(800, ms / (netShaky() ? 2 : 3))), signal) : Promise.resolve());
 
 // ---- uploads that resume -------------------------------------------------------------------------
 // A big upload is remembered on this device (IndexedDB: the object, its owner key, R2's upload id and

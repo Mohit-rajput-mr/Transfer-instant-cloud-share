@@ -31,13 +31,15 @@ const save = (w: Where) => {
 export type Fix = { lat: number; lon: number; acc: number; at: number };
 let fix: Fix | null = null;
 let sent: Fix | null = null;
-const FIX_FOR = 10 * 60_000;
+// (a computer is asked only every half hour, see follow(): its fix stays good that long)
+const FIX_FOR_PHONE = 10 * 60_000;
+const FIX_FOR_DESK = 40 * 60_000;
 const setFix = (c: GeolocationCoordinates) => {
   fix = { lat: c.latitude, lon: c.longitude, acc: Math.round(c.accuracy), at: Date.now() };
   return fix;
 };
 /** the last exact position, while fresh: sent with the heartbeat */
-export const fixNow = () => (isAnon() ? null : fix && Date.now() - fix.at < FIX_FOR ? fix : null);
+export const fixNow = () => (isAnon() ? null : fix && Date.now() - fix.at < (isMobileDevice() ? FIX_FOR_PHONE : FIX_FOR_DESK) ? fix : null);
 export const markSent = (f: Fix | null) => (sent = f);
 /** metres between two fixes */
 const dist = (a: Fix, b: Fix) => {
@@ -152,7 +154,7 @@ export function locate(): Promise<Where> {
         res(w);
       },
       (e) => rej(Object.assign(new Error(e.code === 1 ? "Location is blocked for this site" : "Couldn't get your location"), { denied: e.code === 1 })),
-      { enableHighAccuracy: false, timeout: 12_000, maximumAge: 10 * 60_000 },
+      { enableHighAccuracy: false, timeout: 12_000, maximumAge: (isMobileDevice() ? 10 : 30) * 60_000 },
     );
   });
 }
@@ -190,13 +192,27 @@ export function follow(onArea: (w: Where) => void, onMoved: () => void) {
       confirmT = setTimeout(() => {
         if (stopped || gpsNext !== area) return;
         navigator.geolocation.getCurrentPosition(onFix, () => !stopped && !isAnon() && gpsNext === area && cur?.how === "gps" && commit(area), {
-          enableHighAccuracy: mobile, timeout: 30_000, maximumAge: 0,
+          enableHighAccuracy: mobile, timeout: 30_000, maximumAge: mobile ? 0 : 5 * 60_000,
         });
       }, 20_000);
     } else commit(area);
     if (!sent || dist(sent, f) > 100) onMoved();
   };
-  const id = navigator.geolocation.watchPosition(onFix, () => {}, { enableHighAccuracy: mobile, timeout: 30_000, maximumAge: mobile ? 15_000 : 60_000 });
+  // A computer is NOT followed (owner 2026-10-27: "opening Orbi makes the whole computer's internet stop, other
+  // browsers too"). On Windows every fresh position makes the Wi-Fi card scan all channels, and watchPosition asked
+  // for one about every minute: each scan takes the radio off its channel, so the whole machine's connection stalls
+  // or drops. A computer doesn't move: one cached position every 30 minutes (maximumAge: no new scan while it is
+  // fresh) is plenty. Phones and tablets keep following.
+  if (!mobile) {
+    const ask = () => !stopped && navigator.geolocation.getCurrentPosition(onFix, () => {}, { enableHighAccuracy: false, timeout: 30_000, maximumAge: 30 * 60_000 });
+    const t = setInterval(ask, 30 * 60_000);
+    return () => {
+      stopped = true;
+      clearTimeout(confirmT);
+      clearInterval(t);
+    };
+  }
+  const id = navigator.geolocation.watchPosition(onFix, () => {}, { enableHighAccuracy: true, timeout: 30_000, maximumAge: 15_000 });
   return () => {
     stopped = true;
     clearTimeout(confirmT);
