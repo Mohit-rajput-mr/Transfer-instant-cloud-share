@@ -59,9 +59,8 @@ Severity: C critical · H high · M medium · L low. Status: FIXED (verified how
   - DONE (owner) HQ Analytics page /admin/analytics: per UTC day visitors, new devices, uploaders, downloaders, visits,
     uploads, downloads, data, GPS, peak live, median upload/download time; range/custom dates/country/by day-week-month,
     one unit per chart (People/Activity/Data/Live/Speed), sortable table. Per-device counts start with migration 032.
-  - OPEN (owner action) Migration 032 last step NOT applied: the Supabase tool asked for a confirmation that went
-    unanswered. Still to run: the `sessions_device_day` trigger + `cron.schedule('orbit-live-sample', …)`, and the new
-    'uploads' key of orbit_admin_pins (see the file). Until then Analytics has no visitors/GPS/peak-live per day.
+  - DONE Migration 032 fully applied (owner OK'd): trigger sessions_device_day (as CREATE OR REPLACE TRIGGER), pg_cron
+    job orbit-live-sample (*/2), orbit_admin_pins with 'uploads'. Checked: device_days and live_samples fill.
   - RISK: incoming "arriving" balls not re-tested with two live devices here (needs the worker; logic unchanged).
 - FIXED 2026-10-25 (C, owner: "if it's visible on someone's phone it must be downloadable") — Objects appeared at
   once and were served from the sender's page until the online copy landed; a sender who closed the tab / locked the
