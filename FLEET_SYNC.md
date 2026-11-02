@@ -30,6 +30,12 @@ Severity: C critical · H high · M medium · L low. Status: FIXED (verified how
   2026-11-02: no size cap any more (owner: "any file size can preview but in chunks"). Each decrypted chunk streams
   into a Blob the browser backs on disk (TransformStream backpressure), so the whole file is never in memory at once;
   the 1.5 GB in-memory cap is gone. Verified Playwright: a 40 MB file (5 chunks) previews to a full-size blob: URL.
+  2026-11-02: plays/streams as it loads (owner: "preview should be simultaneous as it loads"). A service worker
+  (public/hqpeek-sw.js, scoped /admin, registered only by HQ) decrypts the stored copy on the fly and serves
+  /hqpeek/<id> with Range, so <video>/<audio>/<img>/<iframe> stream and seek while loading. Key stays in the browser
+  (postMessaged to the SW); nothing sent anywhere new. Falls back to decrypt-then-show blob when there's no SW or a
+  browser won't route media through it (AdminPeek retryBlob on media onError). Verified Playwright: 46-chunk video
+  played after 20 chunks (not all); img/video/text all render via the SW; text <script> stays inert.
   Verified: npm run check; real route answers 401 without the admin cookie; next dev + Playwright with real AES-GCM
   ciphertext and mocked API: wrong code → "Wrong passcode", PNG 400x300 shown, MP4 (2 chunks, no mime) plays 320x240
   3 s, open text shown with <script> as text, 1440 + 390 px. OPEN: try on prod with a real object (needs admin login).

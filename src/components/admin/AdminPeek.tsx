@@ -37,6 +37,7 @@ export function kindOf(mime: string): Kind {
 }
 
 type Meta = { salt: string; iterations: number; open: boolean; anon: boolean };
+type Reply = { ok: boolean; reason?: string; store?: string; nonce: string; size: number; chunkSize: number; fileName?: string; mime?: string };
 type Shown = { url: string; kind: Kind; mime: string; fileName: string; size: number; text?: string };
 type Stage = { s: "meta" } | { s: "pass"; err?: string } | { s: "checking" } | { s: "loading"; done: number; size: number } | { s: "shown" } | { s: "error"; msg: string };
 
@@ -46,60 +47,138 @@ const REASONS: Record<string, string> = {
   unauthorized: "Your admin session ended. Log in again.",
 };
 
+// A service worker (public/hqpeek-sw.js) decrypts the stored copy on the fly and serves /hqpeek/<id> with Range
+// support, so media plays and seeks while it streams instead of waiting for the whole file. Registered once, lazily.
+type PeekJob = { key: CryptoKey; nonce: Uint8Array; storeUrl: string; size: number; chunkSize: number; mime: string };
+let swReady: Promise<boolean> | null = null;
+function ensureSW(): Promise<boolean> {
+  if (swReady) return swReady;
+  swReady = (async () => {
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator) || !window.isSecureContext) return false;
+    try {
+      await navigator.serviceWorker.register("/hqpeek-sw.js", { scope: "/admin" });
+      if (navigator.serviceWorker.controller) return true;
+      // the worker claims this page on activate; wait for it to take control (or give up and use the blob fallback)
+      await new Promise<void>((res) => {
+        const t = setTimeout(res, 4000);
+        navigator.serviceWorker.addEventListener("controllerchange", () => (clearTimeout(t), res()), { once: true });
+      });
+      return !!navigator.serviceWorker.controller;
+    } catch {
+      return false;
+    }
+  })();
+  return swReady;
+}
+// hand the worker the key + where the ciphertext is, and wait for it to acknowledge before the media element asks
+function postJob(id: string, job: PeekJob): Promise<boolean> {
+  const sw = navigator.serviceWorker.controller;
+  if (!sw) return Promise.resolve(false);
+  return new Promise((res) => {
+    const mc = new MessageChannel();
+    const t = setTimeout(() => res(false), 4000);
+    mc.port1.onmessage = () => (clearTimeout(t), res(true));
+    sw.postMessage({ type: "peek", id, job }, [mc.port2]);
+  });
+}
+const dropJob = (id: string) => navigator.serviceWorker?.controller?.postMessage({ type: "drop", id });
+
 export default function AdminPeek({ t, onClose }: { t: AdminTransfer; onClose: () => void }) {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [stage, setStage] = useState<Stage>({ s: "meta" });
   const [pass, setPass] = useState("");
   const [shown, setShown] = useState<Shown | null>(null);
   const abort = useRef<AbortController | null>(null);
+  const token = useRef<string | null>(null);
 
-  // stop the download and free the decrypted copy when the window closes
-  useEffect(() => () => abort.current?.abort(), []);
-  useEffect(() => () => { if (shown) URL.revokeObjectURL(shown.url); }, [shown]);
+  // stop the download, free the decrypted copy and drop the worker's job when the window closes
+  useEffect(() => () => { abort.current?.abort(); if (token.current) dropJob(token.current); }, []);
+  useEffect(() => () => { if (shown?.url.startsWith("blob:")) URL.revokeObjectURL(shown.url); }, [shown]);
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", esc);
     return () => window.removeEventListener("keydown", esc);
   }, [onClose]);
 
+  // kept so a stream that a browser won't play through the worker can be retried as a decrypt-then-show blob
+  const last = useRef<{ r: Reply; key: CryptoKey; mime: string; kind: Kind; fileName: string } | null>(null);
+  const triedBlob = useRef(false);
+
+  // Decrypt the whole file into a disk-backed Blob, then show it. Any size (each chunk streams in so memory stays
+  // bounded), but it only appears once finished. Used when there is no service worker, or if streaming playback failed.
+  const showViaBlob = async (ctx: NonNullable<typeof last.current>, ac: AbortController) => {
+    const { r, key, mime, kind, fileName } = ctx;
+    setStage({ s: "loading", done: 0, size: r.size });
+    const ts = new TransformStream<Uint8Array, Uint8Array>();
+    const writer = ts.writable.getWriter();
+    const blobPromise = new Response(ts.readable).blob();
+    try {
+      await streamDecrypt({
+        url: r.store!, key, nonce: fromB64(r.nonce), size: r.size, chunkSize: r.chunkSize, signal: ac.signal,
+        sink: { write: (c) => writer.write(c), close: () => writer.close(), abort: () => writer.abort() },
+        onProgress: (done) => setStage({ s: "loading", done, size: r.size }),
+      });
+    } catch (e) {
+      await writer.abort(e).catch(() => {});
+      await blobPromise.catch(() => {});
+      throw e;
+    }
+    const blob = (await blobPromise).slice(0, r.size, mime); // slice shares the bytes; it only stamps the type
+    const text = kind === "text" || kind === "link" ? await blob.slice(0, TEXT_MAX).text() : undefined;
+    if (ac.signal.aborted) return;
+    setShown({ url: URL.createObjectURL(blob), kind, mime, fileName, size: r.size, text });
+    setStage({ s: "shown" });
+  };
+
+  // the player couldn't read the streamed copy (a browser that won't route media through the worker): fall back once
+  const retryBlob = () => {
+    if (triedBlob.current || !last.current) return;
+    triedBlob.current = true;
+    if (token.current) (dropJob(token.current), (token.current = null));
+    const ac = (abort.current = new AbortController());
+    showViaBlob(last.current, ac).catch((e) => {
+      if (!ac.signal.aborted) setStage({ s: "error", msg: `Could not open it: ${e instanceof Error ? e.message : String(e)}` });
+    });
+  };
+
   const open = async (m: Meta, code: string) => {
     abort.current?.abort();
+    triedBlob.current = false;
     const ac = (abort.current = new AbortController());
     setStage({ s: "checking" });
     try {
       const { key, auth } = await deriveKeys(code, fromB64(m.salt), m.iterations);
       const res = await fetch(`/api/admin/transfers/${t.id}/peek`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ auth }), signal: ac.signal });
-      const r = await res.json().catch(() => ({ ok: false, reason: "gone" }));
+      const r: Reply = await res.json().catch(() => ({ ok: false, reason: "gone" }));
       if (!r.ok) {
         if (r.reason === "wrong") return setStage(m.open ? { s: "error", msg: "This open object uses its anonymous space's key, which HQ doesn't have." } : { s: "pass", err: "Wrong passcode" });
-        return setStage({ s: "error", msg: REASONS[r.reason] ?? "Could not open it." });
+        return setStage({ s: "error", msg: REASONS[r.reason ?? ""] ?? "Could not open it." });
       }
       if (!r.store) return setStage({ s: "error", msg: "No stored copy: this object lives only on the sender's device, so HQ can't fetch it." });
       const mime = mimeOf(r.fileName ?? "", r.mime ?? "");
-      setStage({ s: "loading", done: 0, size: r.size });
-      // Any size: each decrypted chunk is streamed straight into a Blob the browser backs on disk, so the whole
-      // file is never held in memory at once (owner 2026-11-02: a 1.6 GB file hit the old in-memory cap). The
-      // TransformStream gives real backpressure — at most a chunk or two is buffered between decrypt and the Blob.
-      const ts = new TransformStream<Uint8Array, Uint8Array>();
-      const writer = ts.writable.getWriter();
-      const blobPromise = new Response(ts.readable).blob();
-      try {
-        await streamDecrypt({
-          url: r.store, key, nonce: fromB64(r.nonce), size: r.size, chunkSize: r.chunkSize, signal: ac.signal,
-          sink: { write: (c) => writer.write(c), close: () => writer.close(), abort: () => writer.abort() },
-          onProgress: (done) => setStage({ s: "loading", done, size: r.size }),
-        });
-      } catch (e) {
-        await writer.abort(e).catch(() => {});
-        await blobPromise.catch(() => {});
-        throw e;
-      }
-      // slice shares the underlying bytes (no copy); it only stamps the right type on the Blob
-      const blob = (await blobPromise).slice(0, r.size, mime);
       const kind = kindOf(mime);
-      const text = kind === "text" || kind === "link" ? (await blob.slice(0, TEXT_MAX).text()) : undefined;
-      setShown({ url: URL.createObjectURL(blob), kind, mime, fileName: r.fileName || t.fileName || t.name, size: r.size, text });
-      setStage({ s: "shown" });
+      const fileName = r.fileName || t.fileName || t.name;
+      last.current = { r, key, mime, kind, fileName };
+
+      // Preferred path: a service worker decrypts on the fly and serves /hqpeek/<id> with Range, so the player
+      // streams and seeks while it loads (owner 2026-11-02: play as it loads, don't wait for the whole file).
+      if (await ensureSW()) {
+        const id = crypto.randomUUID();
+        const ok = await postJob(id, { key, nonce: fromB64(r.nonce), storeUrl: r.store, size: r.size, chunkSize: r.chunkSize, mime });
+        if (ac.signal.aborted) return;
+        if (ok) {
+          if (token.current) dropJob(token.current);
+          token.current = id;
+          const url = `/hqpeek/${id}`;
+          // text/links need the characters to show, so read just the start through the same worker
+          const text = kind === "text" || kind === "link" ? await fetch(url, { headers: { Range: `bytes=0-${TEXT_MAX - 1}` }, signal: ac.signal }).then((x) => x.text()).catch(() => "") : undefined;
+          if (ac.signal.aborted) return;
+          setShown({ url, kind, mime, fileName, size: r.size, text });
+          return setStage({ s: "shown" });
+        }
+      }
+
+      await showViaBlob(last.current, ac);
     } catch (e) {
       if (ac.signal.aborted) return;
       const msg = e instanceof Error ? e.message : String(e);
@@ -156,15 +235,18 @@ export default function AdminPeek({ t, onClose }: { t: AdminTransfer; onClose: (
             </div>
           )}
           {stage.s === "error" && <p className="hq-peek-err">{stage.msg}</p>}
-          {stage.s === "shown" && shown && <View v={shown} />}
+          {stage.s === "shown" && shown && <View v={shown} onStreamFail={shown.url.startsWith("/hqpeek/") ? retryBlob : undefined} />}
         </div>
       </div>
     </div>
   );
 }
 
-function View({ v }: { v: Shown }) {
+function View({ v, onStreamFail }: { v: Shown; onStreamFail?: () => void }) {
   const [broken, setBroken] = useState(false);
+  // A streamed media element that errors: if the browser won't route it through the worker, retry as a blob once;
+  // otherwise it is genuinely an unplayable format.
+  const fail = () => (onStreamFail ? onStreamFail() : setBroken(true));
   if (broken || v.kind === "other" || v.kind === "folder")
     return (
       <div className="hq-peek-none">
@@ -173,9 +255,9 @@ function View({ v }: { v: Shown }) {
         <a className="pill" href={v.url} download={v.fileName}>Save to this computer</a>
       </div>
     );
-  if (v.kind === "image") return <img className="hq-peek-media" src={v.url} alt={v.fileName} onError={() => setBroken(true)} />;
-  if (v.kind === "video") return <video className="hq-peek-media" src={v.url} controls autoPlay playsInline onError={() => setBroken(true)} />;
-  if (v.kind === "audio") return <audio src={v.url} controls autoPlay onError={() => setBroken(true)} />;
+  if (v.kind === "image") return <img className="hq-peek-media" src={v.url} alt={v.fileName} onError={fail} />;
+  if (v.kind === "video") return <video className="hq-peek-media" src={v.url} controls autoPlay playsInline onError={fail} />;
+  if (v.kind === "audio") return <audio src={v.url} controls autoPlay onError={fail} />;
   if (v.kind === "pdf") return <iframe className="hq-peek-pdf" src={v.url} title={v.fileName} />;
   if (v.kind === "link") {
     const u = (v.text ?? "").trim();
