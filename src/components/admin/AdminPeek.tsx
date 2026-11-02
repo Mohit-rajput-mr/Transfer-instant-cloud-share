@@ -9,8 +9,7 @@ import type { AdminTransfer } from "./types";
 // browser: a passcode object needs its passcode (the server never has it), an open one opens at once. Nothing is
 // counted and a wrong passcode never locks the object for its receivers.
 
-/** decrypted in memory: past this, a browser tab may run out of memory */
-const MAX = 1536 * 1024 * 1024;
+/** only the start of a text/link object is read into a string for display */
 const TEXT_MAX = 512 * 1024;
 
 type Kind = "image" | "video" | "audio" | "pdf" | "text" | "link" | "folder" | "other";
@@ -76,16 +75,27 @@ export default function AdminPeek({ t, onClose }: { t: AdminTransfer; onClose: (
         return setStage({ s: "error", msg: REASONS[r.reason] ?? "Could not open it." });
       }
       if (!r.store) return setStage({ s: "error", msg: "No stored copy: this object lives only on the sender's device, so HQ can't fetch it." });
-      if (r.size > MAX) return setStage({ s: "error", msg: `Too big to preview here (${formatBytes(r.size)}; up to ${formatBytes(MAX)}).` });
       const mime = mimeOf(r.fileName ?? "", r.mime ?? "");
-      const parts: Uint8Array[] = [];
       setStage({ s: "loading", done: 0, size: r.size });
-      await streamDecrypt({
-        url: r.store, key, nonce: fromB64(r.nonce), size: r.size, chunkSize: r.chunkSize, signal: ac.signal,
-        sink: { write: async (c) => void parts.push(c), close: async () => {}, abort: async () => {} },
-        onProgress: (done) => setStage({ s: "loading", done, size: r.size }),
-      });
-      const blob = new Blob(parts as BlobPart[], { type: mime });
+      // Any size: each decrypted chunk is streamed straight into a Blob the browser backs on disk, so the whole
+      // file is never held in memory at once (owner 2026-11-02: a 1.6 GB file hit the old in-memory cap). The
+      // TransformStream gives real backpressure — at most a chunk or two is buffered between decrypt and the Blob.
+      const ts = new TransformStream<Uint8Array, Uint8Array>();
+      const writer = ts.writable.getWriter();
+      const blobPromise = new Response(ts.readable).blob();
+      try {
+        await streamDecrypt({
+          url: r.store, key, nonce: fromB64(r.nonce), size: r.size, chunkSize: r.chunkSize, signal: ac.signal,
+          sink: { write: (c) => writer.write(c), close: () => writer.close(), abort: () => writer.abort() },
+          onProgress: (done) => setStage({ s: "loading", done, size: r.size }),
+        });
+      } catch (e) {
+        await writer.abort(e).catch(() => {});
+        await blobPromise.catch(() => {});
+        throw e;
+      }
+      // slice shares the underlying bytes (no copy); it only stamps the right type on the Blob
+      const blob = (await blobPromise).slice(0, r.size, mime);
       const kind = kindOf(mime);
       const text = kind === "text" || kind === "link" ? (await blob.slice(0, TEXT_MAX).text()) : undefined;
       setShown({ url: URL.createObjectURL(blob), kind, mime, fileName: r.fileName || t.fileName || t.name, size: r.size, text });
