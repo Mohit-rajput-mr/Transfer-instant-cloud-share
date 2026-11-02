@@ -20,6 +20,17 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- 2026-11-02 DONE (owner ask) — HQ "From" filter now covers everything and defaults to TODAY.
+  - Default: HQ opens on today (savedSince → today midnight; an explicit "All time" stores the sentinel "all" so it
+    sticks, otherwise reopening defaults to today). First overview call carries ?since=<today>.
+  - Spaces were fetched from their own endpoint and never filtered — now filtered client-side by each space's `at`
+    (creation time): the Spaces tile, panel and expanded table show only spaces created in the window (AdminApp spaceList).
+    Objects, activity, countries, cities, anonymous, pins already filter server-side (orbit_admin_overview_since / route).
+  - SinceBar: day-oriented quick spans (Today · Last hour · 7 days · 30 days · All time) with the active one lit; the
+    datetime picker still allows any exact instant. Phone: 44–46 px tap targets, chips in a wrap grid, full-width date box.
+  - Verified Playwright: default load uses ?since=today, Today chip active, date box = today; Spaces shows only today's by
+    default and both after All time; phone chip 44 px / date 46 px. npm run check green.
+  - NOTE (open): HQ "Void" tab still shows only what is alive right now (ephemeral), so it is not day-filtered; say so if asked.
 - 2026-11-02 DONE (owner ask) — HQ Preview: Objects (side panel + full list) have a Preview button. Open objects open
   at once; passcode objects ask for the object's passcode (zero-knowledge: the server never has it, so there is no way
   around typing it — owner chose this over key escrow). Decrypted in the admin's browser only (components/admin/AdminPeek.tsx):

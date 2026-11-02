@@ -71,12 +71,20 @@ function countryRows(data: Overview, events: Ev[]): CountryRow[] {
 
 /** HQ's "From" filter: only what happened from this moment on (null = everything). Kept on this browser. */
 const SINCE_KEY = "hq:since";
+const todayMidnight = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+};
+// HQ opens on TODAY by default (owner 2026-11-02). A stored timestamp is kept; the "all" sentinel is the only way
+// all-time sticks across reloads; anything else (first visit, cleared) falls back to today.
 function savedSince(): string | null {
   try {
     const v = localStorage.getItem(SINCE_KEY);
-    return v && !Number.isNaN(Date.parse(v)) ? v : null;
+    if (v === "all") return null;
+    return v && !Number.isNaN(Date.parse(v)) ? v : todayMidnight();
   } catch {
-    return null;
+    return todayMidnight();
   }
 }
 const sinceLabel = (iso: string) => new Date(iso).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -149,8 +157,7 @@ export default function AdminApp() {
     sinceRef.current = v;
     setSinceState(v);
     try {
-      if (v) localStorage.setItem(SINCE_KEY, v);
-      else localStorage.removeItem(SINCE_KEY);
+      localStorage.setItem(SINCE_KEY, v ?? "all"); // "all" so all-time sticks; otherwise reopening defaults to today
     } catch {}
     void load();
   };
@@ -230,6 +237,13 @@ function Dashboard({ data, events, now, since, onSince, onRefresh, onLogout }: {
     const t = setInterval(get, 20_000);
     return () => clearInterval(t);
   }, []);
+  // spaces come from their own endpoint, so the "From" filter is applied here by each space's creation time — HQ then
+  // shows only the spaces created in the chosen window, like every other record (owner 2026-11-02).
+  const spaceList = useMemo(() => {
+    if (!spaces || !since) return spaces;
+    const t = Date.parse(since);
+    return spaces.filter((s) => s.at >= t);
+  }, [spaces, since]);
   const [spin, setSpin] = useState(true);
   const [layersOpen, setLayersOpen] = useState(false); // phones: the layer chips sit behind one "Layers" button
   // routes on the globe: the live ones, or a set picked in History (all time by default)
@@ -380,7 +394,7 @@ function Dashboard({ data, events, now, since, onSince, onRefresh, onLogout }: {
             <Tile label={since ? "Downloads since" : "Downloads today"} value={n(today.downloads)} sub={formatBytes(today.bytes_down ?? 0)} />
             <Tile label={since ? "Devices since" : "Devices all-time"} value={n(data?.devices)} sub={since ? `${n(data?.newDevices)} new · ${n(data?.visits)} visits` : `${n(data?.visits)} visits`} />
             {since && data?.gps ? <Tile label="GPS since" value={`${n(data.gps.on)} on`} sub={`${n(data.gps.off)} no GPS / off · ${n(today.views)} views`} /> : null}
-            <Tile label="Spaces" value={n(spaces?.length)} sub={`${n(spaces?.filter((x) => x.priv).length)} private · ${n(spaces?.reduce((a, x) => a + x.members.length, 0))} members`} />
+            <Tile label={since ? "Spaces since" : "Spaces"} value={n(spaceList?.length)} sub={`${n(spaceList?.filter((x) => x.priv).length)} private · ${n(spaceList?.reduce((a, x) => a + x.members.length, 0))} members`} />
             <Tile label="Open objects now" value={n(data?.transfers.filter((t) => t.open).length)} sub={`${n(data?.transfers.filter((t) => !t.open).length)} with passcode`} />
             <Tile label="Saved in cloud now" value={n(data?.cloud?.ids.length)} sub={`${formatBytes(data?.cloud?.bytes ?? 0)} · today ${n(data?.cloud?.today.copies)} (${formatBytes(data?.cloud?.today.bytes ?? 0)})`} />
             <Tile label="Containers now" value={n(containers(data?.transfers ?? []).length)} sub={`${n(containers(data?.transfers ?? []).reduce((a, c) => a + c.items.length, 0))} objects inside`} />
@@ -388,9 +402,9 @@ function Dashboard({ data, events, now, since, onSince, onRefresh, onLogout }: {
             <Tile label={since ? "Data moved since" : "Data moved all-time"} value={formatBytes((data?.totals.bytes_up ?? 0) + (data?.totals.bytes_down ?? 0))} sub={`${n(data?.totals.uploads)} up · ${n(data?.totals.downloads)} down`} />
           </div>
 
-          <Panel title="Spaces" right={`${spaces?.length ?? "…"}`} onExpand={() => setExpand("spaces")}>
+          <Panel title="Spaces" right={`${spaceList?.length ?? "…"}`} onExpand={() => setExpand("spaces")}>
             <div className="hq-list">
-              {spaces?.length ? spaces.slice(0, 6).map((sp) => (
+              {spaceList?.length ? spaceList.slice(0, 6).map((sp) => (
                 <div key={sp.slug} className="hq-row short">
                   <span className="hq-flag">{sp.priv ? "🔒" : "◎"}</span>
                   <span className="hq-name">{sp.title} <span className="mono dim">· {data?.transfers.filter((t) => t.space === sp.slug).length ?? 0} objects</span></span>
@@ -500,7 +514,7 @@ function Dashboard({ data, events, now, since, onSince, onRefresh, onLogout }: {
         </div>
       )}
       {expand === "void" && <AdminVoid onClose={() => setExpand(null)} />}
-      {expand && expand !== "history" && expand !== "anon" && expand !== "void" && expand !== "pins" && data && <Expanded kind={expand} data={data} events={events} focusCc={focusCc} onCountry={openCountry} spaces={spaces ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} onPeek={setPeek} />}
+      {expand && expand !== "history" && expand !== "anon" && expand !== "void" && expand !== "pins" && data && <Expanded kind={expand} data={data} events={events} focusCc={focusCc} onCountry={openCountry} spaces={spaceList ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} onPeek={setPeek} />}
       {peek && <AdminPeek key={peek.id} t={peek} onClose={closePeek} />}
     </div>
   );
@@ -841,32 +855,42 @@ function Expanded({ kind, data, events, focusCc, onCountry, spaces, now, onClose
   );
 }
 
-/** "From" filter in the header: pick a date and time, or a quick span; everything on HQ then counts only from there. */
+/** "From" filter in the header: pick a day/time, or a quick span; every number, list and globe layer on HQ — objects,
+ *  spaces, anonymous, activity, places — then counts only from there. Defaults to today. */
 function SinceBar({ since, onSince }: { since: string | null; onSince: (v: string | null) => void }) {
   const local = (iso: string) => {
     const d = new Date(iso);
     return new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
   };
-  const ago = (ms: number) => onSince(new Date(Date.now() - ms).toISOString());
-  const midnight = () => {
+  // midnight local, `back` days ago, as an ISO instant — the quick spans all land on a day boundary
+  const dayStart = (back: number) => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
-    onSince(d.toISOString());
+    d.setDate(d.getDate() - back);
+    return d.toISOString();
   };
+  const today = dayStart(0);
+  const d7 = dayStart(6);
+  const d30 = dayStart(29);
+  const is = (iso: string) => since === iso;
   return (
-    <div className={`hq-since${since ? " on" : ""}`} title="Show only what happened from this time on (globe, numbers, lists)">
-      <span className="mono">From</span>
+    <div className={`hq-since${since ? " on" : ""}`} title="Show only what happened from this day/time on — objects, spaces, anonymous, activity, places, the globe">
+      <span className="mono hq-since-lbl">From</span>
+      <div className="hq-since-quick" role="group" aria-label="Quick time filter">
+        <button className={`chip${is(today) ? " on" : ""}`} onClick={() => onSince(today)}>Today</button>
+        <button className="chip" onClick={() => onSince(new Date(Date.now() - 3_600_000).toISOString())}>Last hour</button>
+        <button className={`chip${is(d7) ? " on" : ""}`} onClick={() => onSince(d7)}>7 days</button>
+        <button className={`chip${is(d30) ? " on" : ""}`} onClick={() => onSince(d30)}>30 days</button>
+        <button className={`chip${!since ? " on" : ""}`} onClick={() => onSince(null)}>All time</button>
+      </div>
       <input
+        className="hq-since-date"
         type="datetime-local"
         value={since ? local(since) : ""}
         max={local(new Date().toISOString())}
         onChange={(e) => (e.target.value ? onSince(new Date(e.target.value).toISOString()) : onSince(null))}
         aria-label="Show activity from this date and time"
       />
-      <button className="chip" onClick={() => ago(3_600_000)}>1 h</button>
-      <button className="chip" onClick={midnight}>Today</button>
-      <button className="chip" onClick={() => onSince(new Date().toISOString())}>Now</button>
-      {since ? <button className="chip on" onClick={() => onSince(null)}>All ✕</button> : null}
     </div>
   );
 }
