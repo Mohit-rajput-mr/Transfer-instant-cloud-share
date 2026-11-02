@@ -2,7 +2,7 @@
 import { pickedSkin } from "./skins";
 import { makePreview } from "./preview";
 import {
-  CHUNK, ITERATIONS, deriveKeys, encryptedSize, fromB64, randomBytes, streamDecrypt, toB64, toHex,
+  CHUNK, ITERATIONS, OPEN_PASS, deriveKeys, encryptedSize, fromB64, randomBytes, streamDecrypt, toB64, toHex,
   type DownloadSink,
 } from "./crypto";
 import { deviceLabel, dropOwnerKey, senderKey, setOwnerKey, type Orb } from "./client";
@@ -32,9 +32,7 @@ async function sendRetry(url: string, init: RequestInit, tries = 3): Promise<Res
 
 export type Stage = "packing" | "deriving" | "encrypting" | "uploading" | "finalizing" | "waiting" | "decrypting" | "done";
 
-/** Open objects (no passcode) are still encrypted, with this well-known code: the server stays blind to the
- *  content, and anyone who opens the object can decrypt it without typing anything. */
-export const OPEN_PASS = "orbit:open";
+export { OPEN_PASS } from "./crypto";
 
 export async function launch(opts: {
   file: File;

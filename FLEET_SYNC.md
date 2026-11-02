@@ -20,6 +20,16 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
 
 ## Defect log (running list — keep it current; newest first)
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
+- 2026-11-02 DONE (owner ask) — HQ Preview: Objects (side panel + full list) have a Preview button. Open objects open
+  at once; passcode objects ask for the object's passcode (zero-knowledge: the server never has it, so there is no way
+  around typing it — owner chose this over key escrow). Decrypted in the admin's browser only (components/admin/AdminPeek.tsx):
+  image, video, audio, PDF, text/links (HTML/SVG shown as text, never run), anything else → Save. Up to 1.5 GB.
+  Server: GET/POST /api/admin/transfers/[id]/peek (admin cookie only) → orbit_admin_peek (migration 033, APPLIED):
+  counts nothing, a wrong passcode never adds to `failed` (can't lock it for receivers), download limits ignored.
+  Limits: device-only objects (no stored copy) and open objects in anonymous spaces (space key) can't be previewed.
+  Verified: npm run check; real route answers 401 without the admin cookie; next dev + Playwright with real AES-GCM
+  ciphertext and mocked API: wrong code → "Wrong passcode", PNG 400x300 shown, MP4 (2 chunks, no mime) plays 320x240
+  3 s, open text shown with <script> as text, 1440 + 390 px. OPEN: try on prod with a real object (needs admin login).
 - 2026-10-27 (C, owner: "opening Orbi makes the WHOLE computer's internet stop, other browsers too", desktop)
   - FIXED? Prime suspect: desktops with location allowed ran watchPosition (maximumAge 60 s) → Chrome on Windows asks
     for a fresh Wi-Fi position about every minute → each is a full Wi-Fi channel scan → the radio leaves its channel →

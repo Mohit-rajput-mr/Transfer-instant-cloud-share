@@ -6,6 +6,7 @@ import { formatBytes } from "@/lib/client";
 import type { Layer, RouteLine } from "./Earth";
 import { took, when } from "./fmt";
 import AdminVoid from "./AdminVoid";
+import AdminPeek from "./AdminPeek";
 import AdminPages from "./Pages";
 import History, { loadHistory, recLines, routeLines } from "./History";
 import type { AdminSpace, AdminTransfer, AnonSessionRec, Overview } from "./types";
@@ -278,6 +279,9 @@ function Dashboard({ data, events, now, since, onSince, onRefresh, onLogout }: {
     await fetch("/api/admin/logout", { method: "POST" }).catch(() => {});
     onLogout();
   };
+  // HQ preview: decrypt one object in this browser (AdminPeek)
+  const [peek, setPeek] = useState<AdminTransfer | null>(null);
+  const closePeek = useCallback(() => setPeek(null), []);
   const destroy = async (id: string | string[]) => {
     const ids = Array.isArray(id) ? id : [id];
     if (!confirm(ids.length > 1 ? `Destroy all ${ids.length} objects for everyone?` : "Destroy this object for everyone?")) return;
@@ -454,7 +458,10 @@ function Dashboard({ data, events, now, since, onSince, onRefresh, onLogout }: {
                     <span className="mono dim">👁 {t.views} · ↓ {t.downloads} · ● {t.watchers} live · ✕ {t.failed} wrong{t.reports ? ` · ⚑ ${t.reports}` : ""} · burns in {Math.max(0, Math.round((new Date(t.expiresAt).getTime() - now) / 60000))}m</span>
                     <TransferTimes t={t} times={times.get(t.id)} />
                   </div>
-                  <button className="danger-btn" onClick={() => destroy(t.id)}>Destroy</button>
+                  <span className="hq-row-btns">
+                    <button className="pill hq-peek-btn" onClick={() => setPeek(t)}>Preview</button>
+                    <button className="danger-btn" onClick={() => destroy(t.id)}>Destroy</button>
+                  </span>
                 </div>
               )) : <Empty />}
             </div>
@@ -493,7 +500,8 @@ function Dashboard({ data, events, now, since, onSince, onRefresh, onLogout }: {
         </div>
       )}
       {expand === "void" && <AdminVoid onClose={() => setExpand(null)} />}
-      {expand && expand !== "history" && expand !== "anon" && expand !== "void" && expand !== "pins" && data && <Expanded kind={expand} data={data} events={events} focusCc={focusCc} onCountry={openCountry} spaces={spaces ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} />}
+      {expand && expand !== "history" && expand !== "anon" && expand !== "void" && expand !== "pins" && data && <Expanded kind={expand} data={data} events={events} focusCc={focusCc} onCountry={openCountry} spaces={spaces ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} onPeek={setPeek} />}
+      {peek && <AdminPeek key={peek.id} t={peek} onClose={closePeek} />}
     </div>
   );
 }
@@ -528,7 +536,7 @@ const SIZES = [
 ] as const;
 
 /** Full-screen detail for one panel, with filters. */
-function Expanded({ kind, data, events, focusCc, onCountry, spaces, now, onClose, onDestroy }: { kind: Exclude<Expand, null>; data: Overview; events: Ev[]; focusCc: string; onCountry: (cc: string) => void; spaces: AdminSpace[]; now: number; onClose: () => void; onDestroy: (id: string | string[]) => void }) {
+function Expanded({ kind, data, events, focusCc, onCountry, spaces, now, onClose, onDestroy, onPeek }: { kind: Exclude<Expand, null>; data: Overview; events: Ev[]; focusCc: string; onCountry: (cc: string) => void; spaces: AdminSpace[]; now: number; onClose: () => void; onDestroy: (id: string | string[]) => void; onPeek: (t: AdminTransfer) => void }) {
   const [q, setQ] = useState("");
   const [cc, setCc] = useState(focusCc);
   useEffect(() => setCc(focusCc), [focusCc, kind]);
@@ -663,7 +671,7 @@ function Expanded({ kind, data, events, focusCc, onCountry, spaces, now, onClose
                 <span>{t.downloads}</span>
                 <span>{t.watchers}</span>
                 <span>{Math.max(0, Math.round((new Date(t.expiresAt).getTime() - now) / 60000))}m</span>
-                <span><button className="danger-btn" onClick={() => onDestroy(t.id)}>Destroy</button></span>
+                <span className="hq-row-btns"><button className="pill hq-peek-btn" onClick={() => onPeek(t)}>Preview</button><button className="danger-btn" onClick={() => onDestroy(t.id)}>Destroy</button></span>
               </div>
             ))}
             {!rows.length && <Empty />}

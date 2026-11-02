@@ -5,6 +5,9 @@
 export const CHUNK = 8 * 1024 * 1024;
 export const ITERATIONS = 310_000;
 const TAG = 16;
+/** Open objects (no passcode) are still encrypted, with this well-known code: the server stays blind to the
+ *  content, and anyone who opens the object can decrypt it without typing anything. */
+export const OPEN_PASS = "orbit:open";
 
 const enc = new TextEncoder();
 
