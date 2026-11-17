@@ -1,0 +1,102 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Two tyres. The same nail. One goes flat in seconds. The other keeps rolling for miles. So what's hiding inside?",
+   "dur": 7.48,
+   "at": 0.35
+  },
+  {
+   "key": "tube1",
+   "text": "Open up an old style tyre, and you find a second one inside. A soft rubber doughnut, called the inner tube.",
+   "dur": 6.52,
+   "at": 8.28
+  },
+  {
+   "key": "tube2",
+   "text": "The air goes into the tube, not the tyre. The tube swells up like a balloon, and pushes the tyre out against the road.",
+   "dur": 7.501,
+   "at": 15.1
+  },
+  {
+   "key": "tube3",
+   "text": "The tough outer tyre is just armour. On its own, it can't hold any air.",
+   "dur": 4.899,
+   "at": 22.9
+  },
+  {
+   "key": "less1",
+   "text": "Now the tubeless tyre. Open it up, and... nothing. No tube at all!",
+   "dur": 4.753,
+   "at": 28.2
+  },
+  {
+   "key": "less2",
+   "text": "Instead, the inside of the tyre is lined with a thin airtight skin. And its edges sit tight against the metal rim.",
+   "dur": 6.84,
+   "at": 33.3
+  },
+  {
+   "key": "less3",
+   "text": "Pump in air, and the pressure itself shoves those edges onto the rim. The harder it pushes, the tighter it seals.",
+   "dur": 7.249,
+   "at": 40.44
+  },
+  {
+   "key": "nailT",
+   "text": "Here comes the nail. In the tube tyre, it pops the balloon. The air rushes out around the tube, and escapes through the wheel. Flat, in seconds.",
+   "dur": 8.337,
+   "at": 48.09
+  },
+  {
+   "key": "nailL",
+   "text": "In the tubeless tyre, the thick rubber squeezes around the nail and grips it. The air only leaks slowly. You can often drive on to a garage.",
+   "dur": 9.549,
+   "at": 56.83
+  },
+  {
+   "key": "fix",
+   "text": "And the repair? A tube tyre has to come off the wheel. A tubeless one gets a rubber plug, pushed in from outside. Minutes.",
+   "dur": 7.591,
+   "at": 66.78
+  },
+  {
+   "key": "heat",
+   "text": "There's more. A tube rubs against the tyre and makes heat. No tube means less heat, and less weight.",
+   "dur": 6.627,
+   "at": 74.72
+  },
+  {
+   "key": "but",
+   "text": "So why do tubes still exist? Wire spoke wheels are full of holes, so most of them need one. And a tube is cheap to replace.",
+   "dur": 8.952,
+   "at": 81.7
+  },
+  {
+   "key": "verdict",
+   "text": "The winner for everyday roads? Tubeless. Because it fails slowly. And slow is safe.",
+   "dur": 5.603,
+   "at": 91.05
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer works the same way. Nothing extra in the middle. No login, no app. Your file is sealed on your own phone, before it leaves.",
+   "dur": 8.931,
+   "at": 97.15
+  },
+  {
+   "key": "orbi2",
+   "text": "It pops up on the other screen in about a second. And thirty minutes later, it's gone.",
+   "dur": 5.645,
+   "at": 106.38
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. Same nail. Very different ending.",
+   "dur": 3.951,
+   "at": 112.43
+  }
+ ],
+ "duration": 118.18
+}
