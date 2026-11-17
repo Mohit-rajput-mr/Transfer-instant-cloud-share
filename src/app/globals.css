@@ -1904,6 +1904,10 @@ html.lg-refract .drawer.lg { -webkit-backdrop-filter: url(#lg-refract) blur(14px
 .destroy { background: rgba(12,14,18,0.78); border: 2px solid #ff5a4e; color: #ff5a4e; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
 .destroy svg { width: 55%; height: 55%; }
 .destroy:hover { background: rgba(255,59,48,0.25); }
+/* owner 2026-11-17: cancel an upload = a red × in a white ring at the ball's top-right */
+.orb-cancel { position: absolute; z-index: 5; right: -14%; top: -12%; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: #050608; border: 3px solid #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.6); cursor: pointer; transition: scale .15s; }
+.orb-cancel svg { width: 62%; height: 62%; fill: none; stroke: #ff2b2b; stroke-width: 3.6; stroke-linecap: round; }
+.orb-cancel:hover { scale: 1.12; background: #1a0606; }
 /* tags that are icons */
 .ic-tag { display: inline-grid; place-items: center; padding: 2px 6px; }
 .ic-tag svg { width: 11px; height: 11px; }

@@ -315,6 +315,8 @@ export default function OrbView(props: {
   onOpenMember?: (id: string) => void;
   /** the sender's own: destroy this ball (or everything in this container) */
   onDestroy?: () => void;
+  /** owner 2026-11-17: a red × on the ball while it uploads (sent by mistake): stop it and remove it */
+  onCancel?: () => void;
   /** the sender's own ball inside a container */
   onDestroyMember?: (id: string) => void;
 }) {
@@ -690,6 +692,11 @@ export default function OrbView(props: {
           return;
         }
         // the red destroy icons
+        if ((e.target as Element).closest?.("[data-cancel]")) {
+          pressed.current = null;
+          props.onCancel?.();
+          return;
+        }
         const kill = (e.target as Element).closest?.("[data-destroy]") as HTMLElement | null;
         if (kill) {
           pressed.current = null;
@@ -778,7 +785,11 @@ export default function OrbView(props: {
         </svg>
         <KindBadge kind={fileKind(orb.fileName, orb.mime)} />
         <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : ext(orb.fileName)}</span>
-        {props.onDestroy && mine && !up && phase !== "burning" && <span className="destroy" data-destroy="" role="button" aria-label={`Destroy ${orb.name}`} title="Destroy"><LuTrash2 /></span>}
+        {props.onCancel && mine && !incoming && phase !== "burning" ? (
+          <span className="orb-cancel" data-cancel="" role="button" aria-label={`Cancel upload of ${orb.name}`} title="Cancel upload">
+            <svg viewBox="0 0 24 24" aria-hidden><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </span>
+        ) : props.onDestroy && mine && !up && phase !== "burning" && <span className="destroy" data-destroy="" role="button" aria-label={`Destroy ${orb.name}`} title="Destroy"><LuTrash2 /></span>}
         {mine && badge ? <span className="mine-no" aria-hidden>{badge}</span> : null}
         {got && !up ? <span className="got-mark" aria-hidden><LuCheck /></span> : null}
         {!up && <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>

@@ -22,7 +22,7 @@ import { supabase, type RealtimeChannel } from "@/lib/realtime";
 import SpacePanel, { SpaceRoom } from "./Spaces";
 import BubbleZoom from "./BubbleZoom";
 import { heldIds, release as releaseP2P } from "@/lib/p2p";
-import { cloudSaved, cloudSaving, isResumable, stopCopy } from "@/lib/cloud";
+import { cloudSaved, cloudSaving, isResumable, stopCopy, useCloud } from "@/lib/cloud";
 import { replaceUrl, switchView } from "@/lib/view";
 // a ball leaving: stop offering it directly and stop any upload of its stored copy
 const release = (id: string) => {
@@ -871,6 +871,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   }, [skew]);
   // the anonymous space made by the gate whose link isn't copied yet: shown after its first send lands
   const linkAfter = useRef<string | null>(null);
+  const cloudNow = useCloud();
   const dockLaunches = useMemo(() => launches.map((l) => (prog[l.key] && !l.orb ? { ...l, ...prog[l.key] } : l)), [launches, prog]);
 
 
@@ -2460,6 +2461,21 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     toast(mine.length > 1 ? `${mine.length} objects destroyed` : "Object destroyed");
     broadcast();
   }, [toast, broadcast, beam, applySync]);
+  // the red × on a ball while it uploads (owner 2026-11-17): still launching → stop the launch; in orbit but its online
+  // copy still saving → destroy it (after a yes). Nothing once it is saved: then the usual trash icon destroys it
+  const cancelUp = (id: string): (() => void) | undefined => {
+    const l = dockLaunches.find((x) => !x.orb && !x.err && pendingId(x.key) === id);
+    if (l) return () => l.abort.abort();
+    const c = cloudNow.get(id)?.state;
+    if (ownerKey(id) && (c === "saving" || c === "paused"))
+      return () => {
+        if (window.confirm("Cancel this upload? The file is removed for everyone.")) {
+          setLaunches((ls) => ls.filter((x) => x.orb?.id !== id));
+          void destroy([id]);
+        }
+      };
+    return undefined;
+  };
   const listedUnlock = panel?.kind === "unlock" ? orbs.find((o) => o.id === panel.id) ?? extra : null;
   if (listedUnlock) keptUnlock.current = listedUnlock;
   else if (panel?.kind !== "unlock") keptUnlock.current = null;
@@ -2840,6 +2856,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
               badge={badges.get(o.id)}
               got={gotIds.has(o.id)}
               onDestroy={isGroup(o.id) ? () => destroy((groups.get(o.id) ?? []).map((m) => m.id)) : ownerKey(o.id) ? () => destroy([o.id]) : undefined}
+              onCancel={cancelUp(o.id)}
               onDestroyMember={isGroup(o.id) ? (id) => destroy([id]) : undefined}
               group={isGroup(o.id) ? groups.get(o.id)?.map((m) => ({ id: m.id, name: m.name, hue: m.hue, size: m.size, got: hasGot(m.id), fileName: m.fileName, expiresAt: m.expiresAt, life: m.life ?? 30, watchers: watchers(m.id), mine: !!ownerKey(m.id), thumb: !!(m.thumb && m.open) })) : undefined}
             />
@@ -2940,6 +2957,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
               badge={badges.get(o.id)}
               got={gotIds.has(o.id)}
               onDestroy={isGroup(o.id) ? () => destroy((groups.get(o.id) ?? []).map((m) => m.id)) : ownerKey(o.id) ? () => destroy([o.id]) : undefined}
+              onCancel={cancelUp(o.id)}
               onDestroyMember={isGroup(o.id) ? (id) => destroy([id]) : undefined}
               group={isGroup(o.id) ? groups.get(o.id)?.map((m) => ({ id: m.id, name: m.name, hue: m.hue, size: m.size, got: hasGot(m.id), fileName: m.fileName, expiresAt: m.expiresAt, life: m.life ?? 30, watchers: watchers(m.id), mine: !!ownerKey(m.id), thumb: !!(m.thumb && m.open) })) : undefined}
             />
