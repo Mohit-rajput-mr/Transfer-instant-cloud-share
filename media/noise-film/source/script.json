@@ -1,0 +1,18 @@
+[
+ {"key":"hook","text":"Your headphones fight noise... with more noise. They make a second sound, the exact opposite of the first, and the two cancel out. Silence, made of sound. Let's slow it down and watch it happen.","emo":1.1,"gap":0.5},
+ {"key":"wave","text":"Sound is a push through the air. A speaker shoves the air, squeezing it together, then pulls back, stretching it apart. Squeeze, stretch, squeeze, stretch. A wave, travelling to your ear.","emo":1.0,"gap":0.45},
+ {"key":"ear","text":"Your eardrum rides those waves, in and out. Big waves sound loud. Fast waves sound high. And a plane engine makes slow, heavy waves. A low, endless hum.","emo":1.0,"gap":0.5},
+ {"key":"flight","text":"In nineteen seventy eight, an engineer named Amar Bose sat on a long flight, wearing airline headphones. The engine hum drowned out his music. So he started sketching a fix, right there on the plane.","emo":1.05,"gap":0.5},
+ {"key":"idea","text":"The idea itself is even older, from the nineteen thirties. Add a squeeze to a stretch, and you get... nothing. Lay a wave on top of its mirror image, and the air doesn't move at all.","emo":1.0,"gap":0.5},
+ {"key":"cut","text":"So let's cut a pair open. A soft cushion seals around your ear. A speaker for your music. And tiny microphones. One listening outside, one listening inside.","emo":0.95,"gap":0.45},
+ {"key":"mic","text":"The outside microphone hears the hum coming. It turns it into an electrical signal, and sends it to a chip.","emo":1.0,"gap":0.45},
+ {"key":"flip","text":"The chip flips it. Every squeeze becomes a stretch. Every stretch becomes a squeeze. Anti noise.","emo":1.05,"gap":0.5},
+ {"key":"mix","text":"The speaker plays your music, plus that anti noise, at the very moment the real hum arrives.","emo":1.0,"gap":0.45},
+ {"key":"cancel","text":"Squeeze meets stretch. Stretch meets squeeze. The two waves cancel, and the hum fades away. Your music stays.","emo":1.05,"gap":0.5},
+ {"key":"fast","text":"It has to be fast. The chip works thousands of times a second, and the inside microphone keeps checking what's left over, and corrects it.","emo":1.0,"gap":0.5},
+ {"key":"limits","text":"It works best on steady, low sounds. Engines, trains, the hum of a fan. Sudden, sharp sounds, like a clap or a voice, change too fast. So the cushion has to block those.","emo":0.95,"gap":0.5},
+ {"key":"trans","text":"And the same microphones can do the opposite. Transparency mode passes the outside world into your ears, so you can still hear the announcement.","emo":1.0,"gap":0.5},
+ {"key":"orbi","text":"Noise cancelling stops the hum before it reaches you. Orbi Transfer protects your file before it even leaves. It's locked on your phone first.","emo":1.0,"gap":0.35},
+ {"key":"orbi2","text":"It reaches the other phone in about a second. No login, no app. And after thirty minutes, it burns.","emo":1.05,"gap":0.6},
+ {"key":"end","text":"Orbi Transfer dot com. Silence, made of sound.","emo":1.0,"gap":0.8}
+]
