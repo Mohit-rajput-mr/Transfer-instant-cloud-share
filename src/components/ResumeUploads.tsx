@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { LuCheck, LuUpload } from "react-icons/lu";
-import { dropPending, pendingUploads, resumeCopy, sameFile, useCloud, type PendingUpload } from "@/lib/cloud";
+import { dropPending, pendingUploads, resumeCopy, sameFile, useCloud, type PendingUpload, stopCopy } from "@/lib/cloud";
 import { CHUNK } from "@/lib/crypto";
 import { hold } from "@/lib/p2p";
 import { dropOwnerKey, formatBytes } from "@/lib/client";
@@ -83,6 +83,7 @@ function ResumeItem({ u }: { u: PendingUpload }) {
     void resumeCopy(u, f);
   };
   const discard = () => {
+    stopCopy(u.id); // (a running upload stops too, not only the record)
     fetch(`/api/transfers/${u.id}`, { method: "DELETE", headers: { "x-owner": u.owner } }).catch(() => {});
     dropOwnerKey(u.id);
     dropPending(u.id);
@@ -99,7 +100,7 @@ function ResumeItem({ u }: { u: PendingUpload }) {
           {cloud?.state === "saved" ? (
             <span className="dock-cloud ok">Finished <LuCheck className="ic-inline" /> safe to close</span>
           ) : cloud?.state === "saving" ? (
-            `Saving online · ${Math.round(cloud.frac * 100)}%${cloud.speed ? ` · ${cloud.speed}` : ""} · others see it once saved, keep open`
+            `Saving online · ${Math.round(cloud.frac * 100)}%${cloud.speed ? ` · ${cloud.speed}` : ""}, keep open`
           ) : cloud?.state === "paused" ? (
             `Paused at ${Math.round(cloud.frac * 100)}%, waiting for the network`
           ) : cloud?.state === "failed" ? (
@@ -115,7 +116,7 @@ function ResumeItem({ u }: { u: PendingUpload }) {
         <>
           <input ref={input} type="file" hidden onChange={(e) => (pick(e.target.files?.[0]), (e.target.value = ""))} />
           <button className="pill lg-press solid" onClick={() => input.current?.click()}><LuUpload aria-hidden /> Finish</button>
-          <button className="dock-x lg-press" aria-label="Discard" title="Discard" onClick={discard}>×</button>
+          <button className="dock-x cancel lg-press" aria-label="Cancel upload" title="Cancel upload" onClick={discard}>×</button>
         </>
       )}
     </div>

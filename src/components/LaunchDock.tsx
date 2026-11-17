@@ -74,6 +74,8 @@ export default function LaunchDock(props: {
   onToggle: (key: string) => void;
   onDismiss: (key: string) => void;
   onOpenOwner: (id: string) => void;
+  /** owner 2026-11-17: a red × while it uploads: stop the upload and remove the object (sent by mistake) */
+  onCancel: (key: string, id: string) => void;
 }) {
   const { launches, onDismiss } = props;
   const dl = useDownloads();
@@ -114,7 +116,7 @@ export default function LaunchDock(props: {
   );
 }
 
-function DockItem({ l, badges, onToggle, onDismiss, onOpenOwner }: { l: Launch } & Omit<Parameters<typeof LaunchDock>[0], "launches">) {
+function DockItem({ l, badges, onToggle, onDismiss, onOpenOwner, onCancel }: { l: Launch } & Omit<Parameters<typeof LaunchDock>[0], "launches">) {
   const [copied, setCopied] = useState(false);
   const cloud = useCloud().get(l.orb?.id ?? "");
   const n = badges.get(l.orb ? l.orb.id : pendingId(l.key));
@@ -152,7 +154,7 @@ function DockItem({ l, badges, onToggle, onDismiss, onOpenOwner }: { l: Launch }
           <span className="mono">{STAGE[l.stage] ?? "Launching"} · {l.stage === "uploading" ? `${pct}%` : formatBytes(l.size)}{l.files > 1 ? ` · ${l.files} files` : ""}</span>
           <span className="dock-bar"><i style={{ transform: `scaleX(${l.stage === "uploading" || l.stage === "finalizing" ? Math.max(0.03, l.frac) : 0.03})` }} /></span>
         </div>
-        <button className="dock-x lg-press" aria-label="Abort launch" onClick={() => l.abort.abort()}>×</button>
+        <button className="dock-x cancel lg-press" aria-label="Cancel upload" title="Cancel upload" onClick={() => l.abort.abort()}>×</button>
       </div>
     );
 
@@ -163,7 +165,7 @@ function DockItem({ l, badges, onToggle, onDismiss, onOpenOwner }: { l: Launch }
         <div className="dock-main">
           <b className="ellip">{l.name}</b>
           <span className="mono">In orbit · <span className="dock-code">{l.orb.id}</span>
-            {cloud?.state === "saving" && <span className="dock-cloud"> · saving online {Math.round(cloud.frac * 100)}%{cloud.speed ? ` · ${cloud.speed}` : ""} · others see it once saved, keep open</span>}
+            {cloud?.state === "saving" && <span className="dock-cloud"> · saving online {Math.round(cloud.frac * 100)}%{cloud.speed ? ` · ${cloud.speed}` : ""}, keep open</span>}
             {cloud?.state === "saved" && <span className="dock-cloud ok"> · saved <LuCheck className="ic-inline" /> safe to close</span>}
             {cloud?.state === "paused" && <span className="dock-cloud"> · paused at {Math.round(cloud.frac * 100)}%, resumes when you are back online</span>}
             {cloud?.state === "failed" && <span className="dock-cloud"> · keep this page open</span>}
@@ -176,7 +178,12 @@ function DockItem({ l, badges, onToggle, onDismiss, onOpenOwner }: { l: Launch }
         <button className="dock-x lg-press" aria-label={l.open ? "Minimize" : "Expand"} aria-expanded={l.open} onClick={() => onToggle(l.key)}>
           <svg viewBox="0 0 12 12" aria-hidden><path d={l.open ? "M2.5 4.5L6 8l3.5-3.5" : "M2.5 7.5L6 4l3.5 3.5"} /></svg>
         </button>
-        <button className="dock-x lg-press" aria-label="Close" onClick={() => onDismiss(l.key)}>×</button>
+        {cloud?.state === "saving" || cloud?.state === "paused" ? (
+          <button className="dock-x cancel lg-press" aria-label="Cancel upload" title="Cancel upload"
+            onClick={() => window.confirm("Cancel this upload? The file is removed for everyone.") && onCancel(l.key, l.orb!.id)}>×</button>
+        ) : (
+          <button className="dock-x lg-press" aria-label="Close" onClick={() => onDismiss(l.key)}>×</button>
+        )}
       </div>
       {l.open && (
         <div className="dock-more">

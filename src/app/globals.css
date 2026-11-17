@@ -1164,6 +1164,9 @@ html.lg-refract :is(.top, .drawer, .send-menu, .up-pill, .up-card, .send-fab).lg
 @keyframes dock-more { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 @keyframes dock-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.82); opacity: 0.7; } }
 @media (hover: hover) { .dock-x:hover { background: rgba(255,255,255,0.08); } }
+/* owner 2026-11-17: cancel an upload = a red × */
+.dock-x.cancel { color: #ff4d4d; border-color: rgba(255, 77, 77, 0.55); background: rgba(255, 77, 77, 0.12); font-weight: 700; }
+@media (hover: hover) { .dock-x.cancel:hover { background: rgba(255, 77, 77, 0.28); color: #fff; } }
 @media (max-width: 720px) {
   .dock { right: max(12px, var(--safe-r)); left: max(12px, var(--safe-l)); width: auto; bottom: calc(112px + var(--safe-b)); }
 }

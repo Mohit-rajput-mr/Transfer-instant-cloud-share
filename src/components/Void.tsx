@@ -3415,6 +3415,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         onToggle={(key) => setLaunches((ls) => ls.map((l) => (l.key === key ? { ...l, open: !l.open } : l)))}
         onDismiss={(key) => setLaunches((ls) => ls.filter((l) => l.key !== key))}
         onOpenOwner={(id) => setPanel({ kind: "owner", id })}
+        onCancel={(key, id) => (setLaunches((ls) => ls.filter((l) => l.key !== key)), void destroy([id]))}
       />
     </>
   );
