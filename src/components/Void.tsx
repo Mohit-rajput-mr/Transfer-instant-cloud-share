@@ -29,19 +29,8 @@ const release = (id: string) => {
   releaseP2P(id);
   stopCopy(id);
 };
-/** remove an object on the server in the background: tried again (and again once back online) until it goes through */
-async function removeLater(id: string, owner: string) {
-  for (let i = 0; i < 12; i++) {
-    const r = await fetch(`/api/transfers/${id}`, { method: "DELETE", headers: { "x-owner": owner }, keepalive: true }).catch(() => null);
-    if (r && (r.ok || r.status === 403 || r.status === 404)) return dropOwnerKey(id);
-    await new Promise<void>((res) => {
-      const t = setTimeout(done, Math.min(60_000, 2000 * 2 ** i));
-      function done() { clearTimeout(t); window.removeEventListener("online", done); res(); }
-      window.addEventListener("online", done);
-    });
-  }
-}
 import { downloading } from "@/lib/downloads";
+import { removeLater } from "@/lib/transfer";
 import { warm } from "@/lib/peek";
 import { anonLink, anonTitle, createAnonPassSpace, createSpace, joinAnonByName, joinAnonSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
 import { BsIncognito } from "react-icons/bs";

@@ -120,7 +120,7 @@ export async function launch(opts: {
   // cancelled before the first byte (during the key or the record): don't start the upload at all
   if (signal?.aborted) {
     void kept.then(() => unkeep(id));
-    void fetch(`/api/transfers/${id}`, { method: "DELETE", headers: { "x-owner": owner }, keepalive: true }).then((r) => r.ok && dropOwnerKey(id), () => null);
+    void removeLater(id, owner);
     throw new DOMException("Aborted", "AbortError");
   }
   // a folder is packed on the fly, so it can't be picked again after a reload: only real files too big to keep here
@@ -131,7 +131,7 @@ export async function launch(opts: {
   // on the network for it (owner 2026-11-17: "instantly, slow internet or none")
   if (signal?.aborted) {
     void kept.then(() => unkeep(id));
-    void fetch(`/api/transfers/${id}`, { method: "DELETE", headers: { "x-owner": owner }, keepalive: true }).then((r) => r.ok && dropOwnerKey(id), () => null);
+    void removeLater(id, owner);
     throw new DOMException("Aborted", "AbortError");
   }
   await kept;
@@ -499,4 +499,17 @@ async function receiveNow(opts: {
   const file = mem.take(saveName(r.fileName, type), type);
   if (!hold) autoDownload(file);
   return { kind: "file", file, held: hold };
+}
+
+/** remove an object on the server in the background: tried again (and again once back online) until it goes through */
+export async function removeLater(id: string, owner: string) {
+  for (let i = 0; i < 12; i++) {
+    const r = await fetch(`/api/transfers/${id}`, { method: "DELETE", headers: { "x-owner": owner }, keepalive: true }).catch(() => null);
+    if (r && (r.ok || r.status === 403 || r.status === 404)) return dropOwnerKey(id);
+    await new Promise<void>((res) => {
+      const t = setTimeout(done, Math.min(60_000, 2000 * 2 ** i));
+      function done() { clearTimeout(t); window.removeEventListener("online", done); res(); }
+      window.addEventListener("online", done);
+    });
+  }
 }
