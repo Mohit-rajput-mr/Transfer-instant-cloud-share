@@ -15,7 +15,7 @@ tts = ChatterboxTTS.from_pretrained(device="cpu")
 asr = WhisperModel("small.en", device="cpu", compute_type="int8")
 # spoken numbers vs Whisper's digits: compare both as digits
 NUMS = [("three hundred and ten thousand", "310000"), ("twenty thousand", "20000"), ("thirty eight", "38"), ("three hundred", "300"),
-        ("fifteen hundred", "1500"), ("two thousand", "2000"), ("twenty four", "24"), ("one two three", "123"), ("thirty", "30"),
+        ("fifteen hundred", "1500"), ("eighteen", "18"), ("two thousand", "2000"), ("twenty four", "24"), ("one two three", "123"), ("thirty", "30"),
         ("thirteen", "13"), ("twelve", "12"), ("forty", "40"), ("twenty", "20"), ("ten", "10"), ("four", "4"), ("three", "3"), ("two", "2"), ("one", "1")]
 def norm(s):
     s = s.lower().replace(".com", " dot com").replace("orbytransfer", "orbi transfer").replace("orbitransfer", "orbi transfer").replace("orbee", "orbi").replace("orby", "orbi")

@@ -1,0 +1,21 @@
+[
+ {"key":"hook","text":"Your fridge doesn't make cold. Not one bit. Nothing can. Feel the back of it... it's warm. Because a fridge is really a machine that carries heat out of the box. To see how, we have to cut it open.","emo":1.1,"gap":0.5},
+ {"key":"cut","text":"Slice the side away. The walls are thick. Steel outside, plastic inside, and between them, a fat layer of foam, so outside heat crawls in very slowly.","emo":0.95,"gap":0.45},
+ {"key":"loop","text":"Now look at the back. One sealed loop of copper pipe runs through the whole fridge. A black pump at the bottom. A long zigzag of pipe on the back. A pipe as thin as a noodle. And a cold plate hidden inside.","emo":1.0,"gap":0.45},
+ {"key":"fluid","text":"Inside the loop is a special liquid, the refrigerant. In many fridges today, it's isobutane. And here's its trick. It boils at minus twelve degrees.","emo":1.05,"gap":0.45},
+ {"key":"boil","text":"Boiling needs heat. Think of sweat drying on your skin. As it turns to vapour, it steals your heat, and you feel cold.","emo":0.95,"gap":0.45},
+ {"key":"evap","text":"So, inside the fridge, the refrigerant boils in that cold plate. It soaks up heat from the air, the milk, the leftovers. Everything inside gets colder.","emo":1.0,"gap":0.5},
+ {"key":"stuck","text":"But now the heat is trapped in a cloud of vapour. It has to go somewhere. That's the pump's job.","emo":1.0,"gap":0.4},
+ {"key":"comp","text":"This is the compressor. A piston squeezes the vapour into a tiny space. Squeezed gas gets hot. Like a bike pump that warms up as you pump.","emo":1.0,"gap":0.45},
+ {"key":"hot","text":"Now the vapour is hotter than your kitchen. And heat always flows from hot to cold.","emo":1.0,"gap":0.45},
+ {"key":"cond","text":"So it travels up that zigzag on the back, and the heat pours out into the room. As it cools, the vapour turns back into liquid. That's why the back of your fridge is warm.","emo":1.0,"gap":0.5},
+ {"key":"cap","text":"Then the liquid squeezes through that thin pipe. On the other side the pressure drops. Like a spray can that turns icy as it sprays.","emo":1.0,"gap":0.45},
+ {"key":"again","text":"Low pressure, cold liquid, back in the plate. It boils again, grabs more heat, and the loop goes round, and round.","emo":1.0,"gap":0.5},
+ {"key":"thermo","text":"A thermostat watches the temperature. Around four degrees in the fridge, minus eighteen in the freezer. Too warm, the pump switches on. That's the hum you hear.","emo":0.95,"gap":0.5},
+ {"key":"door","text":"So, open the door to cool your kitchen? It does the opposite. The fridge dumps all the heat it pulls out, plus the heat from its own motor, right back into the room.","emo":1.05,"gap":0.5},
+ {"key":"seal","text":"And ever noticed the door sticks right after you close it? The warm air that got in cools down and shrinks, the pressure drops, and the magnetic seal holds tight.","emo":1.0,"gap":0.55},
+ {"key":"sum","text":"So a fridge never makes cold. It moves heat. In through the cold plate, out through the back. Nothing is stored. It just flows through.","emo":1.0,"gap":0.55},
+ {"key":"orbi","text":"Orbi Transfer works the same way with your files. Your file is locked on your phone, before it leaves.","emo":1.0,"gap":0.35},
+ {"key":"orbi2","text":"It flows to the other phone in about a second. No login, no app. And after thirty minutes, it burns. Nothing is kept.","emo":1.05,"gap":0.6},
+ {"key":"end","text":"Orbi Transfer dot com. Your fridge isn't making cold. It's moving heat.","emo":1.0,"gap":0.8}
+]
