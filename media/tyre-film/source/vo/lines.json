@@ -3,100 +3,130 @@
  "lines": [
   {
    "key": "hook",
-   "text": "Two tyres. The same nail. One goes flat in seconds. The other keeps rolling for miles. So what's hiding inside?",
-   "dur": 7.48,
+   "text": "Two tyres roll over the same nail. One goes flat in seconds. The other keeps going for miles. To see why, we have to cut them open.",
+   "dur": 8.636,
    "at": 0.35
   },
   {
-   "key": "tube1",
-   "text": "Open up an old style tyre, and you find a second one inside. A soft rubber doughnut, called the inner tube.",
-   "dur": 6.52,
-   "at": 8.28
+   "key": "cut",
+   "text": "This is a tube tyre. Slice a piece away, and look closely. There are three layers. The metal rim. The black tyre. And hidden inside, a second ring of soft rubber. The inner tube.",
+   "dur": 11.52,
+   "at": 9.49
   },
   {
-   "key": "tube2",
-   "text": "The air goes into the tube, not the tyre. The tube swells up like a balloon, and pushes the tyre out against the road.",
-   "dur": 7.501,
-   "at": 15.1
+   "key": "tube",
+   "text": "The tube is basically a balloon, bent into a ring. Its valve pokes out through a small hole in the rim. That's where you pump.",
+   "dur": 7.672,
+   "at": 21.46
   },
   {
-   "key": "tube3",
-   "text": "The tough outer tyre is just armour. On its own, it can't hold any air.",
-   "dur": 4.899,
-   "at": 22.9
+   "key": "inflate",
+   "text": "Watch the air go in. It fills the tube, and the tube swells, until it presses hard against the inside of the tyre, all the way round.",
+   "dur": 8.205,
+   "at": 29.53
   },
   {
-   "key": "less1",
-   "text": "Now the tubeless tyre. Open it up, and... nothing. No tube at all!",
-   "dur": 4.753,
-   "at": 28.2
+   "key": "armour",
+   "text": "So the tyre itself holds no air at all. It's a tough shell that grips the road, while the tube holds the pressure.",
+   "dur": 6.733,
+   "at": 38.18
   },
   {
-   "key": "less2",
-   "text": "Instead, the inside of the tyre is lined with a thin airtight skin. And its edges sit tight against the metal rim.",
-   "dur": 6.84,
-   "at": 33.3
+   "key": "less",
+   "text": "Now the tubeless tyre. Same slice. Rim. Tyre. And... no tube! The air sits directly inside the tyre.",
+   "dur": 8.717,
+   "at": 45.42
   },
   {
-   "key": "less3",
-   "text": "Pump in air, and the pressure itself shoves those edges onto the rim. The harder it pushes, the tighter it seals.",
-   "dur": 7.249,
-   "at": 40.44
+   "key": "liner",
+   "text": "To keep it in, the inside of the tyre is coated with a special airtight rubber. And this rim has no spoke holes, so the metal is sealed too.",
+   "dur": 8.849,
+   "at": 54.58
+  },
+  {
+   "key": "bead",
+   "text": "The clever part is the edges. Each one hides a ring of steel wire, called the bead. Pump in air, and the pressure shoves both beads outwards, until they snap onto the rim. Pop!",
+   "dur": 10.232,
+   "at": 63.88
+  },
+  {
+   "key": "seal",
+   "text": "Now the tyre and the rim make one sealed chamber. And the more air you add, the harder the beads press, and the tighter it seals.",
+   "dur": 7.629,
+   "at": 74.57
   },
   {
    "key": "nailT",
-   "text": "Here comes the nail. In the tube tyre, it pops the balloon. The air rushes out around the tube, and escapes through the wheel. Flat, in seconds.",
-   "dur": 8.337,
-   "at": 48.09
+   "text": "Now, the nail. It punches through the tyre, and straight into the tube. And stretched rubber can't hold a hole shut. It pulls it wide open.",
+   "dur": 8.291,
+   "at": 82.74
+  },
+  {
+   "key": "flatT",
+   "text": "The air rushes out, slips between the tube and the tyre, and escapes through the holes in the rim. In seconds, the tyre collapses.",
+   "dur": 8.227,
+   "at": 91.44
   },
   {
    "key": "nailL",
-   "text": "In the tubeless tyre, the thick rubber squeezes around the nail and grips it. The air only leaks slowly. You can often drive on to a garage.",
-   "dur": 9.549,
-   "at": 56.83
+   "text": "In the tubeless tyre, nothing is stretched. The nail sits in thick rubber, and the rubber squeezes tightly around it. Like a cork.",
+   "dur": 8.205,
+   "at": 100.16
+  },
+  {
+   "key": "slow",
+   "text": "Only a little air hisses out, very slowly. Often slow enough to ride on to a repair shop.",
+   "dur": 6.029,
+   "at": 108.77
   },
   {
    "key": "fix",
-   "text": "And the repair? A tube tyre has to come off the wheel. A tubeless one gets a rubber plug, pushed in from outside. Minutes.",
-   "dur": 7.591,
-   "at": 66.78
+   "text": "Fixing them is different too. A tube tyre has to come off the rim, so you can pull the tube out and patch it.",
+   "dur": 6.669,
+   "at": 115.3
+  },
+  {
+   "key": "plug",
+   "text": "The tubeless one? Pull out the nail, and push a sticky rubber plug in from outside. Done in minutes.",
+   "dur": 5.773,
+   "at": 122.32
   },
   {
    "key": "heat",
-   "text": "There's more. A tube rubs against the tyre and makes heat. No tube means less heat, and less weight.",
-   "dur": 6.627,
-   "at": 74.72
+   "text": "And with no tube rubbing inside, a tubeless tyre runs cooler, and it's often a little lighter.",
+   "dur": 5.645,
+   "at": 128.54
   },
   {
    "key": "but",
-   "text": "So why do tubes still exist? Wire spoke wheels are full of holes, so most of them need one. And a tube is cheap to replace.",
-   "dur": 8.952,
-   "at": 81.7
+   "text": "So why do tubes still exist? A wire spoke wheel has a hole for every spoke, and the air would leak right out. So most of them need a tube. Tubes are also cheap, and easy to swap anywhere.",
+   "dur": 10.68,
+   "at": 134.63
   },
   {
    "key": "verdict",
-   "text": "The winner for everyday roads? Tubeless. Because it fails slowly. And slow is safe.",
-   "dur": 5.603,
-   "at": 91.05
+   "text": "For everyday roads, tubeless wins. Not because it never gets a puncture. But because when it does, it fails slowly. And slow is safe.",
+   "dur": 9.233,
+   "at": 145.81
   },
   {
    "key": "orbi",
-   "text": "Orbi Transfer works the same way. Nothing extra in the middle. No login, no app. Your file is sealed on your own phone, before it leaves.",
-   "dur": 8.931,
-   "at": 97.15
+   "text": "Orbi Transfer was built the same way. Nothing extra in the middle. No login, no app. Your file is sealed on your own phone, before it ever leaves.",
+   "dur": 8.973,
+   "at": 155.6
   },
   {
    "key": "orbi2",
-   "text": "It pops up on the other screen in about a second. And thirty minutes later, it's gone.",
-   "dur": 5.645,
-   "at": 106.38
+   "text": "It appears on the other screen in about a second. And after thirty minutes, it's gone.",
+   "dur": 4.579,
+   "at": 164.92
   },
   {
    "key": "end",
    "text": "Orbi Transfer dot com. Same nail. Very different ending.",
    "dur": 3.951,
-   "at": 112.43
+   "at": 169.95
   }
  ],
- "duration": 118.18
+ "duration": 175.7
 }
