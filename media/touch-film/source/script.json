@@ -1,0 +1,17 @@
+[
+ {"key":"hook","text":"Tap your phone with a glove... nothing. Tap it with a sausage... it works! Because your screen can't feel your finger at all. It feels your electricity. To see how, we have to take it apart.","emo":1.1,"gap":0.5},
+ {"key":"layers","text":"Lift the layers apart. On top, tough glass. At the bottom, the display that makes the picture. And in between, a layer you can't even see.","emo":0.95,"gap":0.45},
+ {"key":"grid","text":"It's a grid of see-through wires. Often made of indium tin oxide. It conducts like a metal, but you can see straight through it. Rows going one way. Columns going the other.","emo":1.0,"gap":0.45},
+ {"key":"field","text":"The chip sends a pulse down each row. At every crossing, a tiny electric field reaches over to the column. And the chip measures every crossing, again and again, many times a second.","emo":1.0,"gap":0.5},
+ {"key":"finger","text":"Now, your finger. It's mostly salty water, so it conducts electricity. As it comes close, it steals part of that field.","emo":1.0,"gap":0.45},
+ {"key":"dip","text":"The signal at that crossing drops. The chip sees the dip, and knows. A finger. Right here.","emo":1.05,"gap":0.5},
+ {"key":"centre","text":"But your finger is wider than one crossing. So it dims a few at once. The chip compares how much each one dropped, and finds the exact centre, much finer than the grid.","emo":1.0,"gap":0.5},
+ {"key":"multi","text":"Two fingers? Two dips. The chip tracks both at the same time. That's how pinch to zoom works.","emo":1.05,"gap":0.5},
+ {"key":"glove","text":"A wool glove doesn't conduct. Your finger's charge never reaches the screen, so nothing changes. Touch screen gloves weave conductive thread into the fingertips.","emo":0.95,"gap":0.45},
+ {"key":"rain","text":"Water conducts too. That's why raindrops can make a wet screen tap things on its own.","emo":1.0,"gap":0.45},
+ {"key":"sausage","text":"And the sausage? Salty, wet, and conductive. As far as your phone can tell, it's a finger.","emo":1.1,"gap":0.5},
+ {"key":"old","text":"Old screens worked differently. Two flexible layers had to be pushed together until they touched. That's why you had to press hard, often with a plastic stick.","emo":0.95,"gap":0.5},
+ {"key":"orbi","text":"Today, one light tap is all it takes. On Orbi Transfer, that tap locks your file, on your phone, before it leaves.","emo":1.0,"gap":0.35},
+ {"key":"orbi2","text":"It reaches the other phone in about a second. No login, no app. And after thirty minutes, it burns.","emo":1.05,"gap":0.6},
+ {"key":"end","text":"Orbi Transfer dot com. Your screen doesn't feel your finger. It feels your electricity.","emo":1.0,"gap":0.8}
+]
