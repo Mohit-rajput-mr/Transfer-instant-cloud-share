@@ -19,6 +19,12 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-17 (owner: "the cancel × doesn't work and doesn't disappear instantly"). Root cause: the ball's button captures
+  the pointer for dragging, so the click reported the button, never the × (OrbView). And a cancel waited on the network
+  (storeCopy end, the kept copy, an awaited DELETE) before the ball/card went. FIX: × handled on pointerdown; Void
+  cancelUp removes the card/ball at once and tells everyone (applySync + beam gone), then removeLater() deletes on the
+  server in the background, retried (also on "online"); lib/transfer.ts ends an aborted launch at once (also when cancelled
+  before the first byte, which used to start the upload anyway) and a launch cancelled while being placed is removed.
 - 2026-11-17 (owner: "WhatsApp sends the same file 15× faster; Full speed looks the same as Gentle"). Evidence (geo_events):
   IN upload 127 MB took 397 s = 0.32 MB/s while the SAME file downloaded in IN at 15.7 MB/s (through the live/ edge);
   ES uploads 10–12 MB/s. Root cause: downloads read via the edge worker next to the reader, uploads PUT straight to the

@@ -117,16 +117,28 @@ export async function launch(opts: {
   onProgress("uploading", 0);
   const stop = () => stopCopy(id);
   signal?.addEventListener("abort", stop, { once: true });
+  // cancelled before the first byte (during the key or the record): don't start the upload at all
+  if (signal?.aborted) {
+    void kept.then(() => unkeep(id));
+    void fetch(`/api/transfers/${id}`, { method: "DELETE", headers: { "x-owner": owner }, keepalive: true }).then((r) => r.ok && dropOwnerKey(id), () => null);
+    throw new DOMException("Aborted", "AbortError");
+  }
   // a folder is packed on the fly, so it can't be picked again after a reload: only real files too big to keep here
   // resume by re-picking
   const saved = await storeCopy(id, owner, file, key, nonce, name, file.size > KEEP_MAX && file.type !== FOLDER_MIME, { onFrac: (f) => onProgress("uploading", f) });
-  await kept;
   signal?.removeEventListener("abort", stop);
-  if (signal?.aborted || (!saved && !storeUnavailable(id))) {
+  // cancelled (the red ×): end now. The kept copy and the record are removed in the background, the page never waits
+  // on the network for it (owner 2026-11-17: "instantly, slow internet or none")
+  if (signal?.aborted) {
+    void kept.then(() => unkeep(id));
+    void fetch(`/api/transfers/${id}`, { method: "DELETE", headers: { "x-owner": owner }, keepalive: true }).then((r) => r.ok && dropOwnerKey(id), () => null);
+    throw new DOMException("Aborted", "AbortError");
+  }
+  await kept;
+  if (!saved && !storeUnavailable(id)) {
     void unkeep(id);
     await fetch(`/api/transfers/${id}`, { method: "DELETE", headers: { "x-owner": owner } }).catch(() => null);
     dropOwnerKey(id);
-    if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
     throw new Error("Not sent: the upload didn't go through. Check the connection and send it again.");
   }
   // !saved here: no online storage at all right now (none set up, or this month's free storage is used up): then it

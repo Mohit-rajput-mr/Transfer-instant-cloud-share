@@ -438,6 +438,16 @@ export default function OrbView(props: {
 
   const onPointerDown = (e: RPointerEvent<HTMLButtonElement>) => {
     if (e.button !== 0 || phase === "burning") return;
+    // the red × on an uploading ball: cancel on the press itself (owner 2026-11-17: "it doesn't work"). The button
+    // captures the pointer for dragging, so a click afterwards reports the button, never the ×
+    if ((e.target as Element).closest?.("[data-cancel]")) {
+      e.preventDefault();
+      e.stopPropagation();
+      pressed.current = null;
+      suppressClick.current = true;
+      props.onCancel?.();
+      return;
+    }
     // the button captures the pointer (for dragging), so the click reports the button: remember the ball pressed
     if ((e.target as Element).closest?.("[data-destroy]")) {
       pressed.current = null;
@@ -692,11 +702,7 @@ export default function OrbView(props: {
           return;
         }
         // the red destroy icons
-        if ((e.target as Element).closest?.("[data-cancel]")) {
-          pressed.current = null;
-          props.onCancel?.();
-          return;
-        }
+        if ((e.target as Element).closest?.("[data-cancel]")) return; // (handled on the press)
         const kill = (e.target as Element).closest?.("[data-destroy]") as HTMLElement | null;
         if (kill) {
           pressed.current = null;

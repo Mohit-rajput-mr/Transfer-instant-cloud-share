@@ -29,6 +29,18 @@ const release = (id: string) => {
   releaseP2P(id);
   stopCopy(id);
 };
+/** remove an object on the server in the background: tried again (and again once back online) until it goes through */
+async function removeLater(id: string, owner: string) {
+  for (let i = 0; i < 12; i++) {
+    const r = await fetch(`/api/transfers/${id}`, { method: "DELETE", headers: { "x-owner": owner }, keepalive: true }).catch(() => null);
+    if (r && (r.ok || r.status === 403 || r.status === 404)) return dropOwnerKey(id);
+    await new Promise<void>((res) => {
+      const t = setTimeout(done, Math.min(60_000, 2000 * 2 ** i));
+      function done() { clearTimeout(t); window.removeEventListener("online", done); res(); }
+      window.addEventListener("online", done);
+    });
+  }
+}
 import { downloading } from "@/lib/downloads";
 import { warm } from "@/lib/peek";
 import { anonLink, anonTitle, createAnonPassSpace, createSpace, joinAnonByName, joinAnonSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
@@ -835,6 +847,14 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     const fileName = job.hideNames ? genericFileName(job.file) : undefined;
     launch({ file: job.file, name: job.name, passcode: job.passcode, maxDownloads: job.maxDownloads, life: job.life, open: job.open, group: job.group, task: job.task, hue: l.hue, fileName, signal: l.abort.signal, onProgress })
       .then((orb) => {
+        // cancelled (the red ×) in its last moment, while it was being placed: it doesn't land, it is removed
+        if (l.abort.signal.aborted) {
+          flyEnd(key);
+          say("gone", { k: key }, place);
+          const ok = ownerKey(orb.id);
+          if (ok) void removeLater(orb.id, ok);
+          return;
+        }
         // the first send into a new anonymous space whose link couldn't be copied: the link, to pass on
         if (linkAfter.current && linkAfter.current === spaceRef.current?.slug) {
           linkAfter.current = null;
@@ -2461,18 +2481,30 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     toast(mine.length > 1 ? `${mine.length} objects destroyed` : "Object destroyed");
     broadcast();
   }, [toast, broadcast, beam, applySync]);
-  // the red × on a ball while it uploads (owner 2026-11-17): still launching → stop the launch; in orbit but its online
-  // copy still saving → destroy it (after a yes). Nothing once it is saved: then the usual trash icon destroys it
+  // the red × on a ball while it uploads (owner 2026-11-17: "once clicked it should just instantly cancel, slow
+  // internet or none"): everything on screen goes at once (the ball, its card, the upload), and everyone else is told
+  // at once; removing it on the server runs after, in the background, and is tried again until it goes through.
+  // Still launching: stop the launch (lib/transfer.ts removes its record). In orbit, online copy still saving: the
+  // same as destroy, without waiting for the server. Once saved: no ×, the usual trash icon.
   const cancelUp = (id: string): (() => void) | undefined => {
     const l = dockLaunches.find((x) => !x.orb && !x.err && pendingId(x.key) === id);
-    if (l) return () => l.abort.abort();
-    const c = cloudNow.get(id)?.state;
-    if (ownerKey(id) && (c === "saving" || c === "paused"))
+    if (l)
       return () => {
-        if (window.confirm("Cancel this upload? The file is removed for everyone.")) {
-          setLaunches((ls) => ls.filter((x) => x.orb?.id !== id));
-          void destroy([id]);
-        }
+        window.dispatchEvent(new CustomEvent("orbit:haptic", { detail: "warn" }));
+        l.abort.abort(); // (its launch() ends at once and says "gone" to the others: Void's launch catch)
+        setLaunches((ls) => ls.filter((x) => x.key !== l.key));
+      };
+    const c = cloudNow.get(id)?.state;
+    const key = ownerKey(id);
+    if (key && (c === "saving" || c === "paused"))
+      return () => {
+        window.dispatchEvent(new CustomEvent("orbit:haptic", { detail: "warn" }));
+        release(id);
+        setLaunches((ls) => ls.filter((x) => x.orb?.id !== id));
+        applySync({ og: [id] });
+        beam("gone", { ids: [id] });
+        toast("Upload cancelled");
+        void removeLater(id, key);
       };
     return undefined;
   };
