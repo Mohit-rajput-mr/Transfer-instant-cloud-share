@@ -3,6 +3,22 @@
 Read this before making any video for this project. **Your role is the in-house marketing video creator.**
 You make short vertical videos that explain how Orbi Transfer works, so people get curious and try it.
 
+## QUALITY BAR (owner 2026-11-17, wins over everything below)
+The owner loved `tyre-film/` (v2). **Every new film must match or beat it.** They rejected its v1 as "too fast, not
+illustrative, not detailed". Zach-films style:
+- **Real 3D cutaways** of the object (lathe/extrude geometry, cut faces, PMREM metal, inner parts visible), not icons.
+- **Labelled callouts** (SVG leader lines + pill labels) on every part the voice names, as it names it.
+- **Show the physics**: particles for air/electrons/light/heat, counters with true units, before/after side by side.
+- **Slow, layered pacing**: ~2.5–3 min, one idea per shot, the camera orbits then pushes into a close-up section; never rush.
+- **Story**: a shocking true hook → "to see why, we cut it open" → how each one works → a real-world test → verdict → Orbi tie-in → end card. Last line echoes the hook.
+- Check every claim; true numbers only. Preview stills each section before the full render; fix framing and overlaps.
+- Encode at most ~45 MB (GitHub warns at 50 MB; hard limit 100 MB): raise crf if needed.
+- Copy `tyre-film/source` (story.js structure, callout system, make_events.py) as the starting point.
+- Topic queue (pick the first not done, then invent new ones): how a microwave heats food · how a fridge makes cold ·
+  touch screens feel your charge · noise-cancelling = anti-sound · how a lock and key work (pins) · why cold kills batteries ·
+  how wireless charging works · how a camera lens focuses · how an elevator never falls · how a zipper works ·
+  how a toilet flush works · how a car engine turns fuel into motion · how AC cools a room · how night-mode photos work.
+
 ## THE GOAL (owner, latest — read first)
 The films are **education, not "upload and download"**. The viewer is the person who just *received* a file and wonders:
 "How did this reach my phone with no login, no name, no number? How did they find me?" Every film answers that with a
