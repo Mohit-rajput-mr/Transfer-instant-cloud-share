@@ -26,7 +26,7 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
   the part from the nearest Cloudflare location (only this bucket's f/<id> signed links; R2 still checks the signature);
   lib/cloud.ts put() goes via the edge, falls back to direct after 2 edge failures. Also: Full speed is the default
   (lib/net.ts; a stored "gentle" pick is kept), 6 lanes calm / 2 busy / 1 only after real failures, no breather unless
-  parts failed, 8 download lanes. SaveGuard is a small green note bottom-right (was a big bar top-centre).
+  parts failed, 8 download lanes. SaveGuard widget removed (owner: it overlapped): "saving online % · speed · others see it once saved" sits in the sending card itself (LaunchDock, ResumeUploads).
   Tests: net.test.ts (full default 8 lanes, gentle 6/3). OPEN: measure a real India upload after deploy.
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
 - 2026-11-02 DONE (owner ask) — HQ "From" filter now covers everything and defaults to TODAY.

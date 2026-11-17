@@ -99,7 +99,7 @@ function ResumeItem({ u }: { u: PendingUpload }) {
           {cloud?.state === "saved" ? (
             <span className="dock-cloud ok">Finished <LuCheck className="ic-inline" /> safe to close</span>
           ) : cloud?.state === "saving" ? (
-            `Resumed · ${Math.round(cloud.frac * 100)}%${cloud.speed ? ` · ${cloud.speed}` : ""}, keep open`
+            `Saving online · ${Math.round(cloud.frac * 100)}%${cloud.speed ? ` · ${cloud.speed}` : ""} · others see it once saved, keep open`
           ) : cloud?.state === "paused" ? (
             `Paused at ${Math.round(cloud.frac * 100)}%, waiting for the network`
           ) : cloud?.state === "failed" ? (

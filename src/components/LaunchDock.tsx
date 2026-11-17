@@ -163,7 +163,7 @@ function DockItem({ l, badges, onToggle, onDismiss, onOpenOwner }: { l: Launch }
         <div className="dock-main">
           <b className="ellip">{l.name}</b>
           <span className="mono">In orbit · <span className="dock-code">{l.orb.id}</span>
-            {cloud?.state === "saving" && <span className="dock-cloud"> · saving {Math.round(cloud.frac * 100)}%{cloud.speed ? ` · ${cloud.speed}` : ""}, keep open</span>}
+            {cloud?.state === "saving" && <span className="dock-cloud"> · saving online {Math.round(cloud.frac * 100)}%{cloud.speed ? ` · ${cloud.speed}` : ""} · others see it once saved, keep open</span>}
             {cloud?.state === "saved" && <span className="dock-cloud ok"> · saved <LuCheck className="ic-inline" /> safe to close</span>}
             {cloud?.state === "paused" && <span className="dock-cloud"> · paused at {Math.round(cloud.frac * 100)}%, resumes when you are back online</span>}
             {cloud?.state === "failed" && <span className="dock-cloud"> · keep this page open</span>}
