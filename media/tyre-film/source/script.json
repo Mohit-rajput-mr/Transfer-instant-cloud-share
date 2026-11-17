@@ -1,0 +1,18 @@
+[
+ {"key":"hook","text":"Two tyres. The same nail. One goes flat in seconds. The other keeps rolling for miles. So what's hiding inside?","emo":1.15,"gap":0.45},
+ {"key":"tube1","text":"Open up an old style tyre, and you find a second one inside. A soft rubber doughnut, called the inner tube.","emo":1.0,"gap":0.3},
+ {"key":"tube2","text":"The air goes into the tube, not the tyre. The tube swells up like a balloon, and pushes the tyre out against the road.","emo":1.0,"gap":0.3},
+ {"key":"tube3","text":"The tough outer tyre is just armour. On its own, it can't hold any air.","emo":0.95,"gap":0.4},
+ {"key":"less1","text":"Now the tubeless tyre. Open it up, and... nothing. No tube at all!","emo":1.15,"gap":0.35},
+ {"key":"less2","text":"Instead, the inside of the tyre is lined with a thin airtight skin. And its edges sit tight against the metal rim.","emo":0.95,"gap":0.3},
+ {"key":"less3","text":"Pump in air, and the pressure itself shoves those edges onto the rim. The harder it pushes, the tighter it seals.","emo":1.05,"gap":0.4},
+ {"key":"nailT","text":"Here comes the nail. In the tube tyre, it pops the balloon. The air rushes out around the tube, and escapes through the wheel. Flat, in seconds.","emo":1.1,"gap":0.4},
+ {"key":"nailL","text":"In the tubeless tyre, the thick rubber squeezes around the nail and grips it. The air only leaks slowly. You can often drive on to a garage.","emo":1.05,"gap":0.4},
+ {"key":"fix","text":"And the repair? A tube tyre has to come off the wheel. A tubeless one gets a rubber plug, pushed in from outside. Minutes.","emo":1.0,"gap":0.35},
+ {"key":"heat","text":"There's more. A tube rubs against the tyre and makes heat. No tube means less heat, and less weight.","emo":0.95,"gap":0.35},
+ {"key":"but","text":"So why do tubes still exist? Wire spoke wheels are full of holes, so most of them need one. And a tube is cheap to replace.","emo":1.0,"gap":0.4},
+ {"key":"verdict","text":"The winner for everyday roads? Tubeless. Because it fails slowly. And slow is safe.","emo":1.1,"gap":0.5},
+ {"key":"orbi","text":"Orbi Transfer works the same way. Nothing extra in the middle. No login, no app. Your file is sealed on your own phone, before it leaves.","emo":0.9,"gap":0.3},
+ {"key":"orbi2","text":"It pops up on the other screen in about a second. And thirty minutes later, it's gone.","emo":0.95,"gap":0.4},
+ {"key":"end","text":"Orbi Transfer dot com. Same nail. Very different ending.","emo":0.8,"gap":0.0}
+]

@@ -165,7 +165,8 @@ Use them in every film where a feature is shown.
   why your phone storage fills up · how "the cloud" is just someone's computer.
 
 ## Films so far
-- `tap-film/`: suspense science film — your bank card has no battery: wire loop, induction (toothbrush), chip wakes, answers by flickering its load, secret key → one-time code, thief DENIED → Orbi (code never leaves your phone, near you, 12 tries, 30 min) (**latest**)
+- `tyre-film/`: suspense science film — tube vs tubeless tyres: same nail, two endings; cutaway slices (inner tube balloon vs airtight liner + pressure-sealed beads), pop vs slow leak, plug repair, heat, why spoke wheels still use tubes, verdict tubeless → Orbi: nothing in the middle (no login, no app), sealed on your phone, ~1 s, 30-min burn (**latest**)
+- `tap-film/`: suspense science film — your bank card has no battery: wire loop, induction (toothbrush), chip wakes, answers by flickering its load, secret key → one-time code, thief DENIED → Orbi (code never leaves your phone, near you, 12 tries, 30 min)
 - `gps-film/`: suspense science film — your phone never talks to the satellites; it listens to clocks: delay = distance, bubbles → ring → two points → you, 4th satellite fixes the cheap clock, Einstein (+38 µs/day ≈ 10 km drift, clocks tuned slow before launch) → Orbi: rough area only, anonymous = no location, 30-min burn
 - `password-film/`: suspense science film — a hacker steals every password, they're useless: hashing = one-way blender, salt, slow blending → Orbi (code never leaves phone, 310,000×, hash of the proof, 12 tries, 30 min). First film on the kit
 - `work-desk-film/`: Orbi Work desktop demo — real /work recordings on a laptop mockup, camera zooms per feature (`shots.js`), 9:16 (use this format for workspace films)
