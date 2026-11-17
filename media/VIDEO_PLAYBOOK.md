@@ -14,8 +14,8 @@ illustrative, not detailed". Zach-films style:
 - Check every claim; true numbers only. Preview stills each section before the full render; fix framing and overlaps.
 - Encode at most ~45 MB (GitHub warns at 50 MB; hard limit 100 MB): raise crf if needed.
 - Copy `tyre-film/source` (story.js structure, callout system, make_events.py) as the starting point.
-- Topic queue (pick the first not done, then invent new ones): how a microwave heats food · how a fridge makes cold ·
-  touch screens feel your charge · noise-cancelling = anti-sound · how a lock and key work (pins) · why cold kills batteries ·
+- Topic queue (pick the first not done, then invent new ones): how a microwave heats food ·
+  noise-cancelling = anti-sound · how a lock and key work (pins) · why cold kills batteries ·
   how wireless charging works · how a camera lens focuses · how an elevator never falls · how a zipper works ·
   how a toilet flush works · how a car engine turns fuel into motion · how AC cools a room · how night-mode photos work.
 
