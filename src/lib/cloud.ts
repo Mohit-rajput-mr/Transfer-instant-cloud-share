@@ -43,7 +43,7 @@ export function useCloud() {
 
 const TRIES = 3;
 /** lanes one file may use at most (how many really run is up to lib/net.ts: 2 gently, 1 on a busy line, 6 at full speed) */
-const LANES_UP = 6;
+const LANES_UP = 8;
 
 // ---- a gentle upload: back off as soon as the line starts to choke (lib/net.ts) -----------------------------------
 // Every part (and every small file) takes a turn from the network watch first, across all files at once, so a send of
@@ -56,7 +56,8 @@ let picked = 0;
 /** after a part on a busy line: let the queue drain for half as long as the part took (capped) */
 // (2026-10-27 later: back on whenever the line is choking, failures or not. "Busy" means the round trip is 4× and 400 ms+
 // over quiet: the router's queue is full and the whole house's internet stalls, other browsers included)
-const breather = (ms: number, signal: AbortSignal) => (netCongested() ? sleep(Math.min(30_000, Math.max(800, ms / (netShaky() ? 2 : 3))), signal) : Promise.resolve());
+// (2026-11-17: only after real part failures: pausing on every busy reading made uploads many times slower than the line)
+const breather = (ms: number, signal: AbortSignal) => (netCongested() && netShaky() ? sleep(Math.min(30_000, Math.max(800, ms / (netShaky() ? 2 : 3))), signal) : Promise.resolve());
 
 // ---- uploads that resume -------------------------------------------------------------------------
 // A big upload is remembered on this device (IndexedDB: the object, its owner key, R2's upload id and
@@ -108,7 +109,28 @@ const STALL_MS = 30_000;
 /** PUT one part with progress; resolves to its ETag. A stalled request is cut and fails as a network error, so the
  *  caller tries it again: before (owner 2026-10-27, Mumbai, 20 MB) one stuck request left an upload at "uploading"
  *  for an hour with nothing failing and nothing retried. */
+// Parts go up through the live/ worker next to this device (PUT /u, owner 2026-11-17: India uploaded at 0.3 MB/s straight
+// to the bucket in Europe and downloaded the same file at 15 MB/s through that worker). The worker relays the same signed
+// link, so R2 still checks every part. If the edge fails twice (not deployed yet, blocked), this page goes direct again.
+const LIVE = process.env.NEXT_PUBLIC_LIVE_URL ?? "";
+const EDGE_UP = /^wss:\/\//.test(LIVE) ? LIVE.replace(/^wss:/, "https:").replace(/\/+$/, "") + "/u?s=" : "";
+let edgeUpFails = 0;
+const viaEdge = (url: string) => (EDGE_UP && edgeUpFails < 2 && /\.r2\.cloudflarestorage\.com\//.test(url) ? EDGE_UP + encodeURIComponent(url) : null);
+
 function put(url: string, body: Blob, onSent: (n: number) => void, signal: AbortSignal) {
+  const edge = viaEdge(url);
+  if (!edge) return putTo(url, body, onSent, signal);
+  return putTo(edge, body, onSent, signal).then(
+    (etag) => ((edgeUpFails = 0), etag),
+    (e) => {
+      if (signal.aborted) throw e;
+      edgeUpFails++;
+      console.info("orbi: edge upload failed, this part goes straight to the bucket", e);
+      return putTo(url, body, onSent, signal);
+    },
+  );
+}
+function putTo(url: string, body: Blob, onSent: (n: number) => void, signal: AbortSignal) {
   return new Promise<string>((res, rej) => {
     if (signal.aborted) return rej(new DOMException("Aborted", "AbortError"));
     const x = new XMLHttpRequest();
@@ -498,7 +520,7 @@ export async function waitStored(url: string, ms: number, signal?: AbortSignal, 
 }
 
 const RANGE_CHUNKS = 2;
-const PARALLEL_DOWN = 4;
+const PARALLEL_DOWN = 8;
 
 /** The stored copy, if it is complete: its first range is read right away and IS the check (no separate tiny read
  *  first, one round trip less to R2 per download). null: not there (yet). The other lanes start the moment it is. */

@@ -559,7 +559,7 @@ export function SendPanel(props: {
   // "New container": this send (and what follows) gathers apart from what this device sent before
   const [fresh, setFresh] = useState(false);
   const [more, setMore] = useState(false);
-  const [speed, setSpeed] = useState<UpSpeed>(() => (typeof window === "undefined" ? "gentle" : upSpeed()));
+  const [speed, setSpeed] = useState<UpSpeed>(() => (typeof window === "undefined" ? "full" : upSpeed()));
   const [max, setMax] = useState<number | null>(null);
   // every send starts open (no password); a password is a deliberate choice each time
   const [locked, setLocked] = useState(false);

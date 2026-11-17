@@ -67,14 +67,15 @@ export function netHiccup() {
 // navigator.connection 'change': that fires on every estimate update, mid-upload too, where a fresh base would be inflated)
 if (typeof window !== "undefined") window.addEventListener("online", () => (st.base = Infinity));
 
-// the person's pick: "gentle" (default) backs off on a busy line, "full" always goes flat out
+// the person's pick: "full" (default since 2026-11-17, owner: "make full speed the default") always goes flat out,
+// "gentle" backs off on a busy line
 const SPEED_KEY = "orbit:upspeed";
 export type UpSpeed = "gentle" | "full";
 export const upSpeed = (): UpSpeed => {
   try {
-    return localStorage.getItem(SPEED_KEY) === "full" ? "full" : "gentle";
+    return localStorage.getItem(SPEED_KEY) === "gentle" ? "gentle" : "full";
   } catch {
-    return "gentle";
+    return "full";
   }
 };
 export const setUpSpeed = (v: UpSpeed) => {
@@ -116,7 +117,10 @@ const limit = (k: NetKind) => {
   // (2026-10-27 later, owner: "the internet disconnects / Failed to fetch while I work"): busy means the round trip already
   // grew 4× (and 400 ms+) over the quiet line: the router's queue is full and every other page on this network suffers.
   // Then ONE part at a time until it calms, not two
-  if (k === "up") return upSpeed() === "full" ? 6 : busy ? 1 : !phone && runs.serve > 0 ? 2 : 4; // (never 0: nothing stalls for good on a wrong probe)
+  // (2026-11-17, owner: "WhatsApp sends the same file 15× faster"): a full upload always raises the round trip, so "busy"
+  // was nearly always on and held every upload to one part at a time with pauses. Now 6 parts when calm, 2 on a busy
+  // line, and one at a time only after parts really failed in the last 2 minutes (netShaky)
+  if (k === "up") return upSpeed() === "full" ? 8 : netShaky() && busy ? 1 : busy ? 2 : !phone && runs.serve > 0 ? 3 : 6; // (never 0: nothing stalls for good on a wrong probe)
   if (k === "serve") return busy || (phone && runs.up > 0) ? 1 : 2;
   return st.busy || runs.up || runs.serve || waits.some((w) => w.kind !== "peek") ? 0 : 1;
 };

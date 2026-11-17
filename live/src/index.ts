@@ -92,10 +92,44 @@ async function file(req: Request, env: Env, ctx: ExecutionContext, id: string): 
   return new Response(a, { status: 206, headers: { ...headers, ...CORS, "Cache-Control": "private, no-store", "X-Edge": "miss" } });
 }
 
+// ---- uploads at the edge: PUT /u?s=<a part's signed R2 link> (owner 2026-11-17: an upload from India ran at 0.3 MB/s
+// while the same file downloaded there at 15 MB/s through /f above) ----
+// The page's PUT ends at the Cloudflare location next to it (a short round trip, so the connection gets up to speed at
+// once) and goes on from here over Cloudflare's network to the bucket in Western Europe, instead of crossing the
+// internet all the way to it. Only links the site signed for this bucket's files are relayed (R2 checks the signature
+// itself, so nothing here can write anything the site didn't allow); the bytes are ciphertext, keys never come here.
+const UP_HOST = /^[a-f0-9]{32}\.r2\.cloudflarestorage\.com$/;
+const UP_PATH = /^\/orbi-storage\/f\/[a-z0-9]{4,12}$/;
+const UP_MAX = 64 * 1024 * 1024;
+const UP_CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "PUT, OPTIONS", "Access-Control-Allow-Headers": "Content-Type", "Access-Control-Expose-Headers": "ETag, X-Edge", "Access-Control-Max-Age": "86400" };
+async function up(req: Request): Promise<Response> {
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: UP_CORS });
+  if (req.method !== "PUT") return new Response("method", { status: 405, headers: UP_CORS });
+  // only Orbit's own pages (another site can't spend this account's free requests)
+  if (!ORIGIN.test(req.headers.get("Origin") ?? "")) return new Response("forbidden", { status: 403, headers: UP_CORS });
+  let to: URL;
+  try {
+    to = new URL(new URL(req.url).searchParams.get("s") ?? "");
+  } catch {
+    return new Response("bad link", { status: 400, headers: UP_CORS });
+  }
+  if (to.protocol !== "https:" || !UP_HOST.test(to.hostname) || !UP_PATH.test(to.pathname) || !to.searchParams.has("X-Amz-Signature"))
+    return new Response("bad link", { status: 400, headers: UP_CORS });
+  const n = Number(req.headers.get("Content-Length") ?? -1);
+  if (!(n >= 0 && n <= UP_MAX)) return new Response("size", { status: 413, headers: UP_CORS });
+  // read whole (a part is 8 MB): R2's S3 API wants a known length
+  const body = await req.arrayBuffer();
+  const r = await fetch(to.toString(), { method: "PUT", body });
+  const etag = r.headers.get("ETag");
+  await r.body?.cancel().catch(() => {});
+  return new Response(r.ok ? null : `bucket ${r.status}`, { status: r.status, headers: { ...UP_CORS, ...(etag ? { ETag: etag } : {}), "X-Edge": "up" } });
+}
+
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
     if (url.pathname === "/") return new Response("orbit live", { headers: { "Cache-Control": "no-store" } });
+    if (url.pathname === "/u") return up(req);
     const f = FILE.exec(url.pathname);
     if (f) return file(req, env, ctx, f[1]);
     const m = ROOM.exec(url.pathname);

@@ -19,6 +19,15 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-17 (owner: "WhatsApp sends the same file 15× faster; Full speed looks the same as Gentle"). Evidence (geo_events):
+  IN upload 127 MB took 397 s = 0.32 MB/s while the SAME file downloaded in IN at 15.7 MB/s (through the live/ edge);
+  ES uploads 10–12 MB/s. Root cause: downloads read via the edge worker next to the reader, uploads PUT straight to the
+  R2 S3 endpoint in Western Europe across the whole internet path. FIX: live/ worker PUT /u?s=<signed part link> relays
+  the part from the nearest Cloudflare location (only this bucket's f/<id> signed links; R2 still checks the signature);
+  lib/cloud.ts put() goes via the edge, falls back to direct after 2 edge failures. Also: Full speed is the default
+  (lib/net.ts; a stored "gentle" pick is kept), 6 lanes calm / 2 busy / 1 only after real failures, no breather unless
+  parts failed, 8 download lanes. SaveGuard is a small green note bottom-right (was a big bar top-centre).
+  Tests: net.test.ts (full default 8 lanes, gentle 6/3). OPEN: measure a real India upload after deploy.
 Severity: C critical · H high · M medium · L low. Status: FIXED (verified how) · OPEN · RISK (to verify).
 - 2026-11-02 DONE (owner ask) — HQ "From" filter now covers everything and defaults to TODAY.
   - Default: HQ opens on today (savedSince → today midnight; an explicit "All time" stores the sentinel "all" so it

@@ -3971,11 +3971,13 @@ html:not(#_) .pop.anon-portal .ap-search input::placeholder { color: rgba(255,25
 }
 
 /* sender: still saving online (components/SaveGuard.tsx) */
-.save-guard { position: fixed; z-index: 70; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 10px); width: min(560px, calc(100vw - 24px)); box-sizing: border-box; padding: 12px 16px; border-radius: 16px; display: flex; flex-direction: column; gap: 4px; background: rgba(12, 14, 18, 0.92); border: 1px solid rgba(255, 200, 80, 0.45); color: #fff; pointer-events: none; }
-.save-guard b { font-size: 14px; } .save-guard .mono { font-size: 11px; color: #c8ccd6; }
-.save-guard.ok { border-color: rgba(61, 255, 140, 0.6); } .save-guard.ok b { color: #3dff8c; }
-.save-guard-bar { display: block; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.12); overflow: hidden; margin-top: 4px; }
-.save-guard-bar > i { display: block; height: 100%; background: #ffd04a; transform-origin: left; transition: transform 0.4s; }
+/* owner 2026-11-17: a small green note bottom-right (was a big bar top-centre), above the bubble buttons */
+.save-guard { position: fixed; z-index: 70; top: auto; left: auto; transform: none; right: max(22px, var(--safe-r)); bottom: calc(156px + var(--safe-b)); width: min(270px, calc(100vw - 44px)); box-sizing: border-box; padding: 9px 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 3px; background: rgba(8, 26, 16, 0.94); border: 1px solid rgba(61, 255, 140, 0.5); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); color: #fff; pointer-events: none; animation: sg-in .25s ease-out; }
+@keyframes sg-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.save-guard b { font-size: 12.5px; color: #3dff8c; } .save-guard .mono { font-size: 10px; line-height: 1.35; color: #b9d9c6; }
+.save-guard.ok b { color: #3dff8c; }
+.save-guard-bar { display: block; height: 3px; border-radius: 2px; background: rgba(61, 255, 140, 0.15); overflow: hidden; margin-top: 3px; }
+.save-guard-bar > i { display: block; height: 100%; background: #3dff8c; transform-origin: left; transition: transform 0.4s; }
 
 /* ---- card: the preview picture is the preview button (Panels UnlockPanel .thumb-tile) ---- */
 .thumb-tile { position: relative; display: block; width: 100%; padding: 0; border: 1px solid rgba(255,255,255,0.16); border-radius: 16px; background: #0e0f12; cursor: pointer; overflow: hidden; color: inherit; font: inherit; transition: border-color var(--dur-1, .15s), box-shadow var(--dur-1, .15s); }
