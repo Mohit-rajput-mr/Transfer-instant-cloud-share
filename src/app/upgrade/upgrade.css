@@ -544,3 +544,10 @@
   .ug-go-d { grid-column: 1 / -1; grid-row: 2; margin-top: 8px; }
   .sx .ug-go .sx-arr.ug-go-arr { grid-column: 2; grid-row: 1; width: 24px; height: 24px; }
 }
+
+/* paid cards: seats, refund link, checkout error */
+.ug-seats { display: inline-flex; align-items: center; gap: 8px; margin-right: 6px; }
+.ug-seats input { width: 68px; min-height: 40px; border-radius: 999px; border: 1px solid #444; background: #000; color: #fff; text-align: center; font: inherit; font-size: 16px; }
+.ug-refund { font-size: 12px; }
+.ug-err { flex-basis: 100%; color: #ff8a8a; }
+.ug-foot a { color: inherit; text-decoration: underline; }

@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import Starfield from "@/components/Starfield";
 import { perf } from "@/lib/perf";
+import { useSession } from "@/lib/auth";
 
 export type SitePage = "about" | "upgrade";
 export type ArrowDir = "right" | "up-right" | "down" | "up";
@@ -36,6 +37,7 @@ const SMALL = [
   { label: "Terms", href: "/terms" },
   { label: "Privacy", href: "/privacy" },
   { label: "Refunds", href: "/refunds" },
+  { label: "Account", href: "/account" },
 ];
 // what the chapter indicator shows before the observer has run (the DOM count replaces the total)
 const FIRST: Record<SitePage, { label: string; total: string }> = {
@@ -387,6 +389,7 @@ export default function SiteChrome({ page, children }: { page: SitePage; childre
               <i className="sx-dot" aria-hidden />
               <span className="sx-chipf">Live · free to send</span>
             </span>
+            <AccountLink />
             <VoidLink href="/" className="sx-pill sm solid">
               Send
             </VoidLink>
@@ -482,9 +485,9 @@ export default function SiteChrome({ page, children }: { page: SitePage; childre
             <div>
               <h2 className="sx-label sx-foot-h">Status</h2>
               <ul className="sx-foot-st sx-chipf" data-anim>{/* the live dot pauses off-screen */}
-                <li><i className="sx-dot" aria-hidden />Free — live today</li>
-                <li><i className="sx-ring" aria-hidden />Pro — coming soon</li>
-                <li><i className="sx-ring" aria-hidden />Business — coming soon</li>
+                <li><i className="sx-dot" aria-hidden />Free — live</li>
+                <li><i className="sx-dot" aria-hidden />Pro — live</li>
+                <li><i className="sx-dot" aria-hidden />Business — live</li>
               </ul>
             </div>
           </div>
@@ -501,5 +504,15 @@ export default function SiteChrome({ page, children }: { page: SitePage; childre
         </div>
       </footer>
     </div>
+  );
+}
+
+/** header: "Log in" when signed out, "Account" when signed in (Pro and Business need an account; sending doesn't) */
+function AccountLink() {
+  const session = useSession();
+  return (
+    <Link href={session ? "/account" : "/login?next=/account"} className="sx-pill sm sx-acc">
+      {session ? "Account" : "Log in"}
+    </Link>
   );
 }

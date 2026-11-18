@@ -19,8 +19,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { life } = untag(item);
   // keeps the object alive while it uploads (the sender may come back and resume); once saved, the life
   // the sender picked starts from now. The database stores 30-minute lives, shorter ones are cut from it.
-  const alive = (done: boolean) =>
-    rpc("orbit_upload_alive", { p_id: id, p_owner_hash: ownerHash, p_minutes: done ? LIFE_MIN : LIFE_MIN + (LIFE_MIN - life), p_done: done }).catch(() => null);
+  // a paid long life (lib/plans.ts) starts once the copy is saved: the sender may close the page from then on
+  const alive = async (done: boolean) => {
+    if (done && life > LIFE_MIN && (await rpc<string | null>("orbit_send_live", { p_id: id, p_owner_hash: ownerHash }).catch(() => null))) return true;
+    return rpc("orbit_upload_alive", { p_id: id, p_owner_hash: ownerHash, p_minutes: done ? LIFE_MIN : LIFE_MIN + Math.max(0, LIFE_MIN - life), p_done: done }).catch(() => null);
+  };
   const sign = (uploadId: string, ns: number[]) =>
     Promise.all(ns.map((n) => presign("PUT", key, { partNumber: String(n), uploadId }, 6 * 3600).then((url) => ({ n, url }))));
   const key = objectKey(id);
@@ -34,7 +37,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       if (b.probe) return NextResponse.json({ probe });
       // free-tier guard: past it the file still goes directly, it just isn't stored
       const bud = await rpc<{ month?: number; live?: number }>("orbit_cloud_budget", {}).catch(() => null);
-      if (bud && (Number(bud.month) + item.size > CLOUD_MONTH_BYTES || Number(bud.live) > CLOUD_LIVE_BYTES))
+      // (a paid long life counts against its own plan's quota instead, checked when the send was opened)
+      if (life <= LIFE_MIN && bud && (Number(bud.month) + item.size > CLOUD_MONTH_BYTES || Number(bud.live) > CLOUD_LIVE_BYTES))
         return NextResponse.json({ error: "storage full" }, { status: 507 });
       // one part: a single plain upload (1 operation instead of 3)
       if (parts === 1) return NextResponse.json({ put: await presign("PUT", key, {}, 3600) });

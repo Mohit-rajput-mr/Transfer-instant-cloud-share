@@ -1,6 +1,7 @@
 import { after, NextRequest, NextResponse } from "next/server";
 import { writeTicket } from "@/lib/edge";
-import { MAX_FILE_BYTES, MAX_LABEL } from "@/lib/limits";
+import { planOf } from "@/lib/account";
+import { PERKS, livesFor } from "@/lib/plans";
 import { ANON_AREA, anonNet, areaFor, areasParam, clean, geo, isB64, isHex, netHash, newId, reap, rpc, sha256 } from "@/lib/server";
 import { validSkin } from "@/lib/skin-list";
 import { LIVES, burnedUp, cleanGroup, cleanHandle, isAnonSpace, member, tagName, untag, validFrom, validTask } from "@/lib/spaces";
@@ -35,7 +36,11 @@ export async function POST(req: NextRequest) {
   const chunkSize = Number(b.chunkSize);
   const iterations = Number(b.iterations);
   const maxDownloads = b.maxDownloads == null ? null : Number(b.maxDownloads);
-  if (!Number.isSafeInteger(size) || size < 0 || size > MAX_FILE_BYTES) return NextResponse.json({ error: `File is larger than ${MAX_LABEL}` }, { status: 413 });
+  // the plan decides the largest file and the longest life (lib/plans.ts); signed-out senders are Free
+  const { user, plan, account } = await planOf(req);
+  const perks = PERKS[plan];
+  if (!Number.isSafeInteger(size) || size < 0 || size > perks.maxFile)
+    return NextResponse.json({ error: `File is larger than ${perks.maxFileLabel}${plan === "free" ? " (Pro takes 100 GB)" : ""}` }, { status: 413 });
   if (!Number.isSafeInteger(chunkSize) || chunkSize < 1 << 20 || chunkSize > 64 << 20) return bad("chunk");
   if (!Number.isSafeInteger(iterations) || iterations < 100_000 || iterations > 2_000_000) return bad("iterations");
   if (maxDownloads !== null && (!Number.isSafeInteger(maxDownloads) || maxDownloads < 1 || maxDownloads > 999)) return bad("max");
@@ -43,10 +48,12 @@ export async function POST(req: NextRequest) {
   if (!isHex(b.auth, 64) || !isHex(b.owner, 64)) return bad("keys");
 
   let name = (clean(b.name, 60) || "untitled").replace(/^⟪/, "(");
-  const life = LIVES.includes(Number(b.life)) ? Number(b.life) : 30;
+  // long lives are for the public void (a space keeps its own clock; anonymous sends stay short)
+  const long = b.anon !== true && b.space == null && livesFor(plan).some(([m]) => m === Number(b.life)) ? Number(b.life) : 0;
+  const life = long || (LIVES.includes(Number(b.life)) ? Number(b.life) : 30);
   // anonymous (lib/anon.ts): no device, no place, no style, no preview, a rotating rate-limit key
   let anon = b.anon === true;
-  const tags = { life, open: b.open === true, from: validFrom(b.from) ? b.from : undefined, group: cleanGroup(b.group) || undefined, skin: validSkin(b.skin) ? b.skin : undefined, thumb: b.thumb === true, task: validTask(b.task) ? b.task : undefined } as Parameters<typeof tagName>[1];
+  const tags = { life: long ? 30 : life, long: long || undefined, open: b.open === true, from: validFrom(b.from) ? b.from : undefined, group: cleanGroup(b.group) || undefined, skin: validSkin(b.skin) ? b.skin : undefined, thumb: b.thumb === true, task: validTask(b.task) ? b.task : undefined } as Parameters<typeof tagName>[1];
   if (b.space != null) {
     const me = await member(b.space, b.deviceId, b.spaceToken);
     if (!me) return NextResponse.json({ error: "You are no longer in this space" }, { status: 403 });
@@ -72,6 +79,14 @@ export async function POST(req: NextRequest) {
   const mime = clean(b.mime, 120) || "application/octet-stream";
 
   const id = newId();
+  // a paying sender: the send goes in their history, and a long life must fit the storage they have left
+  if (user && account && plan !== "free" && !anon) {
+    const ok = await rpc<string>("orbit_send_open", {
+      p: { id, user: user.id, pool: account.pool, name: untagged(name), fileName, size, life: long || life, quota: perks.quota },
+    }).catch(() => "ok");
+    if (ok === "quota")
+      return NextResponse.json({ error: `Your ${perks.quotaLabel} of storage is full. Delete something, or pick 30 minutes or less.` }, { status: 507 });
+  }
   // no storage: the sender's device serves the file directly (lib/p2p.ts)
   const pathname = `p2p/${id}`;
 
@@ -99,5 +114,8 @@ export async function POST(req: NextRequest) {
   after(() => writeTicket(id).catch(() => {}));
   return NextResponse.json({ id });
 }
+
+/** the name as people see it (the tags are internal) */
+const untagged = (name: string) => untag({ name }).name as string;
 
 const bad = (what: string) => NextResponse.json({ error: `invalid ${what}` }, { status: 400 });

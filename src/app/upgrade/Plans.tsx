@@ -1,18 +1,18 @@
 "use client";
 
-// /upgrade on the blackboard. Free is everything that works today; Pro and Business are planned (early access by
-// email, no payments, no card form), so every paid line carries "soon" or "planned". The `yearly` toggle drives every
-// price on the page. Styles: ./upgrade.css (ug-*) on top of ../site.css (sx-*).
+// /upgrade on the blackboard. Free, Pro and Business are all open: paid plans are bought through Paddle (merchant of
+// record) after logging in (lib/checkout.ts). Every line listed under a plan is built and enforced (lib/plans.ts);
+// ideas that aren't built live only in the roadmap. The `yearly` toggle drives every price on the page. Styles: ./upgrade.css (ug-*) on top of ../site.css (sx-*).
 
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { Arrow, Check, Ghost, VoidLink, SecHead, Ticker } from "@/components/SiteChrome";
 import { FAQ } from "./faq";
+import { buy } from "@/lib/checkout";
+import { useSession } from "@/lib/auth";
 
 const MAIL = "transferorbi@gmail.com";
-// one developer, no team: "Hi Orbi,"; only Business asks for a team size
-const ask = (plan: string) =>
-  `mailto:${MAIL}?subject=${encodeURIComponent(`Orbi ${plan}: early access`)}&body=${encodeURIComponent(`Hi Orbi,\n\nI'd like early access to ${plan}.\n${plan === "Business" ? "Team size:\n" : ""}What I'd use it for:\n`)}`;
+// one developer, no team: "Hi Orbi,"
 const idea = (name: string) => `mailto:${MAIL}?subject=${encodeURIComponent(`Orbi idea: ${name}`)}&body=${encodeURIComponent(`Hi Orbi,\n\nI'd use ${name} for:\n`)}`;
 
 const TOTAL = "09";
@@ -25,20 +25,15 @@ type Plan = { id: PlanId; n: string; name: string; now: boolean; month: number; 
 
 // spaces themselves already stay (only what is inside them burns), so the paid line is "nothing burns"
 const BUSINESS_POINTS = [
-  "Team workspaces where nothing burns",
-  "Members, roles and invites by email",
-  "Task boards with due dates, routes and owners",
-  "Files up to 250 GB",
-  "Pooled storage: 1 TB per user",
-  "Send history for 1 year",
-  "Admin console: devices, sessions, revoke",
-  "Audit log of every send and download",
-  "Your logo and domain on share pages",
-  "Google / Microsoft sign-in (SSO)",
-  "Choose the data region",
-  "Slack and Teams alerts, API and webhooks",
-  "Priority support",
-];
+  "Files up to 250 GB each",
+  "Keep files up to 30 days (delete any time)",
+  "1 TB of storage shared by the whole team",
+  "Add your team by email: each seat gets Business",
+  "Team history: every send by every member, for 1 year",
+  "Download counts kept in the history after a file burns",
+  "One bill for the team: add or remove seats any time",
+  "Priority email support",
+]
 
 const PLANS: Plan[] = [
   {
@@ -58,24 +53,21 @@ const PLANS: Plan[] = [
     ],
   },
   {
-    id: "pro", n: "02", name: "Pro", now: false, month: 8, year: 6,
+    id: "pro", n: "02", name: "Pro", now: true, month: 8, year: 6,
     blurb: "For people who send every day and want things to stay a little longer.",
     lead: "Everything in Free, plus",
     points: [
-      "Keep files up to 7 days (delete any time)",
-      "Notes and tasks with no timer",
-      "Files up to 100 GB",
-      "3 spaces where nothing burns",
-      "Your own link: orbitransfer.com/you",
-      "Receipts you keep after it burns: who, when, which device",
-      "Expiry dates on the calendar, not just minutes",
-      "Send history for 30 days",
-      "Desktop and phone apps",
+      "Files up to 100 GB each",
+      "Keep files up to 7 days: 1 hour, 6 hours, 1, 3 or 7 days",
+      "200 GB stored at the same time",
+      "Send history for 30 days: what, when, how many downloads",
+      "Your plan on every device: log in with email or Google",
+      "Cancel any time · 14-day refund",
       "Email support",
     ],
   },
   {
-    id: "business", n: "03", name: "Business", now: false, month: 16, year: 12,
+    id: "business", n: "03", name: "Business", now: true, month: 16, year: 12,
     blurb: "A shared workspace for teams that move files, notes and tasks together.",
     lead: "Everything in Pro, plus",
     points: BUSINESS_POINTS,
@@ -92,35 +84,25 @@ const TABLE: { n: string; group: string; rows: Row[] }[] = [
     ["Resume after a dropped connection", true, true, true],
     ["Open link or passcode", true, true, true],
     ["Download limit (1 to 10)", true, true, true],
-    ["Expiry date on the calendar", false, "up to 7 days", true],
   ] },
-  { n: "5.2", group: "Time", rows: [
-    ["How long a file stays", "5 to 30 min", "up to 7 days", "until deleted"],
-    ["Notes", "5 to 30 min", "no timer", "no timer"],
-    ["Tasks", "up to 8 h (testing)", "no timer", "no timer"],
-    ["Send history", false, "30 days", "1 year"],
+  { n: "5.2", group: "Time and storage", rows: [
+    ["How long a file stays", "5 to 30 min", "up to 7 days", "up to 30 days"],
+    ["Stored at the same time", "—", "200 GB", "1 TB per team"],
+    ["Send history", false, "30 days", "1 year, whole team"],
+    ["Download counts kept after it burns", false, true, true],
   ] },
   { n: "5.3", group: "Spaces and teams", rows: [
-    ["Public void and Nearby", true, true, true],
+    ["Public void, Nearby and Wi-Fi", true, true, true],
     ["Spaces, public or locked with a code", true, true, true],
-    ["Spaces where files and tasks don't burn", false, "3", "unlimited"],
-    ["Members, roles, email invites", false, false, true],
-    ["Task boards: due dates, owners, routes", "basic", "basic", "full"],
+    ["Bubble notes and tasks", true, true, true],
+    ["Team members by email (seats)", false, false, true],
+    ["One bill, seats added or removed any time", false, false, true],
   ] },
-  { n: "5.4", group: "Control and security", rows: [
-    ["Live viewers and downloads", true, true, true],
-    ["Open and download log while it floats", true, true, true],
-    ["Receipts kept after it burns", false, true, true],
-    ["Your own link and branding", false, "link", "logo + domain"],
-    ["Admin console and audit log", false, false, true],
-    ["SSO (Google, Microsoft)", false, false, true],
-    ["Data region choice", false, false, true],
-  ] },
-  { n: "5.5", group: "Apps and support", rows: [
+  { n: "5.4", group: "Account and support", rows: [
+    ["Account needed", "no", "email or Google", "email or Google"],
+    ["Live viewers and downloads while it floats", true, true, true],
     ["Any browser, Classic and Work looks", true, true, true],
-    ["Desktop and phone apps", false, true, true],
-    ["Slack / Teams alerts", false, false, true],
-    ["API and webhooks", false, false, true],
+    ["Cancel any time, 14-day refund", "—", true, true],
     ["Support", "best effort", "email", "priority"],
   ] },
 ];
@@ -133,6 +115,10 @@ const IDEAS: [string, string, string][] = [
   ["Mesh", "Offline nearby", "Two devices on the same Wi-Fi send to each other even when the internet is down."],
   ["Seal", "Signed receipts", "Proof of delivery nobody can edit, not even the sender: signed when the file lands, checkable by anyone."],
   ["Relay", "Hand-off", "Copy on your phone, paste on your laptop: your devices share one clipboard."],
+  ["Handle", "Your own link", "orbitransfer.com/you: a page people send files to, or pick up what you left them."],
+  ["Dock", "Desktop and phone apps", "Drag onto the menu bar or share from your phone's share sheet."],
+  ["Brand", "Your logo and domain", "Share pages with your team's logo, on your own domain."],
+  ["Hook", "API, Slack and Teams", "Send from scripts, and get a ping when a file lands or is downloaded."],
 ];
 
 const PROMISES: [string, string][] = [
@@ -143,11 +129,11 @@ const PROMISES: [string, string][] = [
 ];
 
 const CONTROLS: [string, string][] = [
-  ["Receipts that stay", "Who took it, when, on which device: kept after it burns."],
-  ["Expiry date", "Pick the day it burns, up to 7 days out."],
-  ["Send history", "Thirty days of what you sent."],
-  ["Apps", "Desktop and phone apps, so sending is one drag away."],
-];
+  ["Send history", "Every file you sent, in your account: 30 days on Pro, a year on Business."],
+  ["Downloads kept", "How many times it was downloaded, still there after it burns."],
+  ["Longer lives", "Pick 1 hour, 6 hours, 1, 3 or 7 days (30 on Business) when you send."],
+  ["Every device", "Log in with email or Google and the plan is there."],
+]
 
 // Fig. 1: 60 minute ticks around the dial (r 150), every fifth one longer and brighter
 const TICKS = Array.from({ length: 60 }, (_, i) => {
@@ -171,8 +157,8 @@ const AXIS: { id: string; x: string; t: string }[] = [
 ];
 const LANES: { name: string; live: boolean; to: string; end: string; fill: "f" | "h"; tail?: boolean }[] = [
   { name: "Free", live: true, to: "19.1%", end: "5 to 30 min", fill: "f" },
-  { name: "Pro", live: false, to: "74%", end: "up to 7 days", fill: "h" },
-  { name: "Business", live: false, to: "100%", end: "until deleted", fill: "h", tail: true },
+  { name: "Pro", live: true, to: "74%", end: "up to 7 days", fill: "f" },
+  { name: "Business", live: true, to: "87.7%", end: "up to 30 days", fill: "f" },
 ];
 
 const RECEIPT_DL: [string, string, string, string][] = [
@@ -191,17 +177,17 @@ const LOG: [string, string][] = [
   ["09:12", "A created Task 4"],
   ["09:20", "J sent cut-v3.mov"],
   ["09:21", "M downloaded cut-v3.mov"],
-  ["10:02", "A invited S"],
-  ["10:15", "R ticked Task 2"],
-  ["11:40", "Admin revoked a device"],
-  ["11:41", "SSO sign-in · Google"],
+  ["10:02", "A added S to the team"],
+  ["10:15", "R sent logo.svg · 7 days"],
+  ["11:40", "S downloaded deck.pdf"],
+  ["11:41", "deck.pdf · 4 downloads · burned"],
 ];
 
 /* --------------------------------------------------------------- small parts --------------------------------------------------------------- */
 
 const price = (p: Plan, yearly: boolean) => (yearly ? p.year : p.month);
 const headPrice = (p: Plan, yearly: boolean) =>
-  p.id === "free" ? "$0 · live" : p.id === "pro" ? `$${price(p, yearly)}/mo · soon` : `$${price(p, yearly)}/user/mo · soon`;
+  p.id === "free" ? "$0" : p.id === "pro" ? `$${price(p, yearly)}/mo` : `$${price(p, yearly)}/user/mo`;
 
 function Cell({ v: val }: { v: Val }) {
   if (val === true) return <Check />;
@@ -264,7 +250,7 @@ function Billing({ yearly, set }: { yearly: boolean; set: (y: boolean) => void }
           </em>
         </button>
       </div>
-      <span className="sx-label ug-bill-note">Planned prices · nothing is charged today</span>
+      <span className="sx-label ug-bill-note">USD · cancel any time · 14-day refund</span>
       <span className="sx-sr" aria-live="polite">
         {yearly ? "Yearly prices shown, billed yearly, 25% less." : "Monthly prices shown."}
       </span>
@@ -291,22 +277,21 @@ function Period({ p, yearly }: { p: Plan; yearly: boolean }) {
   );
 }
 
-// which paid plans Stripe can sell right now (keys and prices set in Vercel): asked once per page
-let onP: Promise<{ business?: boolean; pro?: boolean }> | null = null;
-const payOn = () => (onP ??= fetch("/api/checkout", { cache: "no-store" }).then((r) => r.json()).catch(() => ({})));
-
 function PlanCta({ p, yearly }: { p: Plan; yearly: boolean }) {
-  const [on, setOn] = useState(false);
+  const session = useSession();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [seats, setSeats] = useState(1);
+  const billing = yearly ? "yearly" : "monthly";
+  // back from logging in with ?buy=pro-yearly: open that checkout once
   useEffect(() => {
-    if (p.id === "free") return;
-    let live = true;
-    payOn().then((s) => live && setOn(!!s[p.id as "pro" | "business"]));
-    return () => {
-      live = false;
-    };
-  }, [p.id]);
+    if (p.id === "free" || !session) return;
+    const want = new URLSearchParams(location.search).get("buy");
+    if (want !== `${p.id}-yearly` && want !== `${p.id}-monthly`) return;
+    history.replaceState(null, "", location.pathname + location.hash);
+    void go(want.endsWith("yearly") ? "yearly" : "monthly");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, p.id]);
   if (p.id === "free")
     return (
       <>
@@ -318,34 +303,37 @@ function PlanCta({ p, yearly }: { p: Plan; yearly: boolean }) {
         </VoidLink>
       </>
     );
-  if (on) {
-    // Stripe Checkout: card details never touch Orbi; Business picks its seat count there
-    const go = async () => {
-      setBusy(true);
-      setErr("");
-      try {
-        const r = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: p.id, billing: yearly ? "yearly" : "monthly", seats: 1 }) });
-        const j = (await r.json()) as { url?: string; error?: string };
-        if (j.url) return void (location.href = j.url);
-        setErr(j.error || "Checkout is unavailable right now");
-      } catch {
-        setErr("Checkout is unavailable right now");
-      }
-      setBusy(false);
-    };
-    return (
-      <>
-        <button type="button" className="sx-pill solid" onClick={go} disabled={busy}>
-          {busy ? "Opening checkout…" : `Subscribe to ${p.id === "pro" ? "Pro" : "Business"}`} <Arrow dir="up-right" />
-        </button>
-        {err && <span className="sx-label" role="alert">{err}</span>}
-      </>
-    );
+  async function go(b: "monthly" | "yearly" = billing) {
+    setBusy(true);
+    setErr("");
+    try {
+      await buy(p.id as "pro" | "business", b, seats);
+    } catch (e) {
+      setErr((e as Error).message || "Checkout is unavailable right now");
+    }
+    setBusy(false);
   }
+  const name = p.id === "pro" ? "Pro" : "Business";
   return (
-    <a href={ask(p.id === "pro" ? "Pro" : "Business")} className="sx-pill">
-      {p.id === "pro" ? "Get early access" : "Talk to us"} <Arrow dir="up-right" />
-    </a>
+    <>
+      {p.id === "business" && (
+        <label className="sx-label ug-seats">
+          Seats
+          <input type="number" min={1} max={500} value={seats} onChange={(e) => setSeats(Math.max(1, Math.min(500, Math.floor(Number(e.target.value) || 1))))} />
+        </label>
+      )}
+      <button type="button" className={`sx-pill${p.id === "pro" ? " solid" : ""}`} onClick={() => go()} disabled={busy}>
+        {busy ? "Opening checkout…" : session ? `Get ${name}` : `Get ${name}`} <Arrow dir="up-right" />
+      </button>
+      <Link href="/refunds" className="sx-link ug-refund">
+        14-day refund <Arrow dir="right" />
+      </Link>
+      {err && (
+        <span className="sx-label ug-err" role="alert">
+          {err}
+        </span>
+      )}
+    </>
   );
 }
 
@@ -388,7 +376,7 @@ export default function Plans() {
               <i className="sx-dot" aria-hidden />
               Free is live today
             </span>
-            <span>Pro &amp; Business: coming soon</span>
+            <span>Pro &amp; Business: open</span>
           </div>
 
           <div className="sx-fit ug-fit-h1">
@@ -403,16 +391,15 @@ export default function Plans() {
           <div className="sx-grid ug-hero-row">
             <div className="ug-hero-l">
               <p className="sx-lead sx-h-late">
-                Sending stays free: instant, end-to-end encrypted, no account. Pro and Business are for what thirty minutes can&apos;t hold: files that stay for days, receipts you keep, and a home for your team where nothing burns.
-                They aren&apos;t open yet. Ask for early access and you&apos;re first in line.
+                Sending stays free: instant, end-to-end encrypted, no account. Pro and Business are for what thirty minutes can&apos;t hold: files that stay for days, files up to 250 GB, a history of what you sent, and storage your team shares.
               </p>
               <div className="ug-ctas sx-h-late">
                 <a href="#plans" className="sx-pill solid">
                   See the plans <Arrow dir="down" />
                 </a>
-                <a href={ask("Pro")} className="sx-link">
-                  Ask for early access <Arrow dir="up-right" />
-                </a>
+                <Link href="/account" className="sx-link">
+                  Log in or sign up <Arrow dir="right" />
+                </Link>
               </div>
             </div>
             <figure className="sx-figure ug-clock sx-h-fig">
@@ -424,11 +411,11 @@ export default function Plans() {
                 </li>
                 <li>
                   <i className="d" aria-hidden />
-                  Pro · up to 7 days · soon
+                  Pro · up to 7 days
                 </li>
                 <li>
                   <i className="d" aria-hidden />
-                  Business · until deleted · soon
+                  Business · up to 30 days
                 </li>
               </ul>
               <figcaption className="sx-cap">Fig. 1 — One hour on the dial. Free lives on half of it.</figcaption>
@@ -437,7 +424,7 @@ export default function Plans() {
         </div>
       </section>
 
-      <Ticker items={["Free today", "Pro soon", "Business soon", "Sending stays free", "Encrypted on every plan", "No card, no account"]} />
+      <Ticker items={["Free forever", "Pro · 7 days · 100 GB", "Business · 30 days · 250 GB", "Sending stays free", "Encrypted on every plan", "14-day refund"]} />
 
       {/* 01 ─ the plans */}
       <section id="plans" className="sx-sec ug-plans-sec" data-chapter="01|Plans" aria-labelledby="ug-plans-h">
@@ -456,7 +443,7 @@ export default function Plans() {
               <article key={p.id} className={`ug-plan ${p.id}`} aria-labelledby={`ug-p-${p.id}`} data-reveal style={v({ "--i": i })}>
                 <div className="ug-pmeta" data-anim={p.now || undefined}>
                   <span className="sx-label">{p.n}</span>
-                  <span className={`sx-st ${p.now ? "now" : "soon"}`}>{p.now ? "Available now" : "Coming soon"}</span>
+                  <span className="sx-st now">Available now</span>
                 </div>
                 <h3 id={`ug-p-${p.id}`} className="ug-name">
                   {p.name}
@@ -492,7 +479,7 @@ export default function Plans() {
                 <ul className="ug-list">
                   {p.points.map((x) => (
                     <li key={x}>
-                      <i className={`sx-sq ${p.now ? "t" : "p"}`} aria-hidden />
+                      <i className="sx-sq t" aria-hidden />
                       {x}
                     </li>
                   ))}
@@ -501,15 +488,10 @@ export default function Plans() {
             ))}
           </div>
 
-          <p className="sx-label ug-key">
-            <span>
-              <i className="sx-sq t" aria-hidden /> works today
-            </span>
-            <span>
-              <i className="sx-sq p" aria-hidden /> planned
-            </span>
+          <p className="sx-label ug-foot">
+            Prices in USD; local taxes added at checkout where they apply. Payments are handled by Paddle.com, our reseller and merchant of record. Cancel any time ·{" "}
+            <Link href="/refunds">14-day refund</Link> · <Link href="/terms">Terms</Link>
           </p>
-          <p className="sx-label ug-foot">Prices in USD. Paid plans are not open: nothing is charged and there is no card form anywhere on Orbi. Early access is one short email.</p>
         </div>
       </section>
 
@@ -541,8 +523,8 @@ export default function Plans() {
                     <div className="ug-lane-n">
                       <b>{l.name}</b>
                       <span className={`sx-label ug-lane-st${l.live ? " ug-on" : ""}`}>
-                        {l.live ? <i className="sx-dot" /> : <i className="sx-ring" />}
-                        {l.live ? "Live" : "Soon"}
+                        <i className="sx-dot" />
+                        Live
                       </span>
                     </div>
                     <span className="sx-label ug-end m">{l.end}</span>
@@ -563,8 +545,8 @@ export default function Plans() {
                 ))}
               </div>
             </div>
-            <p className="sx-sr">Free: 5 to 30 minutes, live. Pro: up to 7 days, planned. Business: until deleted, planned.</p>
-            <figcaption className="sx-cap">Fig. 2 — How long a file can stay, per plan, on a log scale. Pro and Business are coming soon.</figcaption>
+            <p className="sx-sr">Free: 5 to 30 minutes. Pro: up to 7 days. Business: up to 30 days.</p>
+            <figcaption className="sx-cap">Fig. 2 — How long a file can stay, per plan, on a log scale.</figcaption>
           </figure>
 
           <div className="sx-grid ug-size-row">
@@ -577,18 +559,18 @@ export default function Plans() {
                 </svg>
                 <span className="ug-sz b" aria-hidden style={v({ "--i": 2 })}>
                   <b>250 GB</b>
-                  <span className="sx-label">Business · soon</span>
+                  <span className="sx-label">Business</span>
                 </span>
                 <span className="ug-sz p" aria-hidden style={v({ "--i": 1 })}>
                   <b>100 GB</b>
-                  <span className="sx-label">Pro · soon</span>
+                  <span className="sx-label">Pro</span>
                 </span>
                 <span className="ug-sz f" aria-hidden style={v({ "--i": 0 })}>
                   <b>20 GB</b>
-                  <span className="sx-label">Free · today</span>
+                  <span className="sx-label">Free</span>
                 </span>
               </div>
-              <p className="sx-sr">Largest single file: Free 20 GB today; Pro 100 GB and Business 250 GB, planned.</p>
+              <p className="sx-sr">Largest single file: Free 20 GB, Pro 100 GB, Business 250 GB.</p>
               <figcaption className="sx-cap">Fig. 3 — Largest single file. Area to scale.</figcaption>
             </figure>
             <div className="ug-size-r" data-reveal>
@@ -597,13 +579,13 @@ export default function Plans() {
                 Free already takes files up to 20 GB, any format, folders included. Pro raises the ceiling to 100 GB, Business to 250 GB. Every size travels the same way: sealed 8 MB chunks, and a dropped connection resumes where it stopped.
               </p>
               <div className="ug-pool">
-                <span className="sx-label">Business · soon · storage pool</span>
+                <span className="sx-label">Business · storage pool</span>
                 <div className="ug-pool-sq" data-grow aria-hidden>
                   {[0, 1, 2, 3, 4].map((i) => (
                     <i key={i} style={v({ "--i": i })} />
                   ))}
                 </div>
-                <p className="sx-small">1 TB per member, pooled. A team of five shares 5 TB.</p>
+                <p className="sx-small">1 TB shared by the whole team, whatever its size. Pro keeps 200 GB at once.</p>
               </div>
             </div>
           </div>
@@ -613,14 +595,14 @@ export default function Plans() {
       {/* 03 ─ proof (Pro) */}
       <section id="proof" className="sx-sec ug-proof" data-chapter="03|Proof" aria-labelledby="ug-proof-h">
         <div className="sx-in">
-          <SecHead n="03" label="Proof · Pro, soon" kicker="Receipts" total={TOTAL} />
+          <SecHead n="03" label="History · Pro" kicker="Receipts" total={TOTAL} />
           <h2 id="ug-proof-h" className="sx-h2" data-reveal>
             <span className="ln">Who got it.</span>{" "}
             <span className="ln">When.</span>
           </h2>
           <div className="sx-grid">
             <Lead className="ug-proof-l">
-              Free already shows every open and download while an object floats, lets you cap downloads, and destroys it whenever you say. Coming to Pro: a receipt you keep after it burns, an expiry date on the calendar, your own link, and thirty days of what you sent.
+              Free already shows every open and download while an object floats, lets you cap downloads, and destroys it whenever you say. Pro adds a history in your account: every file you sent, its size, when it burns, and how many times it was downloaded, kept after it burns.
             </Lead>
           </div>
 
@@ -655,24 +637,16 @@ export default function Plans() {
                   <span>limit reached · burned 15:10</span>
                 </div>
               </div>
-              <figcaption className="sx-cap">Fig. 4 — A download receipt. Pro · coming soon · example data.</figcaption>
+              <figcaption className="sx-cap">Fig. 4 — A send, as your history keeps it. Example data.</figcaption>
             </figure>
 
             <div className="ug-proof-r" data-reveal>
-              <div className="ug-own" data-anim aria-hidden>
-                <span className="h">orbitransfer.com/</span>
-                <span className="u">you</span>
-                <i className="ug-cur" />
-              </div>
-              <p className="sx-label ug-own-l">
-                <span className="sx-sr">orbitransfer.com/you — </span>Your own link · soon
-              </p>
               <ul className="ug-ctl">
                 {CONTROLS.map(([t, d]) => (
                   <li key={t}>
                     <div className="ug-ctl-t">
                       <h3 className="sx-chipf">{t}</h3>
-                      <span className="sx-st soon">Soon</span>
+                      <span className="sx-st now">Live</span>
                     </div>
                     <p className="sx-small">{d}</p>
                   </li>
@@ -687,25 +661,21 @@ export default function Plans() {
       <section id="teams" className="sx-sec ug-teams" data-chapter="04|Teams" aria-labelledby="ug-teams-h">
         <Ghost text="TEAM" className="ug-g-team" />
         <div className="sx-in">
-          <SecHead n="04" label="Teams · Business, soon" kicker="Workspace" total={TOTAL} />
+          <SecHead n="04" label="Teams · Business" kicker="Workspace" total={TOTAL} />
           <h2 id="ug-teams-h" className="sx-h2" data-reveal>
             <span className="ln">A home</span>{" "}
             <span className="ln">for teams.</span>
           </h2>
           <div className="sx-grid">
             <Lead className="ug-teams-l">
-              Business, when it opens, turns a space into a workspace where nothing burns: members with roles, task boards with owners and due dates, an admin console, an audit log, and your own logo and domain on share pages.
+              Business puts your team on one bill: add people by email and each seat gets Business on every device. Files stay up to 30 days, the team shares 1 TB, and the owner sees every send by every member for a year. Spaces, task boards and bubble notes work the same as on Free.
             </Lead>
           </div>
 
           <figure className="sx-figure ug-ws" data-reveal>
             <div className="ug-ws-f" aria-hidden>
               <div className="ug-ws-top">
-                <span className="sx-label">Workspace · nothing burns</span>
-                <span className="ug-ws-logo">
-                  <i />
-                  <span className="sx-label">Your logo</span>
-                </span>
+                <span className="sx-label">Team · Business</span>
               </div>
               <div className="ug-ws-body">
                 <div className="ug-ws-mem">
@@ -737,7 +707,7 @@ export default function Plans() {
                   ))}
                 </div>
                 <div className="ug-ws-log">
-                  <span className="sx-label">Audit log</span>
+                  <span className="sx-label">Team history</span>
                   <ol data-grow>
                     {LOG.map(([t, e], i) => (
                       <li key={t} style={v({ "--i": i })}>
@@ -750,13 +720,13 @@ export default function Plans() {
               </div>
             </div>
             <p className="sx-sr">Example workspace: five members with roles, a task board with three columns, and an audit log.</p>
-            <figcaption className="sx-cap">Fig. 5 — A Business workspace. Coming soon · example data.</figcaption>
+            <figcaption className="sx-cap">Fig. 5 — A team at work: members, a task board in a space, and the team history. Example data.</figcaption>
           </figure>
 
           <ul className="ug-list ug-feat">
             {BUSINESS_POINTS.map((x) => (
               <li key={x}>
-                <i className="sx-sq p" aria-hidden />
+                <i className="sx-sq t" aria-hidden />
                 {x}
               </li>
             ))}
@@ -783,14 +753,14 @@ export default function Plans() {
             <thead>
               <tr>
                 <th scope="col" className="ug-cmp-0">
-                  <span className="sx-label">{yearly ? "Billed yearly" : "Billed monthly"} · planned prices</span>
+                  <span className="sx-label">{yearly ? "Billed yearly" : "Billed monthly"} · USD</span>
                 </th>
                 {PLANS.map((p) => (
                   <th key={p.id} scope="col" className={p.id === "pro" ? "pro" : undefined}>
                     <span className="ug-cmp-n">{p.name}</span>
                     <span className="sx-label ug-cmp-p">{headPrice(p, yearly)}</span>
                     {/* phones: the price drops, the status stays (visible and read aloud) */}
-                    <span className="sx-label ug-cmp-s">{p.now ? "live" : "soon"}</span>
+                    <span className="sx-label ug-cmp-s">{headPrice(p, yearly)}</span>
                   </th>
                 ))}
               </tr>
@@ -819,7 +789,7 @@ export default function Plans() {
               </tbody>
             ))}
           </table>
-          <p className="sx-label ug-cmp-note">Everything under Pro and Business is planned, not live, and may change before it opens. Free is everything that works today.</p>
+          <p className="sx-label ug-cmp-note">Everything in this table is live. Ideas we haven&apos;t built yet are in the roadmap below, never in a plan.</p>
         </div>
       </section>
 
@@ -931,29 +901,29 @@ export default function Plans() {
       </section>
 
       {/* 09 ─ early access */}
-      <section id="early" className="sx-sec sx-sky ug-early" data-chapter="09|Early access" aria-labelledby="ug-fin">
+      <section id="early" className="sx-sec sx-sky ug-early" data-chapter="09|Start" aria-labelledby="ug-fin">
         {/* solid, and low behind the rows: an outline ghost never sits under the outlined "in line." */}
-        <Ghost text="SOON" className="ug-g-soon" />
+        <Ghost text="GO" className="ug-g-soon" />
         <div className="sx-in">
-          <SecHead n="09" label="Be first" kicker="Early access" total={TOTAL} />
+          <SecHead n="09" label="Start" kicker="Get a plan" total={TOTAL} />
           <div className="sx-fit ug-fit-fin">
             <h2 id="ug-fin" className="sx-mega ug-fin" data-reveal>
               <span className="ln">
-                Be <span className="brk">first</span>
+                Make it <span className="brk">last</span>
               </span>{" "}
-              <span className="ln sx-out">in line.</span>
+              <span className="ln sx-out">longer.</span>
             </h2>
           </div>
-          <Lead className="ug-early-l">No payment, no form, no account. One short email: tell us your plan and what you&apos;d use it for (for Business, your team size too).</Lead>
+          <Lead className="ug-early-l">Log in with email or Google, pick a plan, pay through Paddle. It switches on within a minute. Cancel any time; 14-day refund.</Lead>
           <div className="ug-gos">
-            <a className="ug-go" href={ask("Pro")}>
+            <a className="ug-go" href="#plans">
               <span className="ug-go-n">Pro</span>
-              <span className="sx-label ug-go-d">Soon · early access · {yearly ? "$6/mo billed yearly" : "$8/mo"}</span>
+              <span className="sx-label ug-go-d">7 days · 100 GB · {yearly ? "$6/mo billed yearly" : "$8/mo"}</span>
               <Arrow dir="up-right" className="ug-go-arr" />
             </a>
-            <a className="ug-go" href={ask("Business")}>
+            <a className="ug-go" href="#plans">
               <span className="ug-go-n">Business</span>
-              <span className="sx-label ug-go-d">Soon · talk to us · {yearly ? "$12/user/mo billed yearly" : "$16/user/mo"}</span>
+              <span className="sx-label ug-go-d">30 days · 250 GB · {yearly ? "$12/user/mo billed yearly" : "$16/user/mo"}</span>
               <Arrow dir="up-right" className="ug-go-arr" />
             </a>
           </div>

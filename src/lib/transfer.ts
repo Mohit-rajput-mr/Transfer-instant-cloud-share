@@ -1,4 +1,5 @@
 "use client";
+import { authHeader } from "./auth";
 import { pickedSkin } from "./skins";
 import { makePreview } from "./preview";
 import {
@@ -69,7 +70,8 @@ export async function launch(opts: {
 
   const res = await sendRetry("/api/transfers", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    // signed in (Pro, Business): the plan's bigger files and longer lives (lib/plans.ts); never for anonymous sends
+    headers: { "Content-Type": "application/json", ...(anon ? {} : await authHeader()) },
     body: JSON.stringify({
       name, fileName: opts.fileName ?? (file.name || "file"), mime: file.type || "application/octet-stream", size: file.size,
       chunkSize: CHUNK, iterations, salt: toB64(salt), nonce: toB64(nonce), auth, owner,

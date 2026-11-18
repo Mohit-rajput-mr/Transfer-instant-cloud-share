@@ -441,3 +441,6 @@ html[data-perf="low"] .sx .sx-mi { transform: none !important; }
 @media (prefers-reduced-motion: no-preference) and (max-width: 719px) {
   html[data-perf="low"] .sx .sx-tick-track { animation-duration: 51s !important; }
 }
+
+/* header "Log in / Account": phones reach it through the menu (Account) */
+@media (max-width: 560px) { .sx-acc { display: none; } }

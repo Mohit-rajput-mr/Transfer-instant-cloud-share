@@ -33,12 +33,16 @@ export default function Privacy() {
       <h2>Usage statistics</h2>
       <p>To keep the service running we keep anonymous usage stats: your approximate location (country, city, coordinates rounded to about 1 km, derived by our host from your connection; if you share your location in the browser, your exact position instead, kept as your most recent location and shown only on Orbi&apos;s own internal live map, never to other people), browser, OS, device type, and when you visit, upload or download. Detailed events are kept for 30 days; daily totals per country, city, device type and route (city to city) are kept longer. This is never linked to your name, never sold and never shared.</p>
       <h2>Anonymous mode</h2>
-      <p>Turn on <b>Stay anonymous</b> (the mask at the top) to become a ghost: no location and no identity shown to other users. Orbi has no account, no name, no phone and no email, ever. While anonymous, Orbi keeps your IP address and its rough area (city), for abuse and legal requests; other users never see it. Anonymous sends go into an anonymous space: a private space with a random title, shared with one link. Its code and its key ride after the # in that link, which browsers never send to a server.</p>
+      <p>Turn on <b>Stay anonymous</b> (the mask at the top) to become a ghost: no location and no identity shown to other users. Sending never needs an account, a name, a phone or an email. While anonymous, Orbi keeps your IP address and its rough area (city), for abuse and legal requests; other users never see it. Anonymous sends go into an anonymous space: a private space with a random title, shared with one link. Its code and its key ride after the # in that link, which browsers never send to a server.</p>
       <AnonFacts />
       <p><b>What still happens</b></p>
       <AnonStillList />
-      <h2>No accounts, no ads</h2>
-      <p>There are no accounts, no ads and no third-party trackers. Hosting is provided by Vercel, Supabase and Cloudflare.</p>
+      <h2>Accounts (Pro and Business only)</h2>
+      <p>Sending needs no account. If you buy Pro or Business you create one, with your email and a password, an email link, or Google sign-in (Google then shares your name, email and picture with us). We keep your email, your plan and its billing status, and, for your send history, the names, sizes and download counts of what you sent while logged in (30 days on Pro, 1 year on Business; Business team owners see their members&apos; history). Delete your account any time by emailing <a href="mailto:transferorbi@gmail.com">transferorbi@gmail.com</a>.</p>
+      <h2>Payments</h2>
+      <p>Payments are processed by Paddle.com, our reseller and merchant of record. Your card or PayPal details go to Paddle, never to us. Paddle tells us the plan, the amount, the country and the status of each payment. See Paddle&apos;s privacy policy at paddle.com/legal/privacy.</p>
+      <h2>No ads</h2>
+      <p>There are no ads and no third-party trackers. Hosting is provided by Vercel, Supabase and Cloudflare.</p>
       <h2>Tip</h2>
       <p>Don&apos;t put sensitive information in the object name. Only the contents are encrypted.</p>
     </main>
