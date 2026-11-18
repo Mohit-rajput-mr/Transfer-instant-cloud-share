@@ -14,6 +14,8 @@ export default function Terms() {
       <Link className="back glyph" href="/"><LuArrowLeft aria-hidden />Back to the void</Link>
       <h1 className="wide" style={{ marginTop: 24 }}>Terms</h1>
       <p>Orbi Transfer is a free, no-account tool for moving files between devices. By using it you agree to these terms.</p>
+      <h2>Who we are</h2>
+      <p>Orbi Transfer (orbitransfer.com) is run by Mohit Sanjay Rajput, sole trader, India. Contact: <a href="mailto:transferorbi@gmail.com">transferorbi@gmail.com</a>.</p>
       <h2>Fair use</h2>
       <ul>
         <li>Only upload files you have the right to share.</li>
@@ -26,6 +28,8 @@ export default function Terms() {
       <p>Files are encrypted on your device before upload, so Orbi Transfer cannot see or check their contents. You are fully responsible for what you upload, whether you send it open or with a passcode, and who you share the passcode with.</p>
       <h2>Reports and removal</h2>
       <p>Anyone can flag an object with the Report (flag) button. Objects reported by several devices are removed immediately. We may remove any object or block abusive traffic at any time.</p>
+      <h2>Paid plans</h2>
+      <p>Sending stays free. Paid plans (Pro, Business) renew automatically each month or year until you cancel. Orders are processed by our online reseller Paddle.com, the merchant of record, which also handles billing questions and returns. Refunds follow our <Link href="/refunds">refund policy</Link> (14 days).</p>
       <h2>No warranty</h2>
       <p>Orbi Transfer is provided as-is, for free, with no guarantee of availability or delivery. Keep your own copies of anything important. We are not liable for lost, delayed or intercepted files.</p>
       <h2>Changes</h2>

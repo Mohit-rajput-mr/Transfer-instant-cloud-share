@@ -19,6 +19,10 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-18 (owner: Paddle domain review needs a refund policy). ADDED /refunds (14-day refund, Paddle as merchant of record),
+  linked in SiteChrome footer + menu, Void footer, Terms, sitemap. Terms: "Who we are" (seller name) + "Paid plans" (Paddle reseller line).
+  Verified: local build, /refunds 200, links present (Playwright). OPEN: Paddle checkout + webhook + HQ Payments not built; Pro/Business
+  features still "soon" (PRO_FOR_ALL=true) — reviewers may want buyable plans. A live Paddle API key was pasted in chat: owner should revoke it.
 - 2026-11-17 (owner: "the cancel × doesn't work and doesn't disappear instantly"). Root cause: the ball's button captures
   the pointer for dragging, so the click reported the button, never the × (OrbView). And a cancel waited on the network
   (storeCopy end, the kept copy, an awaited DELETE) before the ball/card went. FIX: × handled on pointerdown; Void
