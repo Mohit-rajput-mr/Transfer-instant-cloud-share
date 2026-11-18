@@ -3,6 +3,7 @@ import { switchView } from "@/lib/view";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useDialog } from "@/lib/dialog";
 import Link from "next/link";
+import AccountChip from "./AccountChip";
 import { LuArchive, LuArrowUp, LuBriefcase, LuChevronRight, LuCircleHelp, LuFileText, LuGlobe, LuImage, LuInfo, LuMapPin, LuLayoutGrid, LuLink, LuListChecks, LuMessageSquareText, LuMoon, LuMusic, LuOrbit, LuPalette, LuRocket, LuShieldCheck, LuSun, LuTimer, LuUser, LuUserX, LuVideo, LuWifi, LuX } from "react-icons/lu";
 import { BsIncognito } from "react-icons/bs";
 import { KINDS, type Kind } from "@/lib/skin-list";
@@ -94,6 +95,15 @@ export default function MobileMenu(props: {
           </div>
 
           <div className="sd-list">
+            <AccountChip className="sd-row lg-press">
+              {(label, signedIn) => (
+                <>
+                  <span className="sd-ic"><LuUser /></span>
+                  <span className="sd-txt"><b>{signedIn ? label : "Log in or sign up"}</b><small>{signedIn ? "your account · synced on every device" : "your files, notes, tasks and spaces on every device"}</small></span>
+                  <LuChevronRight className="sd-go" aria-hidden />
+                </>
+              )}
+            </AccountChip>
             <Link className="sd-row sd-up lg-press" href="/upgrade" onClick={close}>
               <span className="sd-ic"><LuRocket /></span>
               <span className="sd-txt"><b>Upgrade</b><small>Pro and Business plans</small></span>

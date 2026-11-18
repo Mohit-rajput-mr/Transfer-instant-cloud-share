@@ -19,6 +19,12 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-18 (owner: "login/sign-up inside the app too, so a user's things can be seen and managed from another device").
+  ADDED components/AccountChip (Classic top bar icon + nav, Work bar, phone menu row) and the account vault:
+  lib/vault.ts + lib/vault-merge.ts (tested) sync owner keys (orbit:own:*), notes (orbit:bubbles), tasks (orbit:tasks),
+  trash/archive (orbit:trash), name and non-anonymous spaces; /api/account/vault seals it (AES-GCM, key per user from
+  ORBIT_SECRET; migration 037 APPLIED); /api/spaces/[slug]/handoff gives a new device its own space pass from a pass
+  in the vault (never anonymous spaces). Sync: on login, every 60 s, on tab hide; "orbi:vault" event refreshes spaces.
 - 2026-11-18 (owner: "after login/sign-up show a profile: name, DoB; make sure they can log in again"). ADDED profile
   step on /account (name + date of birth, 13+; stored in Supabase Auth user_metadata; Google's full_name prefilled),
   shown right after a first login/sign-up, then on to ?next=; "Edit profile" any time; HQ Accounts shows the name

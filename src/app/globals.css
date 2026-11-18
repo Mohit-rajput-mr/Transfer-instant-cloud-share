@@ -4104,3 +4104,6 @@ html:not(#_) .pop.anon-portal .ap-search input::placeholder { color: rgba(255,25
 .pin-switch.on { background: var(--live, #3ddc84); }
 .pin-switch.on i { translate: 16px 0; }
 .pin-switch:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* the account chip in the app's top bar (components/AccountChip.tsx) */
+.nav .nav-acc { display: inline-flex; align-items: center; gap: 6px; }
