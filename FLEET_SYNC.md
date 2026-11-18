@@ -19,6 +19,11 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-18 (owner: "HQ: a separate Users section, how many new users, all info"). ADDED HQ tab Users
+  (components/admin/AdminUsers.tsx, /api/admin/users, migration 038 APPLIED): totals (new today / 7 / 30 days, logged in
+  today, active this week, paying, Google vs email, unconfirmed), filters, search, and per user: name, avatar, email,
+  age (from DoB), sign-in method, joined, last login, plan (team), sends, paid, last vault sync. Verified with mocked
+  data in Playwright; counts checked against auth.users in SQL.
 - 2026-11-18 (owner: Google's window showed "continue to ntnfdvmzylxenjqwdsnp.supabase.co"; no paid custom domain).
   FIX: /login uses Google Identity Services on orbitransfer.com (app/login/GoogleButton.tsx) → ID token →
   auth.signInWithIdToken with a sha256 nonce; the old Supabase redirect stays as a fallback if Google's script fails.
