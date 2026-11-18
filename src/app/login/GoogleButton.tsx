@@ -47,7 +47,6 @@ export default function GoogleButton({ onError, fallback, disabled }: { onError:
         client_id: CLIENT_ID,
         nonce: hashed,
         ux_mode: "popup",
-        use_fedcm_for_button: true,
         callback: async (r: { credential?: string }) => {
           if (!r.credential) return onError("Google sign-in was cancelled");
           const { error } = await auth.signInWithIdToken({ provider: "google", token: r.credential, nonce: raw });
