@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 // account with its plan. Rows come from the Paddle webhook (/api/paddle/webhook → migration 034).
 
 type Pay = { id: string; email: string | null; plan: string | null; billing: string | null; seats: number | null; amount: number | null; currency: string | null; status: string | null; country: string | null; created_at: string };
-type Acc = { email: string | null; plan: string; paid: string; billing: string | null; seats: number; status: string; cancelAtEnd: boolean; periodEnd: string | null; since: string };
+type Acc = { email: string | null; name: string | null; plan: string; paid: string; billing: string | null; seats: number; status: string; cancelAtEnd: boolean; periodEnd: string | null; since: string };
 
 const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric" }) : "—");
 const money = (n: number, cur: string) => `${n.toFixed(2)} ${cur}`;
@@ -92,12 +92,13 @@ export default function AdminPayments({ onClose }: { onClose: () => void }) {
           <table className="mono" style={{ width: "100%", borderCollapse: "collapse", marginTop: 16, fontSize: 12 }}>
             <thead>
               <tr style={{ textAlign: "left", opacity: 0.7 }}>
-                <th>Email</th><th>Plan now</th><th>Billing</th><th>Status</th><th>Renews / ends</th><th>Since</th>
+                <th>Name</th><th>Email</th><th>Plan now</th><th>Billing</th><th>Status</th><th>Renews / ends</th><th>Since</th>
               </tr>
             </thead>
             <tbody>
               {(d?.accounts ?? []).map((a, i) => (
                 <tr key={`${a.email}-${i}`} style={{ borderTop: "1px solid #222" }}>
+                  <td>{a.name ?? "—"}</td>
                   <td>{a.email ?? "—"}</td>
                   <td>{a.plan}{a.plan === "business" ? ` · ${a.seats} seats` : ""}</td>
                   <td>{a.billing ?? "—"}</td>
