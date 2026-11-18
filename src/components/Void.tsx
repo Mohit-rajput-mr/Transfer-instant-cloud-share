@@ -36,7 +36,7 @@ import { anonLink, anonTitle, createAnonPassSpace, createSpace, joinAnonByName, 
 import { BsIncognito } from "react-icons/bs";
 import AnonSeal from "./AnonSeal";
 import KnockBell from "./KnockBell";
-import { LuFlag, LuMessageCircle, LuMapPin, LuMapPinOff, LuMenu, LuPalette, LuSearch, LuPlus, LuArrowUpDown, LuRocket } from "react-icons/lu";
+import { LuFlag, LuMessageCircle, LuMapPin, LuMapPinOff, LuMenu, LuPalette, LuSearch, LuPlus, LuArrowUpDown, LuRocket, LuUser } from "react-icons/lu";
 import MobileMenu from "./MobileMenu";
 import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange } from "./BubbleBoard";
 import TaskBoard, { TaskWires, taskGroups } from "./TaskBoard";
@@ -62,6 +62,7 @@ import { WorkBar, WorkDock, WorkRail } from "./WorkChrome";
 import { dialogOpen } from "@/lib/dialog";
 import KindFilter from "./KindFilter";
 import ScopeTabs from "./ScopeTabs";
+import AccountChip from "./AccountChip";
 
 /** a task with a change applied the way the server will (so the screen updates before it answers) */
 function applyEdit(t: Task, c: { text?: string; route?: string[]; stage?: number }, by: string): Task {
@@ -999,6 +1000,13 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // the spaces this browser is still in (never left), for the Classic navbar's "Your spaces": expired ones leave by
   // themselves (a closed space would refuse the pass anyway)
   const [mySpaces, setMySpaces] = useState<SpaceSession[]>([]);
+  // logged in: another device of the account brought spaces, notes or sent files (lib/vault.ts) — show them now
+  const [vaultN, setVaultN] = useState(0);
+  useEffect(() => {
+    const on = () => setVaultN((n) => n + 1);
+    window.addEventListener("orbi:vault", on);
+    return () => window.removeEventListener("orbi:vault", on);
+  }, []);
   const [spacesOpen, setSpacesOpen] = useState(false);
   const minute = Math.floor(now / 60_000);
   useEffect(() => {
@@ -1010,7 +1018,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       if (!off) setMySpaces(list.filter((x) => !gone.includes(x) && !(isAnon() && !x.anon)));
     }).catch(() => {});
     return () => void (off = true);
-  }, [space, parked, minute]);
+  }, [space, parked, minute, vaultN]);
   // the parked space closed meanwhile: nothing to come back to
   useEffect(() => {
     if (parked?.ends && parked.ends <= now) setParked(null);
@@ -2756,6 +2764,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             {/* in place (lib/view.ts): no reload, uploads and sockets carry on */}
             <button onClick={() => switchView("/work")}>Switch to Work</button>
             <Link href="/upgrade" className="nav-up"><LuRocket aria-hidden />Upgrade</Link>
+            <AccountChip className="nav-acc" />
           </nav>
           {/* what the void shows: one tap each, in the bar's own row (never inside a dropdown; spaces have their own room) */}
           {!space && !inArchive && (
@@ -2787,6 +2796,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             <button className="hd-ic lg-press style-chip" onClick={() => setPanel({ kind: "style" })} aria-label={`Style: ${skinName(skin)}. Change how files look`} title="Style"><LuPalette aria-hidden /></button>
             <button className="hd-ic lg-press" onClick={() => setPanel({ kind: "space", start: ":search" })} aria-label="Search spaces" title="Search spaces"><LuSearch aria-hidden /></button>
             <button className="hd-ic lg-press" onClick={() => setPanel({ kind: "space", start: ":create" })} aria-label="Create a space" title="Create your space"><LuPlus aria-hidden /></button>
+            {/* log in: your sent files, notes, tasks and spaces on every device (lib/vault.ts) */}
+            <AccountChip className="hd-ic lg-press hd-acc">{(label, on) => <LuUser aria-label={on ? `Account: ${label}` : "Log in"} />}</AccountChip>
             {/* when the links don't fit on one row (tablets, small windows, short landscape) they live in the menu */}
             <button className="hd-ic lg-press nav-menu" onClick={() => setPanel({ kind: "menu" })} aria-label="Menu" title="Menu"><LuMenu aria-hidden /></button>
             <button className="pill solid lg-press send-pill" onClick={openMenu}>Send</button>

@@ -6,6 +6,7 @@ import { BsIncognito } from "react-icons/bs";
 import type { Kind } from "@/lib/skin-list";
 import { useTheme } from "@/lib/theme";
 import KindFilter from "./KindFilter";
+import AccountChip from "./AccountChip";
 import { switchView } from "@/lib/view";
 import { SCOPE_HINT, SCOPE_NAME, type Scope } from "@/lib/scope";
 
@@ -100,6 +101,7 @@ export function WorkBar(p: {
         <ThemeToggle className="w-hide-s" />
         <button className="w-btn w-share" onClick={p.onShare} aria-label="Share this workspace" title="Share this workspace"><LuShare2 aria-hidden /><span>Share</span></button>
         <Link href="/upgrade" className="w-btn w-upg"><LuRocket aria-hidden /><span>Upgrade</span></Link>
+        <AccountChip className="w-btn w-acc w-hide-s">{(label) => (<><LuUser aria-hidden /><span>{label}</span></>)}</AccountChip>
         <button className="w-icon w-only-s" onClick={p.onMenu} aria-label="Menu"><LuMenu /></button>
       </div>
     </header>
