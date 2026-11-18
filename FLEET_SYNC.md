@@ -19,6 +19,9 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-18 (owner: Google's window showed "continue to ntnfdvmzylxenjqwdsnp.supabase.co"; no paid custom domain).
+  FIX: /login uses Google Identity Services on orbitransfer.com (app/login/GoogleButton.tsx) → ID token →
+  auth.signInWithIdToken with a sha256 nonce; the old Supabase redirect stays as a fallback if Google's script fails.
 - 2026-11-18 (owner: "login/sign-up inside the app too, so a user's things can be seen and managed from another device").
   ADDED components/AccountChip (Classic top bar icon + nav, Work bar, phone menu row) and the account vault:
   lib/vault.ts + lib/vault-merge.ts (tested) sync owner keys (orbit:own:*), notes (orbit:bubbles), tasks (orbit:tasks),

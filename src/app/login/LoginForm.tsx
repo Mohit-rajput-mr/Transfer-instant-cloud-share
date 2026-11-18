@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
-import { FcGoogle } from "react-icons/fc";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { auth, useSession } from "@/lib/auth";
+import GoogleButton from "./GoogleButton";
 
 type Mode = "in" | "up" | "link" | "reset";
 
@@ -58,6 +58,7 @@ export default function LoginForm() {
     }
   }
 
+  const googleErr = useCallback((t: string) => setMsg({ t, err: true }), []);
   async function google() {
     setBusy(true);
     const { error } = await auth.signInWithOAuth({ provider: "google", options: { redirectTo: back() } });
@@ -75,9 +76,7 @@ export default function LoginForm() {
         <button type="button" className="ac-tab" aria-pressed={mode === "in"} onClick={() => setMode("in")}>Log in</button>
         <button type="button" className="ac-tab" aria-pressed={mode === "up"} onClick={() => setMode("up")}>Sign up</button>
       </div>
-      <button type="button" className="ac-btn ghost" style={{ width: "100%" }} onClick={google} disabled={busy}>
-        <FcGoogle aria-hidden size={20} /> Continue with Google
-      </button>
+      <GoogleButton onError={googleErr} fallback={google} disabled={busy} />
       <div className="ac-or">or with email</div>
       <form className="ac-f" onSubmit={submit}>
         <label>
