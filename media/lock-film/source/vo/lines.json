@@ -1,0 +1,84 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "A key is a password, carved in metal. Push in the wrong one, and the lock won't budge. Push in the right one, and it turns, like it was never locked. To see why, we have to cut one open.",
+   "dur": 10.936,
+   "at": 0.35
+  },
+  {
+   "key": "parts",
+   "text": "Here's the lock, sliced in half. The outer housing never moves. Inside it sits a cylinder called the plug. That's the part that has to turn.",
+   "dur": 9.02,
+   "at": 11.79
+  },
+  {
+   "key": "pins",
+   "text": "Drilled down through both is a row of tiny pin stacks. Each one has a key pin at the bottom, a driver pin on top, and a spring pushing them both down.",
+   "dur": 9.596,
+   "at": 21.26
+  },
+  {
+   "key": "block",
+   "text": "Look where the plug meets the housing. That thin gap is called the shear line. With no key, the springs push the driver pins right across it. So the plug is pinned in place. It can't turn.",
+   "dur": 11.981,
+   "at": 31.3
+  },
+  {
+   "key": "key",
+   "text": "Now slide in the key. Its cuts lift every pin stack, up and down, up and down, as it goes.",
+   "dur": 6.392,
+   "at": 43.78
+  },
+  {
+   "key": "align",
+   "text": "Fully in, each pin stops at a different height. But every gap, between key pin and driver pin, lands exactly on the shear line.",
+   "dur": 8.909,
+   "at": 50.63
+  },
+  {
+   "key": "turn",
+   "text": "Nothing crosses the line anymore. The plug turns, and the cam at the back pulls the bolt. Unlocked.",
+   "dur": 7.736,
+   "at": 60.03
+  },
+  {
+   "key": "wrong",
+   "text": "Now a wrong key, with one cut a little too shallow. That pin goes too high. Its key pin crosses the line, and the lock stays shut. Off by less than a millimetre.",
+   "dur": 9.507,
+   "at": 68.27
+  },
+  {
+   "key": "combos",
+   "text": "Five pins, each with several possible heights. That's thousands of different keys, from one simple design.",
+   "dur": 6.371,
+   "at": 78.28
+  },
+  {
+   "key": "history",
+   "text": "Linus Yale Junior built this compact cylinder lock in the eighteen sixties, building on his father's pin tumbler. But the idea is thousands of years older. Ancient Egypt had pin locks made of wood.",
+   "dur": 11.149,
+   "at": 85.15
+  },
+  {
+   "key": "orbi",
+   "text": "A lock only opens for the right key. Orbi Transfer locks your file on your phone, before it ever leaves.",
+   "dur": 6.093,
+   "at": 96.8
+  },
+  {
+   "key": "orbi2",
+   "text": "It reaches the other phone in about a second. No login, no app. And after thirty minutes, it burns.",
+   "dur": 7.139,
+   "at": 103.24
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. A password, carved in metal.",
+   "dur": 4.263,
+   "at": 110.98
+  }
+ ],
+ "duration": 117.84
+}
