@@ -35,6 +35,7 @@ const SMALL = [
   { label: "Contact", href: "/about#contact" },
   { label: "Terms", href: "/terms" },
   { label: "Privacy", href: "/privacy" },
+  { label: "Refunds", href: "/refunds" },
 ];
 // what the chapter indicator shows before the observer has run (the DOM count replaces the total)
 const FIRST: Record<SitePage, { label: string; total: string }> = {
@@ -468,6 +469,7 @@ export default function SiteChrome({ page, children }: { page: SitePage; childre
                 <li><Link href="/upgrade">Upgrade</Link></li>
                 <li><Link href="/terms">Terms</Link></li>
                 <li><Link href="/privacy">Privacy</Link></li>
+                <li><Link href="/refunds">Refunds</Link></li>
               </ul>
             </div>
             <div>
