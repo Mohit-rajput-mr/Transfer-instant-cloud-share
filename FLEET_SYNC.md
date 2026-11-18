@@ -19,6 +19,18 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-18 (owner: "accounts + Paddle + real Pro/Business features, no coming soon"). BUILT:
+  accounts (Supabase Auth: email+password, email link, Google; /login, /account; lib/auth.ts lazy client), Paddle Billing
+  (lib/paddle.ts, /api/paddle/{config,webhook,portal}, lib/checkout.ts overlay with customData.uid; signature tested),
+  plans (lib/plans.ts: Pro 100 GB / 7 days / 200 GB quota; Business 250 GB / 30 days / 1 TB team pool, seats by email),
+  enforcement (/api/transfers: size + life by plan, orbit_send_open quota; store/finalize: orbit_send_live sets the long
+  life once the copy is saved; name tag l=<min>; sync.ts accepts long lives; formatClock days), history + team
+  (/api/account/{history,team}, account page), HQ Payments tab (/api/admin/payments). Migrations 034, 035 APPLIED.
+  Upgrade page: only built features, buy buttons, 14-day refund link in cards; unbuilt ideas moved to roadmap.
+  Verified: SQL logic in a rolled-back txn (plan_now, seats, lapse, download trigger), unit tests (83), local build,
+  Playwright (cards, signed-out buy → login, account redirect, free chips unchanged, simulated Pro session → 1h…7d).
+  NOT verified (needs owner keys): real Paddle checkout/webhook, Google/email login against Supabase settings, a real
+  long-life upload end to end. OWNER TODO: Supabase Auth URL config + Google provider + SMTP; Vercel env PADDLE_*.
 - 2026-11-18 (owner: Paddle domain review needs a refund policy). ADDED /refunds (14-day refund, Paddle as merchant of record),
   linked in SiteChrome footer + menu, Void footer, Terms, sitemap. Terms: "Who we are" (seller name) + "Paid plans" (Paddle reseller line).
   Verified: local build, /refunds 200, links present (Playwright). OPEN: Paddle checkout + webhook + HQ Payments not built; Pro/Business

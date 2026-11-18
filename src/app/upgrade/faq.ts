@@ -9,16 +9,17 @@ export const FAQ: Faq[] = [
     a: "Yes. Instant, end-to-end encrypted sharing with no account is the free tier, and it stays. Paid plans add time, storage and team tools on top.",
   },
   {
-    q: "When can I pay?",
-    a: "Not yet. Paid plans aren't open and there is no card form anywhere on Orbi. Ask for early access and we'll email you when your plan is ready; you'll be first in line.",
+    q: "How do I pay?",
+    a: "Pick a plan and log in (email or Google). Checkout opens on this page, run by Paddle, our reseller and merchant of record: card, PayPal, Apple Pay or Google Pay. Your plan switches on within a minute, on every device you log in on.",
   },
   {
-    q: "Are these prices final?",
-    a: "They are the planned prices: Pro at $8 a month, or $6 a month billed yearly ($72 a year); Business at $16 per user a month, or $12 billed yearly ($144 a year). They may change before launch.",
+    q: "What do the plans cost?",
+    a: "Pro is $8 a month, or $6 a month billed yearly ($72 a year). Business is $16 per user a month, or $12 per user billed yearly ($144 a year). Local taxes are added at checkout where they apply.",
   },
   {
-    q: "What does “coming soon” cover?",
-    a: "Everything listed under Pro and Business is planned, not live. Free is everything that works today.",
+    q: "Can I cancel or get a refund?",
+    a: "Cancel any time from your account or the link in your receipt; the plan runs to the end of the period you paid for. Changed your mind? Ask within 14 days for a full refund. Details are in the refund policy.",
+    link: { text: "refund policy", href: "/refunds" },
   },
   {
     q: "Can Orbi read my files on a paid plan?",
@@ -26,11 +27,11 @@ export const FAQ: Faq[] = [
   },
   {
     q: "Will I need an account?",
-    a: "Not for Free, ever. Paid plans will need some way to recognize you, most likely an email address; Business adds Google and Microsoft sign-in.",
+    a: "Not for Free, ever. Pro and Business need one, so your plan follows you: sign up with your email or with Google.",
   },
   {
     q: "What happens to my files if I stay on Free?",
-    a: "Nothing changes. They live for the time you picked, 5 to 30 minutes, and then they burn, as they always have.",
+    a: "Nothing changes. They live for the time you picked, 5 to 30 minutes, and then they burn, as they always have. If a paid plan ends, files you already sent keep the life they were given; new ones go back to 30 minutes.",
   },
   {
     q: "Do Classic and Work share a plan?",
@@ -38,7 +39,7 @@ export const FAQ: Faq[] = [
   },
   {
     q: "Who is behind Orbi?",
-    a: "One anonymous developer, building it for fun. No company, no investors. The whole story is on the About page.",
+    a: "One independent developer. No company, no investors. The whole story is on the About page.",
     link: { text: "About page", href: "/about" },
   },
 ];

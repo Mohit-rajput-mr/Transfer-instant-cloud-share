@@ -1,0 +1,23 @@
+/* /login and /account: the .doc page (globals.css) plus a small form kit (ac-*) */
+.ac-card { margin-top: 28px; border: 1px solid #2a2a2a; border-radius: 16px; padding: 22px; background: #0b0b0b; }
+.ac-tabs { display: flex; gap: 6px; margin-bottom: 18px; }
+.ac-tab { flex: 1; min-height: 44px; border-radius: 999px; border: 1px solid #333; background: transparent; color: #aaa; font: inherit; cursor: pointer; }
+.ac-tab[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
+.ac-f { display: grid; gap: 12px; }
+.ac-f label { display: grid; gap: 6px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #888; }
+.ac-f input { min-height: 46px; border-radius: 12px; border: 1px solid #333; background: #000; color: #fff; padding: 0 14px; font: inherit; font-size: 16px; text-transform: none; letter-spacing: 0; }
+.ac-f input:focus { outline: 2px solid #fff; outline-offset: 1px; }
+.ac-btn { min-height: 46px; border-radius: 999px; border: 1px solid #fff; background: #fff; color: #000; font: inherit; font-weight: 600; cursor: pointer; padding: 0 20px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; }
+.ac-btn.ghost { background: transparent; color: #fff; border-color: #444; }
+.ac-btn:disabled { opacity: 0.5; cursor: default; }
+.ac-or { display: flex; align-items: center; gap: 10px; color: #666; font-family: var(--mono); font-size: 11px; margin: 16px 0; }
+.ac-or::before, .ac-or::after { content: ""; flex: 1; height: 1px; background: #2a2a2a; }
+.ac-msg { margin-top: 12px; font-size: 13px; color: #9fe6a0; }
+.ac-msg.err { color: #ff8a8a; }
+.ac-link { background: none; border: 0; color: #aaa; text-decoration: underline; font: inherit; cursor: pointer; padding: 0; }
+.ac-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.ac-kv { display: grid; grid-template-columns: max-content 1fr; gap: 8px 18px; margin: 0; }
+.ac-kv dt { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #777; padding-top: 3px; }
+.ac-kv dd { margin: 0; color: #eee; }
+.ac-plan { display: inline-block; padding: 2px 10px; border-radius: 999px; border: 1px solid #3a3; color: #9fe6a0; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+.ac-plan.free { border-color: #444; color: #aaa; }

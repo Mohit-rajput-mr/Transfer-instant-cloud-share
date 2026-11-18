@@ -14,6 +14,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const item = await rpc<{ name?: unknown; expiresAt?: unknown } | null>("orbit_finalize", { p_id: id, p_owner_hash: sha256(b.owner), p_url: b.url });
   if (!item) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   const o = untag(item);
+  // a paid long life (lib/plans.ts): placing it in orbit gives it the 30-minute life again, so set the long one
+  // (only if its stored copy is saved; orbit_send_live checks the owner and that it is still alive)
+  if (o.life > 30) {
+    const until = await rpc<string | null>("orbit_send_live", { p_id: id, p_owner_hash: sha256(b.owner) }).catch(() => null);
+    if (until) o.expiresAt = until;
+  }
   // HQ Analytics: who uploaded today (never for anonymous sends; migration 032)
   const dev = clean(b.deviceId, 40);
   if (dev && !o.anon) after(() => rpc("orbit_mark_upload", { p_device: dev }).catch(() => {}));

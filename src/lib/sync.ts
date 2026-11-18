@@ -1,7 +1,7 @@
 "use client";
 import type { Bubble } from "./bubbles";
 import type { Orb } from "./client";
-import { MAX_FILE_BYTES } from "./limits";
+import { LONG_LIVES, PERKS } from "./plans";
 import { validSkin } from "./skin-list";
 import type { Task } from "./tasks";
 
@@ -70,9 +70,11 @@ export function cleanTask(v: unknown, serverNow: number): Task | null {
 
 const int = (v: unknown, lo: number, hi: number) => (Number.isSafeInteger(v) && (v as number) >= lo && (v as number) <= hi ? (v as number) : null);
 const B64 = /^[A-Za-z0-9+/_=-]{1,128}$/, NET = /^[0-9a-f]{12}$/, FROM = /^[a-f0-9]{10}$/, SLUG = /^[a-z0-9-]{1,64}$/;
-const LIVES = [5, 10, 15, 20, 25, 30];
+const LIVES = [5, 10, 15, 20, 25, 30, ...LONG_LIVES.map(([m]) => m)];
+const MAX_FILE_BYTES = PERKS.business.maxFile;
 /** an object someone beamed as it landed: the finalize answer, the same public shape the list gives. No object
- * outlives 30 minutes from now, except one wired to a task: that one lives as long as the task (8 hours at most) */
+ * outlives 30 minutes from now, except one wired to a task: that one lives as long as the task (8 hours at most),
+ * and a paid long life (lib/plans.ts): that one no longer than the life it says it has */
 export function cleanOrb(v: unknown, serverNow: number): Orb | null {
   const o = v as Record<string, unknown> | null;
   if (!o || typeof o !== "object" || typeof o.id !== "string" || !ORB_ID.test(o.id)) return null;
@@ -85,7 +87,8 @@ export function cleanOrb(v: unknown, serverNow: number): Orb | null {
   if (o.maxDownloads != null && maxDownloads === null) return null;
   const task = typeof o.task === "string" && TASK_ID.test(o.task) ? o.task : null;
   const exp = Date.parse(expiresAt);
-  if (exp <= serverNow || exp > serverNow + (task ? 8 * 60 * 60_000 : 30 * 60_000) + 60_000) return null;
+  const lifeMin = LIVES.includes(o.life as number) ? (o.life as number) : 30;
+  if (exp <= serverNow || exp > serverNow + Math.max(task ? 8 * 60 : 30, lifeMin) * 60_000 + 60_000) return null;
   if (Date.parse(createdAt) > serverNow + 120_000) return null;
   return {
     id: o.id, fileName, mime, size, salt: o.salt, iterations, hue, status: o.status, maxDownloads, createdAt, expiresAt, task,
@@ -97,7 +100,7 @@ export function cleanOrb(v: unknown, serverNow: number): Orb | null {
     watchers: int(o.watchers, 0, 1e9) ?? 0,
     by: str(o.by, 24)?.trim() || null,
     space: typeof o.space === "string" && SLUG.test(o.space) ? o.space : null,
-    life: LIVES.includes(o.life as number) ? (o.life as number) : 30,
+    life: lifeMin,
     open: o.open === true,
     from: typeof o.from === "string" && FROM.test(o.from) ? o.from : null,
     groupName: str(o.groupName, 40)?.trim() || null,

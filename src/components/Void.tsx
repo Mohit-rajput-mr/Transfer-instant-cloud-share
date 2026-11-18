@@ -3036,7 +3036,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           ))}
           <div className="legal">
             <span>Files are end-to-end encrypted. Max 20 GB each. 300 uploads per network per hour.</span>
-            <span><Link href="/about">About</Link> · <Link href="/about#contact">Contact</Link> · <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/refunds">Refunds</Link> · Abuse? Open the object and tap <span className="glyph"><LuFlag aria-hidden />Report</span></span>
+            <span><Link href="/about">About</Link> · <Link href="/about#contact">Contact</Link> · <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/refunds">Refunds</Link> · <Link href="/account">Account</Link> · Abuse? Open the object and tap <span className="glyph"><LuFlag aria-hidden />Report</span></span>
           </div>
         </section>}
       </main>
@@ -3260,6 +3260,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         <SendPanel
           key={anonNow ? `anon-${space?.slug}` : "send"}
           items={sendItems}
+          inSpace={!!space}
           anon={anonNow && space?.anon ? { space: space.title, hideNames, setHideNames, asIs: scrubbed?.src === panel.items ? scrubbed.asIs : [], cleaning: scrubbed?.src !== panel.items } : undefined}
           onAddFolder={() => {
             adding.current = true;

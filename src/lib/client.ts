@@ -123,6 +123,8 @@ export function formatBytes(n: number) {
 
 export function formatClock(ms: number) {
   const s = Math.max(0, Math.floor(ms / 1000));
+  // a day or more (Pro and Business keep files up to 7 / 30 days): 6d 04h
+  if (s >= 86400) return `${Math.floor(s / 86400)}d ${String(Math.floor(s / 3600) % 24).padStart(2, "0")}h`;
   // an hour or more (things in a space live up to 8 hours): h:mm:ss
   if (s >= 3600) return `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;

@@ -8,7 +8,7 @@ import { FAQ } from "./faq";
 export const metadata: Metadata = {
   title: "Upgrade",
   description:
-    "Orbi Transfer plans. Sending stays free: instant, end-to-end encrypted, no account. Pro and Business, coming soon, add time, receipts and team workspaces.",
+    "Orbi Transfer plans. Sending stays free: instant, end-to-end encrypted, no account. Pro and Business add files that stay up to 7 or 30 days, files up to 250 GB, send history and team storage.",
   alternates: { canonical: "/upgrade" },
 };
 

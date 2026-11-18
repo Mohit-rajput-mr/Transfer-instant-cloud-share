@@ -1,6 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { rpc } from "./server";
 import { validSkin } from "./skin-list";
+import { LONG_LIVES } from "./plans";
 
 // Spaces: separate voids, kept in Supabase (supabase/migrations/004_spaces.sql) behind the same
 // secret-gated functions as everything else:
@@ -214,18 +215,20 @@ export async function search(q: string) {
 //   s: space, b: launched by (name in the space), t: lifetime in minutes (< 30), o: open (no passcode),
 //   g: sender group (an anonymous per-device hash: one device's objects gather into one bubble), n: its name,
 //   k: the sender's style (how the object looks to everyone; see lib/skin-list.ts), p: has a preview picture,
-//   a: sent anonymously (cloud only; open ones are encrypted with the anonymous space's key)
+//   a: sent anonymously (cloud only; open ones are encrypted with the anonymous space's key),
+//   l: a paid long life in minutes (lib/plans.ts LONG_LIVES; set once the stored copy is saved, orbit_send_live)
 // The old space-only form ⟪slug|handle⟫ is still read.
-export interface Tags { space?: string; by?: string; life?: number; open?: boolean; from?: string; group?: string; skin?: string; thumb?: boolean; task?: string; anon?: boolean }
+export interface Tags { space?: string; by?: string; life?: number; open?: boolean; from?: string; group?: string; skin?: string; thumb?: boolean; task?: string; anon?: boolean; long?: number }
 /** a task id (lib/tasks.ts): files wired to it carry it */
 export const validTask = (x: unknown): x is string => typeof x === "string" && /^t[a-z0-9]{9}$/.test(x);
 const OLD = /^⟪([a-z0-9-]{1,32})\|([^⟫]{0,24})⟫/;
-const NEW = /^⟪((?:[sbtognkpwa]=[^;⟫]*;?)*)⟫/;
+const NEW = /^⟪((?:[sbtognkpwal]=[^;⟫]*;?)*)⟫/;
 /** a bubble's name, safe inside a tag */
 export const cleanGroup = (x: unknown) => (typeof x === "string" ? x.replace(/[\u0000-\u001f\u007f⟪⟫;=|]/g, "").replace(/\s+/g, " ").trim().slice(0, 40) : "");
 export const validFrom = (x: unknown): x is string => typeof x === "string" && /^[a-f0-9]{10}$/.test(x);
 export const LIFE_MIN = 30;
 export const LIVES = [5, 10, 15, 20, 25, 30];
+const LONG = new Set(LONG_LIVES.map(([m]) => m));
 
 export function tagName(name: string, t: Tags) {
   const parts: string[] = [];
@@ -239,6 +242,7 @@ export function tagName(name: string, t: Tags) {
   if (t.thumb && t.open) parts.push("p=1");
   if (t.task && validTask(t.task)) parts.push(`w=${t.task}`);
   if (t.anon) parts.push("a=1");
+  if (t.long && LONG.has(t.long)) parts.push(`l=${t.long}`);
   return parts.length ? `⟪${parts.join(";")}⟫${name}` : name;
 }
 
@@ -250,7 +254,7 @@ export function untag<T extends { name?: unknown; expiresAt?: unknown }>(o: T): 
   const m = NEW.exec(name);
   if (!m) return { ...o, space: null, by: null, life: LIFE_MIN, open: false, from: null, groupName: null, skin: null, thumb: false, task: null, anon: false };
   const kv = Object.fromEntries(m[1].split(";").filter(Boolean).map((x) => [x[0], x.slice(2)]));
-  const life = LIVES.includes(Number(kv.t)) ? Number(kv.t) : LIFE_MIN;
+  const life = LONG.has(Number(kv.l)) ? Number(kv.l) : LIVES.includes(Number(kv.t)) ? Number(kv.t) : LIFE_MIN;
   const out = { ...o, name: name.slice(m[0].length), space: kv.s || null, by: kv.b || null, life, open: kv.o === "1", from: validFrom(kv.g) ? kv.g : null, groupName: cleanGroup(kv.n) || null, skin: validSkin(kv.k) ? kv.k : null, thumb: kv.p === "1" && kv.o === "1", task: validTask(kv.w) ? kv.w : null, anon: kv.a === "1" };
   // a shorter life burns earlier than the database's 30 minutes: the server hides it and refuses it from then on
   if (life < LIFE_MIN && typeof o.expiresAt === "string") {

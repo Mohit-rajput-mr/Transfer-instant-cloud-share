@@ -4,7 +4,8 @@ import QRCode from "qrcode";
 import {
   deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, hasGot, markGot, ownerKey, timeAgo, type Orb, type OwnerView, homePath,
 } from "@/lib/client";
-import { MAX_FILE_BYTES, MAX_LABEL } from "@/lib/limits";
+import { usePlan } from "@/lib/auth";
+import { livesFor } from "@/lib/plans";
 import { previewUrl } from "@/lib/preview";
 import { release } from "@/lib/p2p";
 import { setUpSpeed, upSpeed, type UpSpeed } from "@/lib/cloud";
@@ -498,6 +499,9 @@ export function ShareBlock({ id }: { id: string }) {
 export type LaunchJob = { file: File; name: string; files: number; passcode: string; maxDownloads: number | null; life: number; open: boolean; group?: string; /** wired to this task */ task?: string; /** and tick that task done */ done?: boolean; /** anonymous "hide file names": the file goes as photo.jpg, file.pdf… */ hideNames?: boolean };
 
 const LIVES = [5, 10, 15, 20, 25, 30];
+/** a life as a chip says it: 5m … 30m, then 1h, 6h, 1d, 3d, 7d, 14d, 30d (paid plans, lib/plans.ts) */
+export const lifeShort = (m: number) => (m < 60 ? `${m}m` : m < 1440 ? `${m / 60}h` : `${m / 1440}d`);
+const lifeLong = (m: number) => (m < 60 ? `${m} min` : m < 1440 ? `${m / 60} h` : `${m / 1440} day${m === 1440 ? "" : "s"}`);
 // the last choices stick (this device only): the next send is one tap
 const pref = <T,>(k: string, d: T): T => {
   try {
@@ -527,6 +531,8 @@ export function SendPanel(props: {
   task?: string | null;
   /** sending anonymously (lib/anon.ts): into which space, names hidden or not, what couldn't be cleaned */
   anon?: { space: string; hideNames: boolean; setHideNames: (v: boolean) => void; asIs: string[]; cleaning?: boolean };
+  /** sending into a space: it keeps the space's clock, so no long lives */
+  inSpace?: boolean;
 }) {
   const { onClose } = props;
   const openTasks = props.tasks ?? [];
@@ -564,6 +570,14 @@ export function SendPanel(props: {
   // every send starts open (no password); a password is a deliberate choice each time
   const [locked, setLocked] = useState(false);
   const [life, setLife] = useState(() => pref("life", 30));
+  // the plan (Free when signed out): bigger files and longer lives for Pro and Business; none in a space or anonymous
+  const { plan, perks } = usePlan();
+  const longOk = !props.anon && !props.inSpace;
+  const lives = [...LIVES, ...(longOk ? livesFor(plan).map(([m]) => m) : [])];
+  // a stored long life the plan no longer allows (signed out, plan ended, in a space): back to 30 minutes
+  const lifeNow = lives.includes(life) ? life : 30;
+  const MAX_FILE_BYTES = perks.maxFile;
+  const MAX_LABEL = perks.maxFileLabel;
   const [focusNow] = useState(finePointer);
 
   const tooBig = split ? props.items.some((x) => itemSize(x) > MAX_FILE_BYTES) : total > MAX_FILE_BYTES;
@@ -571,10 +585,10 @@ export function SendPanel(props: {
   const go = () => {
     if (!ready) return;
     tick("success");
-    setPref("life", life);
+    setPref("life", lifeNow);
     if (multi) setPref("split", split);
     if (fresh) newContainer();
-    const common = { passcode: locked ? code : "", maxDownloads: max, life, open: !locked, task: wire ?? undefined, done: !!wire && markDone, hideNames: hide };
+    const common = { passcode: locked ? code : "", maxDownloads: max, life: lifeNow, open: !locked, task: wire ?? undefined, done: !!wire && markDone, hideNames: hide };
     if (split) {
       // one ball per pick, each under its own name, all with the same settings
       for (const it of props.items) {
@@ -725,16 +739,16 @@ export function SendPanel(props: {
         {/* the rest folds away: one line says what is set, a tap shows the choices */}
         <button type="button" className={`more-opts${more ? " open" : ""}`} onClick={() => setMore((m) => !m)} aria-expanded={more}>
           <span className="mono">More options</span>
-          <span className="mono dim">{life} min · {max ? `${max} download${max > 1 ? "s" : ""}` : "unlimited"}</span>
+          <span className="mono dim">{lifeLong(lifeNow)} · {max ? `${max} download${max > 1 ? "s" : ""}` : "unlimited"}</span>
           <i aria-hidden><LuChevronDown className="ic-inline" /></i>
         </button>
         {more && (
           <>
             <div className="field">
-              <label><span className="mono">Disappears in</span><span className="mono dim">{life} min</span></label>
+              <label><span className="mono">Disappears in</span><span className="mono dim">{lifeLong(lifeNow)}{plan === "free" && longOk ? " · Pro keeps up to 7 days" : ""}</span></label>
               <div className="chips lives" role="radiogroup" aria-label="Disappears in">
-                {LIVES.map((m) => (
-                  <button key={m} role="radio" aria-checked={life === m} className={`chip lg-press${life === m ? " on" : ""}`} onClick={() => setLife(m)}>{m}m</button>
+                {lives.map((m) => (
+                  <button key={m} role="radio" aria-checked={lifeNow === m} className={`chip lg-press${lifeNow === m ? " on" : ""}`} onClick={() => setLife(m)}>{lifeShort(m)}</button>
                 ))}
               </div>
             </div>
