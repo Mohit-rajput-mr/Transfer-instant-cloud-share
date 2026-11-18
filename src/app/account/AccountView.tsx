@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
+import type { User } from "@supabase/supabase-js";
 import { auth, authFetch, useSession } from "@/lib/auth";
 import type { Perks, PlanId } from "@/lib/plans";
 
@@ -32,6 +33,7 @@ export default function AccountView() {
   const [acc, setAcc] = useState<Acc | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
   const reset = typeof location !== "undefined" && new URLSearchParams(location.search).has("reset");
 
   useEffect(() => {
@@ -70,9 +72,24 @@ export default function AccountView() {
 
   if (!session) return <p>Loading…</p>;
   if (reset) return <NewPassword />;
+  const meta = session.user.user_metadata ?? {};
+  // Google gives a name (full_name); email sign-ups have none until they fill in the profile
+  const name = (typeof meta.name === "string" && meta.name.trim()) || "";
+  if (!name || editing) return <Profile user={session.user} onDone={() => setEditing(false)} first={!name} />;
   return (
     <div className="ac-card">
       <dl className="ac-kv">
+        <dt>Name</dt>
+        <dd>
+          {name}{" "}
+          <button type="button" className="ac-link" style={{ marginLeft: 8 }} onClick={() => setEditing(true)}>Edit profile</button>
+        </dd>
+        {typeof meta.dob === "string" && meta.dob && (
+          <>
+            <dt>Born</dt>
+            <dd>{new Date(`${meta.dob}T12:00:00`).toLocaleDateString("en", { day: "numeric", month: "long", year: "numeric" })}</dd>
+          </>
+        )}
         <dt>Email</dt>
         <dd>{session.user.email}</dd>
         <dt>Plan</dt>
@@ -231,5 +248,57 @@ function Team() {
       )}
       {msg && <p className={`ac-msg${msg.err ? " err" : ""}`} role="status">{msg.t}</p>}
     </section>
+  );
+}
+
+/** today minus `years`, as yyyy-mm-dd (the date input's max) */
+const yearsAgo = (years: number) => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - years);
+  return d.toISOString().slice(0, 10);
+};
+
+/** the profile: name and date of birth, kept on the account (Supabase Auth user metadata), editable any time.
+ *  Shown right after a first sign-up; then the user goes on to where they were heading (?next=). */
+function Profile({ user, onDone, first }: { user: User; onDone: () => void; first: boolean }) {
+  const meta = user.user_metadata ?? {};
+  const [name, setName] = useState<string>((typeof meta.name === "string" && meta.name) || (typeof meta.full_name === "string" && meta.full_name) || "");
+  const [dob, setDob] = useState<string>((typeof meta.dob === "string" && meta.dob) || "");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ t: string; err?: boolean } | null>(null);
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    const n = name.replace(/\s+/g, " ").trim().slice(0, 60);
+    if (n.length < 2) return setMsg({ t: "Please enter your name", err: true });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dob) || dob > yearsAgo(13) || dob < "1900-01-01") return setMsg({ t: "Please enter a real date of birth (you must be 13 or older)", err: true });
+    setBusy(true);
+    const { error } = await auth.updateUser({ data: { name: n, dob } });
+    setBusy(false);
+    if (error) return setMsg({ t: error.message, err: true });
+    const next = new URLSearchParams(location.search).get("next");
+    if (first && next && next.startsWith("/") && !next.startsWith("//") && next !== "/account") return location.replace(next);
+    history.replaceState(null, "", "/account");
+    onDone();
+  }
+  return (
+    <form className="ac-card ac-f" onSubmit={save}>
+      <h2 style={{ margin: "0 0 4px" }}>{first ? "Welcome. Your profile" : "Edit profile"}</h2>
+      {first && <p style={{ margin: 0, fontSize: 13, color: "#999" }}>One step: tell us who you are. You can change it later.</p>}
+      <label>
+        Name
+        <input required autoComplete="name" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />
+      </label>
+      <label>
+        Date of birth
+        <input type="date" required min="1900-01-01" max={yearsAgo(13)} autoComplete="bday" value={dob} onChange={(e) => setDob(e.target.value)} />
+      </label>
+      <label>
+        Email
+        <input value={user.email ?? ""} disabled readOnly />
+      </label>
+      <button className="ac-btn" type="submit" disabled={busy}>{busy ? "Saving…" : first ? "Save and continue" : "Save"}</button>
+      {!first && <button type="button" className="ac-btn ghost" onClick={onDone}>Cancel</button>}
+      {msg && <p className={`ac-msg${msg.err ? " err" : ""}`} role="status">{msg.t}</p>}
+    </form>
   );
 }

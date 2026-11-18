@@ -19,6 +19,12 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-18 (owner: "after login/sign-up show a profile: name, DoB; make sure they can log in again"). ADDED profile
+  step on /account (name + date of birth, 13+; stored in Supabase Auth user_metadata; Google's full_name prefilled),
+  shown right after a first login/sign-up, then on to ?next=; "Edit profile" any time; HQ Accounts shows the name
+  (migration 036 APPLIED). Verified against the LIVE Supabase Auth with test user orbi-qa-test@example.com (Playwright):
+  login → profile → save → log out (session gone) → log in again → profile shown, reload keeps the session, wrong
+  password → "Invalid login credentials". OPEN: owner to delete that test user (SQL editor; MCP hangs on delete).
 - 2026-11-18 (owner: "accounts + Paddle + real Pro/Business features, no coming soon"). BUILT:
   accounts (Supabase Auth: email+password, email link, Google; /login, /account; lib/auth.ts lazy client), Paddle Billing
   (lib/paddle.ts, /api/paddle/{config,webhook,portal}, lib/checkout.ts overlay with customData.uid; signature tested),

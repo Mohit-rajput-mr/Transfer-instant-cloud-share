@@ -21,8 +21,11 @@ export default function LoginForm() {
   const [msg, setMsg] = useState<{ t: string; err?: boolean } | null>(null);
 
   // signed in (also right after a Google or email-link return): go on
+  // a new account (no name yet) fills in its profile first, then goes on
   useEffect(() => {
-    if (session) location.replace(nextPath());
+    if (!session) return;
+    const named = typeof session.user.user_metadata?.name === "string" && session.user.user_metadata.name.trim();
+    location.replace(named ? nextPath() : `/account?setup=1&next=${encodeURIComponent(nextPath())}`);
   }, [session]);
 
   const back = () => `${location.origin}/login?next=${encodeURIComponent(nextPath())}`;
