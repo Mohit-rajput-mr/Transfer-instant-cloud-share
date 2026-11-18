@@ -1,0 +1,84 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Your phone says forty percent, then dies the moment you step into the cold. The charge is still in there. The cold just locked it away. Let's cut a battery open and watch why.",
+   "dur": 13.133,
+   "at": 0.35
+  },
+  {
+   "key": "parts",
+   "text": "Here's a lithium battery, unrolled. Two long strips. One made of graphite, one of a metal oxide. Between them, a thin soaked separator. And flooding all of it, a liquid called the electrolyte.",
+   "dur": 11.644,
+   "at": 13.98
+  },
+  {
+   "key": "ions",
+   "text": "The charge is stored as lithium. Tiny lithium ions, tucked between the layers of the graphite, waiting.",
+   "dur": 6.927,
+   "at": 26.08
+  },
+  {
+   "key": "flow",
+   "text": "To power your phone, each ion swims across the electrolyte to the other side. And every ion that crosses pushes one electron the long way round, through your phone. That stream of electrons is the current.",
+   "dur": 13.521,
+   "at": 33.45
+  },
+  {
+   "key": "warm",
+   "text": "Warm, the electrolyte is thin and runny. The ions swim across easily. Plenty of current, and the screen is bright.",
+   "dur": 8.397,
+   "at": 47.48
+  },
+  {
+   "key": "cold",
+   "text": "Now the cold. The electrolyte thickens, like honey from the fridge. The ions crawl. And at each surface, they stall before they can cross.",
+   "dur": 8.291,
+   "at": 56.32
+  },
+  {
+   "key": "sag",
+   "text": "Fewer ions arrive each second, so the voltage sags. Put it under load, a camera or a torch, and it drops below the phone's safety line. The phone shuts off to protect itself.",
+   "dur": 10.573,
+   "at": 65.11
+  },
+  {
+   "key": "stuck",
+   "text": "But the charge never left. Those ions are still there, just stuck in cold, slow syrup. Warm it in your hands, and the phone wakes straight back up.",
+   "dur": 8.679,
+   "at": 76.19
+  },
+  {
+   "key": "plating",
+   "text": "Charging in the cold is the real danger. The ions reach the graphite but can't tuck inside fast enough, so they pile up as metal on the surface. That damage never heals.",
+   "dur": 10.296,
+   "at": 85.37
+  },
+  {
+   "key": "ev",
+   "text": "It's why an electric car loses range on a freezing morning, and why your phone dies on a ski lift but revives in a warm pocket.",
+   "dur": 7.245,
+   "at": 96.16
+  },
+  {
+   "key": "orbi",
+   "text": "A battery guards its charge until the moment you need it. Orbi Transfer guards your file. It's sealed on your phone, before it ever leaves.",
+   "dur": 8.12,
+   "at": 103.91
+  },
+  {
+   "key": "orbi2",
+   "text": "It reaches the other phone in about a second. No login, no app. And after thirty minutes, it burns.",
+   "dur": 7.139,
+   "at": 112.38
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. The charge was always there. The cold just slowed it down.",
+   "dur": 5.82,
+   "at": 120.12
+  }
+ ],
+ "duration": 128.54
+}
