@@ -1,12 +1,12 @@
 import type { NextRequest } from "next/server";
 import { rpc } from "./server";
-import { otpOn, sessionOf, sessionVerified } from "./otp";
+import { codeAt, otpOn, sessionOf } from "./otp";
 import type { PlanId } from "./plans";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-export interface User { id: string; email: string | null; name: string | null; hue: number | null }
+export interface User { id: string; email: string | null; name: string | null; hue: number | null; session: string | null; /** when this session last entered an emailed code (s), or null */ codeAt: number | null }
 export interface Account {
   plan: PlanId;
   paid: PlanId;
@@ -24,16 +24,16 @@ export interface Account {
   pool: string;
 }
 
-/** The signed-in user behind the token, only once that login was finished with its emailed code (lib/otp.ts);
+/** The signed-in user behind the token, only once that session entered an emailed code (lib/otp.ts);
  *  `{ otp: false }` for the code routes themselves. */
 export async function userOf(req: NextRequest | Request, opts: { otp?: boolean } = {}): Promise<User | null> {
   const u = await tokenUser(req);
   if (!u) return null;
   if (opts.otp === false || !otpOn()) return u;
-  return u.session && (await sessionVerified(u.session, u.id)) ? u : null;
+  return u.codeAt ? u : null;
 }
 
-async function tokenUser(req: NextRequest | Request): Promise<(User & { session: string | null }) | null> {
+async function tokenUser(req: NextRequest | Request): Promise<User | null> {
   const h = req.headers.get("authorization") || "";
   const token = /^Bearer\s+(.+)$/i.exec(h)?.[1];
   if (!token || token.length > 4096) return null;
@@ -44,7 +44,7 @@ async function tokenUser(req: NextRequest | Request): Promise<(User & { session:
   const m = u.user_metadata ?? {};
   const name = typeof m.name === "string" ? m.name : typeof m.full_name === "string" ? m.full_name : null;
   const hue = Number(m.hue);
-  return { id: u.id, email: u.email ?? null, name: name?.trim() || null, hue: Number.isInteger(hue) && hue >= 0 && hue < 360 ? hue : null, session: sessionOf(token) };
+  return { id: u.id, email: u.email ?? null, name: name?.trim() || null, hue: Number.isInteger(hue) && hue >= 0 && hue < 360 ? hue : null, session: sessionOf(token), codeAt: codeAt(token) };
 }
 
 export const accountOf = (u: User) => rpc<Account>("orbit_account_get", { p_user: u.id, p_email: u.email ?? "" });

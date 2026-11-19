@@ -1,10 +1,10 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { auth, authFetch, otpDone, otpState, useSession } from "@/lib/auth";
+import { auth, otpDone, otpState, useSession } from "@/lib/auth";
 import GoogleButton from "./GoogleButton";
 
-type Mode = "in" | "up" | "reset";
+type Mode = "code" | "in" | "up" | "reset";
 
 /** where to go after signing in: ?next=/upgrade… (same-site paths only) */
 const nextPath = () => {
@@ -14,7 +14,7 @@ const nextPath = () => {
 
 export default function LoginForm() {
   const session = useSession();
-  const [mode, setMode] = useState<Mode>("in");
+  const [mode, setMode] = useState<Mode>("code");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [busy, setBusy] = useState(false);
@@ -39,8 +39,11 @@ export default function LoginForm() {
 
   const back = () => `${location.origin}/login?next=${encodeURIComponent(nextPath())}`;
 
+  // "Email code": no password; a 6-digit code to the email logs in (and makes the account on first use), like Claude
+  const [codeFor, setCodeFor] = useState("");
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (mode === "code") return setCodeFor(email.trim().toLowerCase());
     setBusy(true);
     setMsg(null);
     try {
@@ -73,13 +76,15 @@ export default function LoginForm() {
     }
   }
 
-  if (session && otp === "need") return <CodeStep email={session.user.email ?? ""} onDone={() => (otpDone(), setOtp("done"))} />;
+  if (session && otp === "need") return <CodeStep email={session.user.email ?? ""} onDone={() => (otpDone(), setOtp("done"))} onBack={() => auth.signOut().then(() => location.reload())} />;
   if (session) return <p className="ac-msg">{otp === "done" ? "You're logged in. Taking you on…" : "One moment…"}</p>;
+  if (codeFor) return <CodeStep email={codeFor} create onDone={() => otpDone()} onBack={() => setCodeFor("")} />;
   const pwNeeded = mode === "in" || mode === "up";
   return (
     <div className="ac-card">
       <div className="ac-tabs" role="group" aria-label="Log in or sign up">
-        <button type="button" className="ac-tab" aria-pressed={mode === "in"} onClick={() => setMode("in")}>Log in</button>
+        <button type="button" className="ac-tab" aria-pressed={mode === "code"} onClick={() => setMode("code")}>Email code</button>
+        <button type="button" className="ac-tab" aria-pressed={mode === "in" || mode === "reset"} onClick={() => setMode("in")}>Password</button>
         <button type="button" className="ac-tab" aria-pressed={mode === "up"} onClick={() => setMode("up")}>Sign up</button>
       </div>
       <GoogleButton onError={googleErr} fallback={google} disabled={busy} />
@@ -96,7 +101,7 @@ export default function LoginForm() {
           </label>
         )}
         <button className="ac-btn" type="submit" disabled={busy}>
-          {busy ? "One moment…" : mode === "in" ? "Log in" : mode === "up" ? "Create account" : "Send reset link"}
+          {busy ? "One moment…" : mode === "code" ? "Email me a code" : mode === "in" ? "Log in" : mode === "up" ? "Create account" : "Send reset link"}
         </button>
       </form>
       <div className="ac-row" style={{ justifyContent: "space-between" }}>
@@ -109,34 +114,33 @@ export default function LoginForm() {
   );
 }
 
-/** step 2 of every login: the 6-digit code we email to the account */
-function CodeStep({ email, onDone }: { email: string; onDone: () => void }) {
+/** The 6-digit code Supabase emails (signInWithOtp → verifyOtp). After a password or Google login it is step 2;
+ *  on its own ("Email code") it is the whole login. `create`: a new email becomes an account. */
+export function CodeStep({ email, onDone, onBack, create = false, why = "log in" }: { email: string; onDone: () => void; onBack: () => void; create?: boolean; why?: string }) {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ t: string; err?: boolean } | null>(null);
   const send = useCallback(async () => {
     setMsg(null);
-    const r = await authFetch("/api/auth/otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send" }) });
-    const d = await r.json().catch(() => ({}));
-    setMsg(r.ok ? { t: `We sent a 6-digit code to ${email}.` } : { t: d.error || "Couldn't send the code", err: true });
-  }, [email]);
+    const { error } = await auth.signInWithOtp({ email, options: { shouldCreateUser: create } });
+    setMsg(error ? { t: /rate|seconds/i.test(error.message) ? "A code was just sent. Wait a moment before asking again." : /signups not allowed|not found/i.test(error.message) ? "No account with this email." : error.message, err: true } : { t: `We sent a 6-digit code to ${email}.` });
+  }, [email, create]);
   useEffect(() => {
     void send();
   }, [send]);
   async function verify(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const r = await authFetch("/api/auth/otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "verify", code }) });
-    const d = await r.json().catch(() => ({}));
+    const { error } = await auth.verifyOtp({ email, token: code, type: "email" });
     setBusy(false);
-    if (r.ok) return onDone();
-    setMsg({ t: d.error || "Wrong code", err: true });
+    if (!error) return onDone();
+    setMsg({ t: /expired|invalid/i.test(error.message) ? "Wrong or expired code. Check the email, or send a new one." : error.message, err: true });
     setCode("");
   }
   return (
     <form className="ac-card ac-f" onSubmit={verify}>
       <h2 style={{ margin: 0 }}>Check your email</h2>
-      <p className="ac-sub" style={{ margin: 0 }}>Enter the code we sent to <b>{email}</b>. It keeps your account safe even if someone knows your password.</p>
+      <p className="ac-sub" style={{ margin: 0 }}>Enter the code we sent to <b>{email}</b> to {why}.</p>
       <label>
         6-digit code
         <input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required autoFocus value={code} onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))} style={{ letterSpacing: 8, fontSize: 22, textAlign: "center" }} />
@@ -144,7 +148,7 @@ function CodeStep({ email, onDone }: { email: string; onDone: () => void }) {
       <button className="ac-btn" type="submit" disabled={busy || code.length !== 6}>{busy ? "Checking…" : "Verify and continue"}</button>
       <div className="ac-row" style={{ justifyContent: "space-between" }}>
         <button type="button" className="ac-link" onClick={() => void send()}>Send a new code</button>
-        <button type="button" className="ac-link" onClick={() => auth.signOut().then(() => location.reload())}>Use another account</button>
+        <button type="button" className="ac-link" onClick={onBack}>Use another email</button>
       </div>
       {msg && <p className={`ac-msg${msg.err ? " err" : ""}`} role="status">{msg.t}</p>}
     </form>

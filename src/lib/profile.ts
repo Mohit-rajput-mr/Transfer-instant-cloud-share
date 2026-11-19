@@ -4,10 +4,10 @@
 // passcode, style). Sending still works the same signed out.
 import type { User } from "@supabase/supabase-js";
 import { looksLikeName } from "./bubbles";
-import { setSkin } from "./skins";
-import { validSkin } from "./skin-list";
+import { setPalette, setSkin } from "./skins";
+import { PALETTES, validSkin } from "./skin-list";
 
-export type Prefs = { life?: number; max?: number | null; locked?: boolean; skin?: string };
+export type Prefs = { life?: number; max?: number | null; locked?: boolean; skin?: string; pal?: string };
 export interface Profile { name: string; hue: number | null; dob: string; prefs: Prefs }
 
 export const HUES = [0, 25, 45, 90, 140, 175, 200, 225, 265, 300, 330] as const;
@@ -24,6 +24,7 @@ export function profileOf(u: User | null | undefined): Profile {
   if (p.max === null || MAXES.includes(Number(p.max))) prefs.max = p.max === null ? null : Number(p.max);
   if (typeof p.locked === "boolean") prefs.locked = p.locked;
   if (validSkin(p.skin)) prefs.skin = p.skin as string;
+  if (PALETTES.some((x) => x.id === p.pal)) prefs.pal = p.pal as string;
   return { name: name.trim(), hue: Number.isInteger(hue) && hue >= 0 && hue < 360 ? hue : null, dob: typeof m.dob === "string" ? m.dob : "", prefs };
 }
 
@@ -44,4 +45,5 @@ export function applyProfile(u: User | null | undefined) {
   if (p.prefs.max !== undefined) put("orbit:pref:max", p.prefs.max);
   if (p.prefs.locked !== undefined) put("orbit:pref:locked", p.prefs.locked);
   if (p.prefs.skin) setSkin(p.prefs.skin);
+  if (p.prefs.pal) setPalette(p.prefs.pal);
 }
