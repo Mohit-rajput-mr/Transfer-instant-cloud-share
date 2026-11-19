@@ -3,7 +3,7 @@
 const { chromium } = require("/opt/node22/lib/node_modules/playwright");
 const http = require("http"), fs = require("fs"), path = require("path");
 const FPS = 30, DIR = process.cwd(); // run from the film's source folder: node kit/render.cjs …
-const TYPES = { ".js": "text/javascript", ".html": "text/html", ".json": "application/json", ".svg": "image/svg+xml", ".css": "text/css", ".png": "image/png", ".jpg": "image/jpeg", ".woff2": "font/woff2" };
+const TYPES = { ".js": "text/javascript", ".html": "text/html", ".json": "application/json", ".svg": "image/svg+xml", ".css": "text/css", ".png": "image/png", ".jpg": "image/jpeg", ".woff2": "font/woff2", ".wasm": "application/wasm", ".gltf": "model/gltf+json", ".glb": "model/gltf-binary", ".bin": "application/octet-stream", ".gz": "application/gzip" };
 (async () => {
   const [, , a = "0", b = "", outDir = path.join(DIR, "frames")] = process.argv;
   fs.mkdirSync(outDir, { recursive: true });
