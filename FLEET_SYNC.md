@@ -19,6 +19,10 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-19: Supabase Auth email now goes through Brevo SMTP (smtp-relay.brevo.com:587, sender "Orbi Transfer"
+  <transferorbi@gmail.com>), set via the Management API; codes are 6 digits, 10 minutes; email limit 100/h; templates
+  (magic link, confirm signup, reauthentication) show {{ .Token }}, recovery keeps a link. Brevo: SMTP IP blocking had to
+  be OFF (Supabase's IPs vary; error was "525 5.7.1 Unauthorized IP address"). Test code sent: HTTP 200.
 - 2026-11-19: migration 039 (orbit_account_delete) APPLIED (owner approved). Code screen sent twice on open → Supabase's
   60 s limit showed a red error: now one send per address per minute per page, a friendly "already on its way" note.
 - 2026-11-19 (owner: codes came from "Supabase Auth"; wants an email-code login like Claude; Style: white Apply top
