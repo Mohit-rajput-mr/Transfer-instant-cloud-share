@@ -19,7 +19,7 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
-- 2026-11-19 OWNER PICK: ball indicators = design #31 "Curved text" with line icons, live = green dot
+- 2026-11-19 OWNER PICK: ball indicators = design #31 "Curved text" with line icons, live = green dot; opened count (eye) REMOVED by owner — only live · downloaded · DELETE
   (gallery: claude.ai/artifact/82JyqZQ2wmjhgUWQh6bPJR). OrbView OrbStats: live · opened · downloaded · DELETE (own) as
   words along the orbit (r 71, ball = 100); used on single balls (Classic + Work) and in the opened container
   (BubbleZoom, from 34° so it clears the download/lock buttons; its trash moved into the line). Container blob: plain
