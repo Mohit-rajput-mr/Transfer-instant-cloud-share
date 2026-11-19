@@ -47,7 +47,7 @@
    "key": "cold",
    "text": "What about the cold? Space is freezing, but it's empty. There's almost nothing to carry your heat away. You'd cool down very slowly.",
    "dur": 6.712,
-   "at": 69.75
+   "at": 69.76
   },
   {
    "key": "sun",
@@ -98,5 +98,5 @@
    "at": 142.57
   }
  ],
- "duration": 151.16
+ "duration": 151.17
 }
