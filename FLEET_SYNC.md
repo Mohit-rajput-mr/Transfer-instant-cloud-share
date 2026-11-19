@@ -19,6 +19,12 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-19 OWNER PICK: ball indicators = design #31 "Curved text" with line icons, live = green dot
+  (gallery: claude.ai/artifact/82JyqZQ2wmjhgUWQh6bPJR). OrbView OrbStats: live · opened · downloaded · DELETE (own) as
+  words along the orbit (r 71, ball = 100); used on single balls (Classic + Work) and in the opened container
+  (BubbleZoom, from 34° so it clears the download/lock buttons; its trash moved into the line). Container blob: plain
+  line (.grp-stats). File-type icon gone from balls, container members and zoom. Top bar: Send pill and + removed; a
+  white "+ Space" opens create-space. RELEASE r-2026-11-19-curved-stats. Verified Playwright: void, container, zoom.
 - 2026-11-19 (owner: "every bubble defaults to Classic; switching to Classic doesn't change"). Every browser drops
   looks picked before 2026-11-19 once (lib/skins.ts RESET) and no longer pulls the computer-remembered look back:
   Classic (Orbit, vivid) unless someone applies a style or their account carries one. Verified: an old browser with
