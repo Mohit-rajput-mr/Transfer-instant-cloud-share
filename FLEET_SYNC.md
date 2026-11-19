@@ -19,6 +19,11 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-19 (owner: "Apply a style: my current bubbles don't change"). Root cause: each object draws the style it was
+  SENT with (tag k=); Apply only changed new sends. FIX: Apply fires "orbi:restyle"; Void restyles the user's own live
+  objects at once and POSTs /api/transfers/[id]/skin (owner key; retags k= so every screen gets it). Same pattern bug:
+  /wire rebuilt the name without the newer tags (long life l=, account mark v=/c=) — both now use spaces.retagName,
+  which keeps every tag (tested). Verified in Playwright: own ball orbit→card at once, others' unchanged, 1 server call.
 - 2026-11-19 (owner: "a button to hide the name on my bubbles; hidden by default for every user"). ADDED account
   "Bubble name on my files: Hidden | Shown" (prefs.showName, saved at once); /api/transfers sends a logged-in user's
   files with NO name unless showName (default off, also ignores the browser's typed name); applyProfile clears

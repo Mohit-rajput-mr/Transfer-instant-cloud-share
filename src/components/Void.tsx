@@ -338,6 +338,23 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const work = ui === "work";
   const workRef = useRef(work);
   const [orbs, setOrbs] = useState<Orb[]>([]);
+  // Style → Apply: your own floating objects take the new style at once here, and on the server for everyone else
+  useEffect(() => {
+    const on = (e: Event) => {
+      const skin = (e as CustomEvent<string>).detail;
+      if (!skin) return;
+      setOrbs((list) => {
+        for (const o of list) {
+          const key = ownerKey(o.id);
+          if (!key || o.anon || o.skin === skin) continue;
+          void fetch(`/api/transfers/${o.id}/skin`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ owner: key, skin }) }).catch(() => {});
+        }
+        return list.map((o) => (ownerKey(o.id) && !o.anon ? { ...o, skin } : o));
+      });
+    };
+    window.addEventListener("orbi:restyle", on);
+    return () => window.removeEventListener("orbi:restyle", on);
+  }, []);
   const orbsRef = useRef(orbs);
   orbsRef.current = orbs;
   const [loaded, setLoaded] = useState(false);

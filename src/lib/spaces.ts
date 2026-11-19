@@ -267,6 +267,14 @@ export function untag<T extends { name?: unknown; expiresAt?: unknown }>(o: T): 
   }
   return out;
 }
+/** the stored name again with one or more tags changed, every other tag kept (long life, account mark, colour…) */
+export function retagName(u: Untagged<{ name?: unknown; expiresAt?: unknown }>, change: Partial<Tags>) {
+  return tagName(String(u.name), {
+    space: u.space ?? undefined, by: u.by ?? undefined, life: u.life <= LIFE_MIN ? u.life : LIFE_MIN, long: u.life > LIFE_MIN ? u.life : undefined,
+    open: u.open, from: u.from ?? undefined, group: u.groupName ?? undefined, skin: u.skin ?? undefined, thumb: u.thumb,
+    task: u.task ?? undefined, anon: u.anon, verified: u.verified, hue: u.byHue ?? undefined, ...change,
+  });
+}
 export const burnedUp = (o: { expiresAt?: unknown }) => typeof o.expiresAt === "string" && Date.parse(o.expiresAt) <= Date.now();
 
 /** Every space with its people (admin HQ). */

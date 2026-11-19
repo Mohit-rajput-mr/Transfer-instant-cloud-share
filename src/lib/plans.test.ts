@@ -31,3 +31,13 @@ describe("plans", () => {
   });
   it("the clock shows days", () => expect(formatClock(2 * 864e5 + 3 * 36e5)).toBe("2d 03h"));
 });
+
+describe("retagName", () => {
+  it("changes one tag and keeps every other one", async () => {
+    const { retagName } = await import("./spaces");
+    const name = tagName("deck", { by: "jigsaw", verified: true, hue: 265, long: 10080, open: true, skin: "card" });
+    const u = untag({ name });
+    const again = untag({ name: retagName(u, { skin: "ring" }) });
+    expect(again).toMatchObject({ name: "deck", by: "jigsaw", verified: true, byHue: 265, life: 10080, open: true, skin: "ring" });
+  });
+});
