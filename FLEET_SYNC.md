@@ -19,6 +19,10 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-19 ROOT CAUSE of "hide/show + style apply never reached floating files": .vercelignore had `live/` (meant
+  for the root Cloudflare Worker) which also dropped src/app/api/account/live/ from every Vercel upload → 404. FIX:
+  .vercelignore anchored to `/media/` `/live/`; route renamed /api/account/floating anyway. Rule: never name a route
+  folder `live` or `media`. Arc made smaller (r 56–75) with clear gaps between parts.
 - 2026-11-19 (owner design): the three circles became one curved glass arc (OrbView ARC/sector, SVG in ball units):
   views · downloads · destroy (yours, red, data-destroy) or live viewers; rounded corners via a round-joined rim+body
   pair; 11 px numbers, 13–16 px icons. Bug found while testing: `.orb-arc .seg path` also painted the icons' own paths

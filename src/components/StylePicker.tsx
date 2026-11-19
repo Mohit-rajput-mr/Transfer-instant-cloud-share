@@ -48,7 +48,7 @@ export default function StylePicker(props: { onClose: () => void; toast: (m: str
     if (data.session) {
       await auth.updateUser({ data: { prefs: { ...prefs, skin: sel.skin, pal: sel.pal } } }).catch(() => null);
       // logged in: also what this account sent from its other devices
-      await authFetch("/api/account/live", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ skin: sel.skin }) }).catch(() => null);
+      await authFetch("/api/account/floating", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ skin: sel.skin }) }).catch(() => null);
     }
   };
 
