@@ -4164,3 +4164,23 @@ html:not(#_) .pop.anon-portal .ap-search input::placeholder { color: rgba(255,25
 .orb-arc { animation: bubble-in 0.6s var(--spring) both; }
 .orb-anchor.burning .orb-arc { animation: vanish 0.35s ease-in both; }
 .world.far .orb-arc { opacity: 0; }
+
+/* ---- the stats along the orbit (OrbStats, design #31): live · opened · downloaded · DELETE ---- */
+.orb-stats { position: absolute; inset: -40%; width: 180%; height: 180%; z-index: 4; pointer-events: none; overflow: visible; color: #fff; animation: bubble-in 0.6s var(--spring) both; }
+.orb-stats text { font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: .06em; fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.65); stroke-width: 2.4px; }
+.orb-stats .st-dot { fill: #3a4a40; }
+.orb-stats.hot .st-dot { fill: var(--live); filter: drop-shadow(0 0 3px var(--live)); animation: pulse 1.4s ease-in-out infinite; }
+.orb-stats.hot .live text { fill: var(--live); }
+.orb-stats .del { color: #ff5a5a; pointer-events: auto; cursor: pointer; }
+.orb-stats .del text { fill: #ff5a5a; letter-spacing: .14em; }
+.orb-stats .del:hover text { fill: #ff8080; }
+.orb-stats .st-hit { fill: none; stroke: transparent; stroke-width: 18; pointer-events: stroke; }
+.orb-anchor.burning .orb-stats { animation: vanish 0.35s ease-in both; }
+.world.far .orb-stats { opacity: 0; }
+/* a container's stats: the same plain line as the balls' (no box) */
+.grp-stats { position: absolute; right: 18px; top: -22px; z-index: 3; pointer-events: none; display: flex; gap: 12px; font: 700 10.5px var(--mono); letter-spacing: .06em; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.8); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.grp-stats > span { display: inline-flex; align-items: center; gap: 4px; }
+.grp-stats svg { width: 12px; height: 12px; }
+.grp-stats .b-live { width: 7px; height: 7px; border-radius: 50%; background: #3a4a40; display: inline-block; }
+.grp-stats.hot .b-live { background: var(--live); box-shadow: 0 0 6px var(--live); }
+.grp-stats.hot > span:first-child { color: var(--live); }

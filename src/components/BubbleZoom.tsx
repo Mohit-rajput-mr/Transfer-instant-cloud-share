@@ -1,17 +1,16 @@
 "use client";
-import { fileKind, typeHue } from "@/lib/skin-list";
+import { typeHue } from "@/lib/skin-list";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { ext, formatBytes, formatClock, hasGot, ownerKey, type Orb } from "@/lib/client";
-import { KindBadge, bubbleLayout, clampTo, fling, memberPos, stopFling, tracker } from "./OrbView";
+import { OrbStats, bubbleLayout, clampTo, fling, memberPos, stopFling, tracker } from "./OrbView";
 import { enqueue, useDownloads } from "@/lib/downloads";
-import { LuArrowLeft, LuCheck, LuChevronLeft, LuChevronRight, LuDownload, LuEye, LuLock, LuLockOpen, LuTrash2 } from "react-icons/lu";
+import { LuArrowLeft, LuCheck, LuChevronLeft, LuChevronRight, LuDownload, LuLock, LuLockOpen, LuTrash2 } from "react-icons/lu";
 
 /**
  * Zoomed into one sender's bubble: the bubble grows out of where it floats to fill the screen, its
  * balls full size with their orbit rings and details. ← → (or the arrows, or a swipe) surf to the
  * next bubble; Esc, the back button or a tap outside zooms back out.
  */
-const crowd = (n: number) => (n >= 1000 ? "1k+" : n >= 100 ? "100+" : n >= 10 ? "10+" : String(n));
 
 export default function BubbleZoom(props: {
   /** every bubble in the void, in order: [id, name, members] */
@@ -198,7 +197,6 @@ export default function BubbleZoom(props: {
                 }}
               >
                 <span className="zsphere">
-                  <KindBadge kind={fileKind(o.fileName, o.mime)} />
                   <span className="zhalo" aria-hidden />
                   <svg className="zring" viewBox="0 0 100 100" aria-hidden>
                     <circle className="track" cx="50" cy="50" r="48" />
@@ -209,29 +207,10 @@ export default function BubbleZoom(props: {
                   {Array.from({ length: Math.min(o.watchers ?? 0, 4) }, (_, k) => (
                     <span key={k} className="sat" style={{ "--r": `calc(var(--zd) * 0.19 + ${6 + k * 5}px)`, "--t": `${5 + k * 1.7}s`, "--d": `-${k * 0.9}s` } as CSSProperties} aria-hidden />
                   ))}
-                  <span className={`bubble lg zbub${o.watchers ? " hot" : ""}`} aria-label={`${o.watchers ?? 0} live, ${o.views ?? 0} opened, ${o.downloads} downloads`}>
-                    <span title="Live now"><i className="b-live" />{crowd(o.watchers ?? 0)}</span>
-                    <span title="Opened by"><LuEye />{crowd(o.views ?? 0)}</span>
-                    <span title="Downloads"><LuDownload />{crowd(o.downloads)}</span>
-                  </span>
+                  {/* the stats along the orbit, the same as every ball in the void (OrbStats, design #31) */}
+                  <OrbStats from={34} id={`z${o.id}`} live={o.watchers ?? 0} views={o.views ?? 0} downloads={o.downloads} del={ownerKey(o.id) && props.onDestroy ? { name: o.name } : undefined} onDelete={() => props.onDestroy?.([o.id])} />
                   {/* separate round icons pinned to the ball: grouped on the upper-left of the ring: download, lock, trash */}
                   <span className="zicons">
-                    {ownerKey(o.id) && props.onDestroy && (
-                      <span
-                        className="ic kill"
-                        role="button"
-                        tabIndex={0}
-                        aria-label={`Destroy ${o.name}`}
-                        title="Destroy"
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          props.onDestroy?.([o.id]);
-                        }}
-                      >
-                        <LuTrash2 />
-                      </span>
-                    )}
                     <span className={`ic lock${o.open ? " open" : ""}`} title={o.open ? "No password" : "Password needed"} aria-label={o.open ? "No password" : "Password needed"}>
                       {o.open ? <LuLockOpen /> : <LuLock />}
                     </span>

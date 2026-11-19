@@ -2812,12 +2812,12 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             {anonNow ? <>{anonOnButton("pill lg-press anon-badge", true)}{anonOn && <button className="pill lg-press anon-exit" onClick={() => toggleAnon(false)} title="Turn off Anonymous">Exit</button>}</> : <>{anonOffButton("hd-ic lg-press")}{pinButton("hd-ic lg-press geo-chip")}</>}
             <button className="hd-ic lg-press style-chip" onClick={() => setPanel({ kind: "style" })} aria-label={`Style: ${skinName(skin)}. Change how files look`} title="Style"><LuPalette aria-hidden /></button>
             <button className="hd-ic lg-press" onClick={() => setPanel({ kind: "space", start: ":search" })} aria-label="Search spaces" title="Search spaces"><LuSearch aria-hidden /></button>
-            <button className="hd-ic lg-press" onClick={() => setPanel({ kind: "space", start: ":create" })} aria-label="Create a space" title="Create your space"><LuPlus aria-hidden /></button>
             {/* log in: your sent files, notes, tasks and spaces on every device (lib/vault.ts) */}
             <AccountChip className="hd-ic lg-press hd-acc">{(label, on) => <LuUser aria-label={on ? `Account: ${label}` : "Log in"} />}</AccountChip>
             {/* when the links don't fit on one row (tablets, small windows, short landscape) they live in the menu */}
             <button className="hd-ic lg-press nav-menu" onClick={() => setPanel({ kind: "menu" })} aria-label="Menu" title="Menu"><LuMenu aria-hidden /></button>
-            <button className="pill solid lg-press send-pill" onClick={openMenu}>Send</button>
+            {/* owner 2026-11-19: no Send here (the big Send button stays) and no separate +; one white "+ Space" */}
+            <button className="pill solid lg-press send-pill" onClick={() => setPanel({ kind: "space", start: ":create" })} aria-label="Create a space"><LuPlus aria-hidden className="ic-inline" /> Space</button>
           </div>
         </div>
         {/* phones: the same buttons under the slim icon bar */}
