@@ -19,6 +19,11 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-19 (owner design): the three circles became one curved glass arc (OrbView ARC/sector, SVG in ball units):
+  views · downloads · destroy (yours, red, data-destroy) or live viewers; rounded corners via a round-joined rim+body
+  pair; 11 px numbers, 13–16 px icons. Bug found while testing: `.orb-arc .seg path` also painted the icons' own paths
+  dark (fixed: `.seg > path`). RELEASE bumped (r-2026-11-19-accounts-arc) so open tabs reload when idle — the owner kept
+  seeing old builds in long-open tabs. Verified: render desktop/phone, delete segment fires DELETE.
 - 2026-11-19 (owner: "I hid the name, the current bubble still shows it — fix from root"). Root cause: name and style
   live in each object's stored tags, written once at send; account changes only reached new sends. FIX: migration 043
   (orbit_user_live / orbit_user_retag, scoped to the account's own sends) + /api/account/live { show | skin }: the
