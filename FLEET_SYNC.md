@@ -19,6 +19,11 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-19 (owner: "I hid the name, the current bubble still shows it — fix from root"). Root cause: name and style
+  live in each object's stored tags, written once at send; account changes only reached new sends. FIX: migration 043
+  (orbit_user_live / orbit_user_retag, scoped to the account's own sends) + /api/account/live { show | skin }: the
+  account switch and Style → Apply now rewrite every object that account still has floating, from any device (spaces
+  and anonymous objects untouched). Tested retagName hide/show round trip.
 - 2026-11-19 (owner: "Apply a style: my current bubbles don't change"). Root cause: each object draws the style it was
   SENT with (tag k=); Apply only changed new sends. FIX: Apply fires "orbi:restyle"; Void restyles the user's own live
   objects at once and POSTs /api/transfers/[id]/skin (owner key; retags k= so every screen gets it). Same pattern bug:
