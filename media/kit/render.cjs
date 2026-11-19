@@ -20,7 +20,7 @@ const TYPES = { ".js": "text/javascript", ".html": "text/html", ".json": "applic
   const t0 = Date.now();
   for (const f of frames.filter((f) => !fs.existsSync(path.join(outDir, `${String(f).padStart(5, "0")}.png`)))) {
     await page.evaluate((t) => window.render(t), f / FPS);
-    await page.screenshot({ path: path.join(outDir, `${String(f).padStart(5, "0")}.png`) });
+    await page.screenshot({ timeout: 0, path: path.join(outDir, `${String(f).padStart(5, "0")}.png`) });
   }
   console.log("frames", frames.length, "in", ((Date.now() - t0) / 1000).toFixed(0), "s");
   await browser.close(); srv.close();
