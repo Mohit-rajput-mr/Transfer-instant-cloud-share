@@ -19,6 +19,10 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-19 (owner: "HQ All time: no white visitor dots"). Root cause: the data was there (214 spots; IN 36) but
+  each visitor dot was 1.75 px with a black edge, and in Indian cities the DOM "last GPS seen" pins sit right on top.
+  FIX (admin/Earth.tsx): visitor dots 3–9 px by device count, soft white ring + glow. Verified with a rendered globe.
+  Also: DELETE on the ball turns into a red band with black text on hover / press (owner: make the click obvious).
 - 2026-11-19 OWNER PICK: ball indicators = design #31 "Curved text" with line icons, live = green dot; opened count (eye) REMOVED by owner — only live · downloaded · DELETE
   (gallery: claude.ai/artifact/82JyqZQ2wmjhgUWQh6bPJR). OrbView OrbStats: live · opened · downloaded · DELETE (own) as
   words along the orbit (r 71, ball = 100); used on single balls (Classic + Work) and in the opened container
