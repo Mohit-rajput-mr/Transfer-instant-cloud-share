@@ -795,14 +795,38 @@ export default function OrbView(props: {
           <span className="orb-cancel" data-cancel="" role="button" aria-label={`Cancel upload of ${orb.name}`} title="Cancel upload">
             <svg viewBox="0 0 24 24" aria-hidden><path d="M6 6l12 12M18 6L6 18" /></svg>
           </span>
-        ) : props.onDestroy && mine && !up && phase !== "burning" && <span className="destroy" data-destroy="" role="button" aria-label={`Destroy ${orb.name}`} title="Destroy"><LuTrash2 /></span>}
+        ) : null}
         {mine && badge ? <span className="mine-no" aria-hidden>{badge}</span> : null}
         {got && !up ? <span className="got-mark" aria-hidden><LuCheck /></span> : null}
-        {!up && <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
-          <span title="Live now"><i className="b-live" />{crowd(watchers)}</span>
-          <span title="Opened by"><svg viewBox="0 0 16 16" aria-hidden><path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" strokeWidth="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>{crowd(orb.views ?? 0)}</span>
-          <span title="Downloads"><LuDownload />{crowd(orb.downloads)}</span>
-        </span>}
+        {/* the sender's bubble name, top left (owner 2026-11-19) */}
+        {orb.by ? (
+          <span className={`orb-owner${orb.verified ? " acct" : ""}`} style={orb.verified && orb.byHue != null ? ({ "--by": `hsl(${orb.byHue} 85% 72%)` } as CSSProperties) : undefined} title={orb.verified ? `${orb.by} · logged-in account` : orb.by}>
+            {orb.by}{orb.verified ? <LuBadgeCheck className="acct-tick" aria-label="logged-in account" /> : null}
+          </span>
+        ) : null}
+        {/* three round buttons curving along the top right: views, downloads, and destroy (yours) or live viewers */}
+        {!up && (
+          <span className={`orb-dots${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views ?? 0} opened, ${orb.downloads} downloads`}>
+            <span className="od" style={{ "--a": "28deg" } as CSSProperties} title="Opened by">
+              <svg viewBox="0 0 16 16" aria-hidden><path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" strokeWidth="1.5"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
+              <b>{crowd(orb.views ?? 0)}</b>
+            </span>
+            <span className="od" style={{ "--a": "56deg" } as CSSProperties} title="Downloads">
+              <LuDownload aria-hidden />
+              <b>{crowd(orb.downloads)}</b>
+            </span>
+            {props.onDestroy && mine && phase !== "burning" ? (
+              <span className="od del" style={{ "--a": "84deg" } as CSSProperties} data-destroy="" role="button" aria-label={`Destroy ${orb.name}`} title="Destroy">
+                <LuTrash2 aria-hidden />
+              </span>
+            ) : (
+              <span className="od live" style={{ "--a": "84deg" } as CSSProperties} title="Live now">
+                <i className="b-live" />
+                <b>{crowd(watchers)}</b>
+              </span>
+            )}
+          </span>
+        )}
         {phase === "arriving" && <span className="shock" />}
         {Array.from({ length: Math.min(watchers, 4) }, (_, i) => (
           <span
@@ -815,7 +839,7 @@ export default function OrbView(props: {
       )}
       <div className="orb-label wide">{orb.name}</div>
       <div className="orb-meta mono">
-        {orb.by ? (
+        {orb.by && group ? (
           // a logged-in account's name: its own colour and a tick (the name can't be borrowed; see /api/transfers)
           <span className={`orb-by${orb.verified ? " acct" : ""}`} style={orb.verified && orb.byHue != null ? ({ "--by": `hsl(${orb.byHue} 85% 72%)` } as CSSProperties) : undefined} title={orb.verified ? `${orb.by} · logged-in account` : undefined}>
             {orb.by}{orb.verified ? <LuBadgeCheck className="acct-tick" aria-label="logged-in account" /> : null}
