@@ -18,7 +18,7 @@ const age = (dob: string | null) => {
 };
 type Filter = "all" | "today" | "7d" | "paying" | "google" | "email" | "unconfirmed";
 
-export default function AdminUsers({ onClose }: { onClose: () => void }) {
+export default function AdminUsers({ onClose }: { onClose?: () => void }) {
   const [d, setD] = useState<D | null>(null);
   const [err, setErr] = useState("");
   const [f, setF] = useState<Filter>("all");
@@ -65,7 +65,7 @@ export default function AdminUsers({ onClose }: { onClose: () => void }) {
           {err ? ` · ${err}` : ""}
         </span>
         <div>
-          <button className="pill" onClick={onClose}>Close ✕</button>
+          {onClose && <button className="pill" onClick={onClose}>Close ✕</button>}
         </div>
       </div>
       <div className="hq-filters">

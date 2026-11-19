@@ -22,8 +22,10 @@ export function issueSession() {
   return { value: `${exp}.${sig}`, maxAge: SESSION_MS / 1000 };
 }
 
-export function isAdmin(req: NextRequest) {
-  const raw = req.cookies.get(ADMIN_COOKIE)?.value;
+export const isAdmin = (req: NextRequest) => validAdminCookie(req.cookies.get(ADMIN_COOKIE)?.value);
+
+/** a signed, unexpired HQ session cookie (API routes via isAdmin, pages via lib/admin-page.ts) */
+export function validAdminCookie(raw: string | undefined) {
   if (!raw || !process.env.ADMIN_PASSWORD_HASH) return false;
   const [exp, sig] = raw.split(".");
   if (!exp || !sig || Number(exp) < Date.now()) return false;

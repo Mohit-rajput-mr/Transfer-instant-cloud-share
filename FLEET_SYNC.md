@@ -19,6 +19,18 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-19 (owner: "admin pages separate + secured; profile page with more; name+colour on my bubbles; OTP on every
+  login"). DONE: every /admin page checks the HQ cookie ON THE SERVER (lib/admin-page.ts adminIn) and sends only the
+  sign-in otherwise; Users, Payments, Void are now their own pages (/admin/users, /admin/payments, /admin/void; nav in
+  components/admin/Pages.tsx; AdminShell). Profile (lib/profile.ts, account page): name, name colour, DoB, defaults for
+  sends (life, download limit, password, style) applied on every device; security (change password, log out
+  everywhere, delete account with emailed code). Logged-in uploads carry the ACCOUNT's name + colour + tick (server sets
+  tags v=1, c=hue from the Supabase user; the browser can't claim a name). OTP: lib/otp.ts + /api/auth/otp — every
+  login (password or Google) needs a 6-digit code emailed via Resend, bound to the Supabase session_id; userOf()
+  rejects unverified sessions. OFF until RESEND_API_KEY is set. Magic-link login removed. OPEN: migration 039 (OTP
+  codes + account delete) NOT applied — the Supabase MCP asked for approval (it contains deletes); owner to approve or
+  paste it. Verified: gate (curl with/without cookie), login → wrong pw → code step → wrong code → right code → account
+  (mocked OTP API), profile colour + defaults saved to the real Supabase user and applied locally.
 - 2026-11-18 (owner: "HQ: a separate Users section, how many new users, all info"). ADDED HQ tab Users
   (components/admin/AdminUsers.tsx, /api/admin/users, migration 038 APPLIED): totals (new today / 7 / 30 days, logged in
   today, active this week, paying, Google vs email, unconfirmed), filters, search, and per user: name, avatar, email,

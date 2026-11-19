@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
+import AdminLogin from "@/components/admin/AdminLogin";
+import { adminIn } from "@/lib/admin-page";
 import AdminApp from "@/components/admin/AdminApp";
 
 export const metadata: Metadata = { title: "Mission HQ", robots: { index: false, follow: false } };
 
-export default function AdminPage() {
+export const dynamic = "force-dynamic";
+
+// checked on the server: without an HQ session only the sign-in is sent
+export default async function AdminPage() {
+  if (!(await adminIn())) return <AdminLogin />;
   return (
     <>
       {/* open the map connection while the page boots, so the globe's first tiles arrive sooner */}

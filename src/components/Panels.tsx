@@ -566,9 +566,10 @@ export function SendPanel(props: {
   const [fresh, setFresh] = useState(false);
   const [more, setMore] = useState(false);
   const [speed, setSpeed] = useState<UpSpeed>(() => (typeof window === "undefined" ? "full" : upSpeed()));
-  const [max, setMax] = useState<number | null>(null);
-  // every send starts open (no password); a password is a deliberate choice each time
-  const [locked, setLocked] = useState(false);
+  // a logged-in profile may set how sends start (lib/profile.ts); otherwise unlimited and open
+  const [max, setMax] = useState<number | null>(() => pref<number | null>("max", null));
+  // every send starts open (no password) unless the profile says otherwise; a password is a deliberate choice
+  const [locked, setLocked] = useState(() => pref<boolean>("locked", false) === true);
   const [life, setLife] = useState(() => pref("life", 30));
   // the plan (Free when signed out): bigger files and longer lives for Pro and Business; none in a space or anonymous
   const { plan, perks } = usePlan();

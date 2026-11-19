@@ -1,6 +1,6 @@
 "use client";
 import { hoverPeek } from "@/lib/peek";
-import { LuArrowUp, LuCheck, LuDownload, LuLock, LuLockOpen, LuMaximize2, LuTrash2 } from "react-icons/lu";
+import { LuArrowUp, LuCheck, LuDownload, LuLock, LuLockOpen, LuMaximize2, LuTrash2, LuBadgeCheck } from "react-icons/lu";
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
 import { setCardOrigin } from "./Panels";
 import { ext, formatBytes, formatClock, type Orb } from "@/lib/client";
@@ -815,7 +815,12 @@ export default function OrbView(props: {
       )}
       <div className="orb-label wide">{orb.name}</div>
       <div className="orb-meta mono">
-        {orb.by ? <span className="orb-by">{orb.by}</span> : null}
+        {orb.by ? (
+          // a logged-in account's name: its own colour and a tick (the name can't be borrowed; see /api/transfers)
+          <span className={`orb-by${orb.verified ? " acct" : ""}`} style={orb.verified && orb.byHue != null ? ({ "--by": `hsl(${orb.byHue} 85% 72%)` } as CSSProperties) : undefined} title={orb.verified ? `${orb.by} · logged-in account` : undefined}>
+            {orb.by}{orb.verified ? <LuBadgeCheck className="acct-tick" aria-label="logged-in account" /> : null}
+          </span>
+        ) : null}
         <span>{formatBytes(orb.size)}</span>
         {up ? <span className="glyph"><LuArrowUp aria-hidden />{Math.round(launching * 100)}%</span> : <span>{formatClock(left)}</span>}
         {orb.maxDownloads ? <span>max {orb.maxDownloads}</span> : null}

@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import Starfield from "@/components/Starfield";
 import { perf } from "@/lib/perf";
-import { useSession } from "@/lib/auth";
+import { useLogin } from "@/lib/auth";
 
 export type SitePage = "about" | "upgrade";
 export type ArrowDir = "right" | "up-right" | "down" | "up";
@@ -509,7 +509,8 @@ export default function SiteChrome({ page, children }: { page: SitePage; childre
 
 /** header: "Log in" when signed out, "Account" when signed in (Pro and Business need an account; sending doesn't) */
 function AccountLink() {
-  const session = useSession();
+  const { session: raw, verified } = useLogin();
+  const session = verified ? raw : null;
   return (
     <Link href={session ? "/account" : "/login?next=/account"} className="sx-pill sm sx-acc">
       {session ? "Account" : "Log in"}

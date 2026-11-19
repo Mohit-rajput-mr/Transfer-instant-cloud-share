@@ -62,10 +62,16 @@ export async function POST(req: NextRequest) {
     // an anonymous space makes every send anonymous (old clients too)
     if (await isAnonSpace(me.slug)) anon = true;
   }
-  // who sent it, so everyone sees it on the ball / container (a space signs with the member's name instead; never anonymous)
+  // who sent it, so everyone sees it on the ball / container (a space signs with the member's name instead; never anonymous).
+  // Logged in: the account's own profile name and colour, marked as an account (the browser can't claim someone else's)
   if (!anon && b.space == null) {
-    const by = cleanHandle(b.by);
+    const own = user?.name ? cleanHandle(user.name) : "";
+    const by = own || cleanHandle(b.by);
     if (by) tags.by = by;
+    if (own) {
+      tags.verified = true;
+      if (user?.hue != null) tags.hue = user.hue;
+    }
   }
   // the public void pins everything to an area, and an area is a place
   if (anon && b.space == null) return NextResponse.json({ error: "Anonymous sends go into an anonymous space" }, { status: 400 });
