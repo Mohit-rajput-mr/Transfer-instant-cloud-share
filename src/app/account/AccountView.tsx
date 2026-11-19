@@ -165,7 +165,10 @@ function Defaults({ user }: { user: User }) {
     const { data, error } = await auth.updateUser({ data: { prefs: { ...cur, showName: on } } });
     if (error) return setMsg(error.message);
     applyProfile(data.user);
-    setMsg(on ? "Your bubble name now shows on what you send." : "Your name is hidden on what you send.");
+    // what is already floating follows at once, on every screen
+    const r = await authFetch("/api/account/live", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ show: on, hue: p.hue }) }).catch(() => null);
+    const d = r ? await r.json().catch(() => ({})) : {};
+    setMsg(`${on ? "Your bubble name now shows on what you send" : "Your name is hidden on what you send"}${d.changed ? `, and on the ${d.changed} file${d.changed === 1 ? "" : "s"} already floating` : ""}.`);
   }
   async function save() {
     const prefs = { life, max, locked, showName: show, ...(skin ? { skin } : {}), ...(p.prefs.pal ? { pal: p.prefs.pal } : {}) };

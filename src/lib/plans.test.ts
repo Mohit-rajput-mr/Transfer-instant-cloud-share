@@ -41,3 +41,14 @@ describe("retagName", () => {
     expect(again).toMatchObject({ name: "deck", by: "jigsaw", verified: true, byHue: 265, life: 10080, open: true, skin: "ring" });
   });
 });
+
+describe("hiding the name on what is floating", () => {
+  it("drops the name, the account mark and its colour, keeps the rest", async () => {
+    const { retagName } = await import("./spaces");
+    const u = untag({ name: tagName("deck", { by: "jigsaw", verified: true, hue: 140, open: true, skin: "card" }) });
+    const hid = untag({ name: retagName(u, { by: undefined, verified: false, hue: undefined }) });
+    expect(hid).toMatchObject({ name: "deck", by: null, verified: false, byHue: null, open: true, skin: "card" });
+    const shown = untag({ name: retagName(hid, { by: "jigsaw", verified: true, hue: 140 }) });
+    expect(shown).toMatchObject({ by: "jigsaw", verified: true, byHue: 140 });
+  });
+});

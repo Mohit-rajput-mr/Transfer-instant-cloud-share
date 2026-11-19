@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, type CSSProperties } from "react";
-import { auth } from "@/lib/auth";
+import { auth, authFetch } from "@/lib/auth";
 import { LuCheck, LuMonitorSmartphone, LuTicket } from "react-icons/lu";
 import { Pop } from "./Spaces";
 import { KindBadge } from "./OrbView";
@@ -45,7 +45,11 @@ export default function StylePicker(props: { onClose: () => void; toast: (m: str
     props.toast(`Style applied: ${skinName(sel.skin)}`);
     const { data } = await auth.getSession();
     const prefs = (data.session?.user.user_metadata?.prefs ?? {}) as Record<string, unknown>;
-    if (data.session) await auth.updateUser({ data: { prefs: { ...prefs, skin: sel.skin, pal: sel.pal } } }).catch(() => null);
+    if (data.session) {
+      await auth.updateUser({ data: { prefs: { ...prefs, skin: sel.skin, pal: sel.pal } } }).catch(() => null);
+      // logged in: also what this account sent from its other devices
+      await authFetch("/api/account/live", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ skin: sel.skin }) }).catch(() => null);
+    }
   };
 
   const pick = (id: string) => {
