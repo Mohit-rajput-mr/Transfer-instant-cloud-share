@@ -19,6 +19,12 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-19 (owner: "videos not HD / weak physics; Zach-D-style film; Orbi ad at end of every film"). ADDED
+  media/kit/hd.js (three.js HD kit: bloom, DOF, motion blur, grade, analytic studio env — PMREM cost 6 s/frame on
+  SwiftShader) + media/engine-film (3:04 inline-4 cutaway, real slider-crank/1-3-4-2/cam kinematics, crank-synced engine
+  sound, Orbi ad = 12 GB video in parts phone → laptop). Playbook rule: every film ends on a DIFFERENT Orbi feature.
+  FIXED render.cjs: screenshot 30 s timeout killed workers on heavy motion-blur frames (now no timeout). Verified frames
+  by eye + duration 184 s. Open: cam lobes render too dark in close-ups. Not on live branch (media only).
 - 2026-11-18 (owner: "HQ: a separate Users section, how many new users, all info"). ADDED HQ tab Users
   (components/admin/AdminUsers.tsx, /api/admin/users, migration 038 APPLIED): totals (new today / 7 / 30 days, logged in
   today, active this week, paying, Google vs email, unconfirmed), filters, search, and per user: name, avatar, email,
