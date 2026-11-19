@@ -19,6 +19,8 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-19: migration 039 (orbit_account_delete) APPLIED (owner approved). Code screen sent twice on open → Supabase's
+  60 s limit showed a red error: now one send per address per minute per page, a friendly "already on its way" note.
 - 2026-11-19 (owner: codes came from "Supabase Auth"; wants an email-code login like Claude; Style: white Apply top
   right, nothing changes until Apply, saved to the account). CHANGED: login codes are now Supabase Auth email OTP
   (signInWithOtp/verifyOtp); the server counts a session as logged in only when its JWT amr has otp (lib/otp.ts);
