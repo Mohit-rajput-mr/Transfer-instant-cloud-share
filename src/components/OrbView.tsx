@@ -789,7 +789,6 @@ export default function OrbView(props: {
           <circle className="track" cx="50" cy="50" r={R} />
           <circle className="life" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - (up ? Math.max(0.03, launching) : frac))} />
         </svg>
-        <KindBadge kind={fileKind(orb.fileName, orb.mime)} />
         <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : ext(orb.fileName)}</span>
         {props.onCancel && mine && !incoming && phase !== "burning" ? (
           <span className="orb-cancel" data-cancel="" role="button" aria-label={`Cancel upload of ${orb.name}`} title="Cancel upload">
