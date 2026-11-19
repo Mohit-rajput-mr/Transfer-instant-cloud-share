@@ -4187,3 +4187,5 @@ html:not(#_) .pop.anon-portal .ap-search input::placeholder { color: rgba(255,25
 .grp-stats .b-live { width: 7px; height: 7px; border-radius: 50%; background: #3a4a40; display: inline-block; }
 .grp-stats.hot .b-live { background: var(--live); box-shadow: 0 0 6px var(--live); }
 .grp-stats.hot > span:first-child { color: var(--live); }
+/* the straight row twin of .orb-stats: only the Work look shows it (work.css) */
+.orb-statrow { display: none; }

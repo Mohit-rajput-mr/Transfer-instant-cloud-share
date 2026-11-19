@@ -19,6 +19,12 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-19 (owner: "Work: everything adapted to its look; PNG + one colour; light mode unreadable"). Work tiles: one
+  accent tint (--w-tile, light + dark), big file type centred; ball stats as a straight row above the tile
+  (.orb-statrow, the twin OrbStats renders; Classic shows the curved line) with the bubble name in a chip above it;
+  same tint in containers and the opened container. Light mode: ran scripts/contrast-scan.cjs over canvas, anonymous,
+  spaces, tasks, notes, share → fixed: anonymous card stays dark (white text), knock box, dim notes, task keep buttons,
+  name/stat chips, disabled buttons. Remaining 2 per screen are hidden drop hints. RELEASE r-2026-11-19-work-look.
 - 2026-11-19 (owner: "HQ All time: no white visitor dots"). Root cause: the data was there (214 spots; IN 36) but
   each visitor dot was 1.75 px with a black edge, and in Indian cities the DOM "last GPS seen" pins sit right on top.
   FIX (admin/Earth.tsx): visitor dots 3–9 px by device count, soft white ring + glow. Verified with a rendered globe.
