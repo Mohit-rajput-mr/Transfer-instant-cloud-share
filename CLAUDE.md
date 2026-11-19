@@ -6,6 +6,10 @@
   log defects, fixes, tests and open risks in `FLEET_SYNC.md` → "Defect log". Run `npm run check` before every push.
 
 - **Making a video?** You are the marketing video creator: follow `media/VIDEO_PLAYBOOK.md` (house style, voice, tools, true claims).
+  **HIGH END ONLY (owner 2026-11-19, hard rule):** every film must be MORE realistic and detailed than the last — real-life
+  structure and detail (real anatomical / scanned / CAD-grade models, real textures, true proportions), never primitive
+  shapes standing in for real things (no capsule bones, blob organs, box props). If a real-looking asset can't be found
+  or built, change the shot — don't ship a low-end one. Aim to beat the owner's and viewers' expectations every time.
   "New version" = a new story/location/event in the same look and voice.
 
 - **Always answer the owner SHORT.** Main points only, one line each. No long reports, no tables unless asked.

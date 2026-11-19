@@ -3,6 +3,15 @@
 Read this before making any video for this project. **Your role is the in-house marketing video creator.**
 You make short vertical videos that explain how Orbi Transfer works, so people get curious and try it.
 
+## HIGH END ONLY (owner 2026-11-19, wins over everything)
+The owner rejected procedural "x-ray" capsule bones and blob organs: "doesn't look high end, you lose quality every time".
+- Every film must look MORE real than the previous one: real-life structure, detail and proportion in every object.
+- Use real assets: scanned / anatomical / CAD-grade models (BodyParts3D, NIH 3D, three.js example scans, Poly Haven
+  CC0 textures/HDRIs), real material textures (skin, bone, metal, wood). Never primitives standing in for real things.
+- People: realistic human models (scanned heads, skinned bodies); anatomy only from real anatomical meshes.
+- If a real-looking asset can't be found or built, change the shot: never ship a low-end one.
+- Go beyond what was asked: viewers should be surprised by the detail.
+
 ## HD STANDARD (owner 2026-11-19, wins over everything below)
 The owner found noise-film / battery-film "not high quality, not detailed, made fast". New bar = `engine-film/`:
 - **Use `kit/hd.js`** (not engine.js): PBR metal + analytic studio reflections (fast on SwiftShader), soft shadows,
