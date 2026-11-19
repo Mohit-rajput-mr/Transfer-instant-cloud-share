@@ -7,7 +7,7 @@ import { isHandle } from "./bubbles";
 import { setPalette, setSkin } from "./skins";
 import { PALETTES, validSkin } from "./skin-list";
 
-export type Prefs = { life?: number; max?: number | null; locked?: boolean; skin?: string; pal?: string };
+export type Prefs = { life?: number; max?: number | null; locked?: boolean; skin?: string; pal?: string; showName?: boolean };
 export interface Profile { name: string; handle: string; hue: number | null; dob: string; prefs: Prefs }
 
 export const HUES = [0, 25, 45, 90, 140, 175, 200, 225, 265, 300, 330] as const;
@@ -25,6 +25,7 @@ export function profileOf(u: User | null | undefined): Profile {
   if (typeof p.locked === "boolean") prefs.locked = p.locked;
   if (validSkin(p.skin)) prefs.skin = p.skin as string;
   if (PALETTES.some((x) => x.id === p.pal)) prefs.pal = p.pal as string;
+  prefs.showName = p.showName === true;
   return { name: name.trim(), handle: typeof m.handle === "string" && isHandle(m.handle) ? m.handle : "", hue: Number.isInteger(hue) && hue >= 0 && hue < 360 ? hue : null, dob: typeof m.dob === "string" ? m.dob : "", prefs };
 }
 
@@ -39,7 +40,13 @@ export function applyProfile(u: User | null | undefined) {
   if (!u) return;
   const p = profileOf(u);
   // notes and tasks are signed with the account's unique bubble name (uploads get it on the server, from the database)
-  if (p.handle) put("orbit:bubble-name", p.handle);
+  // hidden (the default): notes and tasks carry no name either
+  if (p.handle && p.prefs.showName) put("orbit:bubble-name", p.handle);
+  else {
+    try {
+      if (localStorage.getItem("orbit:bubble-name") === p.handle || p.prefs.showName === false) localStorage.removeItem("orbit:bubble-name");
+    } catch {}
+  }
   if (p.prefs.life != null) put("orbit:pref:life", p.prefs.life);
   if (p.prefs.max !== undefined) put("orbit:pref:max", p.prefs.max);
   if (p.prefs.locked !== undefined) put("orbit:pref:locked", p.prefs.locked);

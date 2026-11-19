@@ -19,6 +19,10 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-19 (owner: "a button to hide the name on my bubbles; hidden by default for every user"). ADDED account
+  "Bubble name on my files: Hidden | Shown" (prefs.showName, saved at once); /api/transfers sends a logged-in user's
+  files with NO name unless showName (default off, also ignores the browser's typed name); applyProfile clears
+  orbit:bubble-name when hidden so notes/tasks carry no name either. Verified in a browser on the real Supabase user.
 - 2026-11-19 (owner sketch): single ball = bubble name TOP LEFT (.orb-owner), three round buttons curving along the top
   right (.orb-dots: views, downloads, and destroy if yours / live viewers if not; destroy keeps data-destroy), title +
   size/time below; the stats pill and bottom-left trash are gone for single balls (containers unchanged). Renaming the

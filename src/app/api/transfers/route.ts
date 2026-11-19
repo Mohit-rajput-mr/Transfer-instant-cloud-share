@@ -64,7 +64,8 @@ export async function POST(req: NextRequest) {
   }
   // who sent it, so everyone sees it on the ball / container (a space signs with the member's name instead; never anonymous).
   // Logged in: the account's bubble name and colour, marked as an account (the browser can't claim someone else's)
-  if (!anon && b.space == null) {
+  // A logged-in user who keeps the name hidden (the default, owner 2026-11-19) sends with no name at all.
+  if (!anon && b.space == null && !(user && !user.showName)) {
     // the account's unique bubble name, never its profile name (names repeat; bubble names don't)
     const own = account?.handle ? cleanHandle(account.handle) : "";
     const by = own || cleanHandle(b.by);
