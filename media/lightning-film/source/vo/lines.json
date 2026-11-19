@@ -3,106 +3,106 @@
  "lines": [
   {
    "key": "hook",
-   "text": "This is what happens to your body when lightning hits you. One bolt can carry three hundred million volts. And yet, nine out of ten people who are struck survive. Here's how.",
-   "dur": 10.305,
+   "text": "Do you know what happens to your body when lightning hits you? One lightning bolt can carry three hundred million volts. And yet, nine out of ten people who are struck survive. Here's how.",
+   "dur": 10.471,
    "at": 0.35
   },
   {
    "key": "storm",
    "text": "It starts inside a storm cloud. Ice and hail smash together, and knock electrons loose. The bottom of the cloud fills up with negative charge, until the air can't hold it back.",
    "dur": 10.979,
-   "at": 11.16
+   "at": 11.32
   },
   {
    "key": "leader",
    "text": "A faint, branching spark creeps down from the cloud, in jumps of about fifty metres. It's called a stepped leader. It's looking for the ground.",
    "dur": 9.848,
-   "at": 22.58
+   "at": 22.75
   },
   {
    "key": "streamer",
    "text": "And the ground answers. From trees, from rooftops, and from you, sparks reach upwards. Your hair stands on end. That's your warning.",
    "dur": 9.443,
-   "at": 32.88
+   "at": 33.05
   },
   {
    "key": "strike",
    "text": "When they touch, the circuit closes. Thirty thousand amps rush down the channel in a few millionths of a second. The air heats up to nearly thirty thousand degrees. Five times hotter than the surface of the sun.",
    "dur": 15.167,
-   "at": 42.77
+   "at": 42.94
   },
   {
    "key": "flash",
    "text": "Now here's the surprise. Most of that current doesn't go through you. It races over the outside of your wet skin. Doctors call it a flashover. Rain and sweat turn to steam so fast, they can blow off your shoes.",
    "dur": 12.835,
-   "at": 58.44
+   "at": 58.61
   },
   {
    "key": "heart",
    "text": "The current that does get inside follows your nerves and blood vessels. It can stop your heart. And it can switch off the part of your brain that tells you to breathe.",
    "dur": 10.253,
-   "at": 71.73
+   "at": 71.89
   },
   {
    "key": "restart",
    "text": "Your heart often restarts on its own. Your breathing doesn't. That's why CPR saves lives. And someone who's been struck carries no charge. It's safe to touch them.",
    "dur": 10.957,
-   "at": 82.43
+   "at": 82.6
   },
   {
    "key": "marks",
    "text": "Within an hour, strange red ferns can bloom across the skin. Lichtenberg figures. A map of the current, drawn in burst blood vessels. They fade within days.",
    "dur": 11.747,
-   "at": 93.84
+   "at": 94.0
   },
   {
    "key": "thunder",
    "text": "Then comes the thunder. The air in the channel expands so fast, it makes a shockwave. Loud enough to burst your eardrums.",
    "dur": 7.655,
-   "at": 106.03
+   "at": 106.2
   },
   {
    "key": "ground",
    "text": "But most people aren't hit directly. Lightning lands nearby, and spreads out through the ground. It runs up one leg, and down the other. That hurts more people than direct hits.",
    "dur": 9.72,
-   "at": 114.14
+   "at": 114.3
   },
   {
    "key": "car",
    "text": "So where are you safe? Inside a car. But not because of the rubber tyres. The metal shell carries the current around you, and down into the ground.",
    "dur": 9.336,
-   "at": 124.31
+   "at": 124.47
   },
   {
    "key": "roy",
    "text": "One park ranger, Roy Sullivan, was struck by lightning seven times. He survived every single one.",
    "dur": 7.56,
-   "at": 134.09
+   "at": 134.26
   },
   {
    "key": "orbi",
    "text": "Lightning always finds the fastest path to the ground. Orbi Transfer finds the fastest path to the people around you.",
    "dur": 7.864,
-   "at": 142.2
+   "at": 142.37
   },
   {
    "key": "orbi2",
    "text": "Drop a file on your phone. Anyone with Orbi open on the same Wi-Fi sees it pop up in seconds. Your laptop, your friend's phone.",
    "dur": 6.759,
-   "at": 150.47
+   "at": 150.63
   },
   {
    "key": "orbi3",
    "text": "No cables, no login, no app. Just a browser. It's locked on your phone before it leaves. And after thirty minutes, it burns.",
    "dur": 8.611,
-   "at": 157.63
+   "at": 157.79
   },
   {
    "key": "end",
    "text": "Orbi Transfer dot com. Three hundred million volts, and nine out of ten walk away.",
    "dur": 5.581,
-   "at": 166.84
+   "at": 167.0
   }
  ],
- "duration": 175.02
+ "duration": 175.19
 }

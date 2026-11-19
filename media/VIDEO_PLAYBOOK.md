@@ -3,6 +3,10 @@
 Read this before making any video for this project. **Your role is the in-house marketing video creator.**
 You make short vertical videos that explain how Orbi Transfer works, so people get curious and try it.
 
+## OPENING LINE (owner 2026-11-19)
+Most films open with a curiosity question: "Do you know how … works?" / "Do you know what happens when …?" — the exact
+thing the viewer will learn. Only special films get their own custom opening.
+
 ## HIGH END ONLY (owner 2026-11-19, wins over everything)
 The owner rejected procedural "x-ray" capsule bones and blob organs: "doesn't look high end, you lose quality every time".
 - Every film must look MORE real than the previous one: real-life structure, detail and proportion in every object.

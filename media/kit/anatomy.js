@@ -65,7 +65,7 @@ export async function loadAnatomy() {
     uPulse: { value: new THREE.Vector4(0, 0, 0, 1) } /* travelling glow front: y (m), width, strength, direction ±1 */,
     uPulse2: { value: new THREE.Vector4(0, 0, 0, 1) },
     uLegP: { value: new THREE.Vector2(-9, 0) } /* current up one leg and down the other: path coord, strength */,
-    uBeat: { value: 0 }, uBreath: { value: 0 }, uHairUp: { value: 0 }, uMed: { value: 0 },
+    uBeat: { value: 0 }, uBreath: { value: 0 }, uHairUp: { value: 0 }, uThermal: { value: 0 }, uMed: { value: 0 },
     uDecal: { value: null }, uDecalR: { value: new THREE.Vector4(-0.2, 1.0, 0.4, 0.45) }, uDecalK: { value: 0 },
     uShoesOn: { value: 1 }, uShoeL: { value: new THREE.Vector4() }, uShoeR: { value: new THREE.Vector4() } };
   const root = new THREE.Group();
@@ -114,7 +114,7 @@ export async function loadAnatomy() {
       if (hk.rough) f = f.replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\n" + hk.rough);
       if (hk.normal) f = f.replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n" + hk.normal);
       if (hk.post) f = f.replace("#include <dithering_fragment>", "#include <dithering_fragment>\n" + hk.post);
-      sh.fragmentShader = `varying vec3 vRest; uniform float uX, uHot, uRed, uT, uCloth, uDecalK, uMed; uniform vec3 uXCol; uniform vec4 uPulse, uPulse2, uDecalR; uniform vec2 uLegP; uniform sampler2D uDecal; uniform float uShoesOn;\n${NOISE}\n` + f;
+      sh.fragmentShader = `varying vec3 vRest; uniform float uX, uHot, uRed, uT, uCloth, uDecalK, uMed; uniform vec3 uXCol; uniform vec4 uPulse, uPulse2, uDecalR; uniform vec2 uLegP; uniform sampler2D uDecal; uniform float uShoesOn, uThermal;\n${NOISE}\n` + f;
     };
     m.customProgramCacheKey = () => "anat|" + key;
     return m;
@@ -142,6 +142,9 @@ export async function loadAnatomy() {
        gl_FragColor.rgb = mix(gl_FragColor.rgb, gl_FragColor.rgb * vec3(1.35, 0.55, 0.45), uRed);
        gl_FragColor.rgb += vec3(1.5, 1.6, 2.6) * fr * uHot;
        ${PULSE}
+       if (uThermal > 0.0) { float tp = clamp(0.92 - fr * 0.55 - (1.6 - vRest.y) * 0.05 * step(1.0, vRest.y) - smoothstep(0.2, 0.0, vRest.y) * 0.25 - smoothstep(0.75, 0.6, abs(vRest.x) * 3.0 - 0.0) * 0.0 + (vn(vRest * 30.0) - 0.5) * 0.08, 0.0, 1.0);
+         vec3 th = tp < 0.33 ? mix(vec3(0.05, 0.0, 0.25), vec3(0.6, 0.0, 0.6), tp / 0.33) : tp < 0.66 ? mix(vec3(0.6, 0.0, 0.6), vec3(1.0, 0.45, 0.0), (tp - 0.33) / 0.33) : mix(vec3(1.0, 0.45, 0.0), vec3(1.0, 1.0, 0.6), (tp - 0.66) / 0.34);
+         gl_FragColor.rgb = mix(gl_FragColor.rgb, th * 0.85, uThermal); }
        gl_FragColor.rgb = mix(gl_FragColor.rgb, uXCol * (0.05 + fr * 1.1), uX);
        gl_FragColor.a = mix(1.0, 0.04 + fr * 0.5, uX); }`,
   };
@@ -151,8 +154,8 @@ export async function loadAnatomy() {
   const cloth = (col, key, weave = 2200) => patch(new THREE.MeshPhysicalMaterial({ color: col, roughness: 0.92, sheen: 0.6, sheenRoughness: 0.8, sheenColor: new THREE.Color(col).multiplyScalar(1.6) }), key, {
     offset: "0.0",
     color: `float wv = 0.86 + 0.14 * (0.5 + 0.5 * sin(vRest.x * ${weave}.0 + vRest.z * ${weave}.0)) * (0.5 + 0.5 * sin(vRest.y * ${weave}.0)); diffuseColor.rgb *= wv * (0.92 + 0.16 * vn(vRest * 90.0));`,
-    normal: `normal = normalize(normal + (vec3(vn(vRest * vec3(60.0, 22.0, 60.0)), vn(vRest * vec3(60.0, 22.0, 60.0) + 5.0), vn(vRest * 40.0 + 2.0)) - 0.5) * 0.35);`,
-    post: `gl_FragColor.a = 1.0 - uX; ${PULSE}`,
+    normal: `normal = normalize(normal + (vec3(vn(vRest * vec3(110.0, 40.0, 110.0)), vn(vRest * vec3(110.0, 40.0, 110.0) + 5.0), vn(vRest * 70.0 + 2.0)) - 0.5) * 0.14);`,
+    post: `gl_FragColor.a = 1.0 - uX;`,
     mask: true,
   });
   const shirtM = cloth(0x39424d, "shirt"), shortsM = cloth(0x141a24, "shorts", 2600); shirtM.transparent = shortsM.transparent = true;
@@ -189,7 +192,7 @@ export async function loadAnatomy() {
   // bone matrices from a pose: { bone: [x, y, z] deg } rotations at each bone's root joint, parent first
   const local = Array.from({ length: NBONE }, () => new THREE.Matrix4()), tmp = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
   const A = {
-    atlas, parts: atlas.parts, root, extra, mat, layers, JP, BONES, pose: {},
+    atlas, parts: atlas.parts, root, extra, mat, layers, JP, BONES, pose: {}, patch, shell, depthMat, PULSE, CLOTH,
     layer(name, filter, material, build) {
       const ps = atlas.parts.filter(filter); if (!ps.length) { console.log("no parts for", name); return null; }
       let g = geom(ps); if (build) g = build(g);
@@ -221,6 +224,7 @@ export async function loadAnatomy() {
   return A;
 }
 
+export { shell };
 /** clothes: skin triangles inside a region, pushed out along the normal (shorts: the front bulge smoothed flat) */
 function shell(g, region, push, flatten) {
   const pos = g.attributes.position.array, nor = g.attributes.normal.array, idx = g.index.array;
@@ -229,6 +233,8 @@ function shell(g, region, push, flatten) {
   const p2 = new Float32Array(pos.length);
   for (let j = 0; j < pos.length / 3; j++) { v.set(pos[j * 3], pos[j * 3 + 1], pos[j * 3 + 2]); const n = V(nor[j * 3], nor[j * 3 + 1], nor[j * 3 + 2]); v.addScaledVector(n, push(v)); if (flatten) flatten(v); p2[j * 3] = v.x; p2[j * 3 + 1] = v.y; p2[j * 3 + 2] = v.z; }
   const o = g.clone(); o.setAttribute("position", new THREE.BufferAttribute(p2, 3)); o.setIndex(keep); o.computeVertexNormals();
+  if (flatten) { const nn = o.attributes.normal; for (let j = 0; j < nn.count; j++) { v.set(pos[j * 3], pos[j * 3 + 1], pos[j * 3 + 2]); const w = (1 - Math.min(1, Math.max(0, (Math.abs(v.x) - 0.05) / 0.06))) * Math.min(1, Math.max(0, (v.y - 0.66) / 0.06)) * Math.min(1, Math.max(0, (0.98 - v.y) / 0.06)) * (v.z > 0 ? 1 : 0);
+    if (w > 0) { const n = V(nn.getX(j), nn.getY(j), nn.getZ(j)).lerp(V(0, 0.1, 1).normalize(), w * 0.85).normalize(); nn.setXYZ(j, n.x, n.y, n.z); } } }
   // the cloth keeps rest coordinates for its pattern: use the original positions for vRest via skinning attributes (same)
   return o;
 }
@@ -240,7 +246,7 @@ export function standardLayers(A, { clothes = true, inside = true } = {}) {
   if (clothes) {
     const ax = (v) => Math.abs(v.x);
     A.layer("shorts", (p) => p.name === "Skin", A.mat.shorts, (g) => shell(g, (v) => v.y > 0.615 && v.y < 1.005 && ax(v) < 0.195, (v) => 0.012 + (v.y < 0.66 ? 0.006 : 0),
-      (v) => { if (ax(v) < 0.075 && v.y > 0.7 && v.y < 0.93 && v.z > 0.035) v.z = 0.035 + (v.z - 0.035) * 0.22; }));
+      (v) => { const w = (1 - Math.min(1, Math.max(0, (ax(v) - 0.06) / 0.04))) * Math.min(1, Math.max(0, (v.y - 0.66) / 0.05)) * Math.min(1, Math.max(0, (0.97 - v.y) / 0.05)); if (v.z > 0.03) v.z = v.z - (v.z - 0.03) * 0.9 * w; }));
     A.layer("shirt", (p) => p.name === "Skin", A.mat.shirt, (g) => shell(g, (v) => v.y > 0.985 && (ax(v) > 0.075 || v.y < 1.44) && v.y < 1.6 && !(ax(v) > 0.155 && v.y < 1.21), (v) => 0.01 + 0.006 * Math.max(0, 1.2 - v.y) * 4));
   }
  if (clothes) A.layer("shoes", (p) => p.name === "Skin", A.mat.shoes, (g) => shell(g, (v) => v.y < 0.105, (v) => 0.009 + Math.max(0, 0.02 - v.y) * 0.4, (v) => { if (v.y < 0.012) v.y = Math.max(v.y - 0.012, -0.002); }));

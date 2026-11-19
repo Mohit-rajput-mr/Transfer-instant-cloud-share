@@ -38,11 +38,12 @@ def wer(ref, y, sr):
 
 only = set(sys.argv[1:])
 out, at = [], 0.35
-prev = json.load(open("vo/lines.json")) if only else None
+import os
+prev = json.load(open("vo/lines.json")) if only and os.path.exists("vo/lines.json") and len(json.load(open("vo/lines.json"))["lines"]) == len(LINES) else None
 for key, text, ex, gap in LINES:
     if only and key not in only:
-        ln = next(l for l in prev["lines"] if l["key"] == key)
-        d = ln["dur"]
+        if prev: d = next(l for l in prev["lines"] if l["key"] == key)["dur"]
+        else: d = sf.info(f"vo/{key}.wav").duration   # no lines.json yet: reuse the take on disk
     else:
         spoken = text.replace("Orbi", "Orbee")
         best = None

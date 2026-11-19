@@ -1,0 +1,102 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know what happens to your body if you step into space without a suit? You won't explode. You won't freeze solid. But you'd have about fifteen seconds.",
+   "dur": 10.492,
+   "at": 0.35
+  },
+  {
+   "key": "airlock",
+   "text": "Picture an airlock. On this side, air presses on every part of you, all the time. You never feel it. On the other side, there's almost nothing. Then the door opens.",
+   "dur": 9.379,
+   "at": 11.34
+  },
+  {
+   "key": "lungs",
+   "text": "First rule. Don't hold your breath. As the pressure drops, the air in your lungs expands, and it can tear them from the inside. So you breathe out. Everything.",
+   "dur": 9.127,
+   "at": 21.22
+  },
+  {
+   "key": "fizz",
+   "text": "Next, the gas dissolved in your blood starts coming out, like opening a bottle of fizzy drink. Tiny bubbles, in your veins and joints.",
+   "dur": 7.736,
+   "at": 30.8
+  },
+  {
+   "key": "boil",
+   "text": "Then the water in your body starts to boil. Not because it's hot. With so little pressure, water boils at body temperature. The saliva on your tongue bubbles away.",
+   "dur": 9.828,
+   "at": 38.98
+  },
+  {
+   "key": "swell",
+   "text": "Your skin swells up, like a balloon. But skin is tough, and it holds you together. Your blood doesn't boil either. Your heart keeps it under pressure.",
+   "dur": 8.611,
+   "at": 49.26
+  },
+  {
+   "key": "brain",
+   "text": "The real danger is quieter. With no air, your lungs start pulling oxygen out of your blood, instead of putting it in. After about fifteen seconds, your brain runs out, and you black out.",
+   "dur": 10.983,
+   "at": 58.32
+  },
+  {
+   "key": "cold",
+   "text": "What about the cold? Space is freezing, but it's empty. There's almost nothing to carry your heat away. You'd cool down very slowly.",
+   "dur": 6.712,
+   "at": 69.75
+  },
+  {
+   "key": "sun",
+   "text": "In sunlight, it's the opposite. With no air to filter it, ultraviolet light burns your skin, fast.",
+   "dur": 7.48,
+   "at": 76.92
+  },
+  {
+   "key": "ninety",
+   "text": "Get back to air within about ninety seconds, and you could survive. Much longer than that, and you won't.",
+   "dur": 7.075,
+   "at": 84.85
+  },
+  {
+   "key": "leblanc",
+   "text": "We know, because it happened. In nineteen sixty six, NASA technician Jim LeBlanc was testing a suit in a vacuum chamber, when a hose came loose. The last thing he remembered, was the saliva fizzing on his tongue. They pumped the air back in, and he woke up fine.",
+   "dur": 17.144,
+   "at": 92.42
+  },
+  {
+   "key": "suit",
+   "text": "That's why a spacesuit is really a tiny planet. A bubble of air, pressure and warmth, built for one person.",
+   "dur": 8.141,
+   "at": 110.07
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer has spaces too. The safe kind.",
+   "dur": 3.555,
+   "at": 118.71
+  },
+  {
+   "key": "orbi2",
+   "text": "Go anonymous. No account, no name. Create a space with a four letter code, and a passcode. Your passcode never leaves your browser.",
+   "dur": 9.208,
+   "at": 122.66
+  },
+  {
+   "key": "orbi3",
+   "text": "Share files and notes, only with the people who know it. Your anonymous session runs on a timer, five to thirty minutes. Then it burns.",
+   "dur": 9.703,
+   "at": 132.27
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. You wouldn't explode. But you'd have fifteen seconds.",
+   "dur": 5.991,
+   "at": 142.57
+  }
+ ],
+ "duration": 151.16
+}
