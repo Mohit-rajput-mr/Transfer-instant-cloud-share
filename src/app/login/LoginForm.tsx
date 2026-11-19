@@ -114,16 +114,31 @@ export default function LoginForm() {
   );
 }
 
+const sentAt = new Map<string, number>();
+
 /** The 6-digit code Supabase emails (signInWithOtp → verifyOtp). After a password or Google login it is step 2;
  *  on its own ("Email code") it is the whole login. `create`: a new email becomes an account. */
 export function CodeStep({ email, onDone, onBack, create = false, why = "log in" }: { email: string; onDone: () => void; onBack: () => void; create?: boolean; why?: string }) {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ t: string; err?: boolean } | null>(null);
-  const send = useCallback(async () => {
+  // one email per address per minute (Supabase's own limit): the screen re-opening never asks twice
+  const send = useCallback(async (again = false) => {
+    const last = sentAt.get(email) ?? 0;
+    if (!again && Date.now() - last < 60_000) return setMsg({ t: `We sent a 6-digit code to ${email}. Check your inbox (and spam).` });
     setMsg(null);
     const { error } = await auth.signInWithOtp({ email, options: { shouldCreateUser: create } });
-    setMsg(error ? { t: /rate|seconds/i.test(error.message) ? "A code was just sent. Wait a moment before asking again." : /signups not allowed|not found/i.test(error.message) ? "No account with this email." : error.message, err: true } : { t: `We sent a 6-digit code to ${email}.` });
+    if (!error) sentAt.set(email, Date.now());
+    const wait = Math.max(5, 60 - Math.round((Date.now() - last) / 1000));
+    setMsg(
+      !error
+        ? { t: `We sent a 6-digit code to ${email}. Check your inbox (and spam).` }
+        : /rate|seconds|security purposes/i.test(error.message)
+          ? { t: `A code is already on its way to ${email}. You can ask for a new one in about ${wait} seconds.` }
+          : /signups not allowed|not found/i.test(error.message)
+            ? { t: "No account with this email.", err: true }
+            : { t: error.message, err: true },
+    );
   }, [email, create]);
   useEffect(() => {
     void send();
@@ -147,7 +162,7 @@ export function CodeStep({ email, onDone, onBack, create = false, why = "log in"
       </label>
       <button className="ac-btn" type="submit" disabled={busy || code.length !== 6}>{busy ? "Checking…" : "Verify and continue"}</button>
       <div className="ac-row" style={{ justifyContent: "space-between" }}>
-        <button type="button" className="ac-link" onClick={() => void send()}>Send a new code</button>
+        <button type="button" className="ac-link" onClick={() => void send(true)}>Send a new code</button>
         <button type="button" className="ac-link" onClick={onBack}>Use another email</button>
       </div>
       {msg && <p className={`ac-msg${msg.err ? " err" : ""}`} role="status">{msg.t}</p>}
