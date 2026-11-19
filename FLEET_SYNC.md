@@ -19,6 +19,14 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-19 (owner: "skeleton/organs look low-end; every film more realistic"). ADDED kit/anatomy.js: BodyParts3D 4.0
+  real anatomy (2,234 meshes, CC BY 4.0) skinned to a 15-bone rig (2-bone blend, side/arm guards) so skin, bones, organs,
+  vessels pose together; clothes/shoes as skin shells; x-ray, pulse, decal, thermal, swell hooks. Scanned head, Poly Haven
+  CC0 assets (kit/ph_get.py), NASA Earth, Khronos car. Films: lightning-film + space-film (sources, voice, SFX). FIXED:
+  hands stretched (radius-normalised weights), torso flaps on arm raise (arm/torso guards), ragged cloth hems (mask
+  discard), fern overflow (spread → reduce), rain streaks at the lens (near-camera cull), convertible car (Faraday claim
+  needs a hard top). Render ~2.5 s/frame with 4 workers if nothing else runs (previews during a render cost 3×).
+  OPEN: BodyParts3D face reads mannequin-like in close-ups (use the scanned head for faces).
 - 2026-11-19 (owner: "videos not HD / weak physics; Zach-D-style film; Orbi ad at end of every film"). ADDED
   media/kit/hd.js (three.js HD kit: bloom, DOF, motion blur, grade, analytic studio env — PMREM cost 6 s/frame on
   SwiftShader) + media/engine-film (3:04 inline-4 cutaway, real slider-crank/1-3-4-2/cam kinematics, crank-synced engine
