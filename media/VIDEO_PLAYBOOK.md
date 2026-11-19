@@ -3,6 +3,22 @@
 Read this before making any video for this project. **Your role is the in-house marketing video creator.**
 You make short vertical videos that explain how Orbi Transfer works, so people get curious and try it.
 
+## HD STANDARD (owner 2026-11-19, wins over everything below)
+The owner found noise-film / battery-film "not high quality, not detailed, made fast". New bar = `engine-film/`:
+- **Use `kit/hd.js`** (not engine.js): PBR metal + analytic studio reflections (fast on SwiftShader), soft shadows,
+  MSAA, bloom, depth of field, sub-frame motion blur, film grade (vignette, grain, fringe, sepia flashback),
+  hatched cutaway faces (`cutaway(mat)` + a clip plane), callouts with leader lines anchored to 3D points.
+- **Real mechanical models**, built to real proportions and moved by real physics (slider-crank, cam profiles,
+  2:1 timing), not boxes. Every part the voice names gets a callout at that moment.
+- Frame for **vertical**: horizontal FOV is narrow; pull cameras back (`H.zoom`), keep text bands clear
+  (title top 150–330, subtitles 1235–1320, HUD 1440–1750). Preview contact sheets with `RS=0.5` before the full render.
+- **Sound that matches the picture** (owner): a film-specific `engine_sfx.py`-style layer → `extra.wav`, mixed by
+  `kit/synth.py` (room tone, object sounds synced to the motion, impacts, whooshes) under the music and voice.
+- **Every film ends with an Orbi ad showing a DIFFERENT feature each time**, on phone AND laptop views (real
+  orbitransfer.com captures): e.g. big video in parts (engine-film), workspace, anonymous mode, Spaces, open files,
+  QR/code, tasks, folders. Never repeat the previous film's feature; only claim live, verified facts.
+- Render: 4 detached workers (`nohup node kit/render.cjs a b frames &`), ~2 s/frame effective at RS 0.8.
+
 ## QUALITY BAR (owner 2026-11-17, wins over everything below)
 The owner loved `tyre-film/` (v2). **Every new film must match or beat it.** They rejected its v1 as "too fast, not
 illustrative, not detailed". Zach-films style:
@@ -186,7 +202,8 @@ Use them in every film where a feature is shown.
 - `touch-film/`: how touch screens feel you — phone layers explode (glass / see-through ITO grid / display), pulsed rows, field at every crossing, finger steals field → signal dip → centre finer than grid, pinch = two dips, wool glove vs conductive thread, raindrop ghost taps, sausage works, old resistive screens
 - `noise-film/`: how noise-cancelling works — sound = squeeze/stretch waves, eardrum (big=loud, fast=high, engine=low hum), 1978 Bose flight, 1930s idea (wave + mirror = nothing), cutaway cup (cushion, speaker, outside+inside mics), mic→chip flips it→anti-noise, music+anti-noise cancel at the ear, thousands/sec + inside-mic correction, claps too fast so the cushion blocks them, transparency mode
 - `lock-film/`: how a pin-tumbler lock works — wrong key won't budge, cutaway housing + plug, pin stacks (key pin, driver pin, spring), shear line, the right key lifts each stack so every gap lands on the line, plug turns + cam pulls the bolt, a cut too shallow crosses the line (off by <1 mm), 5 pins × heights = thousands of keys, Linus Yale Jr. 1860s → Orbi: a password carved in metal
-- `battery-film/`: why cold kills batteries — cut a Li-ion cell (graphite anode / oxide cathode / separator / electrolyte), charge = lithium ions in the graphite, each crossing ion pushes an electron round your phone = current; warm = thin electrolyte, ions swim; cold thickens it like fridge honey, ions crawl, voltage sags below cutoff, phone shuts off though charge remains; warm it and it wakes; charging cold = lithium plating (permanent); EV winter range → Orbi: guards your charge until you need it (**latest**)
+- `engine-film/`: **HD standard** — how a car engine works: inline-4 cutaway (block, pistons+rings, rods, crank, DOHC cams, valves, springs, plug, injector, manifolds, belt, flywheel, gearbox, wheel), 4 strokes with gas/spark/flame, firing order 1-3-4-2, revs to 3,000 rpm, ~⅔ heat, Otto 1876 → Orbi ad: big video in 12 parts, 3 at once, signal drop + resume, phone → laptop, no login/app, locked, 30-min burn (**latest**)
+- `battery-film/`: why cold kills batteries — cut a Li-ion cell (graphite anode / oxide cathode / separator / electrolyte), charge = lithium ions in the graphite, each crossing ion pushes an electron round your phone = current; warm = thin electrolyte, ions swim; cold thickens it like fridge honey, ions crawl, voltage sags below cutoff, phone shuts off though charge remains; warm it and it wakes; charging cold = lithium plating (permanent); EV winter range → Orbi: guards your charge until you need it
 - `tap-film/`: suspense science film — your bank card has no battery: wire loop, induction (toothbrush), chip wakes, answers by flickering its load, secret key → one-time code, thief DENIED → Orbi (code never leaves your phone, near you, 12 tries, 30 min)
 - `gps-film/`: suspense science film — your phone never talks to the satellites; it listens to clocks: delay = distance, bubbles → ring → two points → you, 4th satellite fixes the cheap clock, Einstein (+38 µs/day ≈ 10 km drift, clocks tuned slow before launch) → Orbi: rough area only, anonymous = no location, 30-min burn
 - `password-film/`: suspense science film — a hacker steals every password, they're useless: hashing = one-way blender, salt, slow blending → Orbi (code never leaves phone, 310,000×, hash of the proof, 12 tries, 30 min). First film on the kit

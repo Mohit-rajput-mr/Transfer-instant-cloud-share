@@ -1,0 +1,114 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Inside a four cylinder engine at three thousand revs, a hundred explosions go off every second. And you feel none of them. To see how, we have to cut one open.",
+   "dur": 10.381,
+   "at": 0.35
+  },
+  {
+   "key": "block",
+   "text": "This is a heavy metal block, with round tubes bored straight through it. Those are the cylinders. Inside each one, a piston. A metal plug that slides up and down, sealed by thin springy rings.",
+   "dur": 12.177,
+   "at": 11.23
+  },
+  {
+   "key": "crank",
+   "text": "Underneath, a connecting rod links the piston to the crankshaft. Push the piston down, and the crank swings round. Just like your leg pushing a bicycle pedal.",
+   "dur": 8.952,
+   "at": 23.86
+  },
+  {
+   "key": "head",
+   "text": "On top sits the head. Two little doors, called valves. One lets air in, one lets exhaust out. A spinning camshaft pushes them open, and springs snap them shut. And right in the middle, the spark plug.",
+   "dur": 13.265,
+   "at": 33.26
+  },
+  {
+   "key": "intake",
+   "text": "Now watch one cycle, slowed right down. Stroke one. Intake. The piston slides down, the intake valve opens, and it sucks in air, with a fine mist of fuel.",
+   "dur": 11.683,
+   "at": 47.03
+  },
+  {
+   "key": "comp",
+   "text": "Stroke two. Compression. Both valves shut. The piston rises, and squeezes that mixture into about a tenth of the space.",
+   "dur": 8.167,
+   "at": 59.16
+  },
+  {
+   "key": "power",
+   "text": "Stroke three. Power! The plug fires a spark of over twenty thousand volts. The mixture burns in a flash, hotter than two thousand degrees. The gas expands, and slams the piston down with the force of a few tonnes.",
+   "dur": 14.375,
+   "at": 67.78
+  },
+  {
+   "key": "exhaust",
+   "text": "Stroke four. Exhaust. The exhaust valve opens, and the piston shoves the burnt gas out, towards your tailpipe. Then it all starts again.",
+   "dur": 9.613,
+   "at": 82.65
+  },
+  {
+   "key": "turns",
+   "text": "Four strokes. Two full turns of the crankshaft. And only one of them makes power. So why doesn't the car jerk?",
+   "dur": 7.288,
+   "at": 92.76
+  },
+  {
+   "key": "four",
+   "text": "Because four cylinders take turns. One, three, four, two. While one fires, the others are breathing in, squeezing, and breathing out. There's always a piston pushing.",
+   "dur": 10.787,
+   "at": 100.5
+  },
+  {
+   "key": "fly",
+   "text": "A heavy flywheel on the end smooths out the rest. And the crank sends that spin through the gearbox, to your wheels.",
+   "dur": 6.307,
+   "at": 111.74
+  },
+  {
+   "key": "speed",
+   "text": "Now speed it up. At three thousand revs, every piston stops dead and reverses a hundred times a second. Each cylinder fires twenty five times a second.",
+   "dur": 9.443,
+   "at": 118.49
+  },
+  {
+   "key": "heat",
+   "text": "And here's the strange part. Most of the fuel never moves you at all. Roughly two thirds of its energy escapes as heat, out of the exhaust and the radiator.",
+   "dur": 9.208,
+   "at": 128.44
+  },
+  {
+   "key": "otto",
+   "text": "Nikolaus Otto built the first working four stroke engine in eighteen seventy six. Nearly a hundred and fifty years later, most petrol cars still run on his idea.",
+   "dur": 10.019,
+   "at": 138.15
+  },
+  {
+   "key": "orbi",
+   "text": "An engine never pushes in one giant bang. It splits the work, and fires in turns. Orbi Transfer sends big videos the same way.",
+   "dur": 8.76,
+   "at": 148.71
+  },
+  {
+   "key": "orbi2",
+   "text": "Drop in a video, up to twenty gigabytes. Orbi cuts it into parts, and sends three at once. If your signal drops, it carries on where it stopped.",
+   "dur": 9.575,
+   "at": 157.87
+  },
+  {
+   "key": "orbi3",
+   "text": "Send it from your phone, open it on your laptop. No login, no app, just a browser. It's locked on your phone before it leaves. And after thirty minutes, it burns.",
+   "dur": 8.035,
+   "at": 167.85
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. A hundred explosions a second, and you never felt one.",
+   "dur": 4.92,
+   "at": 176.48
+  }
+ ],
+ "duration": 184.0
+}

@@ -13,7 +13,7 @@ const TYPES = { ".js": "text/javascript", ".html": "text/html", ".json": "applic
   const page = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
   page.on("pageerror", (e) => console.log("pageerror", e.message));
   page.on("console", (m) => ["error","warning"].includes(m.type()) && console.log("console", m.text()));
-  await page.goto(`http://localhost:${port}/film.html`);
+  await page.goto(`http://localhost:${port}/film.html${process.env.RS ? `?rs=${process.env.RS}` : ""}`);
   await page.waitForFunction(() => window.ready === true, null, { timeout: 120000 });
   const dur = await page.evaluate(() => window.DURATION);
   const frames = a === "still" ? b.split(",").map((s) => Math.round(+s * FPS)) : Array.from({ length: Math.min(Math.round(dur * FPS), +b || Infinity) - +a }, (_, i) => +a + i);

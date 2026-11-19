@@ -41,8 +41,14 @@ def adsr(n, a, d, s_lvl, r):
 
 
 def lowpass(x, k):
+    # moving average, same output as np.convolve(x, ones(k)/k, "same") but O(n) (the convolve took ~30 min on a 3-min film)
     k = max(1, int(k))
-    return np.convolve(x, np.ones(k) / k, mode="same")
+    x = np.asarray(x, dtype=float)
+    a = (k - 1) // 2
+    p = np.concatenate([np.zeros(k), x, np.zeros(k)])
+    c = np.cumsum(p)
+    j = np.arange(len(x)) + a + k  # index of the window's last sample in p
+    return (c[j] - c[j - k]) / k
 
 
 # ---------------- music ----------------
@@ -186,6 +192,12 @@ for e in EV["events"]:
     elif k == "end":
         place(sfx, hit(), at, 0, 0.8)
         place(sfx, chime([69, 76, 81, 84, 88], 2.2, 0.18), at, 0)
+
+# film-specific sound design (optional): extra.wav, 48 kHz stereo, added to the effects before ducking
+import os
+if os.path.exists("extra.wav"):
+    w = wave.open("extra.wav"); x = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(float).reshape(-1, 2).T / 32768
+    sfx[:, : min(N, x.shape[1])] += x[:, :N] * float(os.environ.get("EXTRA_GAIN", "1"))
 
 # ---------------- voice ----------------
 vo = np.zeros(N)
