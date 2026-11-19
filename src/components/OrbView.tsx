@@ -312,7 +312,27 @@ export function OrbStats(props: { id: string; live: number; downloads: number; d
       <text dominantBaseline="central"><textPath href={`#${p}-${id}`}>{text}</textPath></text>
     </>
   );
+  const delProps = props.del
+    ? {
+        "data-destroy": "",
+        role: "button",
+        "aria-label": `Destroy ${props.del.name}`,
+        onPointerDown: props.onDelete ? (e: React.PointerEvent) => e.stopPropagation() : undefined,
+        onClick: props.onDelete ? (e: React.MouseEvent) => (e.stopPropagation(), props.onDelete!()) : undefined,
+      }
+    : null;
   return (
+    <>
+    {/* Work look (square tiles): the same three, as one straight row above the tile */}
+    <span className={`orb-statrow${props.live ? " hot" : ""}`} aria-hidden={false}>
+      <span className="sr-live"><i />{count(props.live)}</span>
+      <span className="sr-dl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d={ICON.down} /></svg>{count(props.downloads)}</span>
+      {delProps && (
+        <span className="sr-del" {...delProps} title="Destroy">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d={ICON.bin} /></svg>DELETE
+        </span>
+      )}
+    </span>
     <svg className={`orb-stats${props.live ? " hot" : ""}`} viewBox="-90 -90 180 180" aria-label={`${props.live} live, ${props.downloads} downloads`}>
       <g className="st live">
         <circle cx={polar(L, STAT_R)[0]} cy={polar(L, STAT_R)[1]} r={3.6} className="st-dot" />
@@ -335,6 +355,7 @@ export function OrbStats(props: { id: string; live: number; downloads: number; d
         </g>
       )}
     </svg>
+    </>
   );
 }
 
