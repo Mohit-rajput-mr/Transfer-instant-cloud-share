@@ -157,8 +157,18 @@ function Defaults({ user }: { user: User }) {
   const [locked, setLocked] = useState(p.prefs.locked ?? false);
   const [skin, setSkinS] = useState(p.prefs.skin ?? "");
   const [msg, setMsg] = useState("");
+  // hidden unless chosen (owner 2026-11-19); saved at once, on every device
+  const [show, setShow] = useState(p.prefs.showName === true);
+  async function saveShow(on: boolean) {
+    setShow(on);
+    const cur = (user.user_metadata?.prefs ?? {}) as Record<string, unknown>;
+    const { data, error } = await auth.updateUser({ data: { prefs: { ...cur, showName: on } } });
+    if (error) return setMsg(error.message);
+    applyProfile(data.user);
+    setMsg(on ? "Your bubble name now shows on what you send." : "Your name is hidden on what you send.");
+  }
   async function save() {
-    const prefs = { life, max, locked, ...(skin ? { skin } : {}), ...(p.prefs.pal ? { pal: p.prefs.pal } : {}) };
+    const prefs = { life, max, locked, showName: show, ...(skin ? { skin } : {}), ...(p.prefs.pal ? { pal: p.prefs.pal } : {}) };
     const { data, error } = await auth.updateUser({ data: { prefs } });
     if (error) return setMsg(error.message);
     applyProfile(data.user);
@@ -170,6 +180,14 @@ function Defaults({ user }: { user: User }) {
   return (
     <section className="ac-card">
       <h2>How your files go out</h2>
+      <div className="ac-opt">
+        <span>Bubble name on my files</span>
+        <div>
+          {chip(!show, "Hidden", () => void saveShow(false))}
+          {chip(show, "Shown", () => void saveShow(true))}
+        </div>
+      </div>
+      <p className="ac-sub">{show ? `Everyone sees ${p.handle || "your bubble name"} on what you send, notes and tasks too.` : "Nobody sees who sent your files, notes or tasks. Turn it on to show your bubble name."}</p>
       <p className="ac-sub">The starting choices for every send, on every device you log in on. You can still change them per send.</p>
       <div className="ac-opt"><span>Disappears in</span><div>{[5, 10, 15, 20, 25, 30].map((m) => chip(life === m, `${m}m`, () => setLife(m)))}</div></div>
       <div className="ac-opt"><span>Download limit</span><div>{[null, 1, 2, 3, 5, 10].map((m) => chip(max === m, m == null ? "∞" : String(m), () => setMax(m)))}</div></div>

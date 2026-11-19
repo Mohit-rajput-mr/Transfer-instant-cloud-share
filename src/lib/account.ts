@@ -6,7 +6,7 @@ import type { PlanId } from "./plans";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-export interface User { id: string; email: string | null; name: string | null; hue: number | null; session: string | null; /** when this session last entered an emailed code (s), or null */ codeAt: number | null }
+export interface User { id: string; email: string | null; name: string | null; hue: number | null; /** shows the bubble name on its files (off unless the user turned it on) */ showName: boolean; session: string | null; /** when this session last entered an emailed code (s), or null */ codeAt: number | null }
 export interface Account {
   plan: PlanId;
   paid: PlanId;
@@ -46,7 +46,7 @@ async function tokenUser(req: NextRequest | Request): Promise<User | null> {
   const m = u.user_metadata ?? {};
   const name = typeof m.name === "string" ? m.name : typeof m.full_name === "string" ? m.full_name : null;
   const hue = Number(m.hue);
-  return { id: u.id, email: u.email ?? null, name: name?.trim() || null, hue: Number.isInteger(hue) && hue >= 0 && hue < 360 ? hue : null, session: sessionOf(token), codeAt: codeAt(token) };
+  return { id: u.id, email: u.email ?? null, name: name?.trim() || null, hue: Number.isInteger(hue) && hue >= 0 && hue < 360 ? hue : null, showName: (m.prefs as { showName?: unknown } | undefined)?.showName === true, session: sessionOf(token), codeAt: codeAt(token) };
 }
 
 export const accountOf = (u: User) => rpc<Account>("orbit_account_get", { p_user: u.id, p_email: u.email ?? "" });
