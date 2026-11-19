@@ -6,6 +6,7 @@ import { LuBadgeCheck } from "react-icons/lu";
 import { auth, authFetch, useLogin } from "@/lib/auth";
 import { HUES, applyProfile, profileOf } from "@/lib/profile";
 import { SKINS } from "@/lib/skin-list";
+import { CodeStep } from "../login/LoginForm";
 import type { Perks, PlanId } from "@/lib/plans";
 
 type Acc = {
@@ -155,7 +156,7 @@ function Defaults({ user }: { user: User }) {
   const [skin, setSkinS] = useState(p.prefs.skin ?? "");
   const [msg, setMsg] = useState("");
   async function save() {
-    const prefs = { life, max, locked, ...(skin ? { skin } : {}) };
+    const prefs = { life, max, locked, ...(skin ? { skin } : {}), ...(p.prefs.pal ? { pal: p.prefs.pal } : {}) };
     const { data, error } = await auth.updateUser({ data: { prefs } });
     if (error) return setMsg(error.message);
     applyProfile(data.user);
@@ -202,19 +203,12 @@ function Security({ email }: { email: string }) {
     await auth.signOut({ scope: "global" });
     location.replace("/login");
   }
-  const [code, setCode] = useState("");
-  const [needCode, setNeedCode] = useState(false);
-  async function askDelete() {
-    setOpen("del");
-    const r = await authFetch("/api/account/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send" }) });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok) return setMsg({ t: d.error || "Couldn't send a code", err: true });
-    setNeedCode(!d.noCode);
-    if (!d.noCode) setMsg({ t: `We emailed a code to ${email} to confirm.` });
-  }
+  // deleting needs a fresh emailed code (the server checks it was entered in the last 15 minutes)
+  const [confirming, setConfirming] = useState(false);
   async function del() {
-    const r = await authFetch("/api/account/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete", code }) });
+    const r = await authFetch("/api/account/delete", { method: "POST" });
     const d = await r.json().catch(() => ({}));
+    if (r.status === 403 && d.code) return setConfirming(true);
     if (!r.ok) return setMsg({ t: d.error || "Couldn't delete the account", err: true });
     await auth.signOut().catch(() => {});
     location.replace("/?deleted=1");
@@ -240,14 +234,14 @@ function Security({ email }: { email: string }) {
         {open === "del" ? (
           <>
             <span className="ac-sub">Delete {email} and everything it keeps (profile, history, synced data)? Files already sent burn on their own clock. Cancel a paid plan first.</span>
-            {needCode && <input className="ac-sel" inputMode="numeric" placeholder="6-digit code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ""))} />}
-            <button type="button" className="ac-btn danger" onClick={del} disabled={needCode && code.length !== 6}>Yes, delete my account</button>
+            <button type="button" className="ac-btn danger" onClick={del}>Yes, delete my account</button>
             <button type="button" className="ac-btn ghost" onClick={() => setOpen("")}>Cancel</button>
           </>
         ) : (
-          <button type="button" className="ac-link" onClick={askDelete}>Delete my account</button>
+          <button type="button" className="ac-link" onClick={() => setOpen("del")}>Delete my account</button>
         )}
       </div>
+      {confirming && <CodeStep email={email} why="delete your account" onBack={() => setConfirming(false)} onDone={() => (setConfirming(false), void del())} />}
       {msg && <p className={`ac-msg${msg.err ? " err" : ""}`} role="status">{msg.t}</p>}
     </section>
   );

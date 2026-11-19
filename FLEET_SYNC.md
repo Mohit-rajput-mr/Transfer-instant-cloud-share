@@ -19,6 +19,14 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-19 (owner: codes came from "Supabase Auth"; wants an email-code login like Claude; Style: white Apply top
+  right, nothing changes until Apply, saved to the account). CHANGED: login codes are now Supabase Auth email OTP
+  (signInWithOtp/verifyOtp); the server counts a session as logged in only when its JWT amr has otp (lib/otp.ts);
+  Resend + login_codes table dropped (039 is now only orbit_account_delete). /login: "Email code" (default, creates the
+  account on first use), "Password" (then a code), "Sign up"; Google then a code. Off switch: LOGIN_CODE=off.
+  Sender name/address = Supabase SMTP settings (owner: Gmail SMTP for transferorbi@gmail.com) + templates must show
+  {{ .Token }}. Style card: picks only mark a choice; Pop got a top-bar `action` (white Apply, stays while scrolling);
+  Apply sets skin+palette and saves prefs.skin/pal to the user (lib/profile.ts applies them on every device).
 - 2026-11-19 (owner: "admin pages separate + secured; profile page with more; name+colour on my bubbles; OTP on every
   login"). DONE: every /admin page checks the HQ cookie ON THE SERVER (lib/admin-page.ts adminIn) and sends only the
   sign-in otherwise; Users, Payments, Void are now their own pages (/admin/users, /admin/payments, /admin/void; nav in

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, type CSSProperties } from "react";
+import { auth } from "@/lib/auth";
 import { LuCheck, LuMonitorSmartphone, LuTicket } from "react-icons/lu";
 import { Pop } from "./Spaces";
 import { KindBadge } from "./OrbView";
@@ -33,9 +34,20 @@ export default function StylePicker(props: { onClose: () => void; toast: (m: str
   const [code, setCode] = useState<string | null>(null);
   const [typed, setTyped] = useState("");
   useEffect(() => setSync(deviceSync()), []);
+  // picking only marks a choice in this card; nothing on the void changes until Apply (top right, owner 2026-11-19).
+  // Apply sets it here and, logged in, keeps it with the account (every device you log in on gets it)
+  const [sel, setSel] = useState({ skin, pal });
+  const apply = async () => {
+    setSkin(sel.skin);
+    setPalette(sel.pal);
+    props.toast(`Style applied: ${skinName(sel.skin)}`);
+    const { data } = await auth.getSession();
+    const prefs = (data.session?.user.user_metadata?.prefs ?? {}) as Record<string, unknown>;
+    if (data.session) await auth.updateUser({ data: { prefs: { ...prefs, skin: sel.skin, pal: sel.pal } } }).catch(() => null);
+  };
 
   const pick = (id: string) => {
-    setSkin(id);
+    setSel((x) => ({ ...x, skin: id }));
     setCode(null);
   };
   const toggleSync = async () => {
@@ -56,23 +68,26 @@ export default function StylePicker(props: { onClose: () => void; toast: (m: str
   const redeem = async () => {
     const id = await redeemStyleCode(typed);
     props.toast(id ? `Style applied: ${skinName(id)}` : "That code didn't work");
-    if (id) setTyped("");
+    if (id) {
+      setTyped("");
+      setSel((x) => ({ ...x, skin: id }));
+    }
   };
 
   return (
-    <Pop label="Style" onClose={props.onClose} className="style-pop">
+    <Pop label="Style" onClose={props.onClose} className="style-pop" action={{ label: "Apply", onClick: () => void apply() }}>
       <div className="style-now">
-        <Sample id={skin} i={1} pal={pal} size={58} />
+        <Sample id={sel.skin} i={1} pal={sel.pal} size={58} />
         <div>
-          <span className="mono dim">How files look</span>
-          <div className="wide style-name">{skinName(skin)}</div>
+          <span className="mono dim">{sel.skin === skin && sel.pal === pal ? "How files look" : "Picked · press Apply"}</span>
+          <div className="wide style-name">{skinName(sel.skin)}</div>
         </div>
       </div>
       <section className="style-group">
         <span className="mono dim">Colours</span>
         <div className="seg style-pal" role="radiogroup" aria-label="Colours">
           {PALETTES.map((p) => (
-            <button key={p.id} role="radio" aria-checked={pal === p.id} className={pal === p.id ? "on" : ""} onClick={() => setPalette(p.id)} title={p.note}>
+            <button key={p.id} role="radio" aria-checked={sel.pal === p.id} className={sel.pal === p.id ? "on" : ""} onClick={() => setSel((x) => ({ ...x, pal: p.id }))} title={p.note}>
               <i className={`pal-dot ${p.id}`} aria-hidden />{p.name}
             </button>
           ))}
@@ -83,10 +98,10 @@ export default function StylePicker(props: { onClose: () => void; toast: (m: str
           <span className="mono dim">{g}</span>
           <div className="style-grid">
             {SKINS.filter((s) => s.group === g).map((s, i) => (
-              <button key={s.id} className={`style-tile lg-press${s.id === skin ? " on" : ""}`} onClick={() => pick(s.id)} aria-pressed={s.id === skin} aria-label={`${s.name} style`}>
-                <Sample id={s.id} i={i + g.length} pal={pal} />
+              <button key={s.id} className={`style-tile lg-press${s.id === sel.skin ? " on" : ""}`} onClick={() => pick(s.id)} aria-pressed={s.id === sel.skin} aria-label={`${s.name} style`}>
+                <Sample id={s.id} i={i + g.length} pal={sel.pal} />
                 <b>{s.name}</b>
-                {s.id === skin && <i className="style-check" aria-hidden><LuCheck /></i>}
+                {s.id === sel.skin && <i className="style-check" aria-hidden><LuCheck /></i>}
               </button>
             ))}
           </div>
@@ -114,7 +129,7 @@ export default function StylePicker(props: { onClose: () => void; toast: (m: str
         </div>
         <div className="style-redeem">
           <input className="line-input" value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Have a code? ORBI-…" maxLength={11} autoComplete="off" onKeyDown={(e) => e.key === "Enter" && redeem()} />
-          <button className="pill lg-press" disabled={typed.trim().length < 6} onClick={redeem}>Apply</button>
+          <button className="pill lg-press" disabled={typed.trim().length < 6} onClick={redeem}>Use code</button>
         </div>
       </section>
     </Pop>
