@@ -280,8 +280,8 @@ import { bubbleLayout } from "@/lib/layout";
 const KIND_ICON = { photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive, other: LuFile } as const;
 /** what kind of file it is (photo, video, document, audio, archive), as a small badge on the ball */
 // the arc beside a ball: three parts, in degrees clockwise from 12 o'clock, between two radii (ball radius = 50)
-const ARC: [number, number][] = [[10, 40], [44, 74], [78, 108]];
-const ARC_IN = 56, ARC_OUT = 75, ARC_MID = (ARC_IN + ARC_OUT) / 2;
+const ARC: [number, number][] = [[12, 38], [45, 71], [78, 104]];
+const ARC_IN = 56, ARC_OUT = 72, ARC_MID = (ARC_IN + ARC_OUT) / 2;
 const polar = (deg: number, r: number): [number, number] => {
   const a = ((deg - 90) * Math.PI) / 180;
   return [Math.round(r * Math.cos(a) * 100) / 100, Math.round(r * Math.sin(a) * 100) / 100];
@@ -293,7 +293,7 @@ const sector = (a0: number, a1: number, inset = 0) => {
   const [x0, y0] = polar(d0, r1), [x1, y1] = polar(d1, r1), [x2, y2] = polar(d1, r0), [x3, y3] = polar(d0, r0);
   return `M${x0} ${y0}A${r1} ${r1} 0 0 1 ${x1} ${y1}L${x2} ${y2}A${r0} ${r0} 0 0 0 ${x3} ${y3}Z`;
 };
-const ARC_ROUND = 3.5;
+const ARC_ROUND = 3;
 
 export function KindBadge(props: { kind: string }) {
   const I = KIND_ICON[props.kind as keyof typeof KIND_ICON];
@@ -832,7 +832,7 @@ export default function OrbView(props: {
                   {/* the rim (light edge) and the body, both round-joined: soft corners */}
                   <path className="rim" d={sector(seg[0], seg[1], ARC_ROUND)} strokeWidth={ARC_ROUND * 2 + 1.8} />
                   <path className="body" d={sector(seg[0], seg[1], ARC_ROUND)} strokeWidth={ARC_ROUND * 2} />
-                  <foreignObject x={cx - 14} y={cy - 14} width={28} height={28}>
+                  <foreignObject x={cx - 12} y={cy - 12} width={24} height={24}>
                     <span className="seg-in">
                       {i === 0 ? (
                         <><svg viewBox="0 0 16 16" aria-hidden><path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" strokeWidth="1.5"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg><b>{crowd(orb.views ?? 0)}</b></>

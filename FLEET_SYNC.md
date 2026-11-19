@@ -19,6 +19,11 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-19 (owner: "every bubble defaults to Classic; switching to Classic doesn't change"). Every browser drops
+  looks picked before 2026-11-19 once (lib/skins.ts RESET) and no longer pulls the computer-remembered look back:
+  Classic (Orbit, vivid) unless someone applies a style or their account carries one. Verified: an old browser with
+  ring+mono loads Classic; Apply Orbit turns its own "ring" ball into orbit and the server gets it. Arc a bit smaller
+  again (r 56–72, 26° parts, 7° gaps). RELEASE r-2026-11-19-classic-default (open tabs reload when idle).
 - 2026-11-19 ROOT CAUSE of "hide/show + style apply never reached floating files": .vercelignore had `live/` (meant
   for the root Cloudflare Worker) which also dropped src/app/api/account/live/ from every Vercel upload → 404. FIX:
   .vercelignore anchored to `/media/` `/live/`; route renamed /api/account/floating anyway. Rule: never name a route

@@ -21,6 +21,20 @@ const KEY = "orbit:skin";
 const PAL = "orbit:pal";
 const SYNC = "orbit:skin-device";
 const EVT = "orbit:skin";
+// Owner 2026-11-19: every ball starts Classic (Orbit, vivid). Looks picked before this date (often while testing) are
+// dropped once per browser, and the look remembered for the computer is no longer pulled back in: a style only
+// applies when someone picks it and presses Apply (or it comes with their account).
+const RESET = "orbit:look-reset";
+const RESET_V = "2026-11-19";
+if (typeof window !== "undefined") {
+  try {
+    if (localStorage.getItem(RESET) !== RESET_V) {
+      localStorage.removeItem(KEY);
+      localStorage.removeItem(PAL);
+      localStorage.setItem(RESET, RESET_V);
+    }
+  } catch {}
+}
 const get = (k: string) => {
   try {
     return localStorage.getItem(k);
@@ -103,7 +117,8 @@ export async function setDeviceSync(on: boolean) {
 
 /** a browser that never picked a style: the one remembered for this computer, if there is one */
 export async function findDeviceSkin(): Promise<string | null> {
-  if (isAnon() || pickedSkin() || pickedPalette()) return null;
+  // (Classic by default: the computer-wide look is not pulled back in any more, see RESET above)
+  if (isAnon() || pickedSkin() || pickedPalette() || get(RESET) === RESET_V) return null;
   const r = await prefsApi<{ prefs: { skin?: string; pal?: string } | null }>({ action: "find", traits: traits() });
   const id = r?.prefs?.skin;
   if (!validSkin(id)) return null;
