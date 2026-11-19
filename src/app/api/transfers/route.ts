@@ -86,8 +86,9 @@ export async function POST(req: NextRequest) {
   const mime = clean(b.mime, 120) || "application/octet-stream";
 
   const id = newId();
-  // a paying sender: the send goes in their history, and a long life must fit the storage they have left
-  if (user && account && plan !== "free" && !anon) {
+  // a logged-in sender: the send is recorded (history on paid plans; a long life must fit the storage left)
+  // (every logged-in send is recorded, Free too: renaming the bubble name renames what is still floating, migration 042)
+  if (user && account && !anon) {
     const ok = await rpc<string>("orbit_send_open", {
       p: { id, user: user.id, pool: account.pool, name: untagged(name), fileName, size, life: long || life, quota: perks.quota },
     }).catch(() => "ok");

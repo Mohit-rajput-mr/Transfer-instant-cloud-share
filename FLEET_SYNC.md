@@ -19,6 +19,11 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-19 (owner sketch): single ball = bubble name TOP LEFT (.orb-owner), three round buttons curving along the top
+  right (.orb-dots: views, downloads, and destroy if yours / live viewers if not; destroy keeps data-destroy), title +
+  size/time below; the stats pill and bottom-left trash are gone for single balls (containers unchanged). Renaming the
+  bubble name now renames what is still floating (042: orbit_handle_claim rewrites b= on live v=1 objects listed in
+  sends; every logged-in send is now recorded in sends, Free too). Verified: Playwright desktop + phone with mocked list.
 - 2026-11-19 (owner: "files show my profile name; names repeat — need a unique compulsory bubble name, Gmail-style
   suggestions"). ADDED bubble names (migration 040 handles + 041 HQ, APPLIED): unique a-z0-9._ 3-20, reserved words
   refused; /api/account/handle GET (free? + 3 suggestions from wanted/name/email) and POST (claim/change); the profile
