@@ -10,7 +10,7 @@ type Acc = { email: string | null; name: string | null; plan: string; paid: stri
 const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric" }) : "—");
 const money = (n: number, cur: string) => `${n.toFixed(2)} ${cur}`;
 
-export default function AdminPayments({ onClose }: { onClose: () => void }) {
+export default function AdminPayments({ onClose }: { onClose?: () => void }) {
   const [d, setD] = useState<{ payments: Pay[]; accounts: Acc[] } | null>(null);
   const [err, setErr] = useState("");
   const [view, setView] = useState<"payments" | "accounts">("payments");
@@ -48,7 +48,7 @@ export default function AdminPayments({ onClose }: { onClose: () => void }) {
           {err ? ` · ${err}` : ""}
         </span>
         <div>
-          <button className="pill" onClick={onClose}>Close ✕</button>
+          {onClose && <button className="pill" onClick={onClose}>Close ✕</button>}
         </div>
       </div>
       <div className="hq-filters">

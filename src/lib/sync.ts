@@ -107,6 +107,8 @@ export function cleanOrb(v: unknown, serverNow: number): Orb | null {
     skin: validSkin(o.skin) ? o.skin : null,
     thumb: o.thumb === true,
     anon: o.anon === true,
+    verified: o.verified === true,
+    byHue: Number.isInteger(o.byHue) && (o.byHue as number) >= 0 && (o.byHue as number) < 360 ? (o.byHue as number) : null,
   };
 }
 

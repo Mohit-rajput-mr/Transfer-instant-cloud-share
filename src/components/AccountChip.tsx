@@ -2,15 +2,20 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { LuUser } from "react-icons/lu";
-import { useSession } from "@/lib/auth";
+import { useLogin } from "@/lib/auth";
 import { startVaultSync } from "@/lib/vault";
+import { applyProfile } from "@/lib/profile";
 
 /** In the app (Classic, Work, the phone menu): "Log in" when signed out, your name when signed in. Logged in, what
  *  this device keeps (sent files, notes, tasks, spaces, trash) follows the account to every device (lib/vault.ts). */
 export default function AccountChip({ className, children }: { className?: string; children?: (label: string, signedIn: boolean) => React.ReactNode }) {
-  const session = useSession();
+  // logged in only once the login's emailed code was entered (lib/otp.ts)
+  const { session: raw, verified } = useLogin();
+  const session = verified ? raw : null;
   useEffect(() => {
-    if (session) startVaultSync();
+    if (!session) return;
+    applyProfile(session.user);
+    startVaultSync();
   }, [session]);
   const meta = session?.user.user_metadata ?? {};
   const name = (typeof meta.name === "string" && meta.name) || (typeof meta.full_name === "string" && meta.full_name) || "Account";

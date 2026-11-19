@@ -4107,3 +4107,7 @@ html:not(#_) .pop.anon-portal .ap-search input::placeholder { color: rgba(255,25
 
 /* the account chip in the app's top bar (components/AccountChip.tsx) */
 .nav .nav-acc { display: inline-flex; align-items: center; gap: 6px; }
+
+/* a logged-in account's name on its balls and containers: its colour, and a tick */
+.orb-by.acct { color: var(--by, #9fe6a0); display: inline-flex; align-items: center; gap: 3px; font-weight: 600; }
+.orb-by .acct-tick { width: 11px; height: 11px; flex: none; }

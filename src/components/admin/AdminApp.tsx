@@ -5,9 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatBytes } from "@/lib/client";
 import type { Layer, RouteLine } from "./Earth";
 import { took, when } from "./fmt";
-import AdminVoid from "./AdminVoid";
-import AdminPayments from "./AdminPayments";
-import AdminUsers from "./AdminUsers";
+import Login from "./AdminLogin";
 import AdminPeek from "./AdminPeek";
 import AdminPages from "./Pages";
 import History, { loadHistory, recLines, routeLines } from "./History";
@@ -170,46 +168,6 @@ export default function AdminApp() {
   return <Dashboard data={data} events={shown} now={now} since={since} onSince={setSince} onRefresh={load} onLogout={() => setAuth("locked")} />;
 }
 
-function Login({ onIn }: { onIn: () => void }) {
-  const [pw, setPw] = useState("");
-  const [err, setErr] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const submit = async () => {
-    if (!pw || busy) return;
-    setBusy(true);
-    setErr(null);
-    const r = await fetch("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw }) }).catch(() => null);
-    setBusy(false);
-    if (r?.ok) return onIn();
-    setErr((await r?.json().catch(() => null))?.error ?? "Could not reach HQ");
-    setPw("");
-  };
-  return (
-    <div className="hq-login">
-      <div className="drawer hq-card" role="dialog" aria-label="Admin login">
-        <div className="drawer-head">
-          <span className="mono dim">Mission HQ · restricted</span>
-          <Link href="/" className="x" aria-label="Close: back to the void">×</Link>
-        </div>
-        <div className="drawer-body" style={{ gridTemplateColumns: "1fr" }}>
-          <div className="col">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="hq-emblem" src="/brand/emblem.svg" alt="" width={606} height={561} />
-            <div className="wide d-title">Identify.</div>
-            <div className="field">
-              <label htmlFor="hq-pw"><span className="mono">Password</span></label>
-              <input id="hq-pw" className="line-input code-input" type="password" autoComplete="current-password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} />
-            </div>
-            {err && <p className="err">{err}</p>}
-            <div className="grow" />
-            <button className="cta" disabled={!pw || busy} onClick={submit}>{busy ? "Verifying…" : "Enter HQ →"}</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 const LAYERS: { id: Layer; label: string; dot: string }[] = [
   { id: "live", label: "Live now", dot: "#3dff8c" },
   { id: "exact", label: "Exact · live", dot: "#ff4fd8" },
@@ -221,7 +179,7 @@ const LAYERS: { id: Layer; label: string; dot: string }[] = [
   { id: "routes", label: "Transfer routes", dot: "linear-gradient(90deg,#59b8ff,#ffa045)" },
 ];
 
-type Expand = "history" | "void" | "payments" | "users" | "anon" | "activity" | "countries" | "objects" | "containers" | "cities" | "spaces" | "pins" | null;
+type Expand = "history" | "anon" | "activity" | "countries" | "objects" | "containers" | "cities" | "spaces" | "pins" | null;
 
 function Dashboard({ data, events, now, since, onSince, onRefresh, onLogout }: { data: Overview | null; events: Ev[]; now: number; since: string | null; onSince: (v: string | null) => void; onRefresh: () => void; onLogout: () => void }) {
   const [layers, setLayers] = useState<Set<Layer>>(new Set(["live", "exact", "exactSeen", "anon", "visitors", "uploads", "downloads", "routes"]));
@@ -332,9 +290,6 @@ function Dashboard({ data, events, now, since, onSince, onRefresh, onLogout }: {
         <AdminPages />
         <nav className="hq-tabs" aria-label="HQ sections">
           <button className={!expand ? "on" : ""} onClick={() => setExpand(null)}>Globe</button>
-          <button className={expand === "void" ? "on" : ""} onClick={() => setExpand("void")}>Void</button>
-          <button className={expand === "users" ? "on" : ""} onClick={() => setExpand("users")}>Users</button>
-          <button className={expand === "payments" ? "on" : ""} onClick={() => setExpand("payments")}>Payments</button>
           <button className={expand === "history" ? "on" : ""} onClick={() => setExpand("history")}>History</button>
           <button className={expand === "activity" ? "on" : ""} onClick={() => (setFocusCc(""), setExpand("activity"))}>Activity</button>
           <button className={expand === "countries" ? "on" : ""} onClick={() => setExpand("countries")}>Countries <b>{data?.topCountries.length ?? 0}</b></button>
@@ -517,10 +472,7 @@ function Dashboard({ data, events, now, since, onSince, onRefresh, onLogout }: {
           {data ? <Pins data={data} /> : <p className="mono dim">Loading…</p>}
         </div>
       )}
-      {expand === "void" && <AdminVoid onClose={() => setExpand(null)} />}
-      {expand === "payments" && <AdminPayments onClose={() => setExpand(null)} />}
-      {expand === "users" && <AdminUsers onClose={() => setExpand(null)} />}
-      {expand && expand !== "history" && expand !== "anon" && expand !== "void" && expand !== "payments" && expand !== "users" && expand !== "pins" && data && <Expanded kind={expand} data={data} events={events} focusCc={focusCc} onCountry={openCountry} spaces={spaceList ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} onPeek={setPeek} />}
+      {expand && expand !== "history" && expand !== "anon" && expand !== "pins" && data && <Expanded kind={expand} data={data} events={events} focusCc={focusCc} onCountry={openCountry} spaces={spaceList ?? []} now={now} onClose={() => setExpand(null)} onDestroy={destroy} onPeek={setPeek} />}
       {peek && <AdminPeek key={peek.id} t={peek} onClose={closePeek} />}
     </div>
   );
@@ -632,7 +584,7 @@ function Expanded({ kind, data, events, focusCc, onCountry, spaces, now, onClose
   return (
     <div className="hq-expand" role="dialog" aria-label="Details">
       <div className="hq-expand-head">
-        <b className="wide">{({ history: "History", activity: "Activity", countries: "Countries", objects: "Objects in orbit", containers: "Containers", cities: "Places", spaces: "Spaces", anon: "Anonymous", void: "Void", payments: "Payments", users: "Users", pins: "Globe pins" } as const)[kind]}</b>
+        <b className="wide">{({ history: "History", activity: "Activity", countries: "Countries", objects: "Objects in orbit", containers: "Containers", cities: "Places", spaces: "Spaces", anon: "Anonymous", pins: "Globe pins" } as const)[kind]}</b>
         <button className="pill" onClick={onClose}>Close ✕</button>
       </div>
       {kind === "objects" && (
