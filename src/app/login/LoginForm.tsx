@@ -33,7 +33,8 @@ export default function LoginForm() {
   }, [session]);
   useEffect(() => {
     if (!session || otp !== "done") return;
-    const named = typeof session.user.user_metadata?.name === "string" && session.user.user_metadata.name.trim();
+    const m = session.user.user_metadata ?? {};
+    const named = typeof m.name === "string" && m.name.trim() && typeof m.handle === "string" && m.handle;
     location.replace(named ? nextPath() : `/account?setup=1&next=${encodeURIComponent(nextPath())}`);
   }, [session, otp]);
 

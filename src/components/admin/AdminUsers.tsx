@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 // Data: /api/admin/users (migration 038). Refreshes every 30 s.
 
 type U = {
-  id: string; email: string | null; name: string | null; dob: string | null; avatar: string | null; providers: string[];
+  id: string; email: string | null; name: string | null; handle: string | null; dob: string | null; avatar: string | null; providers: string[];
   createdAt: string; lastLogin: string | null; confirmed: boolean; plan: string; team: boolean; synced: string | null; sends: number; paid: number;
 };
 type D = { total: number; newToday: number; new7: number; new30: number; loginsToday: number; active7: number; google: number; email: number; unconfirmed: number; paying: number; users: U[] };
@@ -46,7 +46,7 @@ export default function AdminUsers({ onClose }: { onClose?: () => void }) {
         (f === "google" && u.providers.includes("google")) ||
         (f === "email" && u.providers.includes("email")) ||
         (f === "unconfirmed" && !u.confirmed);
-      return ok && (!s || `${u.email} ${u.name ?? ""}`.toLowerCase().includes(s));
+      return ok && (!s || `${u.email} ${u.name ?? ""} ${u.handle ?? ""}`.toLowerCase().includes(s));
     });
   }, [d, f, q]);
 
@@ -82,7 +82,7 @@ export default function AdminUsers({ onClose }: { onClose?: () => void }) {
         <table className="mono" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead>
             <tr style={{ textAlign: "left", opacity: 0.7 }}>
-              <th>Name</th><th>Email</th><th>Age</th><th>Signs in with</th><th>Joined</th><th>Last login</th><th>Plan</th><th>Sends</th><th>Paid</th><th>Synced</th>
+              <th>Name</th><th>Bubble name</th><th>Email</th><th>Age</th><th>Signs in with</th><th>Joined</th><th>Last login</th><th>Plan</th><th>Sends</th><th>Paid</th><th>Synced</th>
             </tr>
           </thead>
           <tbody>
@@ -93,6 +93,7 @@ export default function AdminUsers({ onClose }: { onClose?: () => void }) {
                   {u.avatar ? <img src={u.avatar} alt="" width={22} height={22} style={{ borderRadius: "50%" }} referrerPolicy="no-referrer" /> : <span style={{ width: 22 }} />}
                   {u.name ?? <span className="dim">no profile yet</span>}
                 </td>
+                <td>{u.handle ?? "—"}</td>
                 <td>{u.email ?? "—"}{u.confirmed ? "" : " · unconfirmed"}</td>
                 <td>{age(u.dob)}</td>
                 <td>{u.providers.join(" + ") || "—"}</td>
