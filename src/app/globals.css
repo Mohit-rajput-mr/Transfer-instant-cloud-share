@@ -4149,15 +4149,15 @@ html:not(#_) .pop.anon-portal .ap-search input::placeholder { color: rgba(255,25
 .orb-arc .seg > path { stroke-linejoin: round; transition: fill .15s, stroke .15s; }
 .orb-arc .seg > .rim { fill: rgba(255,255,255,0.4); stroke: rgba(255,255,255,0.4); filter: drop-shadow(0 2px 5px rgba(0,0,0,0.6)); }
 .orb-arc .seg > .body { fill: rgb(28,31,40); stroke: rgb(28,31,40); }
-.orb-arc .seg-in { width: 32px; height: 32px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-  color: #fff; font-family: var(--mono); font-size: 11px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
-.orb-arc .seg-in svg { width: 13px; height: 13px; flex: none; }
+.orb-arc .seg-in { width: 28px; height: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  color: #fff; font-family: var(--mono); font-size: 9.5px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.orb-arc .seg-in svg { width: 11px; height: 11px; flex: none; }
 .orb-arc .seg-in b { font-weight: 600; }
 .orb-arc .seg.del { pointer-events: auto; cursor: pointer; }
 .orb-arc .seg.del > .rim { fill: rgba(255,90,90,0.6); stroke: rgba(255,90,90,0.6); }
 .orb-arc .seg.del > .body { fill: rgb(66,14,18); stroke: rgb(66,14,18); }
 .orb-arc .seg.del:hover > .body { fill: rgb(100,18,24); stroke: rgb(100,18,24); }
-.orb-arc .seg.del .seg-in svg { width: 16px; height: 16px; color: #ff5a5a; }
+.orb-arc .seg.del .seg-in svg { width: 13px; height: 13px; color: #ff5a5a; }
 .orb-arc .seg.live .b-live { width: 6px; height: 6px; }
 .orb-arc.hot .seg.live > .rim { fill: var(--live); stroke: var(--live); }
 .orb-arc.hot .seg.live .b-live { background: var(--live); box-shadow: 0 0 4px var(--live); }
