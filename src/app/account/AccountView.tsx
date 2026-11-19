@@ -81,7 +81,9 @@ export default function AccountView() {
   const prof = profileOf(session.user);
   // email sign-ups have no name until they fill in the profile (Google gives one)
   const named = typeof session.user.user_metadata?.name === "string" && session.user.user_metadata.name.trim();
-  if (!named || editing) return <Profile user={session.user} onDone={() => setEditing(false)} first={!named} />;
+  // a profile needs a name AND a unique bubble name (accounts from before bubble names are asked once)
+  const hasHandle = typeof session.user.user_metadata?.handle === "string" && !!session.user.user_metadata.handle;
+  if (!named || !hasHandle || editing) return <Profile user={session.user} onDone={() => setEditing(false)} first={!named || !hasHandle} />;
   const avatar = typeof session.user.user_metadata?.avatar_url === "string" ? session.user.user_metadata.avatar_url : "";
   return (
     <>
@@ -94,8 +96,8 @@ export default function AccountView() {
           <span className="ac-av" style={{ background: `hsl(${prof.hue ?? 140} 60% 35%)` }}>{prof.name.slice(0, 1).toUpperCase()}</span>
         )}
         <div style={{ minWidth: 0 }}>
-          <b className="ac-name" style={{ color: `hsl(${prof.hue ?? 140} 85% 72%)` }}>{prof.name} <LuBadgeCheck aria-label="your account" /></b>
-          <div className="ac-sub">{session.user.email}{acc ? <> · <span className={`ac-plan ${acc.plan}`}>{NAME[acc.plan]}</span></> : null}</div>
+          <b className="ac-name" style={{ color: `hsl(${prof.hue ?? 140} 85% 72%)` }}>{prof.handle} <LuBadgeCheck aria-label="your bubble name" /></b>
+          <div className="ac-sub">{prof.name} · {session.user.email}{acc ? <> · <span className={`ac-plan ${acc.plan}`}>{NAME[acc.plan]}</span></> : null}</div>
         </div>
         <button type="button" className="ac-btn ghost" onClick={() => setEditing(true)}>Edit profile</button>
       </section>
@@ -381,6 +383,24 @@ function Profile({ user, onDone, first }: { user: User; onDone: () => void; firs
   const [name, setName] = useState<string>((typeof meta.name === "string" && meta.name) || (typeof meta.full_name === "string" && meta.full_name) || "");
   const [dob, setDob] = useState<string>((typeof meta.dob === "string" && meta.dob) || "");
   const [hue, setHue] = useState<number>(Number.isInteger(Number(meta.hue)) ? Number(meta.hue) : 140);
+  // the bubble name: unique, required, checked as you type, with 3 free ones offered (migration 040)
+  const [handle, setHandle] = useState<string>(typeof meta.handle === "string" ? meta.handle : "");
+  const [check, setCheck] = useState<{ handle: string; available: boolean; suggestions: string[] } | null>(null);
+  useEffect(() => {
+    let on = true;
+    const t = setTimeout(() => {
+      authFetch(`/api/account/handle?h=${encodeURIComponent(handle)}`, { cache: "no-store" })
+        .then((r) => r.json())
+        .then((d) => on && !d.error && setCheck(d))
+        .catch(() => {});
+    }, 350);
+    return () => {
+      on = false;
+      clearTimeout(t);
+    };
+  }, [handle]);
+  const mine = typeof meta.handle === "string" && meta.handle === handle;
+  const valid = /^[a-z0-9][a-z0-9._]{1,18}[a-z0-9]$/.test(handle) && !/\.\.|__|\._|_\./.test(handle);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ t: string; err?: boolean } | null>(null);
   async function save(e: FormEvent) {
@@ -388,8 +408,16 @@ function Profile({ user, onDone, first }: { user: User; onDone: () => void; firs
     const n = name.replace(/\s+/g, " ").trim().slice(0, 60);
     if (n.length < 2) return setMsg({ t: "Please enter your name", err: true });
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dob) || dob > yearsAgo(13) || dob < "1900-01-01") return setMsg({ t: "Please enter a real date of birth (you must be 13 or older)", err: true });
+    if (!valid) return setMsg({ t: "Pick a bubble name: 3 to 20 letters, numbers, dots or underscores", err: true });
     setBusy(true);
-    const { data, error } = await auth.updateUser({ data: { name: n, dob, hue } });
+    const c = await authFetch("/api/account/handle", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ handle }) });
+    if (!c.ok) {
+      setBusy(false);
+      const d = await c.json().catch(() => ({}));
+      setCheck((x) => (x ? { ...x, available: false } : x));
+      return setMsg({ t: `${d.error || "That bubble name is taken"}. Pick one of the free ones below.`, err: true });
+    }
+    const { data, error } = await auth.updateUser({ data: { name: n, dob, hue, handle } });
     if (!error) applyProfile(data.user);
     setBusy(false);
     if (error) return setMsg({ t: error.message, err: true });
@@ -407,6 +435,33 @@ function Profile({ user, onDone, first }: { user: User; onDone: () => void; firs
         <input required autoComplete="name" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />
       </label>
       <label>
+        Bubble name · unique, everyone sees it on what you send
+        <input required autoComplete="username" maxLength={20} placeholder="e.g. mohit123" value={handle} onChange={(e) => (setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, "")), setMsg(null))} />
+      </label>
+      {handle && (
+        <p className={`ac-msg${!valid || (check?.handle === handle && !check.available && !mine) ? " err" : ""}`} style={{ margin: 0 }}>
+          {!valid
+            ? "3 to 20 letters, numbers, dots or underscores; starts and ends with a letter or number"
+            : mine
+              ? "This is your bubble name"
+              : check?.handle !== handle
+                ? "Checking…"
+                : check.available
+                  ? `${handle} is free`
+                  : `${handle} is taken`}
+        </p>
+      )}
+      {check && check.suggestions.length > 0 && (!handle || (check.handle === handle && !check.available && !mine)) && (
+        <div className="ac-opt">
+          <span>Free names</span>
+          <div>
+            {check.suggestions.map((x) => (
+              <button type="button" key={x} className="ac-chip" onClick={() => setHandle(x)}>{x}</button>
+            ))}
+          </div>
+        </div>
+      )}
+      <label>
         Date of birth
         <input type="date" required min="1900-01-01" max={yearsAgo(13)} autoComplete="bday" value={dob} onChange={(e) => setDob(e.target.value)} />
       </label>
@@ -419,7 +474,7 @@ function Profile({ user, onDone, first }: { user: User; onDone: () => void; firs
         </div>
       </div>
       <p className="ac-sub" style={{ margin: 0 }}>
-        On your files: <b style={{ color: `hsl(${hue} 85% 72%)` }}>{name.trim() || "Your name"} ✓</b> · everyone sees this name on what you send while logged in
+        On your files: <b style={{ color: `hsl(${hue} 85% 72%)` }}>{handle || "yourname"} ✓</b> · your profile name stays private to your account
       </p>
       <label>
         Email

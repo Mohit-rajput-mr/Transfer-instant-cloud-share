@@ -46,6 +46,8 @@ const write = (m: Record<string, string>) => {
   } catch {}
 };
 export const isMine = (id: string) => !!read()[id];
+/** an account's unique bubble name (migration 040): lower case letters, numbers, dots, underscores */
+export const isHandle = (s: string) => /^[a-z0-9][a-z0-9._]{1,18}[a-z0-9]$/.test(s);
 /** Is this a person's name, or something else typed into the name box (a note title, an address, a code)?
  *  A name: 1-24 characters, letters (any language) with spaces, dots, apostrophes or hyphens, at most 3 words, no digits.
  *  "Mohit", "Mary-Jane O'Neil", "Rajput M." pass; "24-51 LITTLE NECK REPLY", "comp 1", "a.b@c.com" don't. */
@@ -59,7 +61,7 @@ export const bubbleName = () => {
   if (isAnon()) return "";
   try {
     const v = localStorage.getItem(NAME) || "";
-    if (v && !looksLikeName(v)) {
+    if (v && !looksLikeName(v) && !isHandle(v)) {
       localStorage.removeItem(NAME);
       return "";
     }

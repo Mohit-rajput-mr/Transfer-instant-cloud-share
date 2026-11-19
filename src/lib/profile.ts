@@ -3,12 +3,12 @@
 // log in on: the name and colour their files and notes carry, and how their sends start (life, download limit,
 // passcode, style). Sending still works the same signed out.
 import type { User } from "@supabase/supabase-js";
-import { looksLikeName } from "./bubbles";
+import { isHandle } from "./bubbles";
 import { setPalette, setSkin } from "./skins";
 import { PALETTES, validSkin } from "./skin-list";
 
 export type Prefs = { life?: number; max?: number | null; locked?: boolean; skin?: string; pal?: string };
-export interface Profile { name: string; hue: number | null; dob: string; prefs: Prefs }
+export interface Profile { name: string; handle: string; hue: number | null; dob: string; prefs: Prefs }
 
 export const HUES = [0, 25, 45, 90, 140, 175, 200, 225, 265, 300, 330] as const;
 const LIVES = [5, 10, 15, 20, 25, 30];
@@ -25,7 +25,7 @@ export function profileOf(u: User | null | undefined): Profile {
   if (typeof p.locked === "boolean") prefs.locked = p.locked;
   if (validSkin(p.skin)) prefs.skin = p.skin as string;
   if (PALETTES.some((x) => x.id === p.pal)) prefs.pal = p.pal as string;
-  return { name: name.trim(), hue: Number.isInteger(hue) && hue >= 0 && hue < 360 ? hue : null, dob: typeof m.dob === "string" ? m.dob : "", prefs };
+  return { name: name.trim(), handle: typeof m.handle === "string" && isHandle(m.handle) ? m.handle : "", hue: Number.isInteger(hue) && hue >= 0 && hue < 360 ? hue : null, dob: typeof m.dob === "string" ? m.dob : "", prefs };
 }
 
 const put = (k: string, v: unknown) => {
@@ -38,9 +38,8 @@ const put = (k: string, v: unknown) => {
 export function applyProfile(u: User | null | undefined) {
   if (!u) return;
   const p = profileOf(u);
-  // notes and tasks are signed with the first name (≤ 24 letters, a name); uploads get the full account name on the server
-  const short = p.name.split(/\s+/).slice(0, 3).join(" ").slice(0, 24);
-  if (short && looksLikeName(short)) put("orbit:bubble-name", short);
+  // notes and tasks are signed with the account's unique bubble name (uploads get it on the server, from the database)
+  if (p.handle) put("orbit:bubble-name", p.handle);
   if (p.prefs.life != null) put("orbit:pref:life", p.prefs.life);
   if (p.prefs.max !== undefined) put("orbit:pref:max", p.prefs.max);
   if (p.prefs.locked !== undefined) put("orbit:pref:locked", p.prefs.locked);

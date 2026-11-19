@@ -22,6 +22,8 @@ export interface Account {
   owner: boolean;
   /** whose storage quota and history this user's sends count against */
   pool: string;
+  /** the unique bubble name (migration 040): the only name this account's files, notes and tasks carry */
+  handle: string | null;
 }
 
 /** The signed-in user behind the token, only once that session entered an emailed code (lib/otp.ts);
