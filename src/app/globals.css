@@ -4173,8 +4173,11 @@ html:not(#_) .pop.anon-portal .ap-search input::placeholder { color: rgba(255,25
 .orb-stats.hot .live text { fill: var(--live); }
 .orb-stats .del { color: #ff5a5a; pointer-events: auto; cursor: pointer; }
 .orb-stats .del text { fill: #ff5a5a; letter-spacing: .14em; }
-.orb-stats .del:hover text { fill: #ff8080; }
-.orb-stats .st-hit { fill: none; stroke: transparent; stroke-width: 18; pointer-events: stroke; }
+/* hover / press: the DELETE part turns into a red band with black text, so it is clear what a click does */
+.orb-stats .st-hit { fill: none; stroke: transparent; stroke-width: 19; stroke-linecap: round; pointer-events: stroke; transition: stroke .15s; }
+.orb-stats .del:hover .st-hit, .orb-stats .del:active .st-hit, .orb-stats .del:focus-visible .st-hit { stroke: #ff3b3b; }
+.orb-stats .del:hover, .orb-stats .del:active { color: #0a0a0a; }
+.orb-stats .del:hover text, .orb-stats .del:active text { fill: #0a0a0a; stroke: none; }
 .orb-anchor.burning .orb-stats { animation: vanish 0.35s ease-in both; }
 .world.far .orb-stats { opacity: 0; }
 /* a container's stats: the same plain line as the balls' (no box) */

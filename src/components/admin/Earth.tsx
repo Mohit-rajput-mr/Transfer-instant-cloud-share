@@ -330,10 +330,14 @@ export default function Earth({ data, layers, spin, routes }: { data: Overview |
           type: "circle",
           source: k,
           paint: {
-            "circle-radius": k === "visitors" ? 1.75 : 2.25, // pixels: identical at every zoom
+            // visitors: a white dot that grows with the number of devices at that spot (3 px for one, up to 9 px), so it
+            // shows around the "last GPS seen" pins drawn on top of the same cities (owner 2026-11-19: white dots unseen)
+            "circle-radius": k === "visitors" ? ["min", 9, ["+", 3, ["*", 1.4, ["ln", ["max", 1, ["get", "n"]]]]]] : 2.25,
             "circle-color": DOT[k],
-            "circle-stroke-color": "#000",
-            "circle-stroke-width": 0.5,
+            "circle-opacity": k === "visitors" ? 0.85 : 1,
+            "circle-blur": k === "visitors" ? 0.15 : 0,
+            "circle-stroke-color": k === "visitors" ? "rgba(255,255,255,0.35)" : "#000",
+            "circle-stroke-width": k === "visitors" ? 2 : 0.5,
             "circle-pitch-alignment": "viewport", // round from every angle
           },
         });
