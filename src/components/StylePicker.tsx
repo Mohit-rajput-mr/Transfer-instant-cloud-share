@@ -40,6 +40,8 @@ export default function StylePicker(props: { onClose: () => void; toast: (m: str
   const apply = async () => {
     setSkin(sel.skin);
     setPalette(sel.pal);
+    // what you still have floating takes the new style too, here and on every screen (Void listens)
+    window.dispatchEvent(new CustomEvent("orbi:restyle", { detail: sel.skin }));
     props.toast(`Style applied: ${skinName(sel.skin)}`);
     const { data } = await auth.getSession();
     const prefs = (data.session?.user.user_metadata?.prefs ?? {}) as Record<string, unknown>;

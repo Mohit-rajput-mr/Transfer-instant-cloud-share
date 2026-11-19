@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isHex, rpc, sha256, validId } from "@/lib/server";
-import { tagName, untag, validTask } from "@/lib/spaces";
+import { retagName, untag, validTask } from "@/lib/spaces";
 
 export const dynamic = "force-dynamic";
 
@@ -14,10 +14,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const item = await rpc<{ name?: unknown; expiresAt?: unknown } | null>("orbit_owner", { p_id: id, p_owner_hash: ownerHash });
   if (!item || typeof item.name !== "string") return NextResponse.json({ error: "gone" }, { status: 404 });
   const u = untag(item);
-  const name = tagName(String(u.name), {
-    space: u.space ?? undefined, by: u.by ?? undefined, life: u.life, open: u.open, from: u.from ?? undefined,
-    group: u.groupName ?? undefined, skin: u.skin ?? undefined, thumb: u.thumb, task: b.task ?? undefined, anon: u.anon,
-  });
+  // (every other tag stays: before, wiring dropped a paid long life and the account mark)
+  const name = retagName(u, { task: b.task ?? undefined });
   const ok = await rpc<boolean>("orbit_retag", { p_id: id, p_owner_hash: ownerHash, p_name: name });
   return ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: "gone" }, { status: 404 });
 }
