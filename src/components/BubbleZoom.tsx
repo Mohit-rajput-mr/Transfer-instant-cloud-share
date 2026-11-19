@@ -208,7 +208,7 @@ export default function BubbleZoom(props: {
                     <span key={k} className="sat" style={{ "--r": `calc(var(--zd) * 0.19 + ${6 + k * 5}px)`, "--t": `${5 + k * 1.7}s`, "--d": `-${k * 0.9}s` } as CSSProperties} aria-hidden />
                   ))}
                   {/* the stats along the orbit, the same as every ball in the void (OrbStats, design #31) */}
-                  <OrbStats from={34} id={`z${o.id}`} live={o.watchers ?? 0} views={o.views ?? 0} downloads={o.downloads} del={ownerKey(o.id) && props.onDestroy ? { name: o.name } : undefined} onDelete={() => props.onDestroy?.([o.id])} />
+                  <OrbStats from={34} id={`z${o.id}`} live={o.watchers ?? 0} downloads={o.downloads} del={ownerKey(o.id) && props.onDestroy ? { name: o.name } : undefined} onDelete={() => props.onDestroy?.([o.id])} />
                   {/* separate round icons pinned to the ball: grouped on the upper-left of the ring: download, lock, trash */}
                   <span className="zicons">
                     <span className={`ic lock${o.open ? " open" : ""}`} title={o.open ? "No password" : "Password needed"} aria-label={o.open ? "No password" : "Password needed"}>

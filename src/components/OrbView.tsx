@@ -301,10 +301,11 @@ const StatIcon = ({ d, a }: { d: string; a: number }) => {
   const [x, y] = polar(a, STAT_R);
   return <g transform={`translate(${x} ${y}) rotate(${a}) scale(0.5) translate(-12 -12)`} fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d={d} /></g>;
 };
-export function OrbStats(props: { id: string; live: number; views: number; downloads: number; del?: { name: string }; onDelete?: () => void; /** where the line starts, degrees from 12 o'clock */ from?: number }) {
+export function OrbStats(props: { id: string; live: number; downloads: number; del?: { name: string }; onDelete?: () => void; /** where the line starts, degrees from 12 o'clock */ from?: number }) {
   const p = `os-${props.id}`;
   // slots (degrees from 12 o'clock): live, opened, downloaded, delete
-  const L = props.from ?? 4, V = L + 30, D = V + 32, X = D + 32;
+  // (opened count dropped, owner 2026-11-19: live, downloaded, delete)
+  const L = props.from ?? 4, D = L + 32, X = D + 32;
   const word = (id: string, a0: number, a1: number, text: string) => (
     <>
       <defs><path id={`${p}-${id}`} d={arcD(STAT_R, a0, a1)} /></defs>
@@ -312,12 +313,11 @@ export function OrbStats(props: { id: string; live: number; views: number; downl
     </>
   );
   return (
-    <svg className={`orb-stats${props.live ? " hot" : ""}`} viewBox="-90 -90 180 180" aria-label={`${props.live} live, ${props.views} opened, ${props.downloads} downloads`}>
+    <svg className={`orb-stats${props.live ? " hot" : ""}`} viewBox="-90 -90 180 180" aria-label={`${props.live} live, ${props.downloads} downloads`}>
       <g className="st live">
         <circle cx={polar(L, STAT_R)[0]} cy={polar(L, STAT_R)[1]} r={3.6} className="st-dot" />
         {word("l", L + 6, L + 28, count(props.live))}
       </g>
-      <g className="st"><StatIcon d={ICON.eye} a={V} />{word("v", V + 8, V + 30, count(props.views))}</g>
       <g className="st"><StatIcon d={ICON.down} a={D} />{word("d", D + 8, D + 30, count(props.downloads))}</g>
       {props.del && (
         <g
@@ -830,9 +830,8 @@ export default function OrbView(props: {
               </div>
         {got && !up ? <span className="got-mark" aria-hidden><LuCheck /></span> : null}
         {/* the container's stats, in the same plain line style as a ball's (design #31): live, opened, downloaded */}
-        {!up && <span className={`grp-stats${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
+        {!up && <span className={`grp-stats${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.downloads} downloads`}>
           <span title="Live now"><i className="b-live" />{count(watchers)}</span>
-          <span title="Opened by"><svg viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d={ICON.eye} /></svg>{count(orb.views ?? 0)}</span>
           <span title="Downloads"><svg viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d={ICON.down} /></svg>{count(orb.downloads)}</span>
         </span>}
             </div>
@@ -863,7 +862,7 @@ export default function OrbView(props: {
           </span>
         ) : null}
         {/* the stats written along the orbit (owner's pick 2026-11-19: design #31 "curved text", line icons) */}
-        {!up && <OrbStats id={orb.id} live={watchers} views={orb.views ?? 0} downloads={orb.downloads} del={props.onDestroy && mine && phase !== "burning" ? { name: orb.name } : undefined} />}
+        {!up && <OrbStats id={orb.id} live={watchers} downloads={orb.downloads} del={props.onDestroy && mine && phase !== "burning" ? { name: orb.name } : undefined} />}
         {phase === "arriving" && <span className="shock" />}
         {Array.from({ length: Math.min(watchers, 4) }, (_, i) => (
           <span
