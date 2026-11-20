@@ -3842,14 +3842,19 @@ html:not(#_) .pop.anon-portal .ap-head p { font: 400 14px/1.45 var(--sans) !impo
 .ap-clock b { color: #eceef1; font-weight: 600; }
 .ap-clock b:last-child { color: #3ddc84; font-variant-numeric: tabular-nums; }
 
-/* how long: five squircle chips */
-.ap-time { display: grid; gap: 8px; }
+/* how long: five even squircle chips, the number over "min", centred (html:not(#_) beats the Pop's own button rules) */
+.ap-time { display: grid; gap: 10px; }
 .ap-time > span, .ap-field > span, .ap-saved > span { font: 600 11px/1 var(--sans); letter-spacing: 0.12em; text-transform: uppercase; color: #8d9297; }
-.ap-time > div { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-.ap-time button { height: 44px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.03); color: #d4d7db;
-  font: 700 16px/1 var(--sans); display: flex; align-items: baseline; justify-content: center; gap: 2px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
-.ap-time button small { font-size: 10px; font-weight: 500; opacity: 0.6; }
-.ap-time button.on { background: #eceef1; color: #060708; border-color: #eceef1; }
+.ap-time > div { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+html:not(#_) .pop.anon-portal .ap-time button { all: unset; box-sizing: border-box; height: 56px; min-width: 0; padding: 0; border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.03); color: #e4e6e9; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center;
+  font: 700 18px/1 var(--sans); font-variant-numeric: tabular-nums; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+html:not(#_) .pop.anon-portal .ap-time button small { display: block; font: 600 9px/1 var(--sans); letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.55; }
+html:not(#_) .pop.anon-portal .ap-time button:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.24); }
+html:not(#_) .pop.anon-portal .ap-time button:focus-visible { outline: 2px solid rgba(255,255,255,0.6); outline-offset: 2px; }
+html:not(#_) .pop.anon-portal .ap-time button.on { background: #eceef1; color: #060708; border-color: #eceef1; }
+html:not(#_) .pop.anon-portal .ap-time button.on small { opacity: 0.6; }
 
 /* the three choices */
 .ap-opts { display: grid; gap: 8px; }
@@ -3910,7 +3915,8 @@ html:not(#_) .pop.anon-portal .ap-search input::placeholder { color: rgba(255,25
 @media (max-width: 420px) {
   .ap-opt { padding: 10px 12px 10px 10px; grid-template-columns: 40px 1fr 16px; }
   .ap-opt > i { width: 40px; height: 40px; }
-  .ap-time button { height: 40px; font-size: 15px; }
+  html:not(#_) .pop.anon-portal .ap-time button { height: 50px; font-size: 16px; }
+  .ap-time > div { gap: 6px; }
 }
 
 /* =====================================================================

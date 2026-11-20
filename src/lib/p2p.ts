@@ -10,7 +10,7 @@ import { supabase, type RealtimeChannel } from "./realtime";
 import { chunkCount, encryptChunk } from "./crypto";
 import { stayAwake } from "./wake";
 import { isAnon } from "./anon";
-import { acquire, netCongested } from "./net";
+import { acquire } from "./net";
 
 const ICE: RTCIceServer[] = [
   { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] },
@@ -166,18 +166,14 @@ async function serveLane(h: Held, s: Session, dc: RTCDataChannel, frame: number)
   const send = sendOver(dc);
   let cur = -1;
   try {
-    const { far } = await s.turn!;
+    await s.turn!;
     for (;;) {
       cur = await claim(s);
       if (cur < 0) return;
-      const t = performance.now();
       const enc = await sealChunk(h, cur, s.total);
       await send(JSON.stringify({ c: cur, n: enc.length, t: s.total }));
       for (let off = 0; off < enc.length; off += frame) await send(enc.subarray(off, off + frame));
       cur = -1;
-      // the line is choking (the upload watch, lib/net.ts): over the internet, leave room after each chunk for
-      // everything else, in proportion to how long it took to go out
-      if (far && netCongested()) await new Promise((r) => setTimeout(r, Math.min(5000, Math.max(300, (performance.now() - t) / 2))));
     }
   } catch {
     // the lane dropped mid-chunk: another lane sends it
