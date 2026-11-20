@@ -41,14 +41,14 @@ const chairB = fit(chairG.scene.clone()); chairB.position.copy(DESK.B).add(V(0, 
   const l = fit(lampG.scene); l.scale.setScalar(0.85); l.position.copy(DESK.B).add(V(0.48, DH + 0.07, -0.25)); l.rotation.y = -0.6; ROOM.add(l);
   const n = fit(padsG.scene); n.position.copy(DESK.A).add(V(0.42, DH, 0.12)); n.rotation.y = 0.3; ROOM.add(n);
   const b = fit(binderG.scene); b.position.copy(DESK.B).add(V(-0.45, DH, 0.05)); b.rotation.y = -0.2; ROOM.add(b);
-  for (const x of [-1.2, 1.2]) { const c = fit(ceilG.scene.clone()); c.position.set(x, 2.6, -0.1); ROOM.add(c); const pl = new THREE.PointLight(0xffe2c0, 3.5, 6, 2); pl.position.set(x, 2.3, 0); ROOM.add(pl); } }
+  for (const x of [-1.2, 1.2]) { const c = fit(ceilG.scene.clone()); c.position.set(x, 2.6, -0.1); ROOM.add(c); const pl = new THREE.PointLight(0xffe2c0, 9, 7, 1.6); pl.position.set(x, 2.3, 0); ROOM.add(pl); } }
 // a monitor: thin bezel, glass, curved back, neck + foot; its screen is a canvas (1440×900) the film draws captures into
 function monitor() {
   const g = new THREE.Group(), t = H.canvasTex(1440, 900, () => {});
   const shell = metal(0x26282c, 0.35);
   const body = sh(new THREE.Mesh(new RoundedBoxGeometry(0.64, 0.4, 0.022, 4, 0.01), shell)); body.position.y = 0.43; g.add(body);
   const backB = sh(new THREE.Mesh(new RoundedBoxGeometry(0.42, 0.26, 0.05, 4, 0.03), shell)); backB.position.set(0, 0.42, -0.03); g.add(backB);
-  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.615, 0.384), new THREE.MeshBasicMaterial({ map: t, toneMapped: false, color: 0xd8d8d8 })); scr.position.set(0, 0.43, 0.0115); g.add(scr);
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.615, 0.384), new THREE.MeshBasicMaterial({ map: t, toneMapped: false, color: 0xb4b4b4 })); scr.position.set(0, 0.43, 0.0115); g.add(scr);
   const gls = new THREE.Mesh(new THREE.PlaneGeometry(0.615, 0.384), new THREE.MeshPhysicalMaterial({ color: 0x000000, transparent: true, opacity: 0.1, roughness: 0.04, clearcoat: 1 })); gls.position.set(0, 0.43, 0.0121); g.add(gls);
   const neck = sh(new THREE.Mesh(new RoundedBoxGeometry(0.05, 0.3, 0.02, 2, 0.008), metal(0xb8bcc0, 0.25))); neck.position.set(0, 0.17, -0.06); neck.rotation.x = -0.12; g.add(neck);
   const foot = sh(new THREE.Mesh(new RoundedBoxGeometry(0.24, 0.012, 0.17, 3, 0.005), metal(0xb8bcc0, 0.25))); foot.position.set(0, 0.006, -0.04); g.add(foot);
@@ -67,15 +67,18 @@ const screenLA = new THREE.PointLight(0x9fc8ff, 0.6, 2.5, 2), screenLB = new THR
 const A = standardLayers(await loadAnatomy()); scene.add(A.root);
 A.mat.shirt.color.set(0x2e3540); A.mat.shorts.color.set(0x23262b); A.mat.shoes.color.set(0xe6e4de);
 const B2 = A.root.clone(); scene.add(B2); // a second seated person (same pose)
-const SIT = { hipL: [-88, 0, 4], hipR: [-88, 0, -4], knL: [86, 0, 0], knR: [86, 0, 0], shL: [-42, 0, 10], shR: [-42, 0, -10], elL: [-62, 0, 0], elR: [-62, 0, 0], head: [6, 0, 0], chest: [4, 0, 0] };
+const SIT = { hipL: [-88, 0, 4], hipR: [-88, 0, -4], knL: [86, 0, 0], knR: [86, 0, 0], shL: [-16, 0, 7], shR: [-16, 0, -7], elL: [-82, 0, 0], elR: [-82, 0, 0], head: [8, 0, 0], chest: [4, 0, 0] };
 const seat = (root, D) => { root.position.copy(D).add(V(0, -0.36, 0.86)); root.rotation.set(0, Math.PI, 0); };
 // mask: the scanned head (Lee Perry-Smith), porcelain white, over the face; a dark hood
 const headG = await gltf("kit/models/head/LeePerrySmith.glb"); const MASK = headG.scene.children[0] || headG.scene;
-MASK.material = new THREE.MeshPhysicalMaterial({ color: 0xf1efe9, roughness: 0.32, clearcoat: 0.6, clearcoatRoughness: 0.2, sheen: 0.3 }); scene.add(MASK); MASK.visible = false;
-{ MASK.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(MASK); MASK.scale.multiplyScalar(0.235 / bb.getSize(V()).y); MASK.castShadow = true; }
-const HOOD = new THREE.Mesh(new THREE.SphereGeometry(0.135, 48, 32, 0, TAU, 0, Math.PI * 0.62), new THREE.MeshPhysicalMaterial({ color: 0x15171a, roughness: 0.9, sheen: 0.6, sheenColor: new THREE.Color(0x40444a), normalMap: tex("kit/ph/denim_fabric/denim_fabric_nor_gl_1k.jpg", false, 4, 4), side: THREE.DoubleSide })); HOOD.castShadow = true; scene.add(HOOD); HOOD.visible = false;
-function maskOn(root, k) { MASK.visible = HOOD.visible = k; if (!k) return; const hp = root.localToWorld(A.root.worldToLocal(A.at(V(0, 1.6, 0.0)))); const fwd = V(0, 0, 1).applyQuaternion(root.quaternion);
-  MASK.position.copy(hp).addScaledVector(fwd, 0.035).add(V(0, -0.015, 0)); MASK.quaternion.copy(root.quaternion); HOOD.position.copy(hp).addScaledVector(fwd, -0.02).add(V(0, 0.01, 0)); HOOD.quaternion.copy(root.quaternion); HOOD.rotateX(-0.5); }
+MASK.material = new THREE.MeshPhysicalMaterial({ color: 0xbdb9b1, roughness: 0.45, clearcoat: 0.3, clearcoatRoughness: 0.3 }); scene.add(MASK); MASK.visible = false;
+{ { const g = MASK.geometry.index ? MASK.geometry.toNonIndexed() : MASK.geometry; g.computeBoundingBox(); const bb = g.boundingBox, cut = bb.min.y + (bb.max.y - bb.min.y) * 0.3, back = bb.min.z + (bb.max.z - bb.min.z) * 0.45; const P = g.attributes.position, keep = [];
+    for (let i = 0; i < P.count; i += 3) { let ok = true; for (let j = 0; j < 3; j++) if (P.getY(i + j) < cut || P.getZ(i + j) < back) ok = false; if (ok) keep.push(i); }
+    const ng = new THREE.BufferGeometry(); for (const name of Object.keys(g.attributes)) { const A0 = g.attributes[name], n = A0.itemSize, arr = new Float32Array(keep.length * 3 * n); keep.forEach((i, k) => { for (let j = 0; j < 3; j++) for (let c = 0; c < n; c++) arr[(k * 3 + j) * n + c] = A0.array[(i + j) * n + c]; }); ng.setAttribute(name, new THREE.BufferAttribute(arr, n)); } MASK.geometry = ng; }
+  MASK.material.side = THREE.DoubleSide; MASK.geometry.center(); MASK.position.set(0, 0, 0); MASK.rotation.set(0, 0, 0); MASK.scale.setScalar(1); MASK.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(MASK); MASK.scale.setScalar(0.215 / bb.getSize(V()).y); MASK.castShadow = true; }
+const HOOD = new THREE.Mesh(new THREE.SphereGeometry(0.112, 48, 32, 0, TAU, 0, Math.PI * 0.55), new THREE.MeshPhysicalMaterial({ color: 0x15171a, roughness: 0.9, sheen: 0.6, sheenColor: new THREE.Color(0x40444a), normalMap: tex("kit/ph/denim_fabric/denim_fabric_nor_gl_1k.jpg", false, 4, 4), side: THREE.DoubleSide })); HOOD.castShadow = true; scene.add(HOOD); HOOD.visible = false;
+function maskOn(root, k) { MASK.visible = HOOD.visible = k; if (!k) return; const hp = root.localToWorld(A.root.worldToLocal(A.at(V(0, 1.6, 0.02)))); const fwd = V(0, 0, 1).applyQuaternion(root.quaternion);
+  MASK.position.copy(hp).addScaledVector(fwd, 0.045); MASK.quaternion.copy(root.quaternion); HOOD.position.copy(hp).addScaledVector(fwd, -0.03).add(V(0, 0.02, 0)); HOOD.quaternion.copy(root.quaternion); HOOD.rotateX(-0.75); }
 
 // ---------- floating glass cards (the problems / what people want) ----------
 function card(w, h, draw, pxw = 640) { const t = H.canvasTex(pxw, Math.round(pxw * h / w), (g, cw, ch) => draw(g, cw, ch));
@@ -115,7 +118,7 @@ const hideCards = () => [...PROB, ...PROB2, ...HIDDEN, ...WORKP, ...WANT].forEac
 
 // ---------- the file ball, beams, locks, embers ----------
 const ballTex = (label, hue) => H.canvasTex(256, 256, (g, w, h) => { const gr = g.createRadialGradient(90, 80, 10, 128, 128, 140); gr.addColorStop(0, `hsl(${hue},80%,78%)`); gr.addColorStop(0.6, `hsl(${hue},70%,42%)`); gr.addColorStop(1, `hsl(${hue},70%,18%)`); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.fillStyle = "#fff"; font(g, 64); g.textAlign = "center"; g.fillText(label, 128, 150); });
-const BALL = sh(new THREE.Mesh(new THREE.SphereGeometry(0.07, 48, 32), new THREE.MeshPhysicalMaterial({ map: ballTex("MP4", 95), roughness: 0.15, clearcoat: 1, emissive: new THREE.Color(0x1a3d10) }))); scene.add(BALL); BALL.visible = false;
+const BALL = sh(new THREE.Mesh(new THREE.SphereGeometry(0.07, 48, 32), new THREE.MeshPhysicalMaterial({ map: ballTex("MP4", 95), roughness: 0.25, clearcoat: 1 }))); scene.add(BALL); BALL.visible = false;
 const NDOT = 60, DOTS = new THREE.InstancedMesh(new THREE.SphereGeometry(0.008, 10, 8), glow(0x3dff8c, 3), NDOT); DOTS.frustumCulled = false; scene.add(DOTS);
 function beam(a, b, t, k, arc = 0.25) { DOTS.visible = k > 0; if (!DOTS.visible) return; const m4 = new THREE.Matrix4(); for (let i = 0; i < NDOT; i++) { const u = ((i / NDOT) + t * 0.6) % 1; const p = a.clone().lerp(b, u); p.y += Math.sin(u * Math.PI) * arc; const s = k * (u < 0.05 || u > 0.95 ? 0.4 : 1); m4.makeScale(s, s, s).setPosition(p); DOTS.setMatrixAt(i, m4); } DOTS.instanceMatrix.needsUpdate = true; }
 const LOCK = makeLock(); LOCK.scale.setScalar(0.25); scene.add(LOCK); LOCK.visible = false;
@@ -136,7 +139,7 @@ const PH = makePhone(0x1d1f22); PH.g.scale.setScalar(0.09); scene.add(PH.g); PH.
 // ---------- screens: the real captures + live overlays ----------
 const SHOT = {}; for (const k of ["d-nearby", "d-wifi", "d-share", "d-anon-card", "d-anon-create", "d-anon-space", "d-anon-find2", "d-anon-joined-A", "d-anon-joined-B", "d-anon-send-opts", "d-anon-sent-A", "d-anon-arrive-B", "d-anon-pw-B", "d-anon-done-B", "w-space", "w-tasks", "w-arranged", "w-task-detail", "d-off-got"]) SHOT[k] = await img(`shots/${k}.png`);
 for (const k of ["p-object", "p-nearby", "p-off-offer", "p-off-sent"]) SHOT[k] = await img(`shots/${k}.png`);
-function drawMon(g, st) { const im = SHOT[st.k]; g.fillStyle = "#000"; g.fillRect(0, 0, 1440, 900); if (im) g.drawImage(im, 0, 0, 1440, 900);
+function drawMon(g, st) { const im = SHOT[st.k]; g.fillStyle = "#000"; g.fillRect(0, 0, 1440, 900); if (im) { g.globalAlpha = /^w-|off/.test(st.k) ? 0.78 : 1; g.drawImage(im, 0, 0, 1440, 900); g.globalAlpha = 1; }
   if (st.cursor) { const [x, y] = st.cursor; g.fillStyle = "#fff"; g.strokeStyle = "#000"; g.lineWidth = 3; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 34); g.lineTo(x + 9, y + 26); g.lineTo(x + 16, y + 40); g.lineTo(x + 22, y + 37); g.lineTo(x + 15, y + 24); g.lineTo(x + 27, y + 24); g.closePath(); g.fill(); g.stroke(); }
   if (st.ring) { const [x, y, r, a] = st.ring; g.strokeStyle = `rgba(61,255,140,${a})`; g.lineWidth = 6; g.beginPath(); g.arc(x, y, r, 0, 7); g.stroke(); }
   if (st.beam != null) { // the sender sees the receiver download: dots stream from the file into their ball (the Beam view)
@@ -172,7 +175,7 @@ hudEl("paper", `<div style="width:${W}px;text-align:center;font:700 ${LAND ? 26 
 const Aface = (root) => root.localToWorld(A.root.worldToLocal(A.at(V(0, 1.55, 0.05))));
 function look2(t, a, b, P0, T0, F0, P1, T1, F1) { move(t, a, b, [P0, T0, F0], [P1, T1, F1]); }
 const OV = (D) => D.clone().add(V(0, DH + 0.42, -0.2)); // monitor centre
-function dayLight() { H.envK.value = 0.55; H.key.intensity = 1.8; H.key.color.set(0xfff1e0); H.key.position.set(3, 6, 4); H.key.target.position.set(0, 0.6, 0); H.hemi.intensity = 0.35; H.rimA.intensity = 0.8; H.rimB.intensity = 0.6; H.bloom.strength = 0.3; scene.background = new THREE.Color(0x0a0c10); }
+function dayLight() { H.envK.value = 0.7; H.key.intensity = 2.6; H.key.color.set(0xfff1e0); H.key.position.set(3, 6, 4); H.key.target.position.set(0, 0.6, 0); H.hemi.intensity = 0.6; H.rimA.intensity = 0.8; H.rimB.intensity = 0.6; H.bloom.strength = 0.3; scene.background = new THREE.Color(0x0a0c10); }
 function nightLight() { H.envK.value = 0.35; H.key.intensity = 0.6; H.key.color.set(0x9fb8ff); H.hemi.intensity = 0.12; H.rimA.intensity = 1.6; H.rimA.color.set(0x3dff8c); H.rimB.intensity = 0.4; H.bloom.strength = 0.45; scene.background = new THREE.Color(0x030405); }
 { const s = H.key.shadow.camera; Object.assign(s, { left: -4, right: 4, top: 4, bottom: -4, near: 0.5, far: 20 }); s.updateProjectionMatrix(); H.key.shadow.bias = -0.0004; H.key.shadow.normalBias = 0.02; }
 const paper = (t, txt, a, b) => { hudShow("paper", win(t, a, b, 0.3, 0.3)); H.$("papt").textContent = txt; };
@@ -185,7 +188,7 @@ H.frame("Try it on two devices", async (t) => {
   // ---- HOOK: how many steps to send one file to the person next to you? (wide on both desks; a counter)
   if (t < at("p1")) {
     B2.visible = true; screen(MA, { k: "d-nearby" }, drawMon); screen(MB, { k: "d-nearby" }, drawMon);
-    move(t, 0, at("p1"), [V(0.2, 2.1, 3.9), V(0, 0.9, 0), 40], [V(0, 1.6, 3.0), V(0, 1.0, 0), 38]);
+    { const F = Aface(A.root); move(t, 0, at("p1"), [F.clone().add(V(1.5, 0.25, 1.7)), F.clone().add(V(0.4, -0.15, -0.4)), 42], [F.clone().add(V(1.1, 0.15, 1.3)), F.clone().add(V(0.3, -0.12, -0.4)), 40]); }
     title(t, 0.3, end("hook"), "A question", "How many steps?");
   }
   // ---- P1: the steps pile up around you (sign in, verify, install, find, upload, compressed) + counter
@@ -246,7 +249,7 @@ H.frame("Try it on two devices", async (t) => {
   }
   // ---- S3: up to 20 GB, original quality, folders intact
   else if (t < at("s4")) {
-    screen(MA, { k: "d-share" }, drawMon); const P = scrW(MA, 0.5, 0.5).add(V(0, 0.05, 0.2)); BALL.visible = true; BALL.scale.setScalar(lerp(1, 2.2, ease(prog(t, at("s3"), fr("s3", 0.4))))); BALL.position.copy(P); BALL.rotation.y = t;
+    screen(MA, { k: "d-share" }, drawMon); const P = scrW(MA, 0.5, 0.5).add(V(0, 0.05, 0.2)); BALL.visible = true; BALL.scale.setScalar(lerp(1, 1.5, ease(prog(t, at("s3"), fr("s3", 0.4))))); BALL.position.copy(P); BALL.rotation.y = t;
     BALL.material.map = BALL.material.map; move(t, at("s3"), at("s4"), [P.clone().add(V(-0.4, 0.15, 1.1)), P, 40], [P.clone().add(V(-0.25, 0.1, 0.85)), P, 38]);
     hudShow("big20", win(t, at("s3") + 0.2, end("s3") + 0.2), { transform: `scale(${lerp(1.2, 1, out(prog(t, at("s3") + 0.2, at("s3") + 0.6)))})` });
   }
@@ -265,7 +268,7 @@ H.frame("Try it on two devices", async (t) => {
     paper(t, "4 · ANONYMOUS MODE", at("a1"), fr("a1", 0.4)); nightLight(); A.root.visible = false; B2.visible = true; maskOn(B2, true);
     const tA = fr("a1", 0.5); screen(MB, { k: t < tA ? "d-anon-card" : "d-anon-space" }, drawMon); screenLB.intensity = 1.2;
     const F = Aface(B2);
-    if (t < tA) move(t, at("a1"), tA, [F.clone().add(V(0.9, 0.15, 1.1)), F.clone().add(V(0, -0.05, 0)), 36], [F.clone().add(V(0.6, 0.1, 0.8)), F.clone().add(V(0, -0.05, 0)), 34]);
+    if (t < tA) move(t, at("a1"), tA, [F.clone().add(V(0.75, 0.05, -0.55)), F.clone().add(V(0, -0.02, 0)), 36], [F.clone().add(V(0.55, 0.02, -0.42)), F.clone().add(V(0, -0.02, 0)), 34]);
     else move(t, tA, at("a2"), [F.clone().add(V(-0.25, 0.08, 0.35)), OV(DESK.B), 40], [F.clone().add(V(-0.15, 0.04, 0.22)), OV(DESK.B), 38]);
     cl("codeC", t, fr("a1", 0.62), end("a1"), scrW(MB, 0.5, 0.56), 790, 1050);
   }
@@ -274,7 +277,7 @@ H.frame("Try it on two devices", async (t) => {
     nightLight(); B2.visible = true; maskOn(B2, true); const tJ = fr("a2", 0.35);
     screen(MA, { k: "d-anon-find2" }, drawMon); screen(MB, { k: t < tJ ? "d-anon-space" : "d-anon-joined-A", ring: t > tJ ? [1355, 85, 34 + 10 * Math.sin(t * 6), 0.9] : null }, drawMon);
     const C = DESK.A.clone().lerp(DESK.B, 0.5).add(V(0, 1.25, -0.1));
-    if (t < tJ) move(t, at("a2"), tJ, [C.clone().add(V(0, 0.5, 3.0)), C, 40], [C.clone().add(V(0, 0.4, 2.6)), C, 38]);
+    if (t < tJ) { const F = Aface(B2); move(t, at("a2"), tJ, [F.clone().add(V(-0.7, 0.25, 0.9)), OV(DESK.B).add(V(0.1, -0.1, 0)), 40], [F.clone().add(V(-0.55, 0.2, 0.7)), OV(DESK.B).add(V(0.1, -0.1, 0)), 38]); }
     else move(t, tJ, at("a3"), [OV(DESK.B).add(V(0.25, 0.1, 0.6)), scrW(MB, 0.85, 0.12), 34], [OV(DESK.B).add(V(0.2, 0.06, 0.45)), scrW(MB, 0.9, 0.1), 32]);
     cl("joinC", t, tJ + 0.3, end("a2"), scrW(MB, 0.94, 0.09), 300, 1050);
   }
@@ -288,7 +291,7 @@ H.frame("Try it on two devices", async (t) => {
     beam(a, b, t, t > tD && pct < 1 ? 1 : 0, 0.25);
     const C = DESK.A.clone().lerp(DESK.B, 0.5).add(V(0, 1.2, -0.1));
     if (t < tS) move(t, at("a3"), tS, [OV(DESK.B).add(V(0.1, 0.05, 0.6)), scrW(MB, 0.75, 0.4), 34], [OV(DESK.B).add(V(0.08, 0.04, 0.5)), scrW(MB, 0.75, 0.42), 32]);
-    else move(t, tS, at("w1"), [C.clone().add(V(0.4, 0.6, 3.0)), C, 40], [C.clone().add(V(0.2, 0.4, 2.4)), C, 38]);
+    else { const F = Aface(B2).add(V(-0.3, -0.1, -0.3)); move(t, tS, at("w1"), [F.clone().add(V(-0.9, 0.4, 1.6)), F, 44], [F.clone().add(V(-0.7, 0.3, 1.3)), F, 42]); }
     cl("oneC", t, at("a3") + 0.2, tS, scrW(MB, 0.78, 0.6), 790, 1050); cl("dlC", t, tD + 0.3, tE, a, 790, 470);
     const bk = prog(t, tE, end("a3")); EMB.userData.burn(bk > 0 ? Math.sin(bk * Math.PI) : 0, t, (x, y) => b.clone().add(V(x * 0.4, y * 0.25, 0)));
   }

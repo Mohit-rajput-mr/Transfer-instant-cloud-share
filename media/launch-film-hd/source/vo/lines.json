@@ -1,0 +1,114 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how many steps it takes to send one file to the person sitting right next to you?",
+   "dur": 4.835,
+   "at": 0.35
+  },
+  {
+   "key": "p1",
+   "text": "Sign in. Verify your number. Install the app. Find the contact. Wait for the upload. And then your video arrives, compressed.",
+   "dur": 8.913,
+   "at": 5.68
+  },
+  {
+   "key": "p2",
+   "text": "Email bounces anything over twenty-five megabytes. Chat apps shrink your photos. And sharing between a phone and a laptop often only works inside one brand.",
+   "dur": 10.936,
+   "at": 15.05
+  },
+  {
+   "key": "p3",
+   "text": "Then there are the problems you never see. A shared link can stay online for years. A photo can carry the exact place it was taken. And once you hit send, you never really know who opened it.",
+   "dur": 9.656,
+   "at": 26.43
+  },
+  {
+   "key": "p4",
+   "text": "At work, it gets worse. Files live in one app, tasks in another, and nobody can see what's actually done.",
+   "dur": 7.117,
+   "at": 36.54
+  },
+  {
+   "key": "q",
+   "text": "So what do people actually want? No account. No app. Any device. Private by default. Gone when it's done. And proof the right person got it.",
+   "dur": 9.34,
+   "at": 44.16
+  },
+  {
+   "key": "s1",
+   "text": "That's Orbi Transfer. Open it in any browser, on any device. Drop a file. That's it.",
+   "dur": 5.773,
+   "at": 54.0
+  },
+  {
+   "key": "s2",
+   "text": "It's locked on your device before it leaves, with AES two fifty six encryption. Your password never leaves your browser. And in thirty minutes or less, it burns.",
+   "dur": 9.357,
+   "at": 60.22
+  },
+  {
+   "key": "s3",
+   "text": "Up to twenty gigabytes. The original file, never compressed. Whole folders arrive with their structure intact.",
+   "dur": 7.053,
+   "at": 70.03
+  },
+  {
+   "key": "s4",
+   "text": "Everyone on the same Wi-Fi sees it appear, live. Nearby shows files from your own area. The Open Void is worldwide. Or just scan its QR code.",
+   "dur": 10.723,
+   "at": 77.53
+  },
+  {
+   "key": "a1",
+   "text": "Need it confidential? Go anonymous. No name, no location, no device. Create a space, get a four letter code, and set a passcode.",
+   "dur": 9.144,
+   "at": 88.75
+  },
+  {
+   "key": "a2",
+   "text": "Share the code and the passcode. When your receiver joins, you see them appear in the space. Now you know exactly who's inside.",
+   "dur": 8.081,
+   "at": 98.35
+  },
+  {
+   "key": "a3",
+   "text": "Send the file with its own password and a one time download. The moment they download it, you see it go. One download, then it's gone.",
+   "dur": 8.077,
+   "at": 106.88
+  },
+  {
+   "key": "w1",
+   "text": "For teams, switch to Work. Make a private space, add tasks, and assign them with an at sign.",
+   "dur": 5.539,
+   "at": 115.46
+  },
+  {
+   "key": "w2",
+   "text": "Every task has a route of coloured steps. Files are wired straight to their task. One look shows who's doing what, and what's done.",
+   "dur": 8.227,
+   "at": 121.44
+  },
+  {
+   "key": "off",
+   "text": "No internet? Offline send works over the same Wi-Fi or a phone hotspot. Scan two codes, and the files go straight across.",
+   "dur": 8.056,
+   "at": 130.17
+  },
+  {
+   "key": "r1",
+   "text": "Before: six steps, an account, and a compressed copy that lives forever. With Orbi: no account, the original file, gone in thirty minutes.",
+   "dur": 8.956,
+   "at": 138.73
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. Drop it, lock it, beam it, burn it.",
+   "dur": 3.495,
+   "at": 148.18
+  }
+ ],
+ "duration": 154.28
+}
