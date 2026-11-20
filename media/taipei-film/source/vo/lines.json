@@ -1,0 +1,96 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know why a giant golden ball hangs inside one of the tallest buildings in the world? It weighs six hundred and sixty tonnes. As much as a hundred elephants.",
+   "dur": 11.111,
+   "at": 0.35
+  },
+  {
+   "key": "tower",
+   "text": "This is Taipei one-oh-one. Five hundred and eight metres tall. When it opened in two thousand and four, it was the tallest building on Earth.",
+   "dur": 9.319,
+   "at": 11.96
+  },
+  {
+   "key": "storms",
+   "text": "But Taiwan gets hit by typhoons and earthquakes. And tall towers are built to bend. In strong wind, the top sways back and forth, slowly, like a tree.",
+   "dur": 10.253,
+   "at": 21.73
+  },
+  {
+   "key": "sick",
+   "text": "The tower is safe. But on the top floors, that slow sway can make people feel seasick. So the engineers hung a pendulum inside.",
+   "dur": 8.163,
+   "at": 32.43
+  },
+  {
+   "key": "ball",
+   "text": "Between floors eighty-seven and ninety-two hangs a steel ball, five and a half metres wide. Forty-one thick steel plates, stacked like coins, hanging from eight steel cables.",
+   "dur": 11.939,
+   "at": 41.05
+  },
+  {
+   "key": "trick",
+   "text": "Here's the trick. When the wind pushes the tower one way, the heavy ball lags behind. It swings the other way, and pulls the tower back.",
+   "dur": 7.416,
+   "at": 53.43
+  },
+  {
+   "key": "tuned",
+   "text": "It's tuned to swing at the same rhythm as the tower. Every push is answered by a pull, right on time.",
+   "dur": 7.868,
+   "at": 61.3
+  },
+  {
+   "key": "pistons",
+   "text": "Underneath, eight hydraulic pistons, like the shock absorbers in a car, turn that motion into heat. And the sway fades away.",
+   "dur": 8.973,
+   "at": 69.62
+  },
+  {
+   "key": "forty",
+   "text": "It cuts the sway at the top by up to forty percent.",
+   "dur": 3.043,
+   "at": 79.04
+  },
+  {
+   "key": "soudelor",
+   "text": "In twenty fifteen, Typhoon Soudelor hit Taipei. The ball swung a full metre, the most ever recorded. And the tower held.",
+   "dur": 8.12,
+   "at": 82.53
+  },
+  {
+   "key": "visit",
+   "text": "And it isn't hidden. You can stand right next to it, and watch it move.",
+   "dur": 4.195,
+   "at": 91.1
+  },
+  {
+   "key": "orbi",
+   "text": "Big things, made simple. Orbi Transfer does that for your files.",
+   "dur": 3.789,
+   "at": 95.8
+  },
+  {
+   "key": "orbi2",
+   "text": "Every file you send gets its own QR code. Point your phone at the screen, and the file is on your phone.",
+   "dur": 6.947,
+   "at": 99.99
+  },
+  {
+   "key": "orbi3",
+   "text": "No app, no login, no cable. It's locked before it leaves. And after thirty minutes, it burns.",
+   "dur": 6.673,
+   "at": 107.33
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. Six hundred and sixty tonnes, holding a tower still.",
+   "dur": 5.347,
+   "at": 114.41
+  }
+ ],
+ "duration": 122.35
+}
