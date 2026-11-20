@@ -1,4 +1,5 @@
 "use client";
+import { GHOST, GHOST_KEY, GHOST_TITLE } from "./ghost";
 import { deviceId, homePath, persistentId } from "./client";
 import { anonSession, isAnon, newAnonId, setScopedAnon } from "./anon";
 import { myArea } from "./where";
@@ -144,6 +145,12 @@ export async function joinAnonSpace(slug: string, code: string, key: string): Pr
   const anonId = newAnonId();
   const s = await post<SpaceSession>(`/api/spaces/${slug}/join`, { anon: true, pass: code, deviceId: anonId });
   return { ...s, anon: true, anonId, code, key };
+}
+/** into Ghost World (lib/ghost.ts): no code, no passcode, a fresh alias each time */
+export async function joinGhost(): Promise<SpaceSession> {
+  const anonId = newAnonId();
+  const s = await post<SpaceSession>(`/api/spaces/${GHOST}/join`, { anon: true, deviceId: anonId });
+  return { ...s, title: GHOST_TITLE, anon: true, anonId, code: "", key: GHOST_KEY };
 }
 // ---- anonymous spaces with a name and a passcode: a 4-character name (the slug's own 4, so knocking works too) and a
 // passcode the creator picks. The passcode never leaves the browser: it is stretched (PBKDF2, salted with the name) into
