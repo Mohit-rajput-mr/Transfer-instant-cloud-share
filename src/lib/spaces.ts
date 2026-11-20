@@ -29,6 +29,8 @@ export interface SpaceMeta {
   anon?: boolean;
   /** Workspace only: members always see it in the Work view; in Classic it is stepped out of */
   work?: boolean;
+  /** the name its creator gave themselves in it (shown as the space's host; spaces made before 2026-11-20 have none) */
+  host?: string;
 }
 
 export const slugify = (s: string) =>
@@ -96,7 +98,7 @@ export async function getMeta(slug: string): Promise<SpaceMeta | null> {
 }
 
 export async function createSpace(
-  title: string, priv: boolean, pass: string | null, opts?: { slug?: string; anon?: boolean; work?: boolean },
+  title: string, priv: boolean, pass: string | null, opts?: { slug?: string; anon?: boolean; work?: boolean; host?: string },
 ): Promise<{ meta: SpaceMeta; owner: string } | null> {
   const slug = opts?.slug ?? slugify(title);
   if (!validSlug(slug)) return null;
@@ -106,7 +108,7 @@ export async function createSpace(
   const old = await rawMeta(slug);
   if (old && !isClosed(old)) return null;
   const owner = randomBytes(24).toString("base64url");
-  const meta: SpaceMeta = { slug, title, priv, pass: priv && pass ? passHash(slug, pass) : null, owner: sha(owner), at: Date.now(), anon: !!opts?.anon, ...(opts?.work ? { work: true } : null) };
+  const meta: SpaceMeta = { slug, title, priv, pass: priv && pass ? passHash(slug, pass) : null, owner: sha(owner), at: Date.now(), anon: !!opts?.anon, ...(opts?.work ? { work: true } : null), ...(opts?.host ? { host: opts.host } : null) };
   // two people racing for the same name: only one wins. A closed private space's name is taken over (its members,
   // files, notes and tasks end there)
   const won = old
@@ -203,7 +205,7 @@ async function index(fresh = false) {
 export async function search(q: string) {
   const s = slugify(q);
   // anonymity is read from the sealed meta only (a named space made before the anon- prefix was reserved can use it)
-  const out: { slug: string; title: string; priv: boolean }[] = [];
+  const out: { slug: string; title: string; priv: boolean; host: string | null }[] = [];
   // a name this instance doesn't know yet may have just been made on another one: look again before saying "none"
   let all = await index();
   if (s && !all.some((x) => x.slug.includes(s)) && Date.now() - (slugCache?.at ?? 0) > 2_000) all = await index(true);
@@ -213,8 +215,8 @@ export async function search(q: string) {
   for (const h of rows) {
     const m = unseal(h.meta);
     if (!m || m.anon || isClosed(m)) continue;
-    out.push({ slug: m.slug, title: m.title, priv: m.priv });
-    if (out.length >= 8) break;
+    out.push({ slug: m.slug, title: m.title, priv: m.priv, host: m.host ?? null });
+    if (out.length >= 12) break;
   }
   return out;
 }
