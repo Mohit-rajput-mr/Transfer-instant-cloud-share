@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import QRCode from "qrcode";
+import { dlProgress } from "@/lib/dlprog";
 import {
   deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, hasGot, markGot, ownerKey, timeAgo, type Orb, type OwnerView, homePath,
 } from "@/lib/client";
@@ -1144,22 +1145,28 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     run(verified, target, folderTarget);
   };
 
+  // how far this download got (said to the sender when it stops: lib/dlprog.ts)
+  const lastF = useRef(0);
   const run = (un: Unlocked, target: ReturnType<typeof pickSaveTarget>, folderTarget: DirHandle | null) => {
     setBusy(true);
     setErr(null);
     abort.current = new AbortController();
     const meter = new Meter(orb.size);
     setSpeed("");
+    lastF.current = 0;
     receive({
       orb, unlocked: un, target, folderTarget, signal: abort.current.signal, inline, hold: holdNow(),
       onProgress: (s, p) => {
         setStage(s);
         setFrac(p);
         if (s === "decrypting") setSpeed(meter.label(p * orb.size));
+        // the sender sees it live (anonymous spaces: lib/dlprog.ts)
+        lastF.current = s === "decrypting" ? p : s === "done" ? 1 : lastF.current;
+        dlProgress(orb.id, lastF.current);
       },
     })
-      .then(landed)
-      .catch(fail)
+      .then((res) => (dlProgress(orb.id, 1, 1), landed(res)))
+      .catch((e) => (dlProgress(orb.id, lastF.current, abort.current?.signal.aborted ? 2 : 3), fail(e)))
       .finally(() => setBusy(false));
   };
   /** the file is here (downloaded now, or already fetched in the background) */

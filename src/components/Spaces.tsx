@@ -1,4 +1,5 @@
 "use client";
+import { hueOf } from "@/lib/dlprog";
 import { homePath } from "@/lib/client";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { BsIncognito } from "react-icons/bs";
@@ -20,11 +21,6 @@ const Arrow = () => (
     <path d="M5 12h13" /><path d="M13 6l6 6-6 6" />
   </svg>
 );
-const hueOf = (s: string) => {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
-  return h;
-};
 const initials = (s: string) => s.trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
 
 /** A liquid-glass card that pops out in the centre of the screen (phones too: never a bottom sheet). */

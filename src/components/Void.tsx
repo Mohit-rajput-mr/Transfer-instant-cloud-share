@@ -42,6 +42,7 @@ import BubbleBoard, { BubbleCompose, BubbleSpace, useStacks, type BubbleChange }
 import TaskBoard, { TaskWires, taskGroups } from "./TaskBoard";
 import { addTask, assignTask, burnTask, carryTasks, wireObject, editTask, isMyTask, moveTask, openInvite, parseTask, sealInvite, stageName, taskLabel, taskLine, tickTask, type Task } from "@/lib/tasks";
 import { cleanOrb, ORB_ID, readSync, type SyncMsg } from "@/lib/sync";
+import { addDl, pruneDl, shownDl, type DlEnd, type DlNote, type Downloader } from "@/lib/dlprog";
 import { joinLive, liveOn, roomsFor, type Chan, type Live } from "@/lib/live";
 import { around } from "@/lib/area";
 import { anonCellNow, asked, dropGps, fixNow, follow, forgetFix, fromIp, locate, locOff, markAsked, markSent, permission, setAnonCell, setLocOff, where } from "@/lib/where";
@@ -397,6 +398,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const [spaceReady, setSpaceReady] = useState(false);
   // who is in the space (and who is live right now, via realtime presence on its channel)
   const [room, setRoom] = useState<SpaceInfo | null>(null);
+  // anonymous spaces: who is downloading the sender's files right now, by object id (lib/dlprog.ts)
+  const [dls, setDls] = useState<Map<string, Downloader[]>>(() => new Map());
   const roomRef = useRef(room);
   roomRef.current = room;
   // bubble text in this void (or space)
@@ -792,6 +795,13 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
         return d || v || w ? { ...o, downloads: o.downloads + d, views: o.views + v, watchers: Math.max(0, (o.watchers ?? 0) + w) } : o;
       }));
     }
+    // someone's download moved (anonymous spaces): only a member of this space, never this device itself
+    if (m.dp?.length && spaceRef.current?.anon) {
+      const r = roomRef.current, me = spaceRef.current.handle;
+      const ok = m.dp.filter((d) => d.w !== me && (!r || r.members.some((x) => x.handle === d.w)));
+      if (ok.length)
+        setDls((cur) => ok.reduce((acc, d) => addDl(acc, d.o, { w: d.w, f: d.f, e: d.e, z: d.z === 1, at: Date.now(), t: d.t ?? Date.now() }), cur));
+    }
     if (m.og?.length) {
       const gone = m.og;
       unsayLanded(gone);
@@ -904,7 +914,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
 
   // clock
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
+    const t = setInterval(() => (setNow(Date.now()), setDls((m) => (m.size ? pruneDl(m, Date.now()) : m))), 1000);
     // tasks and notes leave the screen the moment they expire (the server already stopped listing them)
     const prune = setInterval(() => {
       const n = Date.now() + skewRef.current;
@@ -2028,6 +2038,15 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   };
   const bubbles = useMemo(() => grouped.list.filter((o) => isGroup(o.id)).map((o) => ({ id: o.id, name: o.name, members: groups.get(o.id) ?? [] })), [grouped, groups]);
   // a container zoomed in keeps its sender's style
+  // the sender's own balls show who is downloading them (a container: anyone downloading one of its files)
+  const downloadersOf = (id: string) => {
+    const ids = isGroup(id) ? (groups.get(id) ?? []).map((m) => m.id) : [id];
+    const mineIds = ids.filter((x) => ownerKey(x));
+    if (!mineIds.length) return undefined;
+    const best = new Map<string, Downloader>();
+    for (const x of mineIds) for (const d of dls.get(x) ?? []) if (!best.has(d.w) || (best.get(d.w)!.e && !d.e)) best.set(d.w, d);
+    return best.size ? shownDl([...best.values()], now) : undefined;
+  };
   const zoomSkin = (zoom && bubbles.find((b) => b.id === zoom.id)?.members[0]?.skin) || skin;
   // opening a container counts as looking at it: its viewer dot shows for everyone right away
   const zoomFirst = (zoom && bubbles.find((b) => b.id === zoom.id)?.members[0]?.id) || null;
@@ -2348,6 +2367,43 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     window.addEventListener("orbit:downloaded", on);
     return () => window.removeEventListener("orbit:downloaded", on);
   }, [sync]);
+  // anonymous space: this device's downloads are said in the space as they move, so the sender sees who is getting
+  // their file and how far (lib/dlprog.ts). At most one note per file every 0.8 s, and one every 2.5 s even when
+  // nothing moved (silence then means this device lost its internet: the sender shows "paused")
+  useEffect(() => {
+    const mine = new Map<string, { f: number; at: number; moved: number }>();
+    const tell = (id: string, f: number, e?: DlEnd, z?: boolean) => {
+      const sp = spaceRef.current;
+      if (!sp?.anon || !sp.handle) return;
+      say("sync", { dp: [{ o: id, w: sp.handle, f: Math.round(f * 1000) / 1000, t: Date.now(), ...(e ? { e } : {}), ...(z ? { z: 1 } : {}) }] }, sp.slug);
+    };
+    const on = (ev: Event) => {
+      const d = (ev as CustomEvent<DlNote>).detail;
+      if (!d || !ORB_ID.test(d.id)) return;
+      const now = Date.now(), x = mine.get(d.id);
+      if (d.e) return void (mine.delete(d.id), tell(d.id, d.f, d.e));
+      if (!x) return void (mine.set(d.id, { f: d.f, at: now, moved: now }), tell(d.id, d.f));
+      if (d.f !== x.f) {
+        x.moved = now;
+        x.f = d.f;
+      }
+      if (now - x.at < 800) return;
+      x.at = now;
+      tell(d.id, x.f);
+    };
+    const beat = setInterval(() => {
+      const now = Date.now();
+      for (const [id, x] of mine) {
+        if (now - x.moved > 10 * 60_000) mine.delete(id);
+        else if (now - x.at >= 2500) {
+          x.at = now;
+          tell(id, x.f, undefined, now - x.moved > 6000);
+        }
+      }
+    }, 1000);
+    window.addEventListener("orbit:dl", on);
+    return () => (window.removeEventListener("orbit:dl", on), clearInterval(beat));
+  }, []);
   const [gotTick, setGotTick] = useState(0);
   useEffect(() => {
     const on = () => setGotTick((t) => t + 1);
@@ -2907,6 +2963,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
               onDestroy={isGroup(o.id) ? () => destroy((groups.get(o.id) ?? []).map((m) => m.id)) : ownerKey(o.id) ? () => destroy([o.id]) : undefined}
               onCancel={cancelUp(o.id)}
               onDestroyMember={isGroup(o.id) ? (id) => destroy([id]) : undefined}
+              downloaders={dls.size ? downloadersOf(o.id) : undefined}
               group={isGroup(o.id) ? groups.get(o.id)?.map((m) => ({ id: m.id, name: m.name, hue: m.hue, size: m.size, got: hasGot(m.id), fileName: m.fileName, expiresAt: m.expiresAt, life: m.life ?? 30, watchers: watchers(m.id), mine: !!ownerKey(m.id), thumb: !!(m.thumb && m.open) })) : undefined}
             />
           ))}

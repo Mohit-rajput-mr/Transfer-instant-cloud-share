@@ -3,6 +3,7 @@
 // of living inside a panel, so closing the panel or the container never stops them. One at a time,
 // each with the full connection; every finished one is marked downloaded at once (its ball greys out
 // live). Phones collect the files and save them together with one tap at the end.
+import { dlProgress } from "./dlprog";
 import { useSyncExternalStore } from "react";
 import { markGot, type Orb } from "./client";
 import { receive, unlockOrb, UnlockError } from "./transfer";
@@ -49,7 +50,7 @@ async function run() {
       const un = await unlockOrb(job.orb, job.orb.open ? "" : job.code, abort.signal);
       const res = await receive({
         orb: job.orb, unlocked: un, target: Promise.resolve(null), folderTarget: null, signal: abort.signal, hold: env.mobile,
-        onProgress: (_s, f) => patch(job.id, { frac: f, speed: meter.label(f * job.orb.size) }),
+        onProgress: (s, f) => (patch(job.id, { frac: f, speed: meter.label(f * job.orb.size) }), s === "decrypting" && dlProgress(job.id, f)),
       });
       if (res.kind === "file" && res.held) emit({ held: [...state.held, ...(res.parts?.length ? res.parts : [res.file])] });
       if (res.kind === "text") autoDownload(new File([res.text], `${job.name || "note"}.txt`, { type: "text/plain" }));
@@ -57,7 +58,9 @@ async function run() {
       // every other screen counts it at once (Void says it on the live line)
       window.dispatchEvent(new CustomEvent("orbit:downloaded", { detail: job.id }));
       patch(job.id, { state: "done", frac: 1 });
+      dlProgress(job.id, 1, 1);
     } catch (e) {
+      dlProgress(job.id, state.jobs.find((j) => j.id === job.id)?.frac ?? 0, abort?.signal.aborted ? 2 : 3);
       if (abort?.signal.aborted) {
         emit({ jobs: state.jobs.map((j) => (j.state === "queued" || j.state === "running" ? { ...j, state: "failed", err: "Cancelled" } : j)) });
         break;

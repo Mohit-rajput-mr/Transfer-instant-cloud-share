@@ -12,7 +12,9 @@ import type { Task } from "./tasks";
 
 /** od: files someone just downloaded (+1 download each) · ov / ox: files someone started / stopped looking at
  *  (live viewers ±1) · vw: of those, the ones this device opened for the first time (+1 view) */
-export type SyncMsg = { b?: Bubble; bg?: string[]; t?: Task; tg?: string[]; og?: string[]; od?: string[]; ov?: string[]; ox?: string[]; vw?: string[] };
+export type SyncMsg = { b?: Bubble; bg?: string[]; t?: Task; tg?: string[]; og?: string[]; od?: string[]; ov?: string[]; ox?: string[]; vw?: string[]; dp?: DlSay[] };
+/** dp (anonymous spaces): someone's download of a file moved: o the file, w their alias in the space, f 0..1, e 1 done / 2 stopped */
+export type DlSay = { o: string; w: string; f: number; e?: 1 | 2 | 3; z?: 1; t?: number };
 
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, "").slice(0, max) : null);
 const time = (v: unknown) => (typeof v === "string" && Number.isFinite(Date.parse(v)) ? v : null);
@@ -126,6 +128,16 @@ export function readSync(p: unknown, serverNow: number): SyncMsg {
   for (const k of ["od", "ov", "ox", "vw"] as const) {
     const l = ids(m[k], ORB_ID).slice(0, 20);
     if (l.length) out[k] = l;
+  }
+  if (Array.isArray(m.dp)) {
+    const dp = (m.dp as unknown[]).slice(0, 10).flatMap((x): DlSay[] => {
+      const d = (x ?? {}) as Record<string, unknown>;
+      const w = str(d.w, 24)?.trim();
+      if (typeof d.o !== "string" || !ORB_ID.test(d.o) || !w || typeof d.f !== "number" || !Number.isFinite(d.f)) return [];
+      return [{ o: d.o, w, f: Math.max(0, Math.min(1, d.f)), ...(d.e === 1 || d.e === 2 || d.e === 3 ? { e: d.e } : {}), ...(d.z === 1 ? { z: 1 as const } : {}),
+        ...(typeof d.t === "number" && Number.isFinite(d.t) ? { t: d.t } : {}) }];
+    });
+    if (dp.length) out.dp = dp;
   }
   return out;
 }

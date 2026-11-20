@@ -1,4 +1,5 @@
 "use client";
+import type { DlShown } from "@/lib/dlprog";
 import { hoverPeek } from "@/lib/peek";
 import { LuArrowUp, LuCheck, LuLock, LuLockOpen, LuMaximize2, LuTrash2, LuBadgeCheck } from "react-icons/lu";
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
@@ -359,6 +360,32 @@ export function OrbStats(props: { id: string; live: number; downloads: number; d
   );
 }
 
+// Owner's pick 2026-11-20 (#3 "Beam"): a stream of dots from the ball into each downloader's own little ball, with
+// what is happening written on the beam: downloading 42% (green), paused 42% (orange: their internet dropped or the
+// download stalled), canceled / stopped 42% (red), ✓ got it. Several at once stack in one column beside the ball,
+// running ones first; past four, the rest are counted in one line.
+const DL_MAX = 4;
+const DL_WORD = { down: "downloading", paused: "paused", canceled: "canceled", failed: "stopped", done: "" } as const;
+function Downloaders({ list }: { list: DlShown[] }) {
+  const shown = list.slice(0, list.length > DL_MAX ? DL_MAX - 1 : DL_MAX);
+  const more = list.length - shown.length;
+  return (
+    <div className="orb-dls" role="status" aria-label={list.map((d) => `${d.w}: ${d.state === "done" ? "downloaded" : `${DL_WORD[d.state]} ${Math.floor(d.f * 100)}%`}`).join(", ")}>
+      {shown.map((d) => {
+        const pct = Math.floor(d.f * 100);
+        return (
+          <div key={d.w} className={`odl ${d.state}`} style={{ "--who": d.hue, "--p": d.state === "done" ? 100 : pct } as CSSProperties}>
+            <span className="odl-beam" aria-hidden><b>{d.state === "done" ? "✓ got it" : `${DL_WORD[d.state]} ${pct}%`}</b></span>
+            <span className="odl-ball" aria-hidden>{d.w.replace(/^anon-?/i, "").slice(0, 1).toUpperCase() || "A"}</span>
+            <span className="odl-name" aria-hidden>{d.w}</span>
+          </div>
+        );
+      })}
+      {more > 0 && <div className="odl-more" aria-hidden>+{more} more downloading</div>}
+    </div>
+  );
+}
+
 export function KindBadge(props: { kind: string }) {
   const I = KIND_ICON[props.kind as keyof typeof KIND_ICON];
   return I ? <i className={`kind-badge k-${props.kind}`} aria-hidden><I /></i> : null;
@@ -399,6 +426,8 @@ export default function OrbView(props: {
   onCancel?: () => void;
   /** the sender's own ball inside a container */
   onDestroyMember?: (id: string) => void;
+  /** anonymous space, the sender's own: who is downloading it right now (lib/dlprog.ts) */
+  downloaders?: DlShown[];
 }) {
   const { orb, pos, now, mine, nearby, watchers, onOpen, phase, launching, incoming, badge, got, group } = props;
   const up = launching !== undefined;
@@ -884,6 +913,7 @@ export default function OrbView(props: {
         ) : null}
         {/* the stats written along the orbit (owner's pick 2026-11-19: design #31 "curved text", line icons) */}
         {!up && <OrbStats id={orb.id} live={watchers} downloads={orb.downloads} del={props.onDestroy && mine && phase !== "burning" ? { name: orb.name } : undefined} />}
+        {props.downloaders?.length && !up && phase !== "burning" ? <Downloaders list={props.downloaders} /> : null}
         {phase === "arriving" && <span className="shock" />}
         {Array.from({ length: Math.min(watchers, 4) }, (_, i) => (
           <span

@@ -1177,3 +1177,8 @@ html[data-ui="work"][data-theme="light"] .knock-row input::placeholder { color: 
 html[data-ui="work"][data-theme="light"] .knock-row .cta { background: #18181b; color: #fff; }
 html[data-ui="work"][data-theme="light"] .tb-keep .mono { color: #5b5e66; }
 html[data-ui="work"][data-theme="light"] .tb-keep button:not(.on) { color: #3f3f46; border-color: rgba(0,0,0,.18); }
+
+/* who is downloading (OrbView Downloaders): the tile has no curved stats at its side, so the column sits closer */
+html[data-ui="work"] .orb-dls { left: calc(100% + 14px); }
+html[data-ui="work"][data-theme="light"] .odl-name, html[data-ui="work"][data-theme="light"] .odl-more { color: #2a2c31; text-shadow: none; }
+html[data-ui="work"][data-theme="light"] .odl-beam b { text-shadow: none; filter: brightness(0.75) saturate(1.3); }
