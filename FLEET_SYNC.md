@@ -606,3 +606,5 @@ G. Earth button: owner rejected zoom-out→Earth; button kept. If owner says rem
 - It carries: anonymous sessions 5-30 min (migration 021, applied), dot-ring countdown on the sealed edge, admin
   "Anonymous" table + globe popups, incognito buttons / no overlap, last-GPS-seen pins pink with a green ring.
 - Still open in Supabase: `orbit_session_forget` and `orbit_reap_anon` from migration 020 (the SQL tool timed out on them).
+
+- 2026-11-20 · Films: lightning (`media/lightning-film/OrbiTransfer-struck-by-lightning.mp4`, 175 s) and space (`media/space-film/OrbiTransfer-space-without-a-suit.mp4`, 151 s) rendered, both open "Do you know what happens…". Defect: container restart killed the space render mid-way (no auto-resume); fixed by re-rendering only the missing frame ranges. Risk: long renders need a resume check after restarts.
