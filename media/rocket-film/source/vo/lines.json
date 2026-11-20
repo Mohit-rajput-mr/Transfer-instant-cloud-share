@@ -1,0 +1,90 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how a rocket engine works? Every second, it gulps enough fuel to fill a bathtub, and it has to stop itself from melting.",
+   "dur": 7.523,
+   "at": 0.35
+  },
+  {
+   "key": "tanks",
+   "text": "A rocket carries two liquids. Kerosene, a bit like jet fuel. And liquid oxygen, so cold it boils at minus one hundred and eighty-three degrees.",
+   "dur": 11.128,
+   "at": 8.37
+  },
+  {
+   "key": "why",
+   "text": "Why carry oxygen? Because fire needs it, and in space there isn't any.",
+   "dur": 4.728,
+   "at": 19.95
+  },
+  {
+   "key": "pumps",
+   "text": "The problem is speed. The engine needs hundreds of litres every second. So two pumps, spinning tens of thousands of times a minute, force the liquids in.",
+   "dur": 9.08,
+   "at": 25.13
+  },
+  {
+   "key": "gg",
+   "text": "And what spins the pumps? A tiny rocket engine of its own. A little fuel and oxygen burn here, the hot gas spins a turbine, and the smoke pours out of this pipe on the side.",
+   "dur": 11.299,
+   "at": 34.66
+  },
+  {
+   "key": "cool",
+   "text": "Inside the chamber, the flame reaches over three thousand degrees, hot enough to melt the metal. So the cold fuel flows through tiny channels in the walls first, soaking up the heat, before it burns.",
+   "dur": 10.893,
+   "at": 46.41
+  },
+  {
+   "key": "spark",
+   "text": "To light it, a squirt of a chemical that bursts into flame the moment it touches oxygen. That's the green flash you see at launch.",
+   "dur": 8.06,
+   "at": 57.75
+  },
+  {
+   "key": "nozzle",
+   "text": "The burning gas wants out. The bell-shaped nozzle squeezes it, then lets it expand, until it leaves at nearly three kilometres every second.",
+   "dur": 9.272,
+   "at": 66.26
+  },
+  {
+   "key": "push",
+   "text": "Push gas down that fast, and the gas pushes the engine up. That's thrust. No air to push against needed. It works even better in space.",
+   "dur": 8.824,
+   "at": 75.98
+  },
+  {
+   "key": "nine",
+   "text": "Put nine of these together, and the rocket leaves the pad.",
+   "dur": 3.789,
+   "at": 85.26
+  },
+  {
+   "key": "orbi",
+   "text": "A rocket doesn't wait around. Neither should your files.",
+   "dur": 3.235,
+   "at": 89.55
+  },
+  {
+   "key": "orbi2",
+   "text": "On Orbi Transfer, the Nearby tab shows files dropped around you. Tap one, and it's on your phone. No account, no app.",
+   "dur": 8.227,
+   "at": 93.18
+  },
+  {
+   "key": "orbi3",
+   "text": "It's locked on the sender's phone before it leaves. And after thirty minutes, it burns up. Like a spent rocket stage.",
+   "dur": 6.179,
+   "at": 101.81
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com. Nearly three kilometres a second, straight down.",
+   "dur": 5.069,
+   "at": 108.39
+  }
+ ],
+ "duration": 116.06
+}

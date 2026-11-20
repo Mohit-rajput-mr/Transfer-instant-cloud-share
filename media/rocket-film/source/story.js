@@ -87,25 +87,25 @@ function engine(cut = false) {
   // valves (main fuel, main oxidiser) with actuators, wire harness
   for (const [p, m] of [[P.loxOut.getPoint(0.55), alu], [P.fuelOut.getPoint(0.3), alu]]) { const v = sh(new THREE.Mesh(new RoundedBoxGeometry(0.1, 0.1, 0.1, 2, 0.02), m)); v.position.copy(p); E.add(v); const act = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.12, 12), darkSteel)); act.position.copy(p).add(V(0.07, 0.03, 0)); act.rotation.z = Math.PI / 2; E.add(act); }
   E.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([V(0.15, 2.95, 0.2), V(0.4, 2.8, 0.3), V(0.7, 2.6, 0.12), V(0.86, 2.62, 0.25)]), 40, 0.009, 6), wireM));
-  if (cut) E.traverse((o) => { if (o.isMesh && o.material && o.material !== wireM) { o.material = o.material.clone(); o.material.clippingPlanes = [clipE]; o.material.clipShadows = true; o.material.side = THREE.DoubleSide; } });
+  if (cut) E.traverse((o) => { if (o.isMesh && o.material && o.material !== wireM && !o.material.isShaderMaterial) { o.material.clippingPlanes = [clipE]; o.material.clipShadows = true; o.material.side = THREE.DoubleSide; } });
   return { E, P };
 }
 const ENG = engine(true); scene.add(ENG.E);
 const EP = ENG.P;
 
 // ---------- flows: particles riding the real paths ----------
-const flowM = (c, k = 2.2) => new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(k), toneMapped: false });
+const flowM = (c, k = 1.3) => new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(k), toneMapped: false });
 function stream(curves, n, size, color) { const m = new THREE.InstancedMesh(new THREE.SphereGeometry(size, 8, 6), flowM(color), n); m.frustumCulled = false; scene.add(m); H.reseed(n + curves.length); m.userData = { curves, P: Array.from({ length: n }, () => ({ u: H.rnd(), j: V(H.rnd() - 0.5, H.rnd() - 0.5, H.rnd() - 0.5) })) }; return m; }
 function runStream(m, t, speed, k, root, col) { const m4 = new THREE.Matrix4(), { curves, P } = m.userData; const L = curves.length; m.visible = k > 0;
   if (!m.visible) return; P.forEach((p, i) => { const u = (p.u + t * speed) % 1, seg = Math.min(L - 1, Math.floor(u * L)), uu = u * L - seg; const pt = curves[seg].getPoint(uu).add(p.j.clone().multiplyScalar(0.02)); root.localToWorld(pt); const s = k; m4.makeScale(s, s, s).setPosition(pt); m.setMatrixAt(i, m4); if (col) m.setColorAt(i, col(u)); });
   m.instanceMatrix.needsUpdate = true; if (col && m.instanceColor) m.instanceColor.needsUpdate = true; }
 // cooling channels: fuel climbs from the manifold to the injector inside the wall (a few channels drawn)
 const chanC = []; for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI - Math.PI / 2 - 0.2; const pts = []; for (let k = 0; k <= 16; k++) { const y = 0.97 + k / 16 * 1.45; const r = y < 1.85 ? 0.12 + 0.34 * (1 - Math.pow(y / 1.85, 0.55)) : y < 2.1 ? 0.12 + 0.1 * (1 - Math.cos((y - 1.85) / 0.25 * Math.PI)) / 2 : 0.22; pts.push(V(Math.cos(a) * (r + 0.008), y, Math.sin(a) * (r + 0.008))); } chanC.push(new THREE.CatmullRomCurve3(pts)); }
-const loxS = stream([EP.loxIn, EP.loxOut], 260, 0.012, 0x7fc8ff), fuelS = stream([EP.fuelIn, EP.fuelOut], 220, 0.011, 0xffb347);
-const chanS = stream(chanC, 360, 0.008, 0xffffff); chanS.material.color.setRGB(1, 1, 1);
+const loxS = stream([EP.loxIn, EP.loxOut], 260, 0.007, 0x7fc8ff), fuelS = stream([EP.fuelIn, EP.fuelOut], 220, 0.0065, 0xffb347);
+const chanS = stream(chanC, 360, 0.0055, 0xffffff); chanS.material.color.setRGB(1, 1, 1);
 const ggS = stream([EP.ggFeed], 60, 0.009, 0xffd27a), smokeS = (() => { const n = 220, m = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshStandardMaterial({ color: 0x2b2622, roughness: 1, transparent: true, opacity: 0.55, depthWrite: false }), n); m.frustumCulled = false; scene.add(m); H.reseed(77); m.userData.P = Array.from({ length: n }, () => ({ u: H.rnd(), j: V(H.rnd() - 0.5, H.rnd() - 0.5, H.rnd() - 0.5) })); return m; })();
 // combustion: hot gas from the injector, through the throat, out of the bell (accelerating)
-const NG = 700, gas = new THREE.InstancedMesh(new THREE.SphereGeometry(0.014, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }), NG); gas.frustumCulled = false; scene.add(gas);
+const NG = 700, gas = new THREE.InstancedMesh(new THREE.SphereGeometry(0.009, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false }), NG); gas.frustumCulled = false; scene.add(gas);
 H.reseed(9); const GP = Array.from({ length: NG }, () => ({ u: H.rnd(), a: H.rnd() * TAU, r: Math.sqrt(H.rnd()) }));
 const rAt = (y) => (y < 1.85 ? 0.12 + 0.34 * (1 - Math.pow(y / 1.85, 0.55)) : y < 2.1 ? 0.12 + 0.1 * (1 - Math.cos((y - 1.85) / 0.25 * Math.PI)) / 2 : 0.22);
 function runGas(t, k, colorK = 0) { gas.visible = k > 0; if (!gas.visible) return; const m4 = new THREE.Matrix4(), c = new THREE.Color();
@@ -118,11 +118,11 @@ const plumeU = () => ({ uT: { value: 0 }, uK: { value: 0 }, uVac: { value: 0 }, 
 const PLUME_FS = `uniform float uT, uK, uVac, uGreen; varying vec3 vP; varying vec2 vUv; varying vec3 vN; varying vec3 vV;
   float h(vec2 p){ return fract(sin(dot(p, vec2(12.9, 78.2))) * 43758.5); } float n2(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f); return mix(mix(h(i), h(i+vec2(1,0)), f.x), mix(h(i+vec2(0,1)), h(i+vec2(1,1)), f.x), f.y); }
   void main(){ float y = vUv.y; float along = 1.0 - y; float edge = pow(abs(dot(normalize(vN), normalize(vV))), 1.5);
-    float dia = mix(0.55 + 0.45 * pow(max(0.0, cos(along * 26.0)), 6.0) * smoothstep(0.75, 0.0, along), 1.0, uVac);
+    float dia = mix(0.45 + 1.4 * pow(max(0.0, cos(along * 19.0)), 10.0) * smoothstep(0.55, 0.0, along), 1.0, uVac);
     float fl = 0.75 + 0.25 * n2(vec2(vUv.x * 18.0, along * 9.0 - uT * 22.0));
     float fade = smoothstep(1.0, 0.05, along) * smoothstep(0.0, 0.02, along);
-    vec3 core = mix(vec3(2.6, 2.2, 1.5), vec3(2.4, 0.9, 0.25), smoothstep(0.0, 0.5, along)); core = mix(core, vec3(0.6, 2.6, 0.8), uGreen);
-    vec3 c = core * dia * fl * fade * (0.35 + 0.9 * edge) * uK; gl_FragColor = vec4(c, 1.0); }`;
+    vec3 core = mix(vec3(2.4, 1.6, 0.7), vec3(1.5, 0.45, 0.1), smoothstep(0.03, 0.45, along)); core *= mix(1.0, 0.45, (1.0 - edge) * 0.8); core = mix(core, vec3(0.6, 2.6, 0.8), uGreen);
+    vec3 c = core * dia * fl * fade * (0.22 + 0.75 * edge) * uK * 0.7; gl_FragColor = vec4(c, 1.0); }`;
 const PLUME_VS = `varying vec3 vP; varying vec2 vUv; varying vec3 vN; varying vec3 vV; void main(){ vUv = uv; vP = position; vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0); vV = -mv.xyz; gl_Position = projectionMatrix * mv; }`;
 function makePlume(len = 6, r0 = 0.44, r1 = 0.9) { const u = plumeU(); const g = new THREE.CylinderGeometry(r0, r1, len, 48, 40, true); g.translate(0, -len / 2, 0);
   { const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const y = -p.getY(i) / len; const bulge = 1 + Math.sin(Math.min(1, y * 3) * Math.PI) * 0.08; p.setX(i, p.getX(i) * bulge); p.setZ(i, p.getZ(i) * bulge); } g.computeVertexNormals(); }
@@ -132,7 +132,7 @@ const nozzleLight = new THREE.PointLight(0xffa040, 0, 12, 1.6); nozzleLight.posi
 
 // ---------- the test stand (dark hangar, steel frame) ----------
 const STAND = new THREE.Group(); scene.add(STAND);
-{ const fl = sh(new THREE.Mesh(new THREE.CircleGeometry(30, 64), new THREE.MeshPhysicalMaterial({ color: 0x1a1c1f, roughness: 0.45, clearcoat: 0.4, map: tex("kit/ph/concrete_floor_worn_001/concrete_floor_worn_001_diff_1k.jpg", true, 10, 10), normalMap: tex("kit/ph/concrete_floor_worn_001/concrete_floor_worn_001_nor_gl_1k.jpg", false, 10, 10) })), false, true); fl.rotation.x = -Math.PI / 2; fl.position.y = -3.2; STAND.add(fl);
+{ const fl = sh(new THREE.Mesh(new THREE.CircleGeometry(30, 64), new THREE.MeshPhysicalMaterial({ color: 0x141517, roughness: 0.7, clearcoat: 0.0, envMapIntensity: 0.2, map: tex("kit/ph/concrete_floor_worn_001/concrete_floor_worn_001_diff_1k.jpg", true, 10, 10), normalMap: tex("kit/ph/concrete_floor_worn_001/concrete_floor_worn_001_nor_gl_1k.jpg", false, 10, 10) })), false, true); fl.rotation.x = -Math.PI / 2; fl.position.y = -3.2; STAND.add(fl);
   const beam = (a, b, r = 0.08) => { const m = sh(new THREE.Mesh(new THREE.BoxGeometry(r, 1, r), paint(0x2f3a44, 0.5))); m.position.copy(a).add(b).multiplyScalar(0.5); m.scale.y = a.distanceTo(b); m.quaternion.setFromUnitVectors(V(0, 1, 0), b.clone().sub(a).normalize()); STAND.add(m); };
   for (const [x, z] of [[-1.2, -1.2], [1.2, -1.2], [-1.2, 1.2], [1.2, 1.2]]) { beam(V(x, -3.2, z), V(x * 0.9, 4.2, z * 0.9), 0.12); }
   for (const y of [3.1, 4.0]) { beam(V(-1.1, y, -1.1), V(1.1, y, -1.1)); beam(V(-1.1, y, 1.1), V(1.1, y, 1.1)); beam(V(-1.1, y, -1.1), V(-1.1, y, 1.1)); beam(V(1.1, y, -1.1), V(1.1, y, 1.1)); }
@@ -143,7 +143,7 @@ const STAND = new THREE.Group(); scene.add(STAND);
 // ---------- the tank cutaway (a stage section: LOX above, kerosene below) ----------
 const TANK = new THREE.Group(); TANK.position.set(60, 0, 0); scene.add(TANK); TANK.visible = false;
 const LU = { uT: { value: 0 } };
-{ const clipT = new THREE.Plane(V(0, 0, -1), 0); const R = 1.85;
+{ const clipT = new THREE.Plane(V(0, 0, 1), 0); const R = 1.85;
   const skin = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 18, 96, 1, true), H.cutaway(new THREE.MeshPhysicalMaterial({ color: 0xf2f2f0, roughness: 0.4, clippingPlanes: [clipT] }), 0x9aa3ab)); skin.position.y = 9; TANK.add(skin);
   const inner = new THREE.Mesh(new THREE.CylinderGeometry(R - 0.03, R - 0.03, 18, 96, 1, true), new THREE.MeshPhysicalMaterial({ color: 0x9da4ab, metalness: 0.9, roughness: 0.35, side: THREE.BackSide, clippingPlanes: [clipT], map: tex("kit/ph/metal_plate_02/metal_plate_02_diff_1k.jpg", true, 6, 8) })); inner.position.y = 9; TANK.add(inner);
   for (const y of [7.6, 0.4, 17.6]) { const dome = new THREE.Mesh(new THREE.SphereGeometry(R - 0.03, 64, 24, 0, TAU, 0, Math.PI / 2), new THREE.MeshPhysicalMaterial({ color: 0xb6bcc2, metalness: 0.9, roughness: 0.3, side: THREE.DoubleSide, clippingPlanes: [clipT] })); dome.scale.y = 0.45; dome.position.y = y; if (y === 0.4) dome.rotation.x = Math.PI; TANK.add(dome); }
@@ -203,6 +203,7 @@ const padL = new THREE.PointLight(0xff9a3c, 0, 220, 1.4); padL.position.set(0, -
   for (const [x, z] of [[-60, -40], [55, -30], [-40, 60]]) { const lt = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 30, 12), metal(0x8a8f94, 0.4)); lt.position.set(x, 8, z); PAD.add(lt); const bulb = new THREE.Mesh(new THREE.BoxGeometry(3, 1.5, 0.6), glow(0xfff1d0, 2.5)); bulb.position.set(x, 23.5, z); bulb.lookAt(0, 20, 0); PAD.add(bulb); } }
 // steam / smoke billboards (soft sprites)
 const puffTex = H.canvasTex(128, 128, (g, w, h) => { const gr = g.createRadialGradient(64, 64, 4, 64, 64, 62); gr.addColorStop(0, "rgba(255,255,255,0.9)"); gr.addColorStop(0.5, "rgba(235,235,235,0.45)"); gr.addColorStop(1, "rgba(220,220,220,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+const SMK = []; for (let i = 0; i < 120; i++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, color: 0x7a6e62, transparent: true, depthWrite: false, opacity: 0 })); sp.visible = false; scene.add(sp); SMK.push(sp); }
 const NS = 320, steam = []; const steamG = new THREE.Group(); PAD.add(steamG); H.reseed(55);
 for (let i = 0; i < NS; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, color: 0xd9d4ce, transparent: true, depthWrite: false, opacity: 0 })); s.userData = { a: H.rnd() * TAU, v: 0.5 + H.rnd(), d: H.rnd(), up: H.rnd() }; steamG.add(s); steam.push(s); }
 
@@ -211,7 +212,7 @@ const IMG = { pnear: await img("shots/phone-nearby.png"), pobj: await img("shots
 const ph = makePhone(), lap = makeLaptop(); const OR = new THREE.Group(); OR.add(ph.g, lap.g); PAD.add(OR); OR.visible = false;
 const lock = makeLock(); OR.add(lock); const embers = makeEmbers(); OR.add(embers);
 const rail = sh(new THREE.Mesh(new RoundedBoxGeometry(14, 0.4, 5, 3, 0.1), new THREE.MeshPhysicalMaterial({ color: 0x2a1f19, roughness: 0.35, clearcoat: 0.7, map: tex("kit/ph/wood_table_001/wood_table_001_diff_1k.jpg", true, 3, 1) }))); OR.add(rail); rail.position.set(0.5, -0.25, 0.5);
-function drawPhone(g, st) { if (st.obj && IMG.pobj) g.drawImage(IMG.pobj, 0, 0, 780, 1688); else if (IMG.pnear) g.drawImage(IMG.pnear, 0, 0, 780, 1688); else { g.fillStyle = "#0b0d10"; g.fillRect(0, 0, 780, 1688); }
+function drawPhone(g, st) { if (st.obj && IMG.pobj) g.drawImage(IMG.pobj, 0, 0, 780, 1688); else if (IMG.pnear) { g.drawImage(IMG.pnear, 0, 0, 780, 1688); g.fillStyle = "#fff"; rr(g, 334, 124, 166, 56, 28); g.fill(); g.fillStyle = "#0b0d10"; g.font = "600 22px M"; g.fillText("NEARBY 1", 356, 160); } else { g.fillStyle = "#0b0d10"; g.fillRect(0, 0, 780, 1688); }
   if (st.tap > 0) { g.fillStyle = `rgba(61,255,140,${0.5 * st.tap})`; g.beginPath(); g.arc(st.tx, st.ty, 40 + 60 * (1 - st.tap), 0, 7); g.fill(); }
   if (st.burn) { g.fillStyle = "rgba(0,0,0,.8)"; rr(g, 160, 150, 460, 80, 40); g.fill(); g.fillStyle = "#ff8a3d"; g.font = "700 34px M"; g.fillText(st.burn, 205, 202); } }
 function drawLap(g, st) { if (IMG.lnear) g.drawImage(IMG.lnear, 0, 0, 1440, 900); else { g.fillStyle = "#0b0d10"; g.fillRect(0, 0, 1440, 900); } }
@@ -238,7 +239,7 @@ hudEl("timer", `<div id="tmr" style="width:1080px;text-align:center;font:800 130
 const EW = (x, y, z) => ENG.E.localToWorld(V(x, y, z));
 function cutOn(k) { clipE.constant = k > 0 ? 0 : 1e6; }   // plane z = 0 through the engine (camera on −z sees inside)
 function spin(t, k) { EP.wheels.forEach((w, i) => (w.rotation.z = t * (i === 2 ? 60 : 45) * k)); }
-function smoke(t, k, root = ENG.E) { const m4 = new THREE.Matrix4(); smokeS.visible = k > 0; if (!smokeS.visible) return; smokeS.userData.P.forEach((p, i) => { const u = (p.u + t * 0.35) % 1; const pt = u < 0.6 ? EP.exh.getPoint(u / 0.6) : V(0.6 + p.j.x * (u - 0.6) * 2.5, 0.1 - (u - 0.6) * 5, 0.36 + p.j.z * (u - 0.6) * 2.5); root.localToWorld(pt); const s = (u < 0.6 ? 0.025 : 0.025 + (u - 0.6) * 0.35) * k; m4.makeScale(s, s, s).setPosition(pt); smokeS.setMatrixAt(i, m4); }); smokeS.instanceMatrix.needsUpdate = true; }
+function smoke(t, k, root = ENG.E) { smokeS.visible = false; SMK.forEach((sp, i) => { const p = smokeS.userData.P[i]; const u = (p.u + t * 0.5) % 1; sp.visible = k > 0 && u > 0.55; if (!sp.visible) return; const v = (u - 0.55) / 0.45; const pt = V(0.6 + p.j.x * v * 1.6, 0.05 - v * 3.2, 0.36 + p.j.z * v * 1.6); root.localToWorld(pt); sp.position.copy(pt); sp.scale.setScalar(0.12 + v * 1.4); sp.material.opacity = k * 0.75 * Math.sin(Math.PI * Math.min(1, v * 1.1)); sp.material.rotation = p.j.y * 6 + t * 0.3; }); }
 const fuelCol = (u) => new THREE.Color().setRGB(lerp(0.6, 2.4, u), lerp(1.2, 0.9, u), lerp(2.4, 0.3, u)); // cold blue-white → hot orange as it climbs
 
 H.frame("Nearby · it burns", async (t) => {
@@ -246,16 +247,16 @@ H.frame("Nearby · it burns", async (t) => {
   camRange(0.02, 6000); STAND.visible = true; ENG.E.visible = true; TANK.visible = false; FIRE.visible = false; PAD.visible = false; OR.visible = false;
   scene.background = new THREE.Color(0x07080a); H.backdrop.visible = true; scene.fog = null; H.zoom = 1; H.bloom.strength = 0.35; H.envK.value = 0.9; H.key.intensity = 2.4; H.hemi.intensity = 0.35;
   cutOn(0); NU.uHeat.value = 0; plume.userData.u.uK.value = 0; plume.userData.u.uGreen.value = 0; plume.userData.u.uVac.value = 0; plume.userData.u.uT.value = t; nozzleLight.intensity = 0;
-  for (const s of [loxS, fuelS, chanS, ggS]) s.visible = false; smokeS.visible = false; gas.visible = false; spin(t, 0);
+  for (const s of [loxS, fuelS, chanS, ggS]) s.visible = false; smoke(t, 0); gas.visible = false; spin(t, 0);
   ENG.E.position.set(0, 0, 0); ENG.E.rotation.set(0, 0, 0);
   const keyAt = (c, r) => { const s = H.key.shadow.camera; H.key.target.position.copy(c); H.key.position.copy(c.clone().add(V(6, 10, 7).normalize().multiplyScalar(r * 2))); Object.assign(s, { left: -r, right: r, top: r, bottom: -r, near: 0.5, far: r * 5 }); s.updateProjectionMatrix(); };
   keyAt(V(0, 1.5, 0), 4);
-  const fire = (k, hot = 1) => { plume.userData.u.uK.value = k; NU.uHeat.value = hot * k; nozzleLight.intensity = 30 * k; runGas(t, 0); smoke(t, k * 0.8); spin(t, k); H.bloom.strength = 0.35 + 0.35 * k; };
+  const fire = (k, hot = 1) => { plume.userData.u.uK.value = k; NU.uHeat.value = hot * k * 0.7; nozzleLight.intensity = 12 * k; runGas(t, 0); smoke(t, k * 0.8); spin(t, k); H.bloom.strength = 0.3 + 0.1 * k; };
 
   // ---- HOOK: on the test stand, the engine fires: a bathtub a second; the bell glows
   if (t < at("tanks")) {
     const ign = ease(prog(t, fr("hook", 0.1), fr("hook", 0.25))); fire(ign, 1); ENG.E.position.x = Math.sin(t * 60) * 0.002 * ign;
-    move(t, 0, at("tanks"), [V(3.2, 0.4, 4.4), V(0, 1.2, 0), 40], [V(2.4, 1.9, 3.2), V(0.1, 1.5, 0), 38]);
+    move(t, 0, at("tanks"), [V(4.6, 0.2, 6.6), V(0, 0.4, 0), 40], [V(3.6, 1.2, 5.2), V(0.1, 0.9, 0), 38]);
     flash(t, fr("hook", 0.12), 0.35, 3, "#ffd9a0");
     hudShow("tub", win(t, fr("hook", 0.4), fr("hook", 0.72)), { transform: `scale(${lerp(1.2, 1, out(prog(t, fr("hook", 0.4), fr("hook", 0.5))))})` }); H.$("tubn").textContent = String(Math.round(300 * ease(prog(t, fr("hook", 0.4), fr("hook", 0.55)))));
     callout("noz", t, fr("hook", 0.75), end("hook"), EW(0.36, 0.7, 0.2), 790, 520);
@@ -274,7 +275,7 @@ H.frame("Nearby · it burns", async (t) => {
   else if (t < at("pumps")) {
     STAND.visible = false; ENG.E.visible = false; FIRE.visible = true; scene.background = new THREE.Color(0x050608);
     const tSp = fr("why", 0.45), tOwn = fr("why", 0.72); const air = 1 - ease(prog(t, tSp, tSp + 0.8)) + ease(prog(t, tOwn, tOwn + 0.6)) * 1.4;
-    flameF.userData.u.uK.value = clamp(air) * 0.9; flameF.userData.u.uT.value = t; flameF.scale.setScalar(0.6 + 0.4 * clamp(air));
+    flameF.userData.u.uK.value = clamp(air) * 1.6; flameF.userData.u.uT.value = t; flameF.scale.setScalar(0.6 + 0.4 * clamp(air));
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(); const C = FIRE.position;
     OX.forEach((o, i) => { const p = o.p.clone().addScaledVector(o.v, Math.sin(t * 0.6 + i) * 0.3); const pull = clamp(air) * ((t * 0.3 + i / NO) % 1); p.lerp(V(0, 0.1, 0), pull * 0.6); const s = clamp(air * 1.2 - (i / NO) * 0.2); q.setFromAxisAngle(o.v, t + o.a);
       const d = V(0.05, 0, 0).applyQuaternion(q); m4.compose(p.clone().add(d), q, V(s, s, s)); oxA.setMatrixAt(i * 2, m4); m4.compose(p.clone().sub(d), q, V(s, s, s)); oxA.setMatrixAt(i * 2 + 1, m4); }); oxA.instanceMatrix.needsUpdate = true;
@@ -299,7 +300,7 @@ H.frame("Nearby · it burns", async (t) => {
   }
   // ---- COOL: chamber cutaway: 3,300 °C flame; cold fuel climbs the wall channels and warms up before it burns
   else if (t < at("spark")) {
-    cutOn(1); NU.uHeat.value = 0.8; runGas(t, 1); runStream(chanS, t, 0.35, 1, ENG.E, fuelCol); nozzleLight.intensity = 10; H.bloom.strength = 0.55;
+    cutOn(1); NU.uHeat.value = 0.6; runGas(t, 1); runStream(chanS, t, 0.35, 1, ENG.E, fuelCol); nozzleLight.intensity = 4; H.bloom.strength = 0.35;
     const C = EW(0, 1.9, 0); move(t, at("cool"), at("spark"), [C.clone().add(V(0.5, 0.3, -2.4)), C.clone().add(V(0, -0.2, 0)), 40], [C.clone().add(V(0.2, 0.15, -1.6)), C.clone().add(V(0, -0.1, 0)), 36]);
     hudShow("temp", win(t, fr("cool", 0.05), fr("cool", 0.45)));
     callout("cham", t, fr("cool", 0.05), fr("cool", 0.45), EW(0, 2.25, 0), 790, 460); callout("chan", t, fr("cool", 0.48), end("cool") + 0.2, chanC[5].getPoint(0.6), 300, 520);
@@ -307,13 +308,13 @@ H.frame("Nearby · it burns", async (t) => {
   // ---- SPARK: TEA-TEB squirt → a green flash in the chamber, then the main flame lights
   else if (t < at("nozzle")) {
     const g0 = fr("spark", 0.22), g1 = fr("spark", 0.6); const gk = win(t, g0, g1, 0.12, 0.4), main = ease(prog(t, fr("spark", 0.55), fr("spark", 0.75)));
-    plume.userData.u.uK.value = Math.max(gk, main); plume.userData.u.uGreen.value = clamp(gk - main * 0.8); NU.uHeat.value = main; nozzleLight.intensity = 30 * Math.max(gk, main); nozzleLight.color.setRGB(1 - gk * 0.6 + main * 0.6, 1, 0.4 + 0.2 * gk); spin(t, 1); H.bloom.strength = 0.6;
+    plume.userData.u.uK.value = Math.max(gk, main); plume.userData.u.uGreen.value = clamp(gk - main * 0.8); NU.uHeat.value = main * 0.6; nozzleLight.intensity = 10 * Math.max(gk, main); nozzleLight.color.setRGB(1 - gk * 0.6 + main * 0.6, 1, 0.4 + 0.2 * gk); spin(t, 1); H.bloom.strength = 0.35;
     move(t, at("spark"), at("nozzle"), [V(1.8, -1.2, 3.4), V(0, 0.4, 0), 42], [V(1.2, -1.6, 2.6), V(0, 0.2, 0), 40]);
     flash(t, g0, 0.3, 3, "#7dff9a"); callout("inj", t, at("spark") + 0.1, g0, EW(0, 2.6, 0.2), 790, 460);
   }
   // ---- NOZZLE: gas squeezed at the throat, then expanding in the bell; speed climbs to ≈3 km/s
   else if (t < at("push")) {
-    cutOn(1); runGas(t, 1); NU.uHeat.value = 0.9; plume.userData.u.uK.value = 0.9; nozzleLight.intensity = 20; H.bloom.strength = 0.55;
+    cutOn(1); runGas(t, 1); NU.uHeat.value = 0.6; plume.userData.u.uK.value = 0.6; nozzleLight.intensity = 6; H.bloom.strength = 0.35;
     const C = EW(0, 1.2, 0); move(t, at("nozzle"), at("push"), [C.clone().add(V(0.3, 0.6, -3.6)), C.clone().add(V(0, 0.4, 0)), 40], [C.clone().add(V(0.1, -0.2, -3.4)), C.clone().add(V(0, -0.4, 0)), 42]);
     callout("throat", t, fr("nozzle", 0.2), fr("nozzle", 0.55), EW(0.12, 1.85, 0), 790, 520); callout("exitV", t, fr("nozzle", 0.6), end("nozzle") + 0.2, EW(0.3, 0.05, 0), 790, 1060);
     hudShow("speed", win(t, fr("nozzle", 0.25), end("nozzle") + 0.2)); const v = 2800 * ease(prog(t, fr("nozzle", 0.3), fr("nozzle", 0.95))); H.$("spv").textContent = `${Math.round(v).toLocaleString("en")} m/s`; S2(H.$("spb"), { width: `${v / 2800 * 100}%` });
@@ -334,7 +335,7 @@ H.frame("Nearby · it burns", async (t) => {
     H.envK.value = 0.5; H.key.intensity = 0.8; H.key.color.set(0xffc49a); H.hemi.intensity = 0.25; keyAt(PAD.position.clone().add(V(0, 20, 0)), 70);
     const ign = ease(prog(t, fr("nine", 0.15), fr("nine", 0.4))), lift = Math.max(0, t - fr("nine", 0.55)); ROCKET.position.y = 0.6 * lift * lift;
     PLUMES.forEach((p, i) => { p.userData.u.uK.value = ign * clamp((t - fr("nine", 0.15) - (i ? 0.08 : 0)) * 6); p.userData.u.uT.value = t + i; }); padL.intensity = 3000 * ign;
-    steam.forEach((s, i) => { const u = clamp(((t - fr("nine", 0.18)) * (0.18 + s.userData.v * 0.1) + s.userData.d * 0.15)); const r = 4 + u * 70 * s.userData.v; s.position.set(Math.cos(s.userData.a) * r, -4 + u * (8 + 30 * s.userData.up), Math.sin(s.userData.a) * r * 0.6 + 6); s.scale.setScalar(4 + u * 28); s.material.opacity = ign * clamp(u * 4) * (1 - u * 0.6) * 0.75; s.material.color.setRGB(0.85 + 0.15 * ign, 0.78 + 0.1 * ign, 0.7); });
+    steam.forEach((s, i) => { const u = clamp(((t - fr("nine", 0.18)) * (0.18 + s.userData.v * 0.1) + s.userData.d * 0.15)); const r = 4 + u * 70 * s.userData.v; s.position.set(Math.cos(s.userData.a) * r, -4 + u * (8 + 30 * s.userData.up), Math.sin(s.userData.a) * r * 0.6 + 6); s.scale.setScalar(4 + u * 22); s.material.opacity = ign * clamp(u * 4) * (1 - u) * 0.45; s.material.color.setRGB(0.85 + 0.15 * ign, 0.78 + 0.1 * ign, 0.7); });
     const P = PAD.position; move(t, at("nine"), at("orbi"), [P.clone().add(V(38, 4, 110)), P.clone().add(V(0, 18, 0)), 36], [P.clone().add(V(30, 2, 95)), P.clone().add(V(0, 26 + ROCKET.position.y * 0.6, 0)), 38]);
     H.cam.position.x += Math.sin(t * 50) * 0.08 * ign; H.cam.position.y += Math.cos(t * 43) * 0.06 * ign;
     title(t, fr("nine", 0.55), end("nine") + 0.3, "Nine engines", "Lift-off");
@@ -344,15 +345,15 @@ H.frame("Nearby · it burns", async (t) => {
     PAD.visible = true; H.backdrop.visible = false; scene.background = null; scene.fog = new THREE.FogExp2(0x4a4558, 0.0016); STAND.visible = false; ENG.E.visible = false; camRange(0.02, 6000);
     H.envK.value = 0.55; H.key.intensity = 0.9; H.key.color.set(0xffc49a); H.hemi.intensity = 0.3;
     const lift = t - fr("nine", 0.55); ROCKET.position.y = 0.6 * lift * lift; PLUMES.forEach((p, i) => { p.userData.u.uK.value = 1; p.userData.u.uT.value = t + i; }); padL.intensity = 3000;
-    steam.forEach((s) => (s.material.opacity *= 0.995));
-    OR.visible = true; OR.position.set(14, 1.2, 160); OR.rotation.y = 0.35; OR.scale.setScalar(0.11); OR.updateMatrixWorld(true); const W = (x, y, z) => OR.localToWorld(V(x, y, z)); keyAt(W(0, 0, 0), 3);
+    steam.forEach((s) => (s.visible = false));
+    OR.visible = true; OR.position.set(10, -5.2, 150); OR.rotation.y = 0.12; OR.scale.setScalar(0.11); OR.updateMatrixWorld(true); const W = (x, y, z) => OR.localToWorld(V(x, y, z)); keyAt(W(0, 0, 0), 3);
     lap.g.position.set(1.6, -0.05, -0.2); lap.g.rotation.set(0, -0.35, 0); lap.lid.rotation.x = -0.2;
     ph.g.position.set(-0.6, 0.55, 0.8); ph.g.rotation.set(-0.35, 0.2, 0);
     const tTap = fr("orbi2", 0.55), tLock = fr("orbi3", 0.1), tBurn = fr("orbi3", 0.62);
-    if (t < at("orbi2")) move(t, at("orbi"), at("orbi2"), [W(-0.4, 3.0, 9.0), W(0.4, 6.0, -30), 40], [W(-0.6, 2.4, 7.0), W(0.2, 2.0, -10), 38]);
+    if (t < at("orbi2")) move(t, at("orbi"), at("orbi2"), [W(-0.6, 1.8, 7.5), W(1.0, 9.0, -40), 42], [W(-0.8, 1.6, 6.2), W(0.6, 4.0, -20), 40]);
     else move(t, at("orbi2"), at("end"), [W(-1.6, 2.6, 4.2), W(-0.5, 0.5, 0.6), 36], [W(-1.2, 2.2, 3.4), W(-0.55, 0.55, 0.7), 34]);
     const burnLeft = t > tBurn ? Math.round(1800 * (1 - ease(prog(t, tBurn, tBurn + 1.4)))) : 1800; const bt = `${String(Math.floor(burnLeft / 60)).padStart(2, "0")}:${String(burnLeft % 60).padStart(2, "0")}`; const burnK = prog(t, tBurn + 0.6, tBurn + 1.8);
-    screen(ph, { obj: t > tTap + 0.3, tap: win(t, tTap, tTap + 0.5, 0.05, 0.3), tx: 390, ty: 900, burn: t > tLock ? `BURNS IN ${bt}` : null }, drawPhone); screen(lap, {}, drawLap);
+    screen(ph, { obj: t > tTap + 0.3, tap: win(t, tTap, tTap + 0.5, 0.05, 0.3), tx: 390, ty: 756, burn: t > tLock ? `BURNS IN ${bt}` : null }, drawPhone); screen(lap, {}, drawLap);
     lock.position.copy(OR.worldToLocal(ph.g.localToWorld(V(0, 0.15, 0.3)))); const lk = win(t, tLock - 0.2, tBurn); lock.scale.setScalar(Math.max(0.001, lk * 0.45));
     embers.userData.burn(burnK > 0 ? clamp(burnK * 2) * (1 - clamp((burnK - 0.6) / 0.4)) : 0, t, (x, y) => OR.worldToLocal(ph.g.localToWorld(V(x * 0.7, y * 1.5, 0.1))));
     title(t, at("orbi") + 0.1, at("orbi2"), "Orbi Transfer", "Doesn't wait around");
