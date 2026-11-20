@@ -67,27 +67,9 @@ export function netHiccup() {
 // navigator.connection 'change': that fires on every estimate update, mid-upload too, where a fresh base would be inflated)
 if (typeof window !== "undefined") window.addEventListener("online", () => (st.base = Infinity));
 
-// the person's pick: "full" (default since 2026-11-17, owner: "make full speed the default") always goes flat out,
-// "gentle" backs off on a busy line
-const SPEED_KEY = "orbit:upspeed";
-export type UpSpeed = "gentle" | "full";
-export const upSpeed = (): UpSpeed => {
-  try {
-    return localStorage.getItem(SPEED_KEY) === "gentle" ? "gentle" : "full";
-  } catch {
-    return "full";
-  }
-};
-export const setUpSpeed = (v: UpSpeed) => {
-  try {
-    localStorage.setItem(SPEED_KEY, v);
-  } catch {}
-  grant();
-};
+// uploads always go at full speed (owner 2026-11-20: the Gentle/Full speed setting is gone)
 /** the round trip is well above this line's quiet level (only measured while something watches it: watchNet) */
 export const lineBusy = () => st.busy;
-/** the line is choking and this device is set to be gentle: uploads (and device-to-device sends) hold back */
-export const netCongested = () => st.busy && upSpeed() === "gentle";
 /** bulk bytes move on this device (an upload, a device-to-device send), or the line was seen choking: a round trip may
  *  take seconds with nothing wrong (lib/live.ts waits longer for its pongs then) */
 export const netLoaded = () => st.busy || st.users > 0 || runs.up > 0 || runs.serve > 0;
@@ -110,7 +92,6 @@ let seq = 0;
 // while someone is served directly (who also gets the copy the moment it is complete). Desktops are unchanged.
 const phone = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 const limit = (k: NetKind) => {
-  const busy = netCongested();
   // (2026-10-27: desktops were held to 1–2 parts at a time with a pause after each, which made every upload far slower
   // than the line: a long, far route (India → the bucket in Europe) needs several parts in flight to fill it. Now 4, and
   // 2 while the round trip is up or someone is served directly; one at a time only after parts actually failed)
@@ -120,8 +101,9 @@ const limit = (k: NetKind) => {
   // (2026-11-17, owner: "WhatsApp sends the same file 15× faster"): a full upload always raises the round trip, so "busy"
   // was nearly always on and held every upload to one part at a time with pauses. Now 6 parts when calm, 2 on a busy
   // line, and one at a time only after parts really failed in the last 2 minutes (netShaky)
-  if (k === "up") return upSpeed() === "full" ? 8 : netShaky() && busy ? 1 : busy ? 2 : !phone && runs.serve > 0 ? 3 : 6; // (never 0: nothing stalls for good on a wrong probe)
-  if (k === "serve") return busy || (phone && runs.up > 0) ? 1 : 2;
+  // (2026-11-20, owner: full speed only) 8 parts at once, always
+  if (k === "up") return 8;
+  if (k === "serve") return phone && runs.up > 0 ? 1 : 2;
   return st.busy || runs.up || runs.serve || waits.some((w) => w.kind !== "peek") ? 0 : 1;
 };
 

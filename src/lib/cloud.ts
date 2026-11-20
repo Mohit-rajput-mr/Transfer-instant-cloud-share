@@ -8,7 +8,7 @@ import { encryptChunk } from "./crypto";
 import { ALIVE_EVERY_MS, LEGACY_PART_CHUNKS, PART_CHUNKS, STORE_CHUNK, STORE_TAG, storeChunks } from "./limits";
 import { stayAwake } from "./wake";
 import { Meter } from "./rate";
-import { acquire, netCongested, netHiccup, netShaky, nudgeNet, tryAcquire, watchNet } from "./net";
+import { acquire, netHiccup, netShaky, nudgeNet, tryAcquire, watchNet } from "./net";
 
 export type CloudState = { state: "saving" | "paused" | "saved" | "failed"; frac: number; speed?: string };
 const states = new Map<string, CloudState>();
@@ -49,15 +49,9 @@ const LANES_UP = 8;
 // Every part (and every small file) takes a turn from the network watch first, across all files at once, so a send of
 // ten 'Separate' files doesn't start thirty parallel uploads. On a busy line one part goes at a time with a pause after
 // it in proportion to how long it took (a duty cycle), so pages, DNS and Windows' own internet check get through.
-export { netCongested, setUpSpeed, upSpeed, type UpSpeed } from "./net";
 /** big files' parts go up in the order the files were picked: the first ball is stored first (a small file, one
  *  upload, goes ahead of them: see single) */
 let picked = 0;
-/** after a part on a busy line: let the queue drain for half as long as the part took (capped) */
-// (2026-10-27 later: back on whenever the line is choking, failures or not. "Busy" means the round trip is 4× and 400 ms+
-// over quiet: the router's queue is full and the whole house's internet stalls, other browsers included)
-// (2026-11-17: only after real part failures: pausing on every busy reading made uploads many times slower than the line)
-const breather = (ms: number, signal: AbortSignal) => (netCongested() && netShaky() ? sleep(Math.min(30_000, Math.max(800, ms / (netShaky() ? 2 : 3))), signal) : Promise.resolve());
 
 // ---- uploads that resume -------------------------------------------------------------------------
 // A big upload is remembered on this device (IndexedDB: the object, its owner key, R2's upload id and
@@ -319,9 +313,7 @@ async function single(id: string, owner: string, file: File, key: CryptoKey, non
           expired = false;
         }
         const body = await sealRange(file, key, nonce, 0, total, total);
-        const t = performance.now();
-        await put(url, body, (b) => set(id, { state: "saving", frac: Math.min(0.99, b / enc), speed: netCongested() ? `${meter.label(b)} · connection busy, going gently` : meter.label(b) }), signal);
-        await breather(performance.now() - t, signal);
+        await put(url, body, (b) => set(id, { state: "saving", frac: Math.min(0.99, b / enc), speed: meter.label(b) }), signal);
         break;
       } catch (e) {
         if (e instanceof Gone || signal.aborted || attempt >= 8) throw e;
@@ -370,7 +362,7 @@ async function multi(
   let queued = 0;
   const progress = () => {
     const done = base + [...sent.values()].reduce((a, b) => a + b, 0);
-    const speed = paused ? undefined : !turns && queued ? "waiting its turn" : netCongested() ? `${meter.label(done)} · connection busy, going gently` : meter.label(done);
+    const speed = paused ? undefined : !turns && queued ? "waiting its turn" : meter.label(done);
     set(id, { state: paused ? "paused" : "saving", frac: Math.min(0.99, done / enc), speed });
   };
   const sync = async () => {
@@ -424,7 +416,6 @@ async function multi(
               for (let attempt = 1; ; attempt++) {
                 try {
                   const body = await sealRange(file, key, nonce, (p.n - 1) * PART_CHUNKS, Math.min(total, p.n * PART_CHUNKS), total);
-                  const t = performance.now();
                   const etag = await put(p.url, body, (b) => (sent.set(p.n, b), progress()), round.signal);
                   // R2 must expose ETag to the page (bucket CORS); without it the parts can't be put together
                   if (!etag) throw new Error("no etag");
@@ -432,8 +423,6 @@ async function multi(
                   sent.set(p.n, partBytes(p.n));
                   paused = false;
                   progress();
-                  // a busy line: keep the turn a while (half as long as this part took) so everything else drains
-                  await breather(performance.now() - t, round.signal);
                   break;
                 } catch (e) {
                   sent.delete(p.n);

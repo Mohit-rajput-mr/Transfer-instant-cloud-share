@@ -162,6 +162,22 @@ export async function passKeys(name: string, pass: string): Promise<{ code: stri
   const key = btoa(String.fromCharCode(...k)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   return { code, key };
 }
+// stretching the passcode is the slow part of opening a space (PBKDF2, most of a second on a phone): it starts while the
+// passcode is typed (warmPassKeys), so pressing Enter only waits for the server
+const keyMemo = new Map<string, Promise<{ code: string; key: string }>>();
+export function warmPassKeys(name: string, pass: string) {
+  const n = cleanAnonName(name), id = `${n}\n${pass}`;
+  let p = keyMemo.get(id);
+  if (!p) {
+    if (keyMemo.size > 8) keyMemo.clear();
+    p = passKeys(n, pass);
+    p.catch(() => keyMemo.delete(id));
+    keyMemo.set(id, p);
+  }
+  return p;
+}
+// the live check's answer, reused by the join a moment later (no second lookup)
+const liveSlugs = new Map<string, { at: number; slugs: string[] }>();
 /** a new anonymous space that a name and a passcode open (and its link, like any anonymous space) */
 export async function createAnonPassSpace(pass: string): Promise<SpaceSession> {
   for (let i = 0; i < 5; i++) {
@@ -183,16 +199,22 @@ export async function anonLive(name: string): Promise<boolean | null> {
   const r = await fetch(`/api/anon-find?name=${n}`, { cache: "no-store" }).catch(() => null);
   if (!r?.ok) return null;
   const slugs = ((await r.json().catch(() => null)) as { slugs?: string[] } | null)?.slugs ?? [];
+  liveSlugs.set(n, { at: Date.now(), slugs });
   return slugs.length > 0;
 }
 /** step into an anonymous space with its name and passcode */
 export async function joinAnonByName(name: string, pass: string): Promise<SpaceSession> {
   const n = cleanAnonName(name);
-  const r = await fetch(`/api/anon-find?name=${n}`, { cache: "no-store" }).catch(() => null);
-  const slugs = ((await r?.json().catch(() => null)) as { slugs?: string[] } | null)?.slugs ?? [];
-  if (!r?.ok) throw new Error("Couldn't look that name up, try again");
-  if (!slugs.length) throw new Error(`No live anonymous space called ${n.toUpperCase()}`);
-  const { code, key } = await passKeys(n, pass);
+  const keys = warmPassKeys(n, pass);
+  const seen = liveSlugs.get(n);
+  let slugs = seen && seen.slugs.length && Date.now() - seen.at < 120_000 ? seen.slugs : null;
+  if (!slugs) {
+    const r = await fetch(`/api/anon-find?name=${n}`, { cache: "no-store" }).catch(() => null);
+    slugs = ((await r?.json().catch(() => null)) as { slugs?: string[] } | null)?.slugs ?? [];
+    if (!r?.ok) throw new Error("Couldn't look that name up, try again");
+    if (!slugs.length) throw new Error(`No live anonymous space called ${n.toUpperCase()}`);
+  }
+  const { code, key } = await keys;
   let last: Error | null = null;
   for (const slug of slugs) {
     try {

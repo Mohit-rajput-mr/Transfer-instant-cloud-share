@@ -13,12 +13,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const deviceId = clean(b?.deviceId, 40);
   const typed = cleanHandle(b?.handle);
   if (!validSlug(slug) || !deviceId) return NextResponse.json({ error: "bad request" }, { status: 400 });
-  const meta = await getMeta(slug);
+  // the space and its members at once (one round trip, not two)
+  const [meta, r] = await Promise.all([getMeta(slug), roster(slug, true)]);
   // an anonymous space gives every member an alias: a typed name is ignored
   if (!typed && !meta?.anon) return NextResponse.json({ error: "Pick a name for yourself" }, { status: 400 });
   if (!meta) return NextResponse.json({ error: "No such space" }, { status: 404 });
   const dh = devHash(deviceId);
-  const r = await roster(slug, true);
   if (r.kicked.has(dh)) return NextResponse.json({ error: "You were removed from this space" }, { status: 403 });
 
   // wrong passcodes: 8 per device, and 40 for a whole network (a VPN exit or an office shares one: one person's

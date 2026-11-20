@@ -8,7 +8,6 @@ import { usePlan } from "@/lib/auth";
 import { livesFor } from "@/lib/plans";
 import { previewUrl } from "@/lib/preview";
 import { release } from "@/lib/p2p";
-import { setUpSpeed, upSpeed, type UpSpeed } from "@/lib/cloud";
 import { newContainer } from "@/lib/client";
 import { useDialog } from "@/lib/dialog";
 import { enqueue } from "@/lib/downloads";
@@ -565,7 +564,6 @@ export function SendPanel(props: {
   // "New container": this send (and what follows) gathers apart from what this device sent before
   const [fresh, setFresh] = useState(false);
   const [more, setMore] = useState(false);
-  const [speed, setSpeed] = useState<UpSpeed>(() => (typeof window === "undefined" ? "full" : upSpeed()));
   // a logged-in profile may set how sends start (lib/profile.ts); otherwise unlimited and open
   const [max, setMax] = useState<number | null>(() => pref<number | null>("max", null));
   // every send starts open (no password) unless the profile says otherwise; a password is a deliberate choice
@@ -751,13 +749,6 @@ export function SendPanel(props: {
                 {lives.map((m) => (
                   <button key={m} role="radio" aria-checked={lifeNow === m} className={`chip lg-press${lifeNow === m ? " on" : ""}`} onClick={() => setLife(m)}>{lifeShort(m)}</button>
                 ))}
-              </div>
-            </div>
-            <div className="field">
-              <label><span className="mono">Upload speed</span><span className="mono dim">{speed === "gentle" ? "backs off when your connection gets busy" : "always flat out"}</span></label>
-              <div className="seg" role="radiogroup" aria-label="Upload speed">
-                <button role="radio" aria-checked={speed === "gentle"} className={`lg-press${speed === "gentle" ? " on" : ""}`} onClick={() => (setUpSpeed("gentle"), setSpeed("gentle"))}>Gentle</button>
-                <button role="radio" aria-checked={speed === "full"} className={`lg-press${speed === "full" ? " on" : ""}`} onClick={() => (setUpSpeed("full"), setSpeed("full"))}>Full speed</button>
               </div>
             </div>
             <div className="field">

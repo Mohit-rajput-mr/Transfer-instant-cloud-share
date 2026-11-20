@@ -1,13 +1,13 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { LuArrowLeft, LuChevronRight, LuCloud, LuCopy, LuEye, LuEyeOff, LuMapPinOff, LuPlus, LuSearch, LuShare2, LuShieldCheck, LuUserRoundX } from "react-icons/lu";
+import { LuArrowLeft, LuChevronRight, LuCloud, LuCopy, LuEyeOff, LuGhost, LuMapPinOff, LuPlus, LuSearch, LuShare2, LuShieldCheck, LuUserRoundX } from "react-icons/lu";
 import { BsIncognito } from "react-icons/bs";
 import { ANON_MINUTES, aliasOf, lastMinutes, type AnonSession } from "@/lib/anon";
 import { Pop } from "./Spaces";
-import { ANON_PASS_MIN, anonLive, cleanAnonName, type SpaceSession } from "@/lib/space";
+import { ANON_PASS_MIN, anonLive, cleanAnonName, warmPassKeys, type SpaceSession } from "@/lib/space";
 
 // "Stay anonymous" (lib/anon.ts), as one simple portal card. Three things to do, nothing else on the first screen:
-//   look around  the open void, as a ghost
+//   Ghost World  the open void, as a ghost (no device, no location, no identity)
 //   create       a private space with its own 4-character code (made up for you) and a passcode you pick (required)
 //   find         someone's space: type its code, see that it's live, give its passcode
 // Every anonymous space burns with the session that made it (5 to 30 minutes). The copy says what Orbi does NOT keep
@@ -114,6 +114,12 @@ export default function AnonCard(props: {
     };
   }, [name, step]);
   const shown = name.length === 4 ? live : "idle";
+  // the passcode's key is worked out while it's typed, so "Enter space" opens it straight away
+  useEffect(() => {
+    if (step !== "find" || shown !== "live" || pass.length < ANON_PASS_MIN) return;
+    const t = setTimeout(() => void warmPassKeys(name, pass).catch(() => {}), 120);
+    return () => clearTimeout(t);
+  }, [step, shown, name, pass]);
 
   const go = (to: "home" | "create" | "find") => {
     setStep(to);
@@ -286,7 +292,7 @@ export default function AnonCard(props: {
     <>
       {timePick}
       <div className="ap-opts">
-        {opt(<LuEye />, "Look around", "The open void, as a ghost", () => (props.switchOn ? props.onClose() : props.onLook(min)))}
+        {opt(<LuGhost />, "Ghost World", "The most anonymous way in: no device, no location, no identity. No clue who's inside.", () => (props.switchOn ? props.onClose() : props.onLook(min)))}
         {opt(<LuPlus />, "Create a space", "Get a code, set a passcode", () => go("create"))}
         {opt(<LuSearch />, "Find a space", "Enter a code + passcode", () => go("find"))}
       </div>
