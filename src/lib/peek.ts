@@ -1,4 +1,5 @@
 "use client";
+import { dlProgress } from "./dlprog";
 import type { Orb } from "./client";
 import { NotYet, peekOrb, receive, receiving } from "./transfer";
 import { viewKind } from "@/components/Viewer";
@@ -73,7 +74,17 @@ const slot = () => (running < lanes() ? Promise.resolve() : new Promise<void>((o
 
 async function fetchPeek(o: Orb, guess: boolean, signal?: AbortSignal) {
   const un = await peekOrb(o, signal);
-  const res = await receive({ orb: o, unlocked: un, target: Promise.resolve(null), folderTarget: null, hold: true, onProgress: () => {}, guess, signal });
+  // asked for (the card opened, not a guess): the bytes really come to this device, so the sender sees it (lib/dlprog.ts)
+  let f = 0;
+  const say = !guess;
+  const res = await receive({
+    orb: o, unlocked: un, target: Promise.resolve(null), folderTarget: null, hold: true, guess, signal,
+    onProgress: (s, p) => say && s === "decrypting" && dlProgress(o.id, (f = p)),
+  }).catch((e) => {
+    if (say) dlProgress(o.id, f, signal?.aborted ? 2 : 3);
+    throw e;
+  });
+  if (say) dlProgress(o.id, 1, 1);
   if (res.kind !== "file") throw new Error("no preview");
   sizes.set(o.id, res.file.size);
   trim();
