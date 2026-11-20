@@ -1119,3 +1119,61 @@ html[data-ui="work"] .pin-menu { background: var(--w-surface); border-color: var
 html[data-ui="work"] .pin-menu-row b { color: var(--w-text); }
 html[data-ui="work"] .pin-menu-row em, html[data-ui="work"] .pin-menu p { color: var(--w-text-3); }
 html[data-ui="work"] .pin-switch.on { background: var(--w-ok); }
+
+/* ---- Work look, owner 2026-11-19: tiles carry one soft accent colour and a big file type; the ball stats become one
+   straight row above the tile (the curved line fits round balls only) ---- */
+html[data-ui="work"] { --w-tile: #7c8cff; }
+html[data-ui="work"] .orb-stats { display: none !important; }
+html[data-ui="work"] .orb-statrow { display: flex; position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); z-index: 4; gap: 8px; align-items: center;
+  font: 600 10px/1 var(--w-mono, ui-monospace, monospace); letter-spacing: .06em; color: var(--w-text-2, #c9c9cf); white-space: nowrap; pointer-events: none; }
+html[data-ui="work"] .orb-statrow > span { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: 6px; background: var(--w-raised, #1d1d20); border: 1px solid var(--w-border-2, rgba(255,255,255,.12)); }
+html[data-ui="work"] .orb-statrow svg { width: 11px; height: 11px; }
+html[data-ui="work"] .orb-statrow .sr-live i { width: 6px; height: 6px; border-radius: 50%; background: #4a4f4c; }
+html[data-ui="work"] .orb-statrow.hot .sr-live { color: var(--w-ok); }
+html[data-ui="work"] .orb-statrow.hot .sr-live i { background: var(--w-ok); box-shadow: 0 0 6px var(--w-ok); }
+html[data-ui="work"] .orb-statrow .sr-del { pointer-events: auto; cursor: pointer; color: var(--w-danger); border-color: color-mix(in srgb, var(--w-danger) 45%, transparent); transition: background .15s, color .15s; }
+html[data-ui="work"] .orb-statrow .sr-del:hover, html[data-ui="work"] .orb-statrow .sr-del:active { background: var(--w-danger); color: #0a0a0a; border-color: var(--w-danger); }
+/* the tile: one accent tint for every file, the type written big in the middle */
+html[data-ui="work"]:not([data-theme="light"]) .orb:not(.group) .orb-body, html[data-ui="work"]:not([data-theme="light"]) .mball { background: linear-gradient(160deg, color-mix(in srgb, var(--w-tile) 34%, #222226) 0%, color-mix(in srgb, var(--w-tile) 12%, #18181b) 100%) !important;
+  border-color: color-mix(in srgb, var(--w-tile) 50%, rgba(255,255,255,.12)) !important; }
+html[data-ui="work"][data-theme="light"] .orb:not(.group) .orb-body, html[data-ui="work"][data-theme="light"] .mball { background: linear-gradient(160deg, color-mix(in srgb, var(--w-tile) 22%, #fff) 0%, color-mix(in srgb, var(--w-tile) 8%, #fff) 100%) !important; }
+html[data-ui="work"] .orb:not(.group) .orb-body > .ext { top: 50% !important; bottom: auto !important; transform: translateY(-50%); font: 800 17px/1 var(--w-font) !important; letter-spacing: .04em !important; color: #fff !important; opacity: 1 !important; }
+html[data-ui="work"][data-theme="light"] .orb:not(.group) .orb-body > .ext { color: color-mix(in srgb, var(--w-tile) 70%, #111) !important; }
+html[data-ui="work"] .orb:not(.group) .orb-body > .ext::before { content: "" !important; }
+/* the opened container in Work: the same tint and row */
+html[data-ui="work"] .zsphere { background: linear-gradient(160deg, color-mix(in srgb, var(--w-tile) 30%, #222226) 0%, color-mix(in srgb, var(--w-tile) 10%, #18181b) 100%) !important; border-color: color-mix(in srgb, var(--w-tile) 45%, rgba(255,255,255,.12)) !important; }
+html[data-ui="work"] .zsphere .zext { color: #fff !important; font-weight: 800 !important; }
+html[data-ui="work"] .zsphere .zext::before { content: "" !important; }
+html[data-ui="work"] .zsphere .orb-statrow { bottom: calc(100% + 10px); }
+html[data-ui="work"] .mball > span:not(.sat) { color: #fff !important; font-weight: 800 !important; }
+html[data-ui="work"][data-theme="light"] .mball > span:not(.sat) { color: color-mix(in srgb, var(--w-tile) 70%, #111) !important; }
+html[data-ui="work"] .mball > span:not(.sat)::before { content: "" !important; }
+/* the bubble name sits above the stats row, not under it */
+html[data-ui="work"] .orb-owner { right: auto; left: 50%; transform: translateX(-50%); bottom: calc(100% + 34px); font-size: 11px; }
+/* the anonymous card is a dark "ghost" card in every theme: Work light mode must not paint it white (its text is white) */
+html[data-ui="work"][data-theme="light"]:not(#_) .pop.anon-portal { background: #060708 !important; color: #eceef1 !important; border-color: rgba(255,255,255,0.12) !important; }
+html[data-ui="work"][data-theme="light"]:not(#_) .pop.anon-portal .pop-head, html[data-ui="work"][data-theme="light"]:not(#_) .pop.anon-portal .pop-head .mono,
+html[data-ui="work"][data-theme="light"]:not(#_) .pop.anon-portal .pop-head .x { color: #c9ccd0 !important; background: transparent !important; }
+/* light mode readability (found by a contrast scan of every Work panel, owner 2026-11-19) */
+html[data-ui="work"][data-theme="light"] .orb-owner { color: var(--w-text, #18181b); text-shadow: none; }
+html[data-ui="work"][data-theme="light"] .orb-owner.acct { color: color-mix(in srgb, var(--by, #16a36a) 55%, #000); }
+html[data-ui="work"][data-theme="light"] .orb-statrow > span { background: #fff; border-color: rgba(0,0,0,.12); color: #3f3f46; }
+html[data-ui="work"][data-theme="light"] .orb-statrow.hot .sr-live { color: #0f7a4c; }
+html[data-ui="work"][data-theme="light"] .orb-statrow .sr-del { color: #c4231a; border-color: rgba(196,35,26,.4); }
+html[data-ui="work"][data-theme="light"] .orb-statrow .sr-del:hover { background: #e5372b; color: #0a0a0a; }
+html[data-ui="work"][data-theme="light"] .dim, html[data-ui="work"][data-theme="light"] .mono.dim, html[data-ui="work"][data-theme="light"] .knock-note { color: #5b5e66 !important; }
+html[data-ui="work"][data-theme="light"] button:disabled { color: #85888f; }
+/* the bubble name: centred above the stats row with a clear gap, never under it */
+html[data-ui="work"] .orb-owner { bottom: calc(100% + 38px) !important; background: var(--w-raised, #1d1d20); padding: 3px 8px; border-radius: 6px; border: 1px solid var(--w-border-2, rgba(255,255,255,.12)); font: 600 11px/1 var(--w-font) !important; }
+html[data-ui="work"][data-theme="light"] .orb-owner { background: #fff; border-color: rgba(0,0,0,.12); }
+html[data-ui="work"][data-theme="light"]:not(#_):not(#_) .dim, html[data-ui="work"][data-theme="light"]:not(#_):not(#_) .knock-note { color: #5b5e66 !important; }
+html[data-ui="work"][data-theme="light"]:not(#_):not(#_) button:disabled { color: #7c7f87 !important; }
+html[data-ui="work"][data-theme="light"]:not(#_):not(#_) .tb-submit:disabled { color: #5a3a14 !important; }
+/* Spaces → knock box: light in Work light mode (it was a dark grey slab with grey text) */
+html[data-ui="work"][data-theme="light"] .knock { background: #f3f3f5; border-color: rgba(0,0,0,.18); }
+html[data-ui="work"][data-theme="light"] .knock .mono, html[data-ui="work"][data-theme="light"] .knock .mono svg { color: #3f3f46 !important; }
+html[data-ui="work"][data-theme="light"] .knock-row input { background: #fff; border-color: rgba(0,0,0,.18); color: #18181b; }
+html[data-ui="work"][data-theme="light"] .knock-row input::placeholder { color: #8b8e96; }
+html[data-ui="work"][data-theme="light"] .knock-row .cta { background: #18181b; color: #fff; }
+html[data-ui="work"][data-theme="light"] .tb-keep .mono { color: #5b5e66; }
+html[data-ui="work"][data-theme="light"] .tb-keep button:not(.on) { color: #3f3f46; border-color: rgba(0,0,0,.18); }

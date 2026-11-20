@@ -32,6 +32,9 @@ export interface Orb {
   groupName?: string | null;
   /** the sender's style: every device draws the object this way */
   skin?: string | null;
+  /** sent from a logged-in account: its name (by) is the account's own, shown in this colour (hue) */
+  verified?: boolean;
+  byHue?: number | null;
   /** a preview picture is stored (photo, video frame, first page): open objects only */
   thumb?: boolean;
   /** wired to this task (lib/tasks.ts) */

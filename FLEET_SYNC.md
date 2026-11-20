@@ -33,6 +33,87 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
   sound, Orbi ad = 12 GB video in parts phone → laptop). Playbook rule: every film ends on a DIFFERENT Orbi feature.
   FIXED render.cjs: screenshot 30 s timeout killed workers on heavy motion-blur frames (now no timeout). Verified frames
   by eye + duration 184 s. Open: cam lobes render too dark in close-ups. Not on live branch (media only).
+- 2026-11-19 (owner: "Work: everything adapted to its look; PNG + one colour; light mode unreadable"). Work tiles: one
+  accent tint (--w-tile, light + dark), big file type centred; ball stats as a straight row above the tile
+  (.orb-statrow, the twin OrbStats renders; Classic shows the curved line) with the bubble name in a chip above it;
+  same tint in containers and the opened container. Light mode: ran scripts/contrast-scan.cjs over canvas, anonymous,
+  spaces, tasks, notes, share → fixed: anonymous card stays dark (white text), knock box, dim notes, task keep buttons,
+  name/stat chips, disabled buttons. Remaining 2 per screen are hidden drop hints. RELEASE r-2026-11-19-work-look.
+- 2026-11-19 (owner: "HQ All time: no white visitor dots"). Root cause: the data was there (214 spots; IN 36) but
+  each visitor dot was 1.75 px with a black edge, and in Indian cities the DOM "last GPS seen" pins sit right on top.
+  FIX (admin/Earth.tsx): visitor dots 3–9 px by device count, soft white ring + glow. Verified with a rendered globe.
+  Also: DELETE on the ball turns into a red band with black text on hover / press (owner: make the click obvious).
+- 2026-11-19 OWNER PICK: ball indicators = design #31 "Curved text" with line icons, live = green dot; opened count (eye) REMOVED by owner — only live · downloaded · DELETE
+  (gallery: claude.ai/artifact/82JyqZQ2wmjhgUWQh6bPJR). OrbView OrbStats: live · opened · downloaded · DELETE (own) as
+  words along the orbit (r 71, ball = 100); used on single balls (Classic + Work) and in the opened container
+  (BubbleZoom, from 34° so it clears the download/lock buttons; its trash moved into the line). Container blob: plain
+  line (.grp-stats). File-type icon gone from balls, container members and zoom. Top bar: Send pill and + removed; a
+  white "+ Space" opens create-space. RELEASE r-2026-11-19-curved-stats. Verified Playwright: void, container, zoom.
+- 2026-11-19 (owner: "every bubble defaults to Classic; switching to Classic doesn't change"). Every browser drops
+  looks picked before 2026-11-19 once (lib/skins.ts RESET) and no longer pulls the computer-remembered look back:
+  Classic (Orbit, vivid) unless someone applies a style or their account carries one. Verified: an old browser with
+  ring+mono loads Classic; Apply Orbit turns its own "ring" ball into orbit and the server gets it. Arc a bit smaller
+  again (r 56–72, 26° parts, 7° gaps). RELEASE r-2026-11-19-classic-default (open tabs reload when idle).
+- 2026-11-19 ROOT CAUSE of "hide/show + style apply never reached floating files": .vercelignore had `live/` (meant
+  for the root Cloudflare Worker) which also dropped src/app/api/account/live/ from every Vercel upload → 404. FIX:
+  .vercelignore anchored to `/media/` `/live/`; route renamed /api/account/floating anyway. Rule: never name a route
+  folder `live` or `media`. Arc made smaller (r 56–75) with clear gaps between parts.
+- 2026-11-19 (owner design): the three circles became one curved glass arc (OrbView ARC/sector, SVG in ball units):
+  views · downloads · destroy (yours, red, data-destroy) or live viewers; rounded corners via a round-joined rim+body
+  pair; 11 px numbers, 13–16 px icons. Bug found while testing: `.orb-arc .seg path` also painted the icons' own paths
+  dark (fixed: `.seg > path`). RELEASE bumped (r-2026-11-19-accounts-arc) so open tabs reload when idle — the owner kept
+  seeing old builds in long-open tabs. Verified: render desktop/phone, delete segment fires DELETE.
+- 2026-11-19 (owner: "I hid the name, the current bubble still shows it — fix from root"). Root cause: name and style
+  live in each object's stored tags, written once at send; account changes only reached new sends. FIX: migration 043
+  (orbit_user_live / orbit_user_retag, scoped to the account's own sends) + /api/account/live { show | skin }: the
+  account switch and Style → Apply now rewrite every object that account still has floating, from any device (spaces
+  and anonymous objects untouched). Tested retagName hide/show round trip.
+- 2026-11-19 (owner: "Apply a style: my current bubbles don't change"). Root cause: each object draws the style it was
+  SENT with (tag k=); Apply only changed new sends. FIX: Apply fires "orbi:restyle"; Void restyles the user's own live
+  objects at once and POSTs /api/transfers/[id]/skin (owner key; retags k= so every screen gets it). Same pattern bug:
+  /wire rebuilt the name without the newer tags (long life l=, account mark v=/c=) — both now use spaces.retagName,
+  which keeps every tag (tested). Verified in Playwright: own ball orbit→card at once, others' unchanged, 1 server call.
+- 2026-11-19 (owner: "a button to hide the name on my bubbles; hidden by default for every user"). ADDED account
+  "Bubble name on my files: Hidden | Shown" (prefs.showName, saved at once); /api/transfers sends a logged-in user's
+  files with NO name unless showName (default off, also ignores the browser's typed name); applyProfile clears
+  orbit:bubble-name when hidden so notes/tasks carry no name either. Verified in a browser on the real Supabase user.
+- 2026-11-19 (owner sketch): single ball = bubble name TOP LEFT (.orb-owner), three round buttons curving along the top
+  right (.orb-dots: views, downloads, and destroy if yours / live viewers if not; destroy keeps data-destroy), title +
+  size/time below; the stats pill and bottom-left trash are gone for single balls (containers unchanged). Renaming the
+  bubble name now renames what is still floating (042: orbit_handle_claim rewrites b= on live v=1 objects listed in
+  sends; every logged-in send is now recorded in sends, Free too). Verified: Playwright desktop + phone with mocked list.
+- 2026-11-19 (owner: "files show my profile name; names repeat — need a unique compulsory bubble name, Gmail-style
+  suggestions"). ADDED bubble names (migration 040 handles + 041 HQ, APPLIED): unique a-z0-9._ 3-20, reserved words
+  refused; /api/account/handle GET (free? + 3 suggestions from wanted/name/email) and POST (claim/change); the profile
+  step requires one (accounts without one are asked once); uploads are signed on the server with account.handle (never
+  the profile name), notes/tasks via orbit:bubble-name; HQ Users shows it. Verified: SQL rules, browser flow with the
+  API mocked (taken → 3 chips → pick → saved to the real Supabase user, header shows it).
+- 2026-11-19: Supabase Auth email now goes through Brevo SMTP (smtp-relay.brevo.com:587, sender "Orbi Transfer"
+  <transferorbi@gmail.com>), set via the Management API; codes are 6 digits, 10 minutes; email limit 100/h; templates
+  (magic link, confirm signup, reauthentication) show {{ .Token }}, recovery keeps a link. Brevo: SMTP IP blocking had to
+  be OFF (Supabase's IPs vary; error was "525 5.7.1 Unauthorized IP address"). Test code sent: HTTP 200.
+- 2026-11-19: migration 039 (orbit_account_delete) APPLIED (owner approved). Code screen sent twice on open → Supabase's
+  60 s limit showed a red error: now one send per address per minute per page, a friendly "already on its way" note.
+- 2026-11-19 (owner: codes came from "Supabase Auth"; wants an email-code login like Claude; Style: white Apply top
+  right, nothing changes until Apply, saved to the account). CHANGED: login codes are now Supabase Auth email OTP
+  (signInWithOtp/verifyOtp); the server counts a session as logged in only when its JWT amr has otp (lib/otp.ts);
+  Resend + login_codes table dropped (039 is now only orbit_account_delete). /login: "Email code" (default, creates the
+  account on first use), "Password" (then a code), "Sign up"; Google then a code. Off switch: LOGIN_CODE=off.
+  Sender name/address = Supabase SMTP settings (owner: Gmail SMTP for transferorbi@gmail.com) + templates must show
+  {{ .Token }}. Style card: picks only mark a choice; Pop got a top-bar `action` (white Apply, stays while scrolling);
+  Apply sets skin+palette and saves prefs.skin/pal to the user (lib/profile.ts applies them on every device).
+- 2026-11-19 (owner: "admin pages separate + secured; profile page with more; name+colour on my bubbles; OTP on every
+  login"). DONE: every /admin page checks the HQ cookie ON THE SERVER (lib/admin-page.ts adminIn) and sends only the
+  sign-in otherwise; Users, Payments, Void are now their own pages (/admin/users, /admin/payments, /admin/void; nav in
+  components/admin/Pages.tsx; AdminShell). Profile (lib/profile.ts, account page): name, name colour, DoB, defaults for
+  sends (life, download limit, password, style) applied on every device; security (change password, log out
+  everywhere, delete account with emailed code). Logged-in uploads carry the ACCOUNT's name + colour + tick (server sets
+  tags v=1, c=hue from the Supabase user; the browser can't claim a name). OTP: lib/otp.ts + /api/auth/otp — every
+  login (password or Google) needs a 6-digit code emailed via Resend, bound to the Supabase session_id; userOf()
+  rejects unverified sessions. OFF until RESEND_API_KEY is set. Magic-link login removed. OPEN: migration 039 (OTP
+  codes + account delete) NOT applied — the Supabase MCP asked for approval (it contains deletes); owner to approve or
+  paste it. Verified: gate (curl with/without cookie), login → wrong pw → code step → wrong code → right code → account
+  (mocked OTP API), profile colour + defaults saved to the real Supabase user and applied locally.
 - 2026-11-18 (owner: "HQ: a separate Users section, how many new users, all info"). ADDED HQ tab Users
   (components/admin/AdminUsers.tsx, /api/admin/users, migration 038 APPLIED): totals (new today / 7 / 30 days, logged in
   today, active this week, paying, Google vs email, unconfirmed), filters, search, and per user: name, avatar, email,

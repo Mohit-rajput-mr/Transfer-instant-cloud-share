@@ -2,9 +2,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// The admin's pages: one switcher in every page's top bar.
+// The admin's pages: one switcher in every page's top bar. Each is its own route, loading only its own data, and each
+// is gated on the server (lib/admin-page.ts).
 const PAGES = [
   { href: "/admin", label: "HQ" },
+  { href: "/admin/users", label: "Users" },
+  { href: "/admin/payments", label: "Payments" },
+  { href: "/admin/void", label: "Void" },
   { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/spaces", label: "Spaces" },
 ] as const;

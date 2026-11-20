@@ -28,7 +28,8 @@ const hueOf = (s: string) => {
 const initials = (s: string) => s.trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
 
 /** A liquid-glass card that pops out in the centre of the screen (phones too: never a bottom sheet). */
-export function Pop(props: { label: string; onClose: () => void; children: ReactNode; className?: string; small?: boolean }) {
+/** A card. `action`: a white button in its top bar (it stays there while the body scrolls); it runs, then the card closes. */
+export function Pop(props: { label: string; onClose: () => void; children: ReactNode; className?: string; small?: boolean; action?: { label: string; onClick: () => void } }) {
   const [out, setOut] = useState(false);
   const { onClose } = props;
   const close = useCallback(() => {
@@ -48,7 +49,14 @@ export function Pop(props: { label: string; onClose: () => void; children: React
       <div ref={box} tabIndex={-1} className={`pop lg${props.small ? " small" : ""}${out ? " out" : ""} ${props.className ?? ""}`} role="dialog" aria-modal="true" aria-label={props.label}>
         <div className="pop-head">
           <span className="mono dim">{props.label}</span>
-          <button className="x" onClick={close} aria-label="Close">×</button>
+          <span className="pop-acts">
+            {props.action && (
+              <button type="button" className="pop-apply lg-press" onClick={() => (props.action!.onClick(), close())}>
+                {props.action.label}
+              </button>
+            )}
+            <button className="x" onClick={close} aria-label="Close">×</button>
+          </span>
         </div>
         <div className="pop-body">{props.children}</div>
       </div>

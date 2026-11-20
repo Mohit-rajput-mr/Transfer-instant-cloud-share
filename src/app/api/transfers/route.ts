@@ -62,10 +62,18 @@ export async function POST(req: NextRequest) {
     // an anonymous space makes every send anonymous (old clients too)
     if (await isAnonSpace(me.slug)) anon = true;
   }
-  // who sent it, so everyone sees it on the ball / container (a space signs with the member's name instead; never anonymous)
-  if (!anon && b.space == null) {
-    const by = cleanHandle(b.by);
+  // who sent it, so everyone sees it on the ball / container (a space signs with the member's name instead; never anonymous).
+  // Logged in: the account's bubble name and colour, marked as an account (the browser can't claim someone else's)
+  // A logged-in user who keeps the name hidden (the default, owner 2026-11-19) sends with no name at all.
+  if (!anon && b.space == null && !(user && !user.showName)) {
+    // the account's unique bubble name, never its profile name (names repeat; bubble names don't)
+    const own = account?.handle ? cleanHandle(account.handle) : "";
+    const by = own || cleanHandle(b.by);
     if (by) tags.by = by;
+    if (own) {
+      tags.verified = true;
+      if (user?.hue != null) tags.hue = user.hue;
+    }
   }
   // the public void pins everything to an area, and an area is a place
   if (anon && b.space == null) return NextResponse.json({ error: "Anonymous sends go into an anonymous space" }, { status: 400 });
@@ -79,8 +87,9 @@ export async function POST(req: NextRequest) {
   const mime = clean(b.mime, 120) || "application/octet-stream";
 
   const id = newId();
-  // a paying sender: the send goes in their history, and a long life must fit the storage they have left
-  if (user && account && plan !== "free" && !anon) {
+  // a logged-in sender: the send is recorded (history on paid plans; a long life must fit the storage left)
+  // (every logged-in send is recorded, Free too: renaming the bubble name renames what is still floating, migration 042)
+  if (user && account && !anon) {
     const ok = await rpc<string>("orbit_send_open", {
       p: { id, user: user.id, pool: account.pool, name: untagged(name), fileName, size, life: long || life, quota: perks.quota },
     }).catch(() => "ok");

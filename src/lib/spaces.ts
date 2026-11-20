@@ -216,13 +216,14 @@ export async function search(q: string) {
 //   g: sender group (an anonymous per-device hash: one device's objects gather into one bubble), n: its name,
 //   k: the sender's style (how the object looks to everyone; see lib/skin-list.ts), p: has a preview picture,
 //   a: sent anonymously (cloud only; open ones are encrypted with the anonymous space's key),
+//   c: the account's name colour (hue 0-359), v: sent from a logged-in account (the name is the account's own),
 //   l: a paid long life in minutes (lib/plans.ts LONG_LIVES; set once the stored copy is saved, orbit_send_live)
 // The old space-only form ⟪slug|handle⟫ is still read.
-export interface Tags { space?: string; by?: string; life?: number; open?: boolean; from?: string; group?: string; skin?: string; thumb?: boolean; task?: string; anon?: boolean; long?: number }
+export interface Tags { space?: string; by?: string; life?: number; open?: boolean; from?: string; group?: string; skin?: string; thumb?: boolean; task?: string; anon?: boolean; long?: number; hue?: number; verified?: boolean }
 /** a task id (lib/tasks.ts): files wired to it carry it */
 export const validTask = (x: unknown): x is string => typeof x === "string" && /^t[a-z0-9]{9}$/.test(x);
 const OLD = /^⟪([a-z0-9-]{1,32})\|([^⟫]{0,24})⟫/;
-const NEW = /^⟪((?:[sbtognkpwal]=[^;⟫]*;?)*)⟫/;
+const NEW = /^⟪((?:[sbtognkpwalcv]=[^;⟫]*;?)*)⟫/;
 /** a bubble's name, safe inside a tag */
 export const cleanGroup = (x: unknown) => (typeof x === "string" ? x.replace(/[\u0000-\u001f\u007f⟪⟫;=|]/g, "").replace(/\s+/g, " ").trim().slice(0, 40) : "");
 export const validFrom = (x: unknown): x is string => typeof x === "string" && /^[a-f0-9]{10}$/.test(x);
@@ -243,25 +244,36 @@ export function tagName(name: string, t: Tags) {
   if (t.task && validTask(t.task)) parts.push(`w=${t.task}`);
   if (t.anon) parts.push("a=1");
   if (t.long && LONG.has(t.long)) parts.push(`l=${t.long}`);
+  if (t.verified && t.by) parts.push("v=1");
+  if (t.verified && t.by && Number.isInteger(t.hue) && t.hue! >= 0 && t.hue! < 360) parts.push(`c=${t.hue}`);
   return parts.length ? `⟪${parts.join(";")}⟫${name}` : name;
 }
 
-export type Untagged<T> = T & { space: string | null; by: string | null; life: number; open: boolean; from: string | null; groupName: string | null; skin: string | null; thumb: boolean; task: string | null; anon: boolean };
+export type Untagged<T> = T & { space: string | null; by: string | null; byHue: number | null; verified: boolean; life: number; open: boolean; from: string | null; groupName: string | null; skin: string | null; thumb: boolean; task: string | null; anon: boolean };
 export function untag<T extends { name?: unknown; expiresAt?: unknown }>(o: T): Untagged<T> {
   const name = typeof o.name === "string" ? o.name : "";
   const old = OLD.exec(name);
-  if (old) return { ...o, name: name.slice(old[0].length), space: old[1], by: old[2] || null, life: LIFE_MIN, open: false, from: null, groupName: null, skin: null, thumb: false, task: null, anon: false };
+  if (old) return { ...o, name: name.slice(old[0].length), space: old[1], by: old[2] || null, byHue: null, verified: false, life: LIFE_MIN, open: false, from: null, groupName: null, skin: null, thumb: false, task: null, anon: false };
   const m = NEW.exec(name);
-  if (!m) return { ...o, space: null, by: null, life: LIFE_MIN, open: false, from: null, groupName: null, skin: null, thumb: false, task: null, anon: false };
+  if (!m) return { ...o, space: null, by: null, byHue: null, verified: false, life: LIFE_MIN, open: false, from: null, groupName: null, skin: null, thumb: false, task: null, anon: false };
   const kv = Object.fromEntries(m[1].split(";").filter(Boolean).map((x) => [x[0], x.slice(2)]));
   const life = LONG.has(Number(kv.l)) ? Number(kv.l) : LIVES.includes(Number(kv.t)) ? Number(kv.t) : LIFE_MIN;
-  const out = { ...o, name: name.slice(m[0].length), space: kv.s || null, by: kv.b || null, life, open: kv.o === "1", from: validFrom(kv.g) ? kv.g : null, groupName: cleanGroup(kv.n) || null, skin: validSkin(kv.k) ? kv.k : null, thumb: kv.p === "1" && kv.o === "1", task: validTask(kv.w) ? kv.w : null, anon: kv.a === "1" };
+  const hue = Number(kv.c);
+  const out = { ...o, name: name.slice(m[0].length), space: kv.s || null, by: kv.b || null, byHue: kv.v === "1" && Number.isInteger(hue) && hue >= 0 && hue < 360 ? hue : null, verified: kv.v === "1" && !!kv.b, life, open: kv.o === "1", from: validFrom(kv.g) ? kv.g : null, groupName: cleanGroup(kv.n) || null, skin: validSkin(kv.k) ? kv.k : null, thumb: kv.p === "1" && kv.o === "1", task: validTask(kv.w) ? kv.w : null, anon: kv.a === "1" };
   // a shorter life burns earlier than the database's 30 minutes: the server hides it and refuses it from then on
   if (life < LIFE_MIN && typeof o.expiresAt === "string") {
     const t = Date.parse(o.expiresAt);
     if (Number.isFinite(t)) out.expiresAt = new Date(t - (LIFE_MIN - life) * 60_000).toISOString();
   }
   return out;
+}
+/** the stored name again with one or more tags changed, every other tag kept (long life, account mark, colour…) */
+export function retagName(u: Untagged<{ name?: unknown; expiresAt?: unknown }>, change: Partial<Tags>) {
+  return tagName(String(u.name), {
+    space: u.space ?? undefined, by: u.by ?? undefined, life: u.life <= LIFE_MIN ? u.life : LIFE_MIN, long: u.life > LIFE_MIN ? u.life : undefined,
+    open: u.open, from: u.from ?? undefined, group: u.groupName ?? undefined, skin: u.skin ?? undefined, thumb: u.thumb,
+    task: u.task ?? undefined, anon: u.anon, verified: u.verified, hue: u.byHue ?? undefined, ...change,
+  });
 }
 export const burnedUp = (o: { expiresAt?: unknown }) => typeof o.expiresAt === "string" && Date.parse(o.expiresAt) <= Date.now();
 

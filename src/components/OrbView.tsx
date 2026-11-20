@@ -1,16 +1,17 @@
 "use client";
 import { hoverPeek } from "@/lib/peek";
-import { LuArrowUp, LuCheck, LuDownload, LuLock, LuLockOpen, LuMaximize2, LuTrash2 } from "react-icons/lu";
+import { LuArrowUp, LuCheck, LuLock, LuLockOpen, LuMaximize2, LuTrash2, LuBadgeCheck } from "react-icons/lu";
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
 import { setCardOrigin } from "./Panels";
 import { ext, formatBytes, formatClock, type Orb } from "@/lib/client";
-import { fileKind, toneOf, typeHue } from "@/lib/skin-list";
+import { toneOf, typeHue } from "@/lib/skin-list";
 import { LuArchive, LuFile, LuFileText, LuImage, LuMusic, LuVideo } from "react-icons/lu";
 import { mapView } from "@/lib/map";
 import { dragAt, overTrash, toTrash } from "@/lib/trash";
 
 /** 7 → "7", 12 → "10+", 140 → "100+": a crowd stays readable */
-const crowd = (n: number) => (n >= 1000 ? "1k+" : n >= 100 ? "100+" : n >= 10 ? "10+" : String(n));
+/** an exact count, shortened only past 999 (1.2k) */
+const count = (n: number) => (n >= 1000 ? `${Math.round(n / 100) / 10}k` : String(n));
 
 export const LIFETIME_MS = 30 * 60 * 1000;
 
@@ -279,6 +280,85 @@ import { bubbleLayout } from "@/lib/layout";
 
 const KIND_ICON = { photo: LuImage, video: LuVideo, doc: LuFileText, audio: LuMusic, archive: LuArchive, other: LuFile } as const;
 /** what kind of file it is (photo, video, document, audio, archive), as a small badge on the ball */
+// ---- the stats along the orbit (design #31): live (green dot), opened, downloaded, and DELETE on your own ----
+// Drawn in the ball's own units: the ball is 100 across, centred on 0,0; the words run clockwise on a circle outside it.
+const STAT_R = 71;
+const polar = (deg: number, r: number): [number, number] => {
+  const a = ((deg - 90) * Math.PI) / 180;
+  return [Math.round(r * Math.cos(a) * 100) / 100, Math.round(r * Math.sin(a) * 100) / 100];
+};
+const arcD = (r: number, a0: number, a1: number) => {
+  const [x0, y0] = polar(a0, r), [x1, y1] = polar(a1, r);
+  return `M${x0} ${y0}A${r} ${r} 0 0 1 ${x1} ${y1}`;
+};
+const ICON = {
+  eye: "M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0 M12 9a3 3 0 1 0 0 6 3 3 0 1 0 0-6",
+  down: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3",
+  bin: "M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6 M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",
+};
+/** one line icon standing on the orbit at angle `a` (turned with it) */
+const StatIcon = ({ d, a }: { d: string; a: number }) => {
+  const [x, y] = polar(a, STAT_R);
+  return <g transform={`translate(${x} ${y}) rotate(${a}) scale(0.5) translate(-12 -12)`} fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d={d} /></g>;
+};
+export function OrbStats(props: { id: string; live: number; downloads: number; del?: { name: string }; onDelete?: () => void; /** where the line starts, degrees from 12 o'clock */ from?: number }) {
+  const p = `os-${props.id}`;
+  // slots (degrees from 12 o'clock): live, opened, downloaded, delete
+  // (opened count dropped, owner 2026-11-19: live, downloaded, delete)
+  const L = props.from ?? 4, D = L + 32, X = D + 32;
+  const word = (id: string, a0: number, a1: number, text: string) => (
+    <>
+      <defs><path id={`${p}-${id}`} d={arcD(STAT_R, a0, a1)} /></defs>
+      <text dominantBaseline="central"><textPath href={`#${p}-${id}`}>{text}</textPath></text>
+    </>
+  );
+  const delProps = props.del
+    ? {
+        "data-destroy": "",
+        role: "button",
+        "aria-label": `Destroy ${props.del.name}`,
+        onPointerDown: props.onDelete ? (e: React.PointerEvent) => e.stopPropagation() : undefined,
+        onClick: props.onDelete ? (e: React.MouseEvent) => (e.stopPropagation(), props.onDelete!()) : undefined,
+      }
+    : null;
+  return (
+    <>
+    {/* Work look (square tiles): the same three, as one straight row above the tile */}
+    <span className={`orb-statrow${props.live ? " hot" : ""}`} aria-hidden={false}>
+      <span className="sr-live"><i />{count(props.live)}</span>
+      <span className="sr-dl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d={ICON.down} /></svg>{count(props.downloads)}</span>
+      {delProps && (
+        <span className="sr-del" {...delProps} title="Destroy">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d={ICON.bin} /></svg>DELETE
+        </span>
+      )}
+    </span>
+    <svg className={`orb-stats${props.live ? " hot" : ""}`} viewBox="-90 -90 180 180" aria-label={`${props.live} live, ${props.downloads} downloads`}>
+      <g className="st live">
+        <circle cx={polar(L, STAT_R)[0]} cy={polar(L, STAT_R)[1]} r={3.6} className="st-dot" />
+        {word("l", L + 6, L + 28, count(props.live))}
+      </g>
+      <g className="st"><StatIcon d={ICON.down} a={D} />{word("d", D + 8, D + 30, count(props.downloads))}</g>
+      {props.del && (
+        <g
+          className="st del"
+          data-destroy=""
+          role="button"
+          aria-label={`Destroy ${props.del.name}`}
+          onPointerDown={props.onDelete ? (e) => e.stopPropagation() : undefined}
+          onClick={props.onDelete ? (e) => (e.stopPropagation(), props.onDelete!()) : undefined}
+        >
+          <title>Destroy</title>
+          <path className="st-hit" d={arcD(STAT_R, X - 7, X + 52)} />
+          <StatIcon d={ICON.bin} a={X} />
+          {word("x", X + 8, X + 62, "DELETE")}
+        </g>
+      )}
+    </svg>
+    </>
+  );
+}
+
 export function KindBadge(props: { kind: string }) {
   const I = KIND_ICON[props.kind as keyof typeof KIND_ICON];
   return I ? <i className={`kind-badge k-${props.kind}`} aria-hidden><I /></i> : null;
@@ -753,7 +833,6 @@ export default function OrbView(props: {
                       title={`${m.name} · ${formatBytes(m.size)} · ${formatClock(mleft)}`}
                     >
                       <span className="mball">
-                        <KindBadge kind={fileKind(m.fileName)} />
                         <svg className="mring" viewBox="0 0 100 100" aria-hidden>
                           <circle className="track" cx="50" cy="50" r="48" />
                           <circle className="life" cx="50" cy="50" r="48" strokeDasharray={301.6} strokeDashoffset={301.6 * (1 - mf)} />
@@ -771,10 +850,10 @@ export default function OrbView(props: {
                 })}
               </div>
         {got && !up ? <span className="got-mark" aria-hidden><LuCheck /></span> : null}
-        {!up && <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
-          <span title="Live now"><i className="b-live" />{crowd(watchers)}</span>
-          <span title="Opened by"><svg viewBox="0 0 16 16" aria-hidden><path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" strokeWidth="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>{crowd(orb.views ?? 0)}</span>
-          <span title="Downloads"><LuDownload />{crowd(orb.downloads)}</span>
+        {/* the container's stats, in the same plain line style as a ball's (design #31): live, opened, downloaded */}
+        {!up && <span className={`grp-stats${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.downloads} downloads`}>
+          <span title="Live now"><i className="b-live" />{count(watchers)}</span>
+          <span title="Downloads"><svg viewBox="0 0 24 24" aria-hidden fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d={ICON.down} /></svg>{count(orb.downloads)}</span>
         </span>}
             </div>
           );
@@ -789,20 +868,22 @@ export default function OrbView(props: {
           <circle className="track" cx="50" cy="50" r={R} />
           <circle className="life" cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - (up ? Math.max(0.03, launching) : frac))} />
         </svg>
-        <KindBadge kind={fileKind(orb.fileName, orb.mime)} />
         <span className="ext">{up && incoming ? `${Math.round(launching * 100)}%` : ext(orb.fileName)}</span>
         {props.onCancel && mine && !incoming && phase !== "burning" ? (
           <span className="orb-cancel" data-cancel="" role="button" aria-label={`Cancel upload of ${orb.name}`} title="Cancel upload">
             <svg viewBox="0 0 24 24" aria-hidden><path d="M6 6l12 12M18 6L6 18" /></svg>
           </span>
-        ) : props.onDestroy && mine && !up && phase !== "burning" && <span className="destroy" data-destroy="" role="button" aria-label={`Destroy ${orb.name}`} title="Destroy"><LuTrash2 /></span>}
+        ) : null}
         {mine && badge ? <span className="mine-no" aria-hidden>{badge}</span> : null}
         {got && !up ? <span className="got-mark" aria-hidden><LuCheck /></span> : null}
-        {!up && <span className={`bubble lg${watchers ? " hot" : ""}`} aria-label={`${watchers} live, ${orb.views} opened, ${orb.downloads} downloads`}>
-          <span title="Live now"><i className="b-live" />{crowd(watchers)}</span>
-          <span title="Opened by"><svg viewBox="0 0 16 16" aria-hidden><path d="M1 8s2.6-5 7-5 7 5 7 5-2.6 5-7 5-7-5-7-5z" fill="none" stroke="currentColor" strokeWidth="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>{crowd(orb.views ?? 0)}</span>
-          <span title="Downloads"><LuDownload />{crowd(orb.downloads)}</span>
-        </span>}
+        {/* the sender's bubble name, top left (owner 2026-11-19) */}
+        {orb.by ? (
+          <span className={`orb-owner${orb.verified ? " acct" : ""}`} style={orb.verified && orb.byHue != null ? ({ "--by": `hsl(${orb.byHue} 85% 72%)` } as CSSProperties) : undefined} title={orb.verified ? `${orb.by} · logged-in account` : orb.by}>
+            {orb.by}{orb.verified ? <LuBadgeCheck className="acct-tick" aria-label="logged-in account" /> : null}
+          </span>
+        ) : null}
+        {/* the stats written along the orbit (owner's pick 2026-11-19: design #31 "curved text", line icons) */}
+        {!up && <OrbStats id={orb.id} live={watchers} downloads={orb.downloads} del={props.onDestroy && mine && phase !== "burning" ? { name: orb.name } : undefined} />}
         {phase === "arriving" && <span className="shock" />}
         {Array.from({ length: Math.min(watchers, 4) }, (_, i) => (
           <span
@@ -815,7 +896,12 @@ export default function OrbView(props: {
       )}
       <div className="orb-label wide">{orb.name}</div>
       <div className="orb-meta mono">
-        {orb.by ? <span className="orb-by">{orb.by}</span> : null}
+        {orb.by && group ? (
+          // a logged-in account's name: its own colour and a tick (the name can't be borrowed; see /api/transfers)
+          <span className={`orb-by${orb.verified ? " acct" : ""}`} style={orb.verified && orb.byHue != null ? ({ "--by": `hsl(${orb.byHue} 85% 72%)` } as CSSProperties) : undefined} title={orb.verified ? `${orb.by} · logged-in account` : undefined}>
+            {orb.by}{orb.verified ? <LuBadgeCheck className="acct-tick" aria-label="logged-in account" /> : null}
+          </span>
+        ) : null}
         <span>{formatBytes(orb.size)}</span>
         {up ? <span className="glyph"><LuArrowUp aria-hidden />{Math.round(launching * 100)}%</span> : <span>{formatClock(left)}</span>}
         {orb.maxDownloads ? <span>max {orb.maxDownloads}</span> : null}

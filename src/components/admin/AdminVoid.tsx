@@ -50,7 +50,7 @@ const spot = (id: string) => {
   return [((h >>> 0) % 1000) / 1000, (((h >>> 10) >>> 0) % 1000) / 1000];
 };
 
-export default function AdminVoid({ onClose }: { onClose: () => void }) {
+export default function AdminVoid({ onClose }: { onClose?: () => void }) {
   const [data, setData] = useState<Data | null>(null);
   const [err, setErr] = useState("");
   const [area, setArea] = useState<string>("all");
@@ -107,7 +107,7 @@ export default function AdminVoid({ onClose }: { onClose: () => void }) {
         <span className="mono dim">{files.length} files · {notes.length} notes · {tasks.length} tasks{err ? ` · ${err}` : ""}</span>
         <span style={{ display: "flex", gap: 8 }}>
           <button className="pill av-burnall" onClick={burnAll} disabled={!files.length && !tasks.length && !notes.length}>Burn all here</button>
-          <button className="pill" onClick={onClose}>Close ✕</button>
+          {onClose && <button className="pill" onClick={onClose}>Close ✕</button>}
         </span>
       </div>
       <div className="hq-filters">

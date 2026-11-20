@@ -1,7 +1,7 @@
 "use client";
 // Paddle.js overlay checkout. The buyer must be logged in: their user id rides in customData so the webhook
 // (/api/paddle/webhook) switches on the plan for exactly this account.
-import { auth } from "./auth";
+import { auth, otpState } from "./auth";
 
 export type PaddleConfig = { token: string; sandbox: boolean; pro: { monthly: string; yearly: string } | null; business: { monthly: string; yearly: string } | null };
 
@@ -47,7 +47,8 @@ function load(c: PaddleConfig) {
 /** Open the checkout for a plan; sends a signed-out buyer to log in first and brings them back here. */
 export async function buy(plan: "pro" | "business", billing: "monthly" | "yearly", seats = 1) {
   const { data } = await auth.getSession();
-  if (!data.session) {
+  const o = data.session ? await otpState() : null;
+  if (!data.session || (o?.required && !o.verified)) {
     location.assign(`/login?next=${encodeURIComponent(`/upgrade?buy=${plan}-${billing}#plans`)}`);
     return;
   }

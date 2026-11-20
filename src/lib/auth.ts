@@ -81,3 +81,40 @@ export function usePlan(): PlanInfo {
   }, [session]);
   return p;
 }
+
+// ---- the emailed code that finishes every login (lib/otp.ts on the server) ----
+export type OtpState = { required: boolean; verified: boolean; email?: string | null };
+let otpCache: { token: string; p: Promise<OtpState> } | null = null;
+/** does this session still need its code? (asked once per session token) */
+export async function otpState(force = false): Promise<OtpState> {
+  const { data } = await auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) return { required: false, verified: false };
+  if (force || otpCache?.token !== token)
+    otpCache = {
+      token,
+      p: fetch("/api/auth/otp", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : { required: true, verified: false }))
+        .catch(() => ({ required: true, verified: false })),
+    };
+  return otpCache.p;
+}
+export const otpDone = () => {
+  otpCache = null;
+  cached = null;
+};
+/** the session, but only once its login is finished with the code (undefined while loading) */
+export function useLogin() {
+  const session = useSession();
+  const [ok, setOk] = useState<boolean | undefined>(undefined);
+  useEffect(() => {
+    let on = true;
+    if (session === undefined) return;
+    if (!session) return void setOk(false);
+    otpState().then((o) => on && setOk(!o.required || o.verified));
+    return () => {
+      on = false;
+    };
+  }, [session]);
+  return { session, verified: ok, ready: session !== undefined && ok !== undefined };
+}
