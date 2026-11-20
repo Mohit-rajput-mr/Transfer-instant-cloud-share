@@ -50,7 +50,7 @@ async function run() {
       const un = await unlockOrb(job.orb, job.orb.open ? "" : job.code, abort.signal);
       const res = await receive({
         orb: job.orb, unlocked: un, target: Promise.resolve(null), folderTarget: null, signal: abort.signal, hold: env.mobile,
-        onProgress: (s, f) => (patch(job.id, { frac: f, speed: meter.label(f * job.orb.size) }), dlProgress(job.id, s === "decrypting" ? f : s === "done" ? 1 : 0)),
+        onProgress: (s, f) => (patch(job.id, { frac: f, speed: meter.label(f * job.orb.size) }), s === "decrypting" && dlProgress(job.id, f)),
       });
       if (res.kind === "file" && res.held) emit({ held: [...state.held, ...(res.parts?.length ? res.parts : [res.file])] });
       if (res.kind === "text") autoDownload(new File([res.text], `${job.name || "note"}.txt`, { type: "text/plain" }));
@@ -60,7 +60,7 @@ async function run() {
       patch(job.id, { state: "done", frac: 1 });
       dlProgress(job.id, 1, 1);
     } catch (e) {
-      dlProgress(job.id, 0, 2);
+      dlProgress(job.id, state.jobs.find((j) => j.id === job.id)?.frac ?? 0, abort?.signal.aborted ? 2 : 3);
       if (abort?.signal.aborted) {
         emit({ jobs: state.jobs.map((j) => (j.state === "queued" || j.state === "running" ? { ...j, state: "failed", err: "Cancelled" } : j)) });
         break;

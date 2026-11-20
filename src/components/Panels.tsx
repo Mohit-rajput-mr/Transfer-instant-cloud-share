@@ -1145,12 +1145,15 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
     run(verified, target, folderTarget);
   };
 
+  // how far this download got (said to the sender when it stops: lib/dlprog.ts)
+  const lastF = useRef(0);
   const run = (un: Unlocked, target: ReturnType<typeof pickSaveTarget>, folderTarget: DirHandle | null) => {
     setBusy(true);
     setErr(null);
     abort.current = new AbortController();
     const meter = new Meter(orb.size);
     setSpeed("");
+    lastF.current = 0;
     receive({
       orb, unlocked: un, target, folderTarget, signal: abort.current.signal, inline, hold: holdNow(),
       onProgress: (s, p) => {
@@ -1158,11 +1161,12 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
         setFrac(p);
         if (s === "decrypting") setSpeed(meter.label(p * orb.size));
         // the sender sees it live (anonymous spaces: lib/dlprog.ts)
-        dlProgress(orb.id, s === "decrypting" ? p : s === "done" ? 1 : 0);
+        lastF.current = s === "decrypting" ? p : s === "done" ? 1 : lastF.current;
+        dlProgress(orb.id, lastF.current);
       },
     })
       .then((res) => (dlProgress(orb.id, 1, 1), landed(res)))
-      .catch((e) => (dlProgress(orb.id, 0, 2), fail(e)))
+      .catch((e) => (dlProgress(orb.id, lastF.current, abort.current?.signal.aborted ? 2 : 3), fail(e)))
       .finally(() => setBusy(false));
   };
   /** the file is here (downloaded now, or already fetched in the background) */

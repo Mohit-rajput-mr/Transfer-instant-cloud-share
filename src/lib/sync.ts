@@ -14,7 +14,7 @@ import type { Task } from "./tasks";
  *  (live viewers ±1) · vw: of those, the ones this device opened for the first time (+1 view) */
 export type SyncMsg = { b?: Bubble; bg?: string[]; t?: Task; tg?: string[]; og?: string[]; od?: string[]; ov?: string[]; ox?: string[]; vw?: string[]; dp?: DlSay[] };
 /** dp (anonymous spaces): someone's download of a file moved: o the file, w their alias in the space, f 0..1, e 1 done / 2 stopped */
-export type DlSay = { o: string; w: string; f: number; e?: 1 | 2 };
+export type DlSay = { o: string; w: string; f: number; e?: 1 | 2 | 3; z?: 1; t?: number };
 
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, "").slice(0, max) : null);
 const time = (v: unknown) => (typeof v === "string" && Number.isFinite(Date.parse(v)) ? v : null);
@@ -134,7 +134,8 @@ export function readSync(p: unknown, serverNow: number): SyncMsg {
       const d = (x ?? {}) as Record<string, unknown>;
       const w = str(d.w, 24)?.trim();
       if (typeof d.o !== "string" || !ORB_ID.test(d.o) || !w || typeof d.f !== "number" || !Number.isFinite(d.f)) return [];
-      return [{ o: d.o, w, f: Math.max(0, Math.min(1, d.f)), ...(d.e === 1 || d.e === 2 ? { e: d.e } : {}) }];
+      return [{ o: d.o, w, f: Math.max(0, Math.min(1, d.f)), ...(d.e === 1 || d.e === 2 || d.e === 3 ? { e: d.e } : {}), ...(d.z === 1 ? { z: 1 as const } : {}),
+        ...(typeof d.t === "number" && Number.isFinite(d.t) ? { t: d.t } : {}) }];
     });
     if (dp.length) out.dp = dp;
   }
