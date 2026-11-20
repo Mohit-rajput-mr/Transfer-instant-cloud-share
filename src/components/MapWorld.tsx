@@ -35,9 +35,11 @@ const HANDLE = ".tb-head, .bub-stack.on-map > header";
 const INNER = "button, a, input, textarea, select, label, form, .tb-row";
 const TEXTY = "input, textarea, select, [contenteditable], .tb-edit, .tb-take, .tb-redeem, .tb-route";
 
-export default function MapWorld({ W, H, band, children, fit, empty, framed, onRect, onMoveItem }: {
+export default function MapWorld({ W, H, band, children, fit, empty, framed, onRect, onMoveItem, extent }: {
   W: number;
   H: number;
+  /** where things really are (world px): the area plus anything dragged outside it. Panning and "fit" reach all of it */
+  extent?: { x0: number; y0: number; x1: number; y1: number };
   band: Band;
   children: ReactNode;
   /** bumped when this device adds something: back to the opening view, so it is in sight */
@@ -72,28 +74,30 @@ export default function MapWorld({ W, H, band, children, fit, empty, framed, onR
     return () => ro.disconnect();
   }, []);
 
-  /** the zoom that shows the whole area */
+  const ex = extent ?? { x0: 0, y0: 0, x1: W, y1: H };
+  const EW = ex.x1 - ex.x0, EH = ex.y1 - ex.y0;
+  /** the zoom that shows the whole area (and whatever was dragged out of it) */
   const allK = useCallback(() => {
     const aw = Math.max(100, size.w - band.left - band.right), ah = Math.max(100, size.h - band.top - band.bottom);
-    return Math.min(1, aw / W, ah / H);
-  }, [size, band, W, H]);
+    return Math.min(1, aw / EW, ah / EH);
+  }, [size, band, EW, EH]);
   // zooming out goes well past the whole area (it all just gets smaller); the fit button brings the opening view back
   const lowK = useCallback(() => Math.min(allK() * 0.5, 0.25), [allK]);
   const fitView = useCallback((): View => {
     const k = Math.max(allK(), OPEN_K);
     const aw = size.w - band.left - band.right, ah = size.h - band.top - band.bottom;
-    return { k, x: band.left + (aw - W * k) / 2, y: band.top + (ah - H * k) / 2 };
-  }, [allK, size, band, W, H]);
+    return { k, x: band.left + (aw - EW * k) / 2 - ex.x0 * k, y: band.top + (ah - EH * k) / 2 - ex.y0 * k };
+  }, [allK, size, band, EW, EH, ex.x0, ex.y0]);
   // a view never drifts so far that the area leaves the screen
   const keepIn = useCallback(
     (v: View): View => {
       const k = Math.min(MAX_K, Math.max(lowK(), v.k));
       const pad = 80;
-      const x = Math.min(size.w - pad, Math.max(pad - W * k, v.x));
-      const y = Math.min(size.h - pad, Math.max(pad - H * k, v.y));
+      const x = Math.min(size.w - pad - ex.x0 * k, Math.max(pad - ex.x1 * k, v.x));
+      const y = Math.min(size.h - pad - ex.y0 * k, Math.max(pad - ex.y1 * k, v.y));
       return { k, x, y };
     },
-    [lowK, size, W, H],
+    [lowK, size, ex.x0, ex.y0, ex.x1, ex.y1],
   );
   const go = useCallback((v: View, animate: boolean) => {
     // known at once (not only after the next render): steps a frame apart (smooth wheel zoom) build on each other
