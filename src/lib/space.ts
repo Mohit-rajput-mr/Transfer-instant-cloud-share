@@ -114,7 +114,7 @@ async function post<T>(url: string, body: unknown): Promise<T> {
   return d as T;
 }
 
-export type SpaceHit = { slug: string; title: string; priv: boolean };
+export type SpaceHit = { slug: string; title: string; priv: boolean; /** the creator's name in it */ host?: string | null };
 export const searchSpaces = async (q: string) =>
   ((await (await fetch(`/api/spaces?q=${encodeURIComponent(q)}`)).json().catch(() => ({ items: [] }))) as { items: SpaceHit[] }).items ?? [];
 export const createSpace = (title: string, handle: string, priv: boolean, pass: string, work = false) =>
@@ -122,7 +122,7 @@ export const createSpace = (title: string, handle: string, priv: boolean, pass: 
 export const joinSpace = (slug: string, handle: string, pass?: string) =>
   post<SpaceSession>(`/api/spaces/${slug}/join`, { handle, pass, deviceId: persistentId() });
 export type SpaceInfo = {
-  title: string; priv: boolean; work?: boolean; handle: string; chan: string; owner: boolean; members: { id: string; handle: string; you: boolean }[];
+  title: string; priv: boolean; work?: boolean; handle: string; chan: string; owner: boolean; host?: string | null; members: { id: string; handle: string; you: boolean }[];
   anon?: boolean;
   /** anonymous spaces: when it and its member list are deleted (ms) */
   ends?: number | null;

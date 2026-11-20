@@ -1183,3 +1183,8 @@ html[data-ui="work"] .orb-dls { left: calc(100% + 14px); }
 html[data-ui="work"][data-theme="light"] .odl-name, html[data-ui="work"][data-theme="light"] .odl-more { color: #2a2c31; text-shadow: none; }
 html[data-ui="work"][data-theme="light"] .odl-beam b { text-shadow: none; filter: brightness(0.75) saturate(1.3); }
 html[data-ui="work"][data-theme="light"] .odl-pct { text-shadow: none; filter: brightness(0.75) saturate(1.3); }
+
+/* Spaces panel (globals.css): Work tokens */
+html[data-ui="work"] :is(.sp-choice, .sp-back, .sp-here-chip, .sp-field input) { background: var(--w-raised, #1d1d20); border-color: var(--w-border-2, rgba(255,255,255,.12)); color: var(--w-text); }
+html[data-ui="work"] :is(.sp-choice span, .sp-host, .sp-field > span, .sp-link) { color: var(--w-text-2, #8a8f98); }
+html[data-ui="work"] :is(.sp-host em, .sp-here-chip b) { color: var(--w-text); }

@@ -4217,3 +4217,42 @@ html:not(#_) .pop.anon-portal .ap-search input::placeholder { color: rgba(255,25
 .odl-more { font: 700 11px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: #aab0b6; padding-left: 2px; text-shadow: 0 1px 3px #000; }
 @keyframes odl-flow { to { background-position: 12px 0; } }
 @media (prefers-reduced-motion: reduce) { .odl-beam { animation: none; } }
+
+/* ---- Spaces panel (owner 2026-11-20): two choices first, short forms, as wide as the screen allows ---- */
+html:not(#_) .pop.spaces-pop { width: min(clamp(360px, 62vw, 920px), calc(100vw - 24px)); max-height: min(calc(100dvh - 32px), 820px); }
+.spaces-pop .pop-body { padding: 18px clamp(16px, 2.4vw, 28px) 22px; }
+.sp-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sp-row .sp-search { flex: 1; min-width: 200px; }
+.sp-back { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px 0 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.05); color: #d6d9dd; font: 600 12px/1 var(--sans); cursor: pointer; flex: none; align-self: flex-start; }
+.sp-back svg { width: 16px; height: 16px; }
+.sp-row .sp-back { align-self: center; }
+.sp-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.sp-choice { display: grid; justify-items: start; gap: 8px; padding: clamp(18px, 2.4vw, 28px); min-height: clamp(130px, 18vh, 190px); border-radius: 22px; text-align: left; cursor: pointer; color: #f2f3f5;
+  border: 1px solid rgba(255,255,255,0.16); background: linear-gradient(160deg, rgba(255,255,255,0.09), rgba(255,255,255,0.02)); transition: background 0.15s, border-color 0.15s, transform 0.15s; }
+.sp-choice:hover { border-color: rgba(255,255,255,0.4); background: linear-gradient(160deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03)); }
+.sp-choice svg { width: 30px; height: 30px; padding: 8px; box-sizing: content-box; border-radius: 14px; background: rgba(255,255,255,0.08); }
+.sp-choice b { font: 800 clamp(20px, 2vw, 26px)/1.1 var(--display, var(--sans)); text-transform: uppercase; letter-spacing: 0.02em; }
+.sp-choice span { font: 400 14px/1.4 var(--sans); color: #a6abb1; }
+.sp-here-chip { justify-self: start; align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.05); color: #c9ccd0; font: 500 13px/1 var(--sans); cursor: pointer; }
+.sp-here-chip b { color: #fff; }
+.sp-here-chip svg { width: 14px; height: 14px; }
+.spaces-pop .sp-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.sp-host { font: 500 12px/1.2 var(--sans); color: #9aa0a6; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp-host em { font-style: normal; color: #e9ebee; font-weight: 600; }
+.sp-link { align-self: flex-start; background: none; border: 0; padding: 4px 0; color: #9aa0a6; font: 500 13px/1 var(--sans); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.sp-link:hover { color: #fff; }
+.sp-kind { flex: 1; min-width: 220px; }
+.sp-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sp-fields .wide-f { grid-column: 1 / -1; }
+@media (max-width: 560px) { .sp-fields { grid-template-columns: 1fr; } }
+.sp-field { display: grid; gap: 7px; }
+.sp-field > span { font: 600 11px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: #a6abb1; }
+.sp-field > span em { font-style: normal; color: #6f757b; }
+.sp-field input { width: 100%; height: 50px; padding: 0 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.05); color: #fff; font: 500 16px/1 var(--sans); outline: none; box-sizing: border-box; }
+.sp-field input:focus { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.08); }
+.sp-field input:disabled { opacity: 0.4; }
+.sp-field.bad input { border-color: #ff5a5a; }
+.sp-hint { margin: 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+.sp-create .cta { align-self: stretch; }
+.room-host { color: #fff; font-weight: 700; }
+

@@ -16,7 +16,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const [{ members }] = await Promise.all([roster(slug), rpc("orbit_space_seen", { p_slug: me.slug, p_dh: me.dh }).catch(() => {})]);
   return NextResponse.json(
     {
-      slug, title: meta.title, priv: meta.priv, work: !!meta.work, handle: me.handle, chan: chanFor(slug), owner,
+      slug, title: meta.title, priv: meta.priv, work: !!meta.work, handle: me.handle, chan: chanFor(slug), owner, host: meta.host ?? null,
       // anonymous spaces and their member lists go 7 days after they were made (migration 020 orbit_reap_anon)
       // a private space closes 8 hours after it was made (lib/spaces.ts closesAt)
       anon: !!meta.anon, ends: meta.anon ? meta.at + 7 * 864e5 : closesAt(meta),
