@@ -7,7 +7,7 @@ import { setCardOrigin } from "./Panels";
 import { ext, formatBytes, formatClock, type Orb } from "@/lib/client";
 import { toneOf, typeHue } from "@/lib/skin-list";
 import { LuArchive, LuFile, LuFileText, LuImage, LuMusic, LuVideo } from "react-icons/lu";
-import { mapView } from "@/lib/map";
+import { mapView, PIN_OUT } from "@/lib/map";
 import { dragAt, overTrash, toTrash } from "@/lib/trash";
 
 /** 7 → "7", 12 → "10+", 140 → "100+": a crowd stays readable */
@@ -467,6 +467,13 @@ export default function OrbView(props: {
   const clamp = (d: Drag, x: number, y: number) => {
     const m = 40;
     let x0 = m - d.bx, x1 = d.bw - m - d.bx, y0 = (mapView.on ? m : 6) - d.by, y1 = d.bh - m - d.by;
+    // on the map a ball may leave the glass (owner 2026-11-20): up to PIN_OUT areas away on every side
+    if (mapView.on) {
+      x0 -= PIN_OUT * d.bw;
+      x1 += PIN_OUT * d.bw;
+      y0 -= PIN_OUT * d.bh;
+      y1 += PIN_OUT * d.bh;
+    }
     // an invisible wall at the screen's edges: a ball can't be dragged (or flung) out of view. Up top it stops just
     // under the header that is really there (not a fixed band lower down)
     if (typeof window !== "undefined") {

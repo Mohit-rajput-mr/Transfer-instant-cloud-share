@@ -59,8 +59,11 @@ const savePins = () => {
   } catch {}
 };
 /** put a thing down where it was dragged (a fraction of the world) */
+// (owner 2026-11-20: "let me drag anything out of the glass") a dragged thing may go well outside the area (up to
+// two areas away on every side); the area's edge is only where new things are put down
+export const PIN_OUT = 2;
 export function pin(key: string, x: number, y: number) {
-  const s = { x: Math.min(1, Math.max(0, x)), y: Math.min(1, Math.max(0, y)) };
+  const s = { x: Math.min(1 + PIN_OUT, Math.max(-PIN_OUT, x)), y: Math.min(1 + PIN_OUT, Math.max(-PIN_OUT, y)) };
   pins.delete(key);
   pins.set(key, s);
   spots.set(key, s);
@@ -129,9 +132,10 @@ export function place(things: Thing[], W: number, H: number) {
         }
       }
     }
-    const s = { x: clampF(best!.x, mx), y: clampF(best!.y, my) };
+    // moved by hand: exactly where it was put, even outside the area; everything else stays inside it
+    const s = pins.has(t.key) ? best! : { x: clampF(best!.x, mx), y: clampF(best!.y, my) };
     spots.set(t.key, s);
-    const r = at(s);
+    const r = pins.has(t.key) ? { x: s.x * W, y: s.y * H, w: t.w, h: t.h } : at(s);
     placed.push(r);
     rects.set(t.key, r);
     out.set(t.key, { x: r.x, y: r.y });

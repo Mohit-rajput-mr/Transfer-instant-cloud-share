@@ -2351,7 +2351,18 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     // tools), so it opens at full size with its glass edge just off screen; it only shows once zoomed out (MapWorld)
     const b = !space && !inArchive ? MAP_BAND[mode] : null;
     const { W, H } = b ? worldSize(things, Math.max(300, vw.w - b.left - b.right), Math.max(420, vw.h - b.top - b.bottom)) : worldSize(things, vw.w, Math.max(620, vw.h));
-    return { W, H, spots: place(things, W, H), size: new Map(things.map((t) => [t.key, t])) };
+    const spots = place(things, W, H);
+    // the area, grown to whatever was dragged out of it (MapWorld pans and fits to all of it)
+    const extent = { x0: 0, y0: 0, x1: W, y1: H };
+    for (const t of things) {
+      const p = spots.get(t.key);
+      if (!p) continue;
+      extent.x0 = Math.min(extent.x0, p.x - t.w / 2 - 24);
+      extent.y0 = Math.min(extent.y0, p.y - t.h / 2 - 24);
+      extent.x1 = Math.max(extent.x1, p.x + t.w / 2 + 24);
+      extent.y1 = Math.max(extent.y1, p.y + t.h / 2 + 24);
+    }
+    return { W, H, spots, extent, size: new Map(things.map((t) => [t.key, t])) };
   }, [mapOn, sizes, showTasks, tGroups, stacks, visible, groups, vw, pinTick, space, inArchive, mode]);
   // only what is on screen is drawn (the map tells what that is as it moves); everything else waits off screen
   const [rect, setRect] = useState<Rect | null>(null);
@@ -2971,7 +2982,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             toast(isAnon() ? "Back in Ghost World" : "Back in the public void");
           }} />}
           {map ? (
-            <MapWorld W={map.W} H={map.H} band={(space || inArchive) && !work ? ROOM_BAND[mode] : MAP_BAND[mode]} fit={fitAll} empty={!map.spots.size} framed={!space && !inArchive} onRect={setRect}
+            <MapWorld W={map.W} H={map.H} extent={map.extent} band={(space || inArchive) && !work ? ROOM_BAND[mode] : MAP_BAND[mode]} fit={fitAll} empty={!map.spots.size} framed={!space && !inArchive} onRect={setRect}
               onMoveItem={(key, dx, dy) => {
                 const p = map.spots.get(key);
                 if (!p) return;
