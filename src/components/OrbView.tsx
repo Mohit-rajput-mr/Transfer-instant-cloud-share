@@ -365,7 +365,7 @@ export function OrbStats(props: { id: string; live: number; downloads: number; d
 // download stalled), canceled / stopped 42% (red), ✓ got it. Several at once stack in one column beside the ball,
 // running ones first; past four, the rest are counted in one line.
 const DL_MAX = 4;
-const DL_WORD = { down: "downloading", paused: "paused", canceled: "canceled", failed: "stopped", done: "" } as const;
+const DL_WORD = { down: "downloading", paused: "paused", canceled: "canceled", failed: "canceled", done: "" } as const;
 function Downloaders({ list }: { list: DlShown[] }) {
   const shown = list.slice(0, list.length > DL_MAX ? DL_MAX - 1 : DL_MAX);
   const more = list.length - shown.length;
@@ -376,7 +376,7 @@ function Downloaders({ list }: { list: DlShown[] }) {
         return (
           <div key={d.w} className={`odl ${d.state}`} style={{ "--who": d.hue, "--p": d.state === "done" ? 100 : pct } as CSSProperties}>
             <span className="odl-beam" aria-hidden><b>{d.state === "done" ? "✓ got it" : `${DL_WORD[d.state]} ${pct}%`}</b></span>
-            <span className="odl-ball" aria-hidden>{d.w.replace(/^anon-?/i, "").slice(0, 1).toUpperCase() || "A"}</span>
+            <span className="odl-ball" aria-hidden>{d.w.trim().slice(0, 1).toUpperCase() || "?"}</span>
             <span className="odl-name" aria-hidden>{d.w}</span>
           </div>
         );
