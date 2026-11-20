@@ -16,7 +16,10 @@ import { RoundedBoxGeometry } from "./lib/jsm/geometries/RoundedBoxGeometry.js";
 export { THREE, RoundedBoxGeometry };
 export const H = {};
 
-const W = 1080, HH = 1920;
+// portrait 1080×1920 by default; ?ar=land renders 1920×1080 (the same story, framed for landscape: H.land)
+const LAND = new URLSearchParams(location.search).get("ar") === "land";
+const W = LAND ? 1920 : 1080, HH = LAND ? 1080 : 1920;
+document.documentElement.style.width = document.body.style.width = W + "px"; document.documentElement.style.height = document.body.style.height = HH + "px";
 document.body.insertAdjacentHTML("beforeend", `<canvas id="gl" width="${W}" height="${HH}"></canvas>
 <svg class="ov" id="lines" width="${W}" height="${HH}" viewBox="0 0 ${W} ${HH}" style="left:0;top:0;z-index:22"></svg>
 <div class="ov" id="hud" style="inset:0;z-index:24"></div>
@@ -26,8 +29,9 @@ document.body.insertAdjacentHTML("beforeend", `<canvas id="gl" width="${W}" heig
 <div class="ov" id="flash"></div>
 <div class="ov" id="fade"></div>
 <style>
-#sub { top: 1235px; font-size: 74px; -webkit-text-stroke: 4px #000; text-shadow: 0 6px 18px rgba(0,0,0,0.7); }
-#title { left: 0; right: 0; top: 150px; text-align: center; z-index: 30; opacity: 0; }
+${LAND ? `#endc .em { top: 170px; width: 230px; margin-left: -115px; } #endc .lg { left: 510px; top: 450px; width: 900px; } #endc .url { top: 620px; } #endc .try { top: 760px; } #sub { left: 160px; right: 160px; }` : ""}
+#sub { top: ${LAND ? 830 : 1235}px; font-size: ${LAND ? 64 : 74}px; -webkit-text-stroke: 4px #000; text-shadow: 0 6px 18px rgba(0,0,0,0.7); }
+#title { left: 0; right: 0; top: ${LAND ? 70 : 150}px; text-align: center; z-index: 30; opacity: 0; }
 #title .k { font: 700 30px/1 "M"; letter-spacing: 0.32em; color: #3dff8c; text-transform: uppercase; margin-bottom: 18px; }
 #title .t { font: 900 104px/0.95 "D"; font-stretch: 112%; color: #fff; text-transform: uppercase; text-shadow: 0 8px 30px rgba(0,0,0,0.55); }
 .cl { position: absolute; padding: 13px 22px 13px 20px; border-radius: 14px; background: rgba(12,14,18,0.78); backdrop-filter: blur(6px);
@@ -179,8 +183,9 @@ function look(p, tgt, fov = 35) { cam.position.copy(p); cam.lookAt(tgt); if (cam
 /** move(t, a, b, [p0, t0, fov0], [p1, t1, fov1], drift) — dolly from one framing to another */
 function move(t, a, b, A, B, drift = 1) {
   const k = ease(prog(t, a, b));
-  const p = A[0].clone().lerp(B[0], k), tg = A[1].clone().lerp(B[1], k), fov = lerp(A[2] ?? 35, B[2] ?? 35, k);
+  const p = A[0].clone().lerp(B[0], k), tg = A[1].clone().lerp(B[1], k); let fov = lerp(A[2] ?? 35, B[2] ?? 35, k);
   p.sub(tg).multiplyScalar(H.zoom ?? 1).add(tg);
+  if (LAND && H.landFov !== false) fov = Math.max(14, fov * 0.62);
   p.x += Math.sin(t * 0.7) * 0.02 * drift; p.y += Math.sin(t * 0.53 + 1) * 0.015 * drift;
   look(p, tg, fov);
 }
@@ -272,7 +277,7 @@ async function ready() {
 
 window.H = H;
 Object.assign(H, {
-  W, HH, $, S, clamp, ease, smooth, out, back, lerp, win, prog, V, rnd, reseed: (s) => (seed = s),
+  W, HH, land: LAND, $, S, clamp, ease, smooth, out, back, lerp, win, prog, V, rnd, reseed: (s) => (seed = s),
   r, scene, cam, comp, envK, studio, bokeh, trail, bloom, grade, envTex, backdrop, floor, hemi, key, rimA, rimB,
   cutaway, metal, paint, matte, glow, castTex, canvasTex, sh,
   LINES, L, at, end, fr, look, move, orbitP, project,

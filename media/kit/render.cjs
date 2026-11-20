@@ -10,10 +10,10 @@ const TYPES = { ".js": "text/javascript", ".html": "text/html", ".json": "applic
   const srv = http.createServer((q, res) => { const f = path.join(DIR, decodeURIComponent(q.url.split("?")[0])); fs.readFile(f, (e, d) => { if (e) { res.writeHead(404); return res.end(); } res.writeHead(200, { "content-type": TYPES[path.extname(f)] || "application/octet-stream" }); res.end(d); }); }).listen(0);
   const port = srv.address().port;
   const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
-  const page = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
+  const LAND = process.env.AR === "land"; const page = await browser.newPage({ viewport: LAND ? { width: 1920, height: 1080 } : { width: 1080, height: 1920 } });
   page.on("pageerror", (e) => console.log("pageerror", e.message));
   page.on("console", (m) => (["error","warning"].includes(m.type()) || process.env.LOG) && console.log("console", m.text()));
-  await page.goto(`http://localhost:${port}/film.html${process.env.RS ? `?rs=${process.env.RS}` : ""}`);
+  await page.goto(`http://localhost:${port}/film.html?rs=${process.env.RS || 0.8}${process.env.AR === "land" ? "&ar=land" : ""}`);
   await page.waitForFunction(() => window.ready === true, null, { timeout: 120000 });
   if (process.env.DBG) await page.evaluate((c) => { window.DBG = c; }, process.env.DBG.split(";;"));
   const dur = await page.evaluate(() => window.DURATION);
