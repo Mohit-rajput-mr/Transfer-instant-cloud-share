@@ -451,7 +451,13 @@ export function SpaceRoom(props: { space: SpaceSession; info: SpaceInfo | null; 
     const t = setTimeout(() => setArm(null), 3000);
     return () => clearTimeout(t);
   }, [arm]);
-  const members = [...(info?.members ?? [])].sort((a, b) => Number(b.you) - Number(a.you) || Number(online.has(b.id)) - Number(online.has(a.id)));
+  // (owner 2026-11-20: a busy Ghost World ran the row over the page) an anonymous space shows only who is here now;
+  // any space shows at most CREW_MAX balls (you first, then online), the rest counted in one "+N" ball
+  const members = [...(info?.members ?? [])]
+    .filter((m) => !space.anon || m.you || online.has(m.id))
+    .sort((a, b) => Number(b.you) - Number(a.you) || Number(online.has(b.id)) - Number(online.has(a.id)));
+  const CREW_MAX = 5;
+  const crew = members.length > CREW_MAX ? members.slice(0, CREW_MAX - 1) : members;
   const live = members.filter((m) => online.has(m.id) || m.you).length;
   // a named space closes 8 hours after it was made: its clock above the name
   const ends = !space.anon && info?.ends ? info.ends : null;
@@ -481,7 +487,7 @@ export function SpaceRoom(props: { space: SpaceSession; info: SpaceInfo | null; 
           Exit
         </button>
         <div className="room-crew">
-          {members.slice(0, 14).map((m) => (
+          {crew.map((m) => (
             <button
               key={m.id}
               className={`crew${online.has(m.id) || m.you ? " on" : ""}${m.you ? " you" : ""}${arm === m.id ? " arm" : ""}`}
@@ -499,7 +505,7 @@ export function SpaceRoom(props: { space: SpaceSession; info: SpaceInfo | null; 
               <span>{arm === m.id ? "Remove?" : m.you ? "you" : m.handle}</span>
             </button>
           ))}
-          {members.length > 14 && <span className="crew more"><i>+{members.length - 14}</i></span>}
+          {members.length > crew.length && <span className="crew more" title={`${members.length - crew.length} more here`}><i>+{members.length - crew.length}</i><span>more</span></span>}
         </div>
       </div>
     </div>

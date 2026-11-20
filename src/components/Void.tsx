@@ -1321,20 +1321,34 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
 
   // Ghost World (lib/ghost.ts): a ghost outside an anonymous space is always in it, never in the open void. Opened as
   // soon as anonymous mode is on (and again after leaving another anonymous space); a failure is tried again in 8 s
-  const [ghostTry, setGhostTry] = useState(0);
+  // (2026-11-20, owner saw open-void files in Ghost World: the open void's balls stayed on screen from the moment
+  // anonymous went on until Ghost World opened, and an answer that came back at the wrong moment was dropped with no
+  // second try. Now the screen is emptied at once, and it asks again every 4 s until Ghost World is open)
   const ghostBusy = useRef(false);
   useEffect(() => {
-    if (!anonOn || space || ghostBusy.current) return;
-    ghostBusy.current = true;
-    joinGhost()
-      .then((s) => {
-        if (spaceRef.current || !isAnon()) return;
-        switchSpace(s);
-        toast(`You're in Ghost World as ${s.handle}`);
-      })
-      .catch(() => setTimeout(() => setGhostTry((n) => n + 1), 8000))
-      .finally(() => (ghostBusy.current = false));
-  }, [anonOn, space, ghostTry, switchSpace, toast]);
+    if (!anonOn || space) return;
+    setOrbs([]);
+    setNotes([]);
+    setTasks([]);
+    setIncoming({});
+    recent.current.clear();
+    known.current = null;
+    const go = () => {
+      if (ghostBusy.current || spaceRef.current || !isAnon()) return;
+      ghostBusy.current = true;
+      joinGhost()
+        .then((s) => {
+          if (spaceRef.current || !isAnon()) return;
+          switchSpace(s);
+          toast(`You're in Ghost World as ${s.handle}`);
+        })
+        .catch(() => {})
+        .finally(() => (ghostBusy.current = false));
+    };
+    go();
+    const t = setInterval(go, 4000);
+    return () => clearInterval(t);
+  }, [anonOn, space, switchSpace, toast]);
 
   // stepped into an anonymous space (its link, a knock, or a saved one) without the switch on: being in one is being
   // anonymous, so a session starts (30 min at most) with its clock on the seal, and it ends by itself
@@ -2140,10 +2154,12 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   // The void can only hold so many spheres (fewer on a phone); keep yours, then nearby, then the newest.
   const cap = !(mode === "desk" && arranged && tasks.length) ? MAP_CAP : ORB_CAP[mode];
   const visible = useMemo(() => {
+    // a ghost outside a space (the moment between anonymous on and Ghost World open) sees nothing of the open void
+    if (anonOn && !space) return [];
     if (shown.length <= cap) return shown;
     const rank = (o: Orb) => (ownerKey(o.id) || isPending(o.id) ? 2 : 0) + (o.netHash === net ? 1 : 0);
     return [...shown].sort((a, b) => rank(b) - rank(a) || b.createdAt.localeCompare(a.createdAt)).slice(0, cap);
-  }, [shown, net, cap]);
+  }, [shown, net, cap, anonOn, space]);
   // the task board is solid ground: a ball that drifts, is dragged or lands behind it is nudged out to its right
   useEffect(() => {
     if (!tasks.length || archived) {
