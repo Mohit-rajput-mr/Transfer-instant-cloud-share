@@ -608,3 +608,4 @@ G. Earth button: owner rejected zoom-out→Earth; button kept. If owner says rem
 - Still open in Supabase: `orbit_session_forget` and `orbit_reap_anon` from migration 020 (the SQL tool timed out on them).
 
 - 2026-11-20 · Films: lightning (`media/lightning-film/OrbiTransfer-struck-by-lightning.mp4`, 175 s) and space (`media/space-film/OrbiTransfer-space-without-a-suit.mp4`, 151 s) rendered, both open "Do you know what happens…". Defect: container restart killed the space render mid-way (no auto-resume); fixed by re-rendering only the missing frame ranges. Risk: long renders need a resume check after restarts.
+- 2026-11-20 · Film: Taipei 101 golden ball (`media/taipei-film/OrbiTransfer-taipei-101-golden-ball.mp4`, 122 s) rendered. Defect: a second container restart killed the render; the render script is now resumable (re-renders only missing frames). Note: making the Orbi QR captures uploaded 4 test JPGs to the public void (burned after 30 min).
