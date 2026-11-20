@@ -1,0 +1,34 @@
+/* /offline — send and receive with no internet (OfflineView.tsx) */
+.off { position: relative; z-index: 2; max-width: 560px; margin: 0 auto; min-height: 100dvh; padding: calc(20px + var(--safe-t)) max(18px, var(--safe-r)) calc(40px + var(--safe-b)) max(18px, var(--safe-l)); color: var(--ink); background: var(--bg); }
+.off-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 36px; }
+.off-back { color: var(--ink); text-decoration: none; font-size: 14px; display: inline-flex; gap: 8px; align-items: center; }
+.off-net { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--live); display: inline-flex; gap: 6px; align-items: center; }
+.off-net.off { color: #ffb347; }
+.off-h { font-size: clamp(44px, 12vw, 76px); line-height: 0.92; margin: 0 0 14px; }
+.off-sub { color: var(--dim); font-size: 15px; line-height: 1.55; margin: 0 0 28px; }
+.off-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.off-big { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 22px 18px; border-radius: 22px; border: 1.5px solid var(--line); background: var(--panel); color: var(--ink); text-align: left; cursor: pointer; font: inherit; }
+.off-big svg { width: 26px; height: 26px; color: var(--live); }
+.off-big b { font-size: 26px; }
+.off-big span { font-size: 11px; letter-spacing: 0.06em; }
+.off-card { border: 1.5px solid var(--line); background: var(--panel); border-radius: 24px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.off-k { align-self: flex-start; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--live); margin: 0; }
+.off-qr { width: min(100%, 360px); aspect-ratio: 1; border-radius: 16px; background: #fff; image-rendering: pixelated; }
+.off-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.off-note { color: var(--dim); font-size: 13px; line-height: 1.5; text-align: center; margin: 0; }
+.off-scan { position: relative; width: 100%; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.off-video { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 18px; background: #111; }
+.off-frame { position: absolute; top: 12%; left: 12%; width: 76%; aspect-ratio: 1; border: 3px solid rgba(255, 255, 255, 0.85); border-radius: 18px; pointer-events: none; box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.25); }
+.off-paste { display: flex; gap: 8px; width: 100%; }
+.off-paste input { flex: 1; min-width: 0; font: 16px var(--mono); padding: 10px 14px; border-radius: 999px; border: 1.5px solid var(--line); background: #000; color: var(--ink); }
+.off-bar { width: 100%; height: 14px; border-radius: 7px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.off-bar i { display: block; height: 100%; background: var(--live); border-radius: 7px; transition: width 0.2s linear; }
+.off-list, .off-files { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 8px; font-size: 12px; }
+.off-files li { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 14px; background: #0c0c0c; }
+.off-files li span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.off-thumb { width: 52px; height: 52px; object-fit: cover; border-radius: 10px; }
+.off-done { font-size: 56px; margin: 0; color: var(--live); }
+.off-spin { width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--live); animation: off-spin 0.9s linear infinite; }
+@keyframes off-spin { to { transform: rotate(360deg); } }
+.off-foot { margin-top: 28px; font-size: 11px; line-height: 1.5; text-align: center; }
+@media (max-width: 380px) { .off-two { grid-template-columns: 1fr; } }

@@ -21,6 +21,7 @@ export default function Privacy() {
         <li><b>Open objects</b> (sent without a passcode) are still encrypted in transit and at rest, but anyone who can see them can open them. Only send something open if you are happy for anyone to take it.</li>
         <li>We store only the encrypted bytes (with Cloudflare R2), and remove them when the lifetime the sender picked runs out (5 to 30 minutes; inside a named space, when the space closes, 8 hours at most), after the download limit, or when the sender destroys them.</li>
         <li>While the sender&apos;s page is open, receivers may also get the encrypted bytes straight from the sender&apos;s device (peer to peer, WebRTC). Public STUN servers (Google, Cloudflare) help the two devices find each other; no file data passes through them.</li>
+        <li><b>Offline send</b> (/offline): the two devices exchange their connection details by scanning each other&apos;s QR code, then the files go straight across your local network (WebRTC, encrypted). Nothing is sent to our servers, and no STUN or relay server is used.</li>
       </ul>
       <h2>What we keep, briefly</h2>
       <ul>

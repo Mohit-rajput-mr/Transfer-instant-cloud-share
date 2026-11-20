@@ -19,6 +19,14 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-20 · FEATURE (owner: "send and receive offline"): `/offline` page (`src/app/offline/*`, `src/lib/offline.ts`, `public/offline-sw.js`).
+  Same Wi-Fi or a phone hotspot, no internet: WebRTC with NO ice servers; the offer/answer travel as QR codes (slimmed SDP, deflate, base64url,
+  ~570 chars) scanned with the camera (BarcodeDetector, else jsQR) or pasted. Files stream over the data channel (64 KB chunks, back-pressure).
+  Service worker scoped to /offline only (network-first page, cache-first /_next/static) so the page opens with no signal after one online visit.
+  Root-cause note: browsers hide local IPs behind mDNS `.local` names unless the page is using the camera; those often don't resolve between
+  phones, so the camera stays on while the code is made (`revealLocalAddress`). Verified: unit tests (codes), prod build, Playwright 2 contexts
+  with ALL HTTP blocked after the first visit: page reloads from the SW, 2 files (2.9 MB random + jpg) arrive byte-identical; QR screenshot decodes
+  with jsQR. NOT verified: two real phones (iOS Safari / Android Chrome) on a hotspot — test before announcing. Not deployed yet.
 - 2026-11-19 (owner: "skeleton/organs look low-end; every film more realistic"). ADDED kit/anatomy.js: BodyParts3D 4.0
   real anatomy (2,234 meshes, CC BY 4.0) skinned to a 15-bone rig (2-bone blend, side/arm guards) so skin, bones, organs,
   vessels pose together; clothes/shoes as skin shells; x-ray, pulse, decal, thermal, swell hooks. Scanned head, Poly Haven

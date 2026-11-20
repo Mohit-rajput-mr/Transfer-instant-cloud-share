@@ -13,6 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       alternates: { languages: languageAlternates() },
     })),
     { url: `${SITE}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${SITE}/offline`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${SITE}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${SITE}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${SITE}/refunds`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },

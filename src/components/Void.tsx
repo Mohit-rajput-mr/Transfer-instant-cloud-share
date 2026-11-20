@@ -2778,6 +2778,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             <a href="#how">How it works</a>
             <button onClick={openTasks}>Tasks{tasks.length ? ` ${tasks.filter((t) => !t.doneAt).length}` : ""}</button>
             <Link href="/about">About</Link>
+            <Link href="/offline">Offline</Link>
             {/* in place (lib/view.ts): no reload, uploads and sockets carry on */}
             <button onClick={() => switchView("/work")}>Switch to Work</button>
             <Link href="/upgrade" className="nav-up"><LuRocket aria-hidden />Upgrade</Link>
@@ -3064,7 +3065,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           ))}
           <div className="legal">
             <span>Files are end-to-end encrypted. Max 20 GB each. 300 uploads per network per hour.</span>
-            <span><Link href="/about">About</Link> · <Link href="/about#contact">Contact</Link> · <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/refunds">Refunds</Link> · <Link href="/account">Account</Link> · Abuse? Open the object and tap <span className="glyph"><LuFlag aria-hidden />Report</span></span>
+            <span><Link href="/about">About</Link> · <Link href="/offline">Offline send</Link> · <Link href="/about#contact">Contact</Link> · <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/refunds">Refunds</Link> · <Link href="/account">Account</Link> · Abuse? Open the object and tap <span className="glyph"><LuFlag aria-hidden />Report</span></span>
           </div>
         </section>}
       </main>

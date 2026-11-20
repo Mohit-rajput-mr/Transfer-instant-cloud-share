@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { useDialog } from "@/lib/dialog";
 import Link from "next/link";
 import AccountChip from "./AccountChip";
-import { LuArchive, LuArrowUp, LuBriefcase, LuChevronRight, LuCircleHelp, LuFileText, LuGlobe, LuImage, LuInfo, LuMapPin, LuLayoutGrid, LuLink, LuListChecks, LuMessageSquareText, LuMoon, LuMusic, LuOrbit, LuPalette, LuRocket, LuShieldCheck, LuSun, LuTimer, LuUser, LuUserX, LuVideo, LuWifi, LuX } from "react-icons/lu";
+import { LuArchive, LuArrowUp, LuBriefcase, LuChevronRight, LuCircleHelp, LuFileText, LuGlobe, LuImage, LuInfo, LuMapPin, LuLayoutGrid, LuLink, LuListChecks, LuMessageSquareText, LuMoon, LuMusic, LuOrbit, LuPalette, LuRocket, LuShieldCheck, LuSun, LuTimer, LuUser, LuUserX, LuVideo, LuWifi, LuWifiOff, LuX } from "react-icons/lu";
 import { BsIncognito } from "react-icons/bs";
 import { KINDS, type Kind } from "@/lib/skin-list";
 import { useTheme } from "@/lib/theme";
@@ -114,6 +114,11 @@ export default function MobileMenu(props: {
               ? row(<LuOrbit />, "Switch to Classic", "the orbit look", () => (close(), switchView("/")))
               : row(<LuBriefcase />, "Switch to Work", "the calm editor look", () => (close(), switchView("/work")))}
             {!props.work && row(<LuCircleHelp />, "How it works", "drop · lock · beam · burn", go(props.onHow))}
+            <Link className="sd-row lg-press" href="/offline" onClick={close}>
+              <span className="sd-ic"><LuWifiOff /></span>
+              <span className="sd-txt"><b>Offline send</b><small>same Wi-Fi · no internet</small></span>
+              <LuChevronRight className="sd-go" aria-hidden />
+            </Link>
             <Link className="sd-row lg-press" href="/about" onClick={close}>
               <span className="sd-ic"><LuInfo /></span>
               <span className="sd-txt"><b>About · Contact</b></span>
