@@ -4,10 +4,11 @@ import { LuArrowLeft, LuChevronRight, LuCloud, LuCopy, LuEyeOff, LuGhost, LuMapP
 import { BsIncognito } from "react-icons/bs";
 import { ANON_MINUTES, aliasOf, lastMinutes, type AnonSession } from "@/lib/anon";
 import { Pop } from "./Spaces";
+import { isGhost } from "@/lib/ghost";
 import { ANON_PASS_MIN, anonLive, cleanAnonName, warmPassKeys, type SpaceSession } from "@/lib/space";
 
 // "Stay anonymous" (lib/anon.ts), as one simple portal card. Three things to do, nothing else on the first screen:
-//   Ghost World  the open void, as a ghost (no device, no location, no identity)
+//   Ghost World  one worldwide room only ghosts are in, never the open void (lib/ghost.ts)
 //   create       a private space with its own 4-character code (made up for you) and a passcode you pick (required)
 //   find         someone's space: type its code, see that it's live, give its passcode
 // Every anonymous space burns with the session that made it (5 to 30 minutes). The copy says what Orbi does NOT keep
@@ -63,7 +64,7 @@ export default function AnonCard(props: {
   space: SpaceSession | null;
   /** anonymous spaces this browser is in */
   saved: SpaceSession[];
-  /** look around: anonymous in the open void (starts a session of `min` minutes if none runs) */
+  /** Ghost World (starts a session of `min` minutes if none runs) */
   onLook: (min: number) => void;
   onTurnOff: () => void;
   /** a new space: its code is made up, the passcode is required */
@@ -244,7 +245,7 @@ export default function AnonCard(props: {
     ));
 
   // ---- inside an anonymous space (or right after making one): its code, to share ----
-  if ((mode === "status" || mode === "link") && space?.anon) {
+  if ((mode === "status" || mode === "link") && space?.anon && !isGhost(space.slug)) {
     const c = anonCode(space);
     return card(mode === "link" ? "Your space is live" : `You're in ${c || "an anonymous space"}`, c ? "Share the code and your passcode. Nothing else gets anyone in." : "Share its link: it holds the key.", (
       <>
@@ -292,7 +293,7 @@ export default function AnonCard(props: {
     <>
       {timePick}
       <div className="ap-opts">
-        {opt(<LuGhost />, "Ghost World", "The most anonymous way in: no device, no location, no identity. No clue who's inside.", () => (props.switchOn ? props.onClose() : props.onLook(min)))}
+        {opt(<LuGhost />, "Ghost World", isGhost(space?.slug) ? "You're here. Only ghosts see what's sent in Ghost World." : "Only ghosts, worldwide: no device, no location, no identity. The open void never sees it.", () => (isGhost(space?.slug) ? props.onClose() : props.onLook(min)))}
         {opt(<LuPlus />, "Create a space", "Get a code, set a passcode", () => go("create"))}
         {opt(<LuSearch />, "Find a space", "Enter a code + passcode", () => go("find"))}
       </div>

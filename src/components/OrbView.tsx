@@ -375,9 +375,11 @@ function Downloaders({ list }: { list: DlShown[] }) {
         const pct = Math.floor(d.f * 100);
         return (
           <div key={d.w} className={`odl ${d.state}`} style={{ "--who": d.hue, "--p": d.state === "done" ? 100 : pct } as CSSProperties}>
-            <span className="odl-beam" aria-hidden><b>{d.state === "done" ? "✓ got it" : `${DL_WORD[d.state]} ${pct}%`}</b></span>
+            <span className="odl-beam" aria-hidden><b>{d.state === "done" ? "✓ got it" : DL_WORD[d.state]}</b></span>
             <span className="odl-ball" aria-hidden>{d.w.trim().slice(0, 1).toUpperCase() || "?"}</span>
             <span className="odl-name" aria-hidden>{d.w}</span>
+            {/* the percentage under the downloader's ball (owner 2026-11-20) */}
+            <span className="odl-pct" aria-hidden>{d.state === "done" ? 100 : pct}%</span>
           </div>
         );
       })}

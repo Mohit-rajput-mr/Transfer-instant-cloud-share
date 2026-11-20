@@ -2,6 +2,7 @@ import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, 
 import { rpc } from "./server";
 import { validSkin } from "./skin-list";
 import { LONG_LIVES } from "./plans";
+import { GHOST, GHOST_TITLE } from "./ghost";
 
 // Spaces: separate voids, kept in Supabase (supabase/migrations/004_spaces.sql) behind the same
 // secret-gated functions as everything else:
@@ -116,6 +117,14 @@ export async function createSpace(
   metaCache.set(slug, { at: Date.now(), meta });
   slugCache = null;
   return { meta, owner };
+}
+
+/** Ghost World's room (lib/ghost.ts): made on first use, an anonymous space that never closes and has no passcode */
+export async function ghostMeta(): Promise<SpaceMeta | null> {
+  const m = await getMeta(GHOST);
+  if (m) return m;
+  const made = await createSpace(GHOST_TITLE, false, null, { slug: GHOST, anon: true });
+  return made?.meta ?? (metaCache.delete(GHOST), await getMeta(GHOST));
 }
 
 /** a member's name in an anonymous space: Anon- and the start of their device hash, longer only when taken */

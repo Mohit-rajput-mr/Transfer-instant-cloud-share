@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { clean, netHash } from "@/lib/server";
-import { addMember, anonAlias, chanFor, checkPass, cleanHandle, devHash, getMeta, roster, tokenFor, uniqueHandle, validSlug } from "@/lib/spaces";
+import { addMember, anonAlias, chanFor, checkPass, cleanHandle, devHash, getMeta, ghostMeta, roster, tokenFor, uniqueHandle, validSlug } from "@/lib/spaces";
+import { GHOST } from "@/lib/ghost";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const typed = cleanHandle(b?.handle);
   if (!validSlug(slug) || !deviceId) return NextResponse.json({ error: "bad request" }, { status: 400 });
   // the space and its members at once (one round trip, not two)
-  const [meta, r] = await Promise.all([getMeta(slug), roster(slug, true)]);
+  const [meta, r] = await Promise.all([slug === GHOST ? ghostMeta() : getMeta(slug), roster(slug, true)]);
   // an anonymous space gives every member an alias: a typed name is ignored
   if (!typed && !meta?.anon) return NextResponse.json({ error: "Pick a name for yourself" }, { status: 400 });
   if (!meta) return NextResponse.json({ error: "No such space" }, { status: 404 });

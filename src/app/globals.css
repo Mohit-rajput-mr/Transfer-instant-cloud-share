@@ -4199,7 +4199,7 @@ html:not(#_) .pop.anon-portal .ap-search input::placeholder { color: rgba(255,25
 /* ---- who is downloading (anonymous spaces, the sender's own balls; OrbView Downloaders, owner's pick #3 "Beam") ----
    one column beside the ball, outside the curved stats (DELETE ends ~0.77 of the ball's size out) */
 .orb-dls { position: absolute; left: 126%; top: 50%; transform: translateY(-50%); z-index: 5; pointer-events: none; display: grid; gap: 14px; justify-items: start; }
-.odl { --c: var(--live, #3ddc84); display: grid; grid-template-columns: 116px 38px; grid-template-areas: "beam ball" ". name"; align-items: center; column-gap: 6px; row-gap: 4px; animation: bubble-in 0.45s var(--spring) both; }
+.odl { --c: var(--live, #3ddc84); display: grid; grid-template-columns: 116px 38px; grid-template-areas: "beam ball" ". name" ". pct"; align-items: center; column-gap: 6px; row-gap: 4px; animation: bubble-in 0.45s var(--spring) both; }
 .odl.paused { --c: #ffa53d; }
 .odl.canceled, .odl.failed { --c: #ff5a5a; }
 .odl-beam { grid-area: beam; position: relative; height: 5px; background-image: radial-gradient(circle, var(--c) 2.1px, transparent 2.6px); background-size: 12px 5px; animation: odl-flow 0.6s linear infinite; }
@@ -4213,6 +4213,7 @@ html:not(#_) .pop.anon-portal .ap-search input::placeholder { color: rgba(255,25
 .odl-ball::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; background: conic-gradient(var(--c) calc(var(--p) * 1%), rgba(255,255,255,0.14) 0);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3.5px), #000 calc(100% - 3px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3.5px), #000 calc(100% - 3px)); transition: background 0.3s; }
 .odl-name { grid-area: name; justify-self: center; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 11px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: #d9dde1; text-shadow: 0 1px 3px #000; }
+.odl-pct { grid-area: pct; justify-self: center; font: 700 14px/1 var(--mono); color: var(--c); font-variant-numeric: tabular-nums; text-shadow: 0 1px 3px #000; }
 .odl-more { font: 700 11px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: #aab0b6; padding-left: 2px; text-shadow: 0 1px 3px #000; }
 @keyframes odl-flow { to { background-position: 12px 0; } }
 @media (prefers-reduced-motion: reduce) { .odl-beam { animation: none; } }

@@ -32,7 +32,7 @@ const release = (id: string) => {
 import { downloading } from "@/lib/downloads";
 import { removeLater } from "@/lib/transfer";
 import { warm } from "@/lib/peek";
-import { anonLink, anonTitle, createAnonPassSpace, createSpace, joinAnonByName, joinAnonSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
+import { anonLink, anonTitle, createAnonPassSpace, joinGhost, createSpace, joinAnonByName, joinAnonSpace, joinSpace, enterSpace as fetchRoom, forget, kickMember, leaveSpace, lastSpace, remember, savedSpaces, setActiveSpace, setCurrent, spaceHeaders, type SpaceInfo, type SpaceSession } from "@/lib/space";
 import { BsIncognito } from "react-icons/bs";
 import AnonSeal from "./AnonSeal";
 import KnockBell from "./KnockBell";
@@ -43,6 +43,7 @@ import TaskBoard, { TaskWires, taskGroups } from "./TaskBoard";
 import { addTask, assignTask, burnTask, carryTasks, wireObject, editTask, isMyTask, moveTask, openInvite, parseTask, sealInvite, stageName, taskLabel, taskLine, tickTask, type Task } from "@/lib/tasks";
 import { cleanOrb, ORB_ID, readSync, type SyncMsg } from "@/lib/sync";
 import { addDl, pruneDl, shownDl, type DlEnd, type DlNote, type Downloader } from "@/lib/dlprog";
+import { isGhost } from "@/lib/ghost";
 import { joinLive, liveOn, roomsFor, type Chan, type Live } from "@/lib/live";
 import { around } from "@/lib/area";
 import { anonCellNow, asked, dropGps, fixNow, follow, forgetFix, fromIp, locate, locOff, markAsked, markSent, permission, setAnonCell, setLocOff, where } from "@/lib/where";
@@ -650,6 +651,15 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     }
     const run = (async () => {
       const sp = spaceRef.current;
+      // anonymous = Ghost World only (owner 2026-11-20): the open void's files, notes and tasks are never shown to a
+      // ghost, not even for the moment before Ghost World opens
+      if (!sp && isAnon()) {
+        setOrbs([]);
+        setNotes([]);
+        setTasks([]);
+        setLoaded(true);
+        return;
+      }
       // the public void also carries what was sent from this network (same Wi-Fi), even when it was pinned to another area
       // (uncached: asked at most every 30 s; what lands from this network meanwhile comes through its live room)
       const sameNet = !sp && !isAnon() ? netList() : Promise.resolve([] as Orb[]);
@@ -1309,6 +1319,23 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     setPanel(null);
   }, [intoAnon, toggleAnon]);
 
+  // Ghost World (lib/ghost.ts): a ghost outside an anonymous space is always in it, never in the open void. Opened as
+  // soon as anonymous mode is on (and again after leaving another anonymous space); a failure is tried again in 8 s
+  const [ghostTry, setGhostTry] = useState(0);
+  const ghostBusy = useRef(false);
+  useEffect(() => {
+    if (!anonOn || space || ghostBusy.current) return;
+    ghostBusy.current = true;
+    joinGhost()
+      .then((s) => {
+        if (spaceRef.current || !isAnon()) return;
+        switchSpace(s);
+        toast(`You're in Ghost World as ${s.handle}`);
+      })
+      .catch(() => setTimeout(() => setGhostTry((n) => n + 1), 8000))
+      .finally(() => (ghostBusy.current = false));
+  }, [anonOn, space, ghostTry, switchSpace, toast]);
+
   // stepped into an anonymous space (its link, a knock, or a saved one) without the switch on: being in one is being
   // anonymous, so a session starts (30 min at most) with its clock on the seal, and it ends by itself
   useEffect(() => {
@@ -1577,6 +1604,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     if (!rtOn || !spaceReady || !areaReady) return;
     // what someone else said, whichever way it came
     const heard = async (event: string, payload: Record<string, unknown>, a: string | null = null) => {
+      // a ghost hears only its own space (Ghost World or an anonymous space), never the open void
+      if (isAnon() && !spaceRef.current) return;
       if (event === "pulse") {
         scheduleRefresh();
         return setPulse((p) => p + 1);
@@ -2908,7 +2937,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
             </div>
           )}
           {!work && !inArchive && !space && (anonNow ? (
-            <button className="where-badge anon" onClick={() => setPanel({ kind: "anon", mode: "status" })} aria-label="You are anonymous in the public void: you can look and download. Sending opens an anonymous space"><i aria-hidden /><BsIncognito aria-hidden />Anonymous here: look only</button>
+            <button className="where-badge anon" onClick={() => setPanel({ kind: "anon", mode: "status" })} aria-label="Opening Ghost World"><i aria-hidden /><BsIncognito aria-hidden />Opening Ghost World…</button>
           ) : (
             <button className="where-badge" onClick={() => setPanel({ kind: "space" })} aria-label="You are in the public void. Open spaces"><i aria-hidden />You&apos;re in the public void</button>
           ))}
@@ -2920,8 +2949,10 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           )}
           {space?.anon && space.code && space.key && <KnockBell space={space} toast={toast} />}
           {space && !inArchive && <SpaceRoom space={space} info={room} online={live} onKick={kick} onExit={() => {
+            // Exit in Ghost World ends anonymous mode; out of another anonymous space, a ghost goes back to Ghost World
+            if (isGhost(space.slug)) return toggleAnon(false);
             switchSpace(null);
-            toast("Back in the public void");
+            toast(isAnon() ? "Back in Ghost World" : "Back in the public void");
           }} />}
           {map ? (
             <MapWorld W={map.W} H={map.H} band={(space || inArchive) && !work ? ROOM_BAND[mode] : MAP_BAND[mode]} fit={fitAll} empty={!map.spots.size} framed={!space && !inArchive} onRect={setRect}
@@ -3314,14 +3345,16 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           saved={anonSaved}
           onClose={() => setPanel(null)}
           onLook={(m) => {
-            toggleAnon(true, false, m);
+            if (!anonOn) toggleAnon(true, false, m);
             setPanel(null);
+            // Ghost World opens by itself for a ghost outside a space (see the effect after findAnon)
+            if (spaceRef.current && !isGhost(spaceRef.current.slug)) switchSpace(null);
           }}
           onTurnOff={() => toggleAnon(false)}
           onCreate={(pass, min) => goAnonSpace(undefined, min, pass)}
           onFind={(code, pass, min) => findAnon(code, pass, min)}
           onPick={(s) => (intoAnon(s), setPanel(null))}
-          onLeave={space?.anon ? () => (switchSpace(null), setPanel(null), toast("Back in the open void, still anonymous")) : undefined}
+          onLeave={space?.anon && !isGhost(space.slug) ? () => (switchSpace(null), setPanel(null), toast("Back in Ghost World")) : undefined}
           join={panel?.kind === "anon-join" ? {
             title: anonTitle(panel.slug),
             go: async () => {
