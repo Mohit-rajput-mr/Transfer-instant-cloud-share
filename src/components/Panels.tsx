@@ -1165,12 +1165,14 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
         dlProgress(orb.id, lastF.current);
       },
     })
-      .then((res) => (dlProgress(orb.id, 1, 1), landed(res)))
+      .then(landed)
       .catch((e) => (dlProgress(orb.id, lastF.current, abort.current?.signal.aborted ? 2 : 3), fail(e)))
       .finally(() => setBusy(false));
   };
   /** the file is here (downloaded now, or already fetched in the background) */
   function landed(res: Received) {
+    // the sender sees "got it" (anonymous spaces), also when the file was already here from the background preview
+    dlProgress(orb.id, 1, 1);
     if (res.kind === "file") {
       const many = !!res.parts?.length && res.held && canShareFiles(res.parts, env);
       setShareParts(many);
