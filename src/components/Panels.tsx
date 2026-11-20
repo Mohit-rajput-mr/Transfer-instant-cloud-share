@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import QRCode from "qrcode";
+import { dlProgress } from "@/lib/dlprog";
 import {
   deviceId, deviceLabel, dropOwnerKey, ext, formatBytes, formatClock, hasGot, markGot, ownerKey, timeAgo, type Orb, type OwnerView, homePath,
 } from "@/lib/client";
@@ -1156,10 +1157,12 @@ export function UnlockPanel(props: { orb: Orb; now: number; watchers: number; on
         setStage(s);
         setFrac(p);
         if (s === "decrypting") setSpeed(meter.label(p * orb.size));
+        // the sender sees it live (anonymous spaces: lib/dlprog.ts)
+        dlProgress(orb.id, s === "decrypting" ? p : s === "done" ? 1 : 0);
       },
     })
-      .then(landed)
-      .catch(fail)
+      .then((res) => (dlProgress(orb.id, 1, 1), landed(res)))
+      .catch((e) => (dlProgress(orb.id, 0, 2), fail(e)))
       .finally(() => setBusy(false));
   };
   /** the file is here (downloaded now, or already fetched in the background) */
