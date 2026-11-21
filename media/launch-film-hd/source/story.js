@@ -155,7 +155,8 @@ function drawPh(g, st) { const im = SHOT[st.k]; g.fillStyle = "#000"; g.fillRect
 
 // ---------- HUD (positions in % so they work in both formats) ----------
 const hb = (top, html) => hudEl(...html, { left: "0px", top: `${top}px`, width: `${W}px` });
-const Y = (yp) => (LAND ? Math.round(120 + yp / 1920 * 840) : yp);
+// landscape: HUD in the upper 120–760 band so it never meets the subtitles (top 830)
+const Y = (yp) => (LAND ? Math.round(120 + yp / 1920 * 640) : yp);
 H.callouts({
   lockC: ["Locked on your device", green, "AES-256-GCM"], pwC: ["Password", green, "never leaves your browser"], burnC: ["Burns", "#ff8a3d", "in 30 minutes or less"],
   wifiC: ["Same Wi-Fi", green, "appears live"], qrC: ["Its own QR code", green], codeC: ["4-letter code", green, "+ a passcode"], joinC: ["They joined", green, "you see who's inside"],
