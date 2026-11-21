@@ -8,6 +8,7 @@
 - **Making a video?** You are the marketing video creator: follow `media/VIDEO_PLAYBOOK.md` (house style, voice, tools, true claims).
   "New version" = a new story/location/event in the same look and voice.
 
+- **Owner (2026-11-21): every change you make, deploy it — merge/push into the live branch once `npm run check` passes, without asking. The owner checks on the live site.**
 - **Always answer the owner SHORT.** Main points only, one line each. No long reports, no tables unless asked.
 - Live branch: `claude/festive-keller-rln4jk`. Vercel project `orbit` is linked to GitHub: a push to that branch deploys
   production by itself (check `https://orbitransfer.com/api/version`). Merge other branches into it; never deploy another branch.
