@@ -55,8 +55,7 @@ async function run() {
       if (res.kind === "file" && res.held) emit({ held: [...state.held, ...(res.parts?.length ? res.parts : [res.file])] });
       if (res.kind === "text") autoDownload(new File([res.text], `${job.name || "note"}.txt`, { type: "text/plain" }));
       if (res.kind !== "file" || !res.held) markGot(job.id);
-      // every other screen counts it at once (Void says it on the live line)
-      window.dispatchEvent(new CustomEvent("orbit:downloaded", { detail: job.id }));
+      // (every other screen counts it once the server says it is a new download: lib/transfer.ts markReceived)
       patch(job.id, { state: "done", frac: 1 });
       dlProgress(job.id, 1, 1);
     } catch (e) {

@@ -3742,15 +3742,21 @@ html[data-theme="light"] .emoji-btn { color: #444; background: rgba(0,0,0,0.05);
 }
 .m-scope { display: none; }
 /* folds, set by the bar itself (lib/fold.ts measures it, data-fold): 1 the small labels and "How it works" go (☰ appears),
-   2 the other links go, 3 the three buttons drop to a row of their own. Only as far as needed for nothing to touch. */
+   2 the other links go, 3 the logo becomes the emblem alone, 4 the three buttons drop to a row of their own. Only as far as needed for nothing to touch. */
 .top-row { grid-template-columns: auto minmax(0, 1fr) auto; }
-.top:is([data-fold="1"], [data-fold="2"], [data-fold="3"]) :is(.brand-by, .live-txt, .top-right .kf-btn > span, .nav a[href="#how"]) { display: none; }
-.top:is([data-fold="1"], [data-fold="2"], [data-fold="3"]) .nav-menu { display: grid !important; }
-.top:is([data-fold="1"], [data-fold="2"], [data-fold="3"]) .top-right { gap: 8px; }
-.top:is([data-fold="2"], [data-fold="3"]) .top-mid .nav { display: none; }
-.top[data-fold="3"] .top-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 0; height: auto; min-height: 40px; }
-.top[data-fold="3"] .top-mid { grid-column: 1 / -1; grid-row: 2; padding: 2px 0 8px; }
-.top:is([data-fold="2"], [data-fold="3"]) .top-mid .nav + .scope-tabs { padding-left: 0; border-left: 0; }
+.top:is([data-fold="1"], [data-fold="2"], [data-fold="3"], [data-fold="4"]) :is(.brand-by, .live-txt, .top-right .kf-btn > span, .nav a[href="#how"]) { display: none; }
+.top:is([data-fold="1"], [data-fold="2"], [data-fold="3"], [data-fold="4"]) .nav-menu { display: grid !important; }
+/* the logo never shrinks into the buttons (owner 2026-11-21: "Your spaces" sat on the name): at its full width it is
+   measured as it is drawn; once the links have folded away and it still doesn't fit, only the emblem stays (fold 3) */
+.top-row > .brand { min-width: max-content; }
+.brand-emblem { display: none; width: 30px; height: 30px; flex: none; user-select: none; -webkit-user-drag: none; }
+.top:is([data-fold="3"], [data-fold="4"]) .brand-logo { display: none; }
+.top:is([data-fold="3"], [data-fold="4"]) .brand-emblem { display: block; }
+.top:is([data-fold="1"], [data-fold="2"], [data-fold="3"], [data-fold="4"]) .top-right { gap: 8px; }
+.top:is([data-fold="2"], [data-fold="3"], [data-fold="4"]) .top-mid .nav { display: none; }
+.top[data-fold="4"] .top-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 0; height: auto; min-height: 40px; }
+.top[data-fold="4"] .top-mid { grid-column: 1 / -1; grid-row: 2; padding: 2px 0 8px; }
+.top:is([data-fold="2"], [data-fold="3"], [data-fold="4"]) .top-mid .nav + .scope-tabs { padding-left: 0; border-left: 0; }
 @media (max-width: 720px) {
   .m-scope { display: flex; justify-content: space-between; padding: 0 2px 8px; gap: 4px; }
   .m-scope button { height: 30px; padding: 0 11px; }

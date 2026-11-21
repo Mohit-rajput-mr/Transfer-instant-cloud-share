@@ -36,3 +36,28 @@
 .ac-sel { min-height: 40px; border-radius: 12px; border: 1px solid #333; background: #000; color: #fff; padding: 0 10px; font: inherit; font-size: 14px; text-transform: none; letter-spacing: 0; }
 .ac-btn.danger { background: #ff5a5a; border-color: #ff5a5a; color: #000; }
 @media (max-width: 560px) { .ac-head { grid-template-columns: auto 1fr; } .ac-head > button { grid-column: 1 / -1; } .ac-opt { grid-template-columns: 1fr; } }
+
+/* Continue with Google (owner 2026-11-21): Orbit's glass pill with Google's G; Google's real button lies invisible over
+   it (app/login/GoogleButton.tsx), so the look is ours and the sign-in is Google's own */
+.ac-google { position: relative; height: 52px; border-radius: 999px; isolation: isolate; }
+.ac-google-btn { position: absolute; inset: 0; width: 100%; display: flex; align-items: center; gap: 14px; padding: 0 8px 0 6px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.16); color: #fff; cursor: pointer; font: inherit; font-weight: 600; font-size: 15px; letter-spacing: 0.01em;
+  background: linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.025) 60%, rgba(255,255,255,0.05)), #0c0c0e;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.5), 0 10px 26px -14px rgba(0,0,0,0.9);
+  transition: translate 0.28s cubic-bezier(.2,1.4,.4,1), border-color 0.2s, box-shadow 0.25s, background 0.2s; }
+.ac-google-btn .g-chip { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: #fff;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.4), 0 4px 12px -4px rgba(0,0,0,0.7); }
+.ac-google-btn .g-chip img { width: 20px; height: 20px; display: block; }
+.ac-google-btn .g-txt { flex: 1; text-align: center; padding-right: 28px; }
+.ac-google-btn .g-go { position: absolute; right: 18px; width: 16px; height: 16px; opacity: 0.45; transition: opacity 0.2s, translate 0.28s cubic-bezier(.2,1.4,.4,1); }
+.ac-google:is(:hover, :focus-within) .ac-google-btn, .ac-google-btn:focus-visible { border-color: rgba(255,255,255,0.42); translate: 0 -1px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -1px 0 rgba(0,0,0,0.5), 0 0 0 4px rgba(255,255,255,0.06), 0 14px 30px -14px rgba(0,0,0,0.95); }
+.ac-google:is(:hover, :focus-within) .g-go, .ac-google-btn:focus-visible .g-go { opacity: 1; translate: 3px 0; }
+.ac-google:active .ac-google-btn { translate: 0 0; }
+.ac-google-btn:disabled { cursor: default; }
+.ac-google.off { opacity: 0.5; pointer-events: none; }
+/* Google's button: present and clickable, never seen (stretched over the whole pill) */
+.ac-gis { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; opacity: 0.0001; overflow: hidden; border-radius: 999px; }
+.ac-gis[hidden] { display: none; }
+.ac-gis > div { transform: scale(var(--gx, 1), var(--gy, 1)); transform-origin: center; }
+@media (prefers-reduced-motion: reduce) { .ac-google-btn, .ac-google-btn .g-go { transition: none; } }

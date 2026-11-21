@@ -2414,15 +2414,24 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     }
     prev.current = { ids, orbs: new Map(visible.map((o) => [o.id, o])), pos: new Map(positions), hue: colors };
   }, [visible, alive, positions, colors, loaded]);
-  // spheres this device already downloaded: dimmed, so what's new stands out
+  // a download the server counted as NEW moves the number on every screen by one (a device downloading again is not
+  // new: migration 045); one that reached its download limit burnt the object, which leaves every screen now
   useEffect(() => {
-    const on = (e: Event) => {
+    const counted = (e: Event) => {
       const id = (e as CustomEvent<string>).detail;
       if (typeof id === "string") sync({ od: [id] });
     };
-    window.addEventListener("orbit:downloaded", on);
-    return () => window.removeEventListener("orbit:downloaded", on);
-  }, [sync]);
+    const burned = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (typeof id !== "string") return;
+      sync({ og: [id] });
+      beam("gone", { ids: [id] });
+      toast("Download limit reached · it burned");
+    };
+    window.addEventListener("orbit:counted", counted);
+    window.addEventListener("orbit:burned", burned);
+    return () => (window.removeEventListener("orbit:counted", counted), window.removeEventListener("orbit:burned", burned));
+  }, [sync, beam, toast]);
   // anonymous space: this device's downloads are said in the space as they move, so the sender sees who is getting
   // their file and how far (lib/dlprog.ts). At most one note per file every 0.8 s, and one every 2.5 s even when
   // nothing moved (silence then means this device lost its internet: the sender shows "paused")
@@ -2478,7 +2487,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
   const areaCount = countArea(alive, area, placed(gps, where()?.how));
   // the Classic bar folds only as far as it must (lib/fold.ts): measured again when its width or contents change
   const topBar = useRef<HTMLElement>(null);
-  const foldKey = `${areaCount}|${nearbyCount}|${badges.size}|${online}|${tasks.length}|${anonNow}|${anonOn}|${!!space}|${inArchive}|${kind}|${work}`;
+  const foldKey = `${areaCount}|${nearbyCount}|${badges.size}|${online}|${tasks.length}|${anonNow}|${anonOn}|${!!space}|${inArchive}|${kind}|${work}|${mySpaces.length}|${parked?.title ?? ""}`;
   useLayoutEffect(() => {
     const el = topBar.current;
     const row = el?.querySelector<HTMLElement>(".top-row");
@@ -2883,6 +2892,9 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           <div className="brand" onClick={tapLogo} role="presentation">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className="brand-logo" src="/logo.svg" alt="Orbi Transfer" width={194} height={28} draggable={false} />
+            {/* a short bar: the emblem alone, never the name squeezed under the buttons (globals.css, data-fold) */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="brand-emblem" src="/brand/emblem.svg" alt="" width={30} height={30} draggable={false} />
             <span className="brand-by">Instant transfer</span>
           </div>
           <div className="top-mid">
@@ -3429,8 +3441,8 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
           now={serverNow}
           watchers={watchers(unlockOrb.id)}
           onClose={() => setPanel(null)}
-          // every screen counts it at once (a "pulse" here made every tab worldwide reload its whole list)
-          onDownloaded={() => sync({ od: [unlockOrb.id] })}
+          // (the count moves on every screen when the server says it is a new download: the orbit:counted listener)
+          onDownloaded={() => {}}
           onViewed={onViewed}
           preview={panel.preview}
         />

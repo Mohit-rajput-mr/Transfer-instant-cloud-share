@@ -3,7 +3,7 @@
 // orbitransfer.com" instead of the Supabase address, at no cost. Google hands back an ID token, which Supabase checks
 // (signInWithIdToken, with a nonce so it can't be replayed). If Google's script can't load, the old redirect stays.
 import { useEffect, useRef, useState } from "react";
-import { FcGoogle } from "react-icons/fc";
+import { LuArrowRight } from "react-icons/lu";
 import { auth } from "@/lib/auth";
 
 // public by design (it is in every Google sign-in page); the secret stays in Supabase
@@ -53,7 +53,12 @@ export default function GoogleButton({ onError, fallback, disabled }: { onError:
           if (error) onError(error.message);
         },
       });
-      window.google.accounts.id.renderButton(box.current, { type: "standard", theme: "filled_black", size: "large", shape: "pill", text: "continue_with", width: Math.min(400, box.current.clientWidth || 320), logo_alignment: "center" });
+      // Google's own button (its iframe is what signs in) lies invisible over Orbit's styled one, stretched to cover it
+      const w = box.current.clientWidth || 320, h = box.current.clientHeight || 52;
+      const gw = Math.max(200, Math.min(400, w));
+      window.google.accounts.id.renderButton(box.current, { type: "standard", theme: "filled_black", size: "large", shape: "pill", text: "continue_with", width: gw, logo_alignment: "center" });
+      box.current.style.setProperty("--gx", String(w / gw));
+      box.current.style.setProperty("--gy", String(h / 40));
       setState("ready");
     })().catch(() => on && setState("fallback"));
     return () => {
@@ -62,14 +67,20 @@ export default function GoogleButton({ onError, fallback, disabled }: { onError:
     };
   }, [onError]);
 
+  // (owner 2026-11-21: in the site's own look, with Google's full-colour G). Google's iframe takes the click wherever it
+  // lies over the pill; anywhere it doesn't (or before / without it), the pill itself signs in by Google's redirect
+  const ready = state === "ready";
   return (
-    <>
-      <div ref={box} className="ac-gis" style={{ display: state === "fallback" ? "none" : "flex", justifyContent: "center", minHeight: 44 }} />
-      {state === "fallback" && (
-        <button type="button" className="ac-btn ghost" style={{ width: "100%" }} onClick={fallback} disabled={disabled}>
-          <FcGoogle aria-hidden size={20} /> Continue with Google
-        </button>
-      )}
-    </>
+    <div className={`ac-google${ready ? " live" : ""}${disabled ? " off" : ""}`}>
+      <button type="button" className="ac-google-btn" onClick={fallback} disabled={disabled || state === "loading"} tabIndex={ready ? -1 : 0} aria-hidden={ready || undefined}>
+        <span className="g-chip">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/google.png" alt="" width={20} height={20} draggable={false} />
+        </span>
+        <span className="g-txt">Continue with Google</span>
+        <LuArrowRight className="g-go" aria-hidden />
+      </button>
+      <div ref={box} className="ac-gis" hidden={state === "fallback"} />
+    </div>
   );
 }

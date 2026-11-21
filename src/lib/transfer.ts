@@ -6,7 +6,7 @@ import {
   CHUNK, ITERATIONS, OPEN_PASS, deriveKeys, encryptedSize, fromB64, randomBytes, streamDecrypt, toB64, toHex,
   type DownloadSink,
 } from "./crypto";
-import { deviceLabel, dropOwnerKey, senderKey, setOwnerKey, type Orb } from "./client";
+import { deviceLabel, dropOwnerKey, persistentId, senderKey, setOwnerKey, type Orb } from "./client";
 import { isAnon } from "./anon";
 import { FOLDER_MIME, directoryOutput, folderSink, zipOutput, type DirHandle, type Manifest } from "./bundle";
 import { autoDownload, safeMime, saveName } from "./save";
@@ -204,7 +204,7 @@ export type Received =
   /** folder rebuilt inside a directory the user picked */
   | { kind: "dir"; folder: string; files: number; where: string };
 
-type UnlockReply = { /** already counted at unlock (objects with a download limit) */ counted?: boolean; url: string; nonce: string; size: number; chunkSize: number; fileName: string; mime: string; store?: string; /** the same copy through Cloudflare's edge (lib/edge.ts) */ edge?: string };
+type UnlockReply = { /** already counted at unlock (objects with a download limit) */ counted?: boolean; /** anonymous objects (migration 045): this device was counted before, so nothing new is counted */ again?: boolean; /** say "received" even though it was counted at unlock (a limit burns the object then) */ tell?: boolean; url: string; nonce: string; size: number; chunkSize: number; fileName: string; mime: string; store?: string; /** the same copy through Cloudflare's edge (lib/edge.ts) */ edge?: string };
 /** Checked passcode: the key plus where the ciphertext lives. Nothing is saved or picked before this succeeds. */
 export type Unlocked = { key: Awaited<ReturnType<typeof deriveKeys>>["key"]; r: UnlockReply; /** the passcode proof, to say "received" */ auth?: string; /** when the download was asked for (performance.now) */ at?: number };
 
@@ -252,9 +252,23 @@ const keyFor = (orb: Orb, pass: string) => {
 /** a no-password object's card is open: get its key ready now */
 export const warmKey = (orb: Orb) => void (orb.open && keyFor(orb, "").catch(() => {}));
 
+/** This device's key for one anonymous object: the same in every tab (so one device counts once, migration 045), different
+ *  for every object (links nothing across objects), and the lasting device id never leaves the page */
+const dks = new Map<string, Promise<string>>();
+function deviceKeyFor(id: string): Promise<string> {
+  let k = dks.get(id);
+  if (!k) {
+    k = crypto.subtle.digest("SHA-256", new TextEncoder().encode(`orbit-dk:${persistentId()}:${id}`))
+      .then((b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join(""));
+    dks.set(id, k);
+  }
+  return k;
+}
+const dkBody = async (orb: Orb) => (orb.anon || isAnon() ? { dk: await deviceKeyFor(orb.id).catch(() => undefined) } : {});
+
 export async function unlockOrb(orb: Orb, passcode: string, signal?: AbortSignal, at = performance.now()): Promise<Unlocked> {
-  const { key, auth } = await keyFor(orb, passcode);
-  const res = await quickPost(`/api/transfers/${orb.id}/unlock`, { auth, device: deviceLabel(), ...spaceBody() }, signal);
+  const [{ key, auth }, dk] = await Promise.all([keyFor(orb, passcode), dkBody(orb)]);
+  const res = await quickPost(`/api/transfers/${orb.id}/unlock`, { auth, device: deviceLabel(), ...spaceBody(), ...dk }, signal);
   const r = await res.json().catch(() => ({ ok: false, reason: "gone" }));
   if (!r.ok) throw new UnlockError(r.reason, r.left);
   return { key, r, auth, at };
@@ -263,17 +277,31 @@ export async function unlockOrb(orb: Orb, passcode: string, signal?: AbortSignal
 /**
  * The file is complete on this device: only now is it a download (counted, on the globe, in the sender's numbers).
  * Unlock no longer counts (migration 031): a receiver stuck on "Unlocking" or waiting for an asleep sender, who then
- * gave up, used to show up as a download. Objects with a download limit are still counted at unlock (r.counted).
+ * gave up, used to show up as a download. Objects with a download limit are still counted at unlock (r.counted); an
+ * anonymous one says "received" too (r.tell), so its last allowed download burns it (migration 045).
  * Once per unlock; keepalive so it still goes out if the page closes right after the save.
+ * What the server answers is told to the page: "orbit:counted" (a NEW count: every screen moves the number by one; a
+ * device that downloads again is not a new count) and "orbit:burned" (the limit is reached: the object leaves every
+ * screen now).
  */
 const told = new WeakSet<Unlocked>();
+const tell = (event: "orbit:counted" | "orbit:burned", id: string) => window.dispatchEvent(new CustomEvent(event, { detail: id }));
 export function markReceived(orb: Orb, un: Unlocked) {
-  if (un.r.counted || !un.auth || told.has(un)) return;
+  if (!un.auth || told.has(un)) return;
   told.add(un);
-  void fetch(`/api/transfers/${orb.id}/received`, {
+  const limited = !!un.r.counted;
+  if (limited && !un.r.again) tell("orbit:counted", orb.id);
+  if (limited && !un.r.tell) return;
+  void dkBody(orb).then((dk) => fetch(`/api/transfers/${orb.id}/received`, {
     method: "POST", keepalive: true, headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ auth: un.auth, device: deviceLabel(), anon: isAnon() || !!orb.anon, ms: un.at != null ? Math.round(performance.now() - un.at) : undefined, ...spaceBody() }),
-  }).catch(() => {});
+    body: JSON.stringify({ auth: un.auth, device: deviceLabel(), anon: isAnon() || !!orb.anon, ms: un.at != null ? Math.round(performance.now() - un.at) : undefined, ...spaceBody(), ...dk }),
+  }))
+    .then((r) => r.json())
+    .then((d: { counted?: boolean; burned?: boolean } | null) => {
+      if (!limited && d?.counted) tell("orbit:counted", orb.id);
+      if (d?.burned) tell("orbit:burned", orb.id);
+    })
+    .catch(() => {});
 }
 
 /** No-password objects only: the same key + location as unlock, but nothing is counted (previews). */

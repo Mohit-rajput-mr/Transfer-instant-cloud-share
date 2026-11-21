@@ -1,7 +1,7 @@
 // The Classic bar folds itself only as far as it must: it tries each fold level (0 = everything on one line) and keeps
 // the first one where logo, middle and icons fit side by side without touching. The last level always fits (the
 // middle gets its own row), so nothing ever slides under anything else, whatever the counts, names or window width.
-export const FOLDS = 3;
+export const FOLDS = 4;
 
 /** the lowest level that fits; `fits(level)` applies the level and measures */
 export function pickFold(fits: (level: number) => boolean, max = FOLDS) {

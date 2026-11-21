@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { anonEventId, clean, geo, isHex, rpc, sha256, validId } from "@/lib/server";
+import { anonDevice, anonEventId, clean, geo, isHex, rpc, sha256, validId } from "@/lib/server";
 import { burnedUp, member, untag } from "@/lib/spaces";
 import { objectKey, presign, r2On } from "@/lib/r2";
 import { edgeLink } from "@/lib/edge";
@@ -15,12 +15,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // anonymous receiver, or an anonymous object: counted, never located or linked to other objects
   const anon = b.anon === true || !!info?.anon;
   // checks the passcode only: the download is counted when the file has arrived (../received, migration 031)
-  const r = await rpc<Record<string, unknown>>("orbit_unlock_check", {
+  // an anonymous object counts each device once and burns at its download limit (migration 045)
+  const once = !!info?.anon;
+  const r = await rpc<Record<string, unknown>>(once ? "orbit_unlock_check2" : "orbit_unlock_check", {
     p_id: id,
     p_auth_hash: sha256(b.auth),
-    p_device: anon ? anonEventId(id, clean(b.deviceId, 40)) : clean(b.deviceId, 40),
+    p_device: anon ? anonEventId(id, anonDevice(b)) : clean(b.deviceId, 40),
     p_label: anon ? "" : clean(b.device, 60),
     p_geo: anon ? {} : geo(req),
+    ...(once ? { p_once: true } : null),
   });
   // a signed link to the stored copy (it may still be uploading: the receiver checks before using it)
   if (r?.ok && r2On()) {

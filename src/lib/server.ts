@@ -55,6 +55,9 @@ export function netInviteKey(req: NextRequest) {
 export const anonNet = (req: NextRequest) => sha256(`${SECRET}:anon:${new Date().toISOString().slice(0, 13)}:${ipOf(req)}`).slice(0, 12);
 /** a stand-in device id for one object: dedupes views/downloads on it, links nothing across objects */
 export const anonEventId = (id: string, device: string) => "a" + sha256(`${SECRET}:ev:${id}:${device}`).slice(0, 15);
+/** the anonymous device key for one object: the page's per-object key of this device (dk, the same in every tab, so a
+ *  device counts once), else the tab's anonymous id (older pages) */
+export const anonDevice = (b: { dk?: unknown; deviceId?: unknown }) => (typeof b.dk === "string" && /^[a-f0-9]{32,64}$/.test(b.dk) ? b.dk : clean(b.deviceId, 40));
 /** reports: one per network per object per day, whatever ids it makes up */
 export const anonReportId = (id: string, req: NextRequest) => "r" + sha256(`${SECRET}:rep:${new Date().toISOString().slice(0, 10)}:${id}:${ipOf(req)}`).slice(0, 15);
 /** anonymous heartbeats are counted under this, never the id the browser sent */
