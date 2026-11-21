@@ -75,7 +75,7 @@ export default function GoogleButton({ onError, fallback, disabled }: { onError:
       <button type="button" className="ac-google-btn" onClick={fallback} disabled={disabled || state === "loading"} tabIndex={ready ? -1 : 0} aria-hidden={ready || undefined}>
         <span className="g-chip">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/google.png" alt="" width={20} height={20} draggable={false} />
+          <img src="/brand/google.png" alt="" width={24} height={24} draggable={false} />
         </span>
         <span className="g-txt">Continue with Google</span>
         <LuArrowRight className="g-go" aria-hidden />
