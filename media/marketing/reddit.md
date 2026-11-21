@@ -20,7 +20,7 @@ So I built **Orbi Transfer**: [orbitransfer.com](https://orbitransfer.com)
 - Everything burns: 30 minutes or less by default.
 
 **Things I added because people asked**
-- **Download limit that burns on the spot:** set "max 2 downloads" and the file is destroyed the moment the 2nd person has it. In anonymous mode it vanishes live from every screen, and the same device downloading twice still counts once.
+- **Download limit that burns on the spot:** set "max 2 downloads" and nobody gets a 3rd. In anonymous mode the file is destroyed the moment the 2nd person has it and vanishes live from every screen, and the same device downloading twice still counts once.
 - **Anonymous mode / Ghost World:** no name, no location on your files, a separate room only anonymous people see.
 - **Private Spaces:** a passcode room for a team or a group of friends.
 - **See who's downloading (anonymous spaces):** the sender watches the receiver's download go 5% → 40% → "got it".
