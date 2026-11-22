@@ -1,0 +1,19 @@
+[
+ {"key": "hook", "text": "Do you know why the tallest building on Earth is shaped like a desert flower?", "emo": 1.1, "gap": 0.5},
+ {"key": "tower", "text": "This is Burj Khalifa, in Dubai. Eight hundred and twenty-eight metres tall. A hundred and sixty-three floors.", "emo": 1.0, "gap": 0.45},
+ {"key": "enemy", "text": "Up there, its biggest enemy isn't its own weight. It's the wind.", "emo": 1.05, "gap": 0.45},
+ {"key": "vortex", "text": "When wind flows past a tall tower, it peels off in swirls. First on one side, then the other. Like a flag flapping in the breeze.", "emo": 1.0, "gap": 0.45},
+ {"key": "rock", "text": "Every swirl gives the tower a little push. If the pushes keep the same rhythm, the tower starts to rock. And the rocking grows.", "emo": 1.05, "gap": 0.45},
+ {"key": "flower", "text": "So the architects borrowed the shape of a desert flower. Three wings, in a Y.", "emo": 1.05, "gap": 0.45},
+ {"key": "setbacks", "text": "And as the tower rises, the wings step back, twenty-seven times, in a spiral.", "emo": 1.0, "gap": 0.45},
+ {"key": "confuse", "text": "Every few floors, the wind meets a different shape. The swirls never line up, and never find a rhythm. Engineers call it confusing the wind.", "emo": 1.05, "gap": 0.45},
+ {"key": "sway", "text": "The very top still moves. About one and a half metres. Slowly, like a tree.", "emo": 1.0, "gap": 0.45},
+ {"key": "core", "text": "Inside, a six-sided concrete core runs up the middle. And the three wings brace it from every side, like the legs of a tripod.", "emo": 1.0, "gap": 0.45},
+ {"key": "pump", "text": "The concrete was pumped six hundred and six metres straight up. A world record.", "emo": 1.05, "gap": 0.45},
+ {"key": "piles", "text": "Underneath, it stands on a hundred and ninety-two concrete piles. Each one and a half metres wide, buried more than fifty metres deep in the desert.", "emo": 1.0, "gap": 0.45},
+ {"key": "spire", "text": "And on top, a spire of more than four thousand tonnes of steel, so tall it could be a skyscraper on its own.", "emo": 1.0, "gap": 0.5},
+ {"key": "orbi", "text": "No single weak point. That's how Orbi Transfer sends your biggest files.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi2", "text": "A big file is split into parts, and several travel at once.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi3", "text": "Lose the signal, and it picks up right where it left off. No app, no login.", "emo": 1.05, "gap": 0.4},
+ {"key": "end", "text": "Orbi Transfer dot com.", "emo": 1.0, "gap": 0.6}
+]
