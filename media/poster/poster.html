@@ -1,0 +1,103 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Orbi Transfer poster</title>
+<style>
+@font-face { font-family: D; src: url(archivo.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+@font-face { font-family: M; src: url(jetbrains.woff2) format("woff2"); font-weight: 100 900; }
+:root { --g: #3dff8c; --r: #ff5a4a; --ink: #f2f4f6; --dim: #8b949e; --line: rgba(255,255,255,.1); }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1920px; height: 1080px; background: #000; color: var(--ink); font-family: D, sans-serif; overflow: hidden; }
+body.port { width: 1080px; height: 1350px; }
+.bg { position: absolute; inset: 0; background:
+  radial-gradient(900px 600px at 78% 30%, rgba(61,255,140,.12), transparent 70%),
+  radial-gradient(800px 500px at 10% 90%, rgba(80,120,255,.10), transparent 70%), #020304; }
+.stars { position: absolute; inset: 0; }
+.wrap { position: relative; height: 100%; padding: 44px 64px; display: grid; grid-template-columns: 560px 1fr; grid-template-rows: auto 1fr auto; gap: 26px 56px; }
+header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; }
+header img { height: 46px; }
+.pill { font: 600 18px M; letter-spacing: .18em; text-transform: uppercase; color: var(--g); border: 1.5px solid rgba(61,255,140,.45); border-radius: 999px; padding: 10px 20px; background: rgba(61,255,140,.06); }
+h1 { font: 900 58px/0.94 D; font-stretch: 112%; letter-spacing: -.01em; text-transform: uppercase; }
+h1 em { font-style: normal; color: var(--g); }
+.lead { margin-top: 14px; font: 500 20px/1.42 D; color: #c4ccd4; }
+.k { font: 700 15px M; letter-spacing: .24em; text-transform: uppercase; color: var(--dim); margin: 20px 0 10px; }
+.prob { display: grid; gap: 7px; }
+.prob div { display: flex; gap: 12px; align-items: center; font: 600 17.5px D; color: #d5dbe1; padding: 8px 14px; border-radius: 12px; background: rgba(255,90,74,.07); border: 1px solid rgba(255,90,74,.22); }
+.prob b { color: var(--r); font: 900 18px Arial; width: 18px; text-align: center; }
+.right { display: grid; grid-template-rows: auto 1fr; gap: 22px; min-height: 0; }
+.devices { position: relative; height: 400px; }
+.lap { position: absolute; right: 130px; top: 0; width: 640px; border-radius: 18px 18px 6px 6px; background: #15171a; padding: 12px 12px 18px; box-shadow: 0 40px 90px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.08); }
+.lap img { display: block; width: 100%; border-radius: 6px; }
+.lap::after { content: ""; position: absolute; left: -40px; right: -40px; bottom: -16px; height: 16px; border-radius: 0 0 22px 22px; background: linear-gradient(#c9ccd0, #8d9196); }
+.lap2 { right: 0; top: 110px; width: 430px; transform: perspective(1400px) rotateY(-8deg); opacity: .96; }
+.phone { position: absolute; left: 10px; top: 40px; width: 200px; border-radius: 30px; background: #111; padding: 9px; box-shadow: 0 30px 70px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.12); transform: rotate(-5deg); }
+.phone img { display: block; width: 100%; border-radius: 22px; }
+.beam { position: absolute; left: 205px; top: 205px; width: 260px; height: 2px; background: repeating-linear-gradient(90deg, var(--g) 0 8px, transparent 8px 22px); filter: drop-shadow(0 0 6px var(--g)); transform: rotate(-8deg); }
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-content: start; }
+.f { padding: 14px 16px 12px; border-radius: 18px; background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)); border: 1px solid var(--line); }
+.f i { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: rgba(61,255,140,.12); color: var(--g); font: 700 22px M; font-style: normal; margin-bottom: 12px; }
+.f h3 { font: 800 20px D; font-stretch: 105%; }
+.f p { margin-top: 6px; font: 500 15.5px/1.4 D; color: var(--dim); }
+.right > div:last-child { position: relative; z-index: 3; } .right > div:last-child > .k { display: inline-block; padding: 6px 14px; border-radius: 999px; background: rgba(0,0,0,.85); border: 1px solid var(--line); }
+footer { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding-top: 18px; border-top: 1px solid var(--line); }
+.steps { display: flex; gap: 26px; font: 900 30px D; font-stretch: 112%; text-transform: uppercase; }
+.steps span:nth-child(odd) { color: #fff; } .steps span:nth-child(even) { color: var(--g); }
+.url { font: 700 26px M; letter-spacing: .04em; padding: 14px 26px; border-radius: 999px; background: var(--g); color: #04140a; }
+.free { font: 600 17px M; letter-spacing: .14em; color: var(--dim); text-transform: uppercase; }
+/* portrait (1080×1350) */
+body.port .wrap { grid-template-columns: 1fr; grid-template-rows: auto auto auto auto auto; padding: 40px 48px; gap: 14px; align-content: start; }
+body.port h1 { font-size: 62px; }
+body.port .lead { font-size: 18px; margin-top: 10px; }
+body.port .k { margin: 10px 0 8px; font-size: 13px; }
+body.port .prob { grid-template-columns: 1fr 1fr; gap: 6px; } body.port .prob div { font-size: 15px; padding: 7px 12px; } body.port .prob div:last-child { display: none; }
+body.port .devices { height: 360px; } body.port .lap { width: 580px; right: 40px; } body.port .lap2 { display: none; } body.port .phone { width: 135px; left: 30px; top: 30px; } body.port .beam { left: 160px; top: 150px; width: 240px; }
+body.port .grid { grid-template-columns: repeat(2, 1fr); gap: 8px; } body.port .f { padding: 10px 14px; display: grid; grid-template-columns: 34px 1fr; column-gap: 10px; align-items: start; }
+body.port .f i { width: 30px; height: 30px; font-size: 15px; margin: 2px 0 0; grid-row: span 2; } body.port .f h3 { font-size: 16px; } body.port .f p { font-size: 12.5px; margin-top: 3px; }
+body.port .steps { font-size: 22px; gap: 14px; } body.port .url { font-size: 20px; padding: 10px 18px; } body.port .free { display: none; } body.port footer { padding-top: 12px; }
+</style></head>
+<body>
+<div class="bg"></div><canvas class="stars" id="st"></canvas>
+<div class="wrap">
+  <header><img src="lockup.svg" alt="Orbi Transfer"><span class="pill">Free · in your browser · no sign-up</span></header>
+  <section class="left">
+    <h1>Send anything.<br><em>No account.</em><br>Gone in 30 min.</h1>
+    <p class="lead">Every file transfer today makes you sign in, install, wait, and hope. Orbi Transfer does it in one step, privately, from any browser.</p>
+    <div class="k">The problem</div>
+    <div class="prob">
+      <div><b>✕</b>Sign in, verify, install an app</div>
+      <div><b>✕</b>Email bounces files over 25 MB</div>
+      <div><b>✕</b>Chat apps compress photos &amp; video</div>
+      <div><b>✕</b>Phone ↔ laptop only within one brand</div>
+      <div><b>✕</b>Shared links stay public for years</div>
+      <div><b>✕</b>No idea who opened it</div>
+      <div><b>✕</b>Work files and tasks live in different apps</div>
+    </div>
+  </section>
+  <section class="right">
+    <div class="devices">
+      <div class="lap"><img src="shot-work.jpg" alt="Workspace: tasks with routes, files wired to tasks"></div>
+      <div class="lap lap2"><img src="shot-anon.jpg" alt="Anonymous space: you see who joined"></div>
+      <div class="phone"><img src="shot-phone.jpg" alt="The file, opened on a phone"></div>
+      <div class="beam"></div>
+    </div>
+    <div>
+      <div class="k" style="margin-top:0">The solution · everything in one tab</div>
+      <div class="grid">
+        <div class="f"><i>↓</i><h3>Drop &amp; done</h3><p>No account, no app. Any phone, tablet or laptop with a browser.</p></div>
+        <div class="f"><i>⌂</i><h3>Locked on your device</h3><p>AES-256-GCM before upload. Your password never leaves the browser.</p></div>
+        <div class="f"><i>30</i><h3>Burns by itself</h3><p>Gone after 5–30 minutes. No link living forever.</p></div>
+        <div class="f"><i>20</i><h3>20 GB, original</h3><p>Never compressed. Folders keep their structure.</p></div>
+        <div class="f"><i>◎</i><h3>Wi-Fi · Nearby · World</h3><p>Same network, your area, or the worldwide Open Void. Every file has a QR.</p></div>
+        <div class="f"><i>?</i><h3>Anonymous spaces</h3><p>No name, no location. 4-letter code + passcode, see who joined.</p></div>
+        <div class="f"><i>1×</i><h3>One-time download</h3><p>Its own password and a download limit. Then it's gone.</p></div>
+        <div class="f"><i>✓</i><h3>Workspace for teams</h3><p>Private spaces, @assign tasks, coloured steps, files wired to tasks.</p></div>
+      </div>
+    </div>
+  </section>
+  <footer><div class="steps"><span>Drop</span><span>Lock</span><span>Beam</span><span>Burn</span></div><span class="free">Made by one developer · free to try</span><span class="url">orbitransfer.com</span></footer>
+</div>
+<script>
+if (location.hash === "#port") document.body.classList.add("port");
+const c = document.getElementById("st"), w = c.width = innerWidth * 2, h = c.height = innerHeight * 2; c.style.width = innerWidth + "px"; c.style.height = innerHeight + "px";
+const g = c.getContext("2d"); let s = 7; const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+for (let i = 0; i < 900; i++) { const a = r() * 0.6 + 0.1; g.fillStyle = `rgba(255,255,255,${a})`; g.beginPath(); g.arc(r() * w, r() * h, r() * 1.6 + 0.3, 0, 7); g.fill(); }
+</script>
+</body></html>
