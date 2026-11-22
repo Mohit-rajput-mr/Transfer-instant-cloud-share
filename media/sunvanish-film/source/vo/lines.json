@@ -1,0 +1,162 @@
+{
+ "sr": 48000,
+ "duration": 91.0,
+ "lines": [
+  {
+   "key": "c1",
+   "text": "It already has.",
+   "at": 4.2,
+   "dur": 2.5
+  },
+  {
+   "key": "c2",
+   "text": "Nothing changes. Its warmth still reaches your skin.",
+   "at": 7.0,
+   "dur": 2.6
+  },
+  {
+   "key": "c3",
+   "text": "Its last light is still on the way.",
+   "at": 9.7,
+   "dur": 2.8
+  },
+  {
+   "key": "c4",
+   "text": "Sunlight takes 8 minutes and 20 seconds to reach us.",
+   "at": 12.9,
+   "dur": 3.6
+  },
+  {
+   "key": "c5",
+   "text": "Then the sky goes out.",
+   "at": 20.1,
+   "dur": 2.5
+  },
+  {
+   "key": "c6",
+   "text": "1.3 seconds later, the Moon goes dark too.",
+   "at": 22.9,
+   "dur": 3.0
+  },
+  {
+   "key": "c7",
+   "text": "It never had light of its own.",
+   "at": 26.2,
+   "dur": 2.6
+  },
+  {
+   "key": "c8",
+   "text": "But Jupiter keeps shining for over an hour.",
+   "at": 29.1,
+   "dur": 3.0
+  },
+  {
+   "key": "c9",
+   "text": "Its last sunlight is still crossing space.",
+   "at": 32.4,
+   "dur": 2.8
+  },
+  {
+   "key": "c10",
+   "text": "Gravity also moves at the speed of light.",
+   "at": 35.6,
+   "dur": 3.0
+  },
+  {
+   "key": "c11",
+   "text": "For 8 minutes, Earth kept circling a Sun that was gone.",
+   "at": 38.9,
+   "dur": 3.4
+  },
+  {
+   "key": "c12",
+   "text": "Now it flies off in a straight line.",
+   "at": 42.6,
+   "dur": 2.9
+  },
+  {
+   "key": "c13",
+   "text": "Plants stop making food at once.",
+   "at": 46.1,
+   "dur": 2.6
+  },
+  {
+   "key": "c14",
+   "text": "One week: \u221218 \u00b0C.",
+   "at": 49.0,
+   "dur": 2.5
+  },
+  {
+   "key": "c15",
+   "text": "One year: \u221273 \u00b0C.",
+   "at": 52.0,
+   "dur": 2.5
+  },
+  {
+   "key": "c16",
+   "text": "The oceans freeze over.",
+   "at": 54.8,
+   "dur": 2.4
+  },
+  {
+   "key": "c17",
+   "text": "But ice is a blanket.",
+   "at": 57.7,
+   "dur": 2.3
+  },
+  {
+   "key": "c18",
+   "text": "Below it, the deep ocean stays liquid.",
+   "at": 60.3,
+   "dur": 2.8
+  },
+  {
+   "key": "c19",
+   "text": "Warmed by Earth's own heat.",
+   "at": 63.4,
+   "dur": 2.4
+  },
+  {
+   "key": "c20",
+   "text": "Life at hot vents never needed sunlight.",
+   "at": 66.1,
+   "dur": 3.0
+  },
+  {
+   "key": "c21",
+   "text": "Millions of years later: \u2212238 \u00b0C.",
+   "at": 69.7,
+   "dur": 3.0
+  },
+  {
+   "key": "c22",
+   "text": "The air itself freezes, and falls as snow.",
+   "at": 73.0,
+   "dur": 3.2
+  },
+  {
+   "key": "c23",
+   "text": "Earth still spins. A day still lasts 24 hours.",
+   "at": 76.7,
+   "dur": 3.3
+  },
+  {
+   "key": "c24",
+   "text": "There's just no day.",
+   "at": 80.3,
+   "dur": 2.4
+  },
+  {
+   "key": "c25",
+   "text": "And for 8 minutes and 20 seconds\u2026 no one would know.",
+   "at": 83.0,
+   "dur": 3.7
+  },
+  {
+   "key": "end",
+   "text": "",
+   "at": 87.2,
+   "dur": 3.8
+  }
+ ]
+}
