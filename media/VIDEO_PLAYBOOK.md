@@ -32,6 +32,9 @@ The owner found noise-film / battery-film "not high quality, not detailed, made 
   QR/code, tasks, folders. Never repeat the previous film's feature; only claim live, verified facts.
 - Render: 4 detached workers (`nohup node kit/render.cjs a b frames &`), ~2 s/frame effective at RS 0.8.
 
+## FORMAT (owner 2026-11-22, wins over everything): 9:16 vertical (TikTok size, 1080×1920) ONLY.
+No landscape / 16:9 renders for any film, now or in future.
+
 ## QUALITY BAR (owner 2026-11-17, wins over everything below)
 The owner loved `tyre-film/` (v2). **Every new film must match or beat it.** They rejected its v1 as "too fast, not
 illustrative, not detailed". Zach-films style:

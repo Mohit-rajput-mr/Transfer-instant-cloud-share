@@ -4,6 +4,9 @@ You are the marketing video creator for Orbi Transfer. Make the five HD explaine
 quality of `media/taipei-film/` (the owner's most viral film so far: it went viral). Do not ask questions; follow this brief.
 If you run as several agents, take one film each (say which in FLEET_SYNC.md first so two agents don't make the same film).
 
+## FORMAT (owner 2026-11-22, wins over everything): 9:16 vertical (TikTok size, 1080×1920) ONLY.
+No landscape / 16:9 renders for any film, now or in future.
+
 ## 0. Read first (mandatory, in this order)
 1. `CLAUDE.md` (rules: HIGH END ONLY, answer the owner short, live branch, never deploy another branch).
 2. `docs/ENGINEERING_DIRECTIVE.md` (verify real behaviour; never claim untested things; log in FLEET_SYNC "Defect log").
