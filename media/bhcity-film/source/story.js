@@ -94,9 +94,48 @@ const GLOW = new THREE.Mesh(new THREE.SphereGeometry(8800, 64, 32), new THREE.Sh
   fragmentShader: `uniform float k; uniform vec3 col; varying vec3 vP; void main(){ float h = max(vP.y, 0.0); gl_FragColor = vec4(col * k * (exp(-h * 9.0) * 0.55 + exp(-h * 3.0) * 0.12), 1.0); }` }));
 GLOW.renderOrder = -1; scene.add(GLOW);
 
-// water of the bay: ocean shader (reflections of the skyline, lamps, Moon and later the disk)
-const water = new Water(new THREE.PlaneGeometry(12000, 12000), { textureWidth: 512, textureHeight: 512, waterNormals, sunDirection: MOON_DIR.clone(), sunColor: 0x9fb3d6, waterColor: 0x04101a, distortionScale: 2.6, fog: false });
-water.rotation.x = -Math.PI / 2; scene.add(water);
+// water of the bay: the ocean shader (reflections) on a real moving surface — eight Gerstner waves (deep-water speed
+// c = √(g/k)) displace the mesh, tilt its normals and whiten their crests; storm and tides scale them
+const WAVES = [[0.35, 1, 47, 0.26], [-0.7, 0.75, 31, 0.2], [0.95, 0.55, 19.7, 0.14], [-0.25, 1, 13.3, 0.1], [0.75, -0.45, 8.9, 0.07], [-0.9, 0.3, 6.1, 0.05], [0.2, -0.95, 4.3, 0.032], [-0.45, -0.85, 2.9, 0.02]]
+  .map(([x, z, L, a]) => { const n = Math.hypot(x, z); return new THREE.Vector4(x / n, z / n, L, a); });
+const waterGeo = (() => { // dense near the camera, coarse far away (local XY; the mesh is rotated flat, world z = −local y)
+  const zs = []; for (let z = 46; z > -4200; z -= 0.22 * (1 + Math.max(0, 31 - z) / 7)) zs.push(z);
+  const xs = [0]; for (let x = 0.3; x < 2200; x += 0.3 * (1 + x / 9)) { xs.push(x); xs.unshift(-x); }
+  const pos = new Float32Array(zs.length * xs.length * 3), idx = [];
+  zs.forEach((z, j) => xs.forEach((x, i) => pos.set([x, -z, 0], (j * xs.length + i) * 3)));
+  for (let j = 0; j < zs.length - 1; j++) for (let i = 0; i < xs.length - 1; i++) { const a = j * xs.length + i, b = a + 1, c = a + xs.length, d = c + 1; idx.push(a, c, b, b, c, d); }
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(pos.length).map((_, i) => (i % 3 === 2 ? 1 : 0)), 3)); g.setIndex(idx); return g;
+})();
+const water = new Water(waterGeo, { textureWidth: 512, textureHeight: 512, waterNormals, sunDirection: MOON_DIR.clone(), sunColor: 0x9fb3d6, waterColor: 0x04101a, distortionScale: 2.6, fog: false });
+water.rotation.x = -Math.PI / 2; scene.add(water); water.frustumCulled = false;
+{ const m = water.material;
+  m.uniforms.uW = { value: WAVES }; m.uniforms.uAmp = { value: 0.6 }; m.uniforms.uWT = { value: 0 }; m.uniforms.uFoam = { value: 0 };
+  m.vertexShader = m.vertexShader.replace("varying vec4 worldPosition;", `varying vec4 worldPosition; varying vec3 vWaveN; varying float vCrest;
+    uniform vec4 uW[8]; uniform float uAmp, uWT;`).replace(`mirrorCoord = modelMatrix * vec4( position, 1.0 );
+					worldPosition = mirrorCoord.xyzw;
+					mirrorCoord = textureMatrix * mirrorCoord;
+					vec4 mvPosition =  modelViewMatrix * vec4( position, 1.0 );`, `vec4 wp = modelMatrix * vec4( position, 1.0 );
+					vec3 base = wp.xyz; vec3 dX = vec3(1.0, 0.0, 0.0), dZ = vec3(0.0, 0.0, 1.0); float crest = 0.0;
+					float fade = 1.0 / (1.0 + max(0.0, 31.0 - base.z) / 220.0);
+					for (int i = 0; i < 8; i++) {
+						vec2 d = uW[i].xy; float k = 6.2831853 / uW[i].z, a = uW[i].w * uAmp * fade, c = sqrt(9.81 / k);
+						float f = k * (dot(d, base.xz) - c * uWT), Q = 0.55 / (k * max(a, 1e-4) * 8.0);
+						Q = min(Q, 1.0 / (k * max(a, 1e-4) * 8.0));
+						wp.x += Q * a * d.x * cos(f); wp.z += Q * a * d.y * cos(f); wp.y += a * sin(f);
+						dX += vec3(-Q * d.x * d.x * k * a * sin(f), d.x * k * a * cos(f), -Q * d.x * d.y * k * a * sin(f));
+						dZ += vec3(-Q * d.x * d.y * k * a * sin(f), d.y * k * a * cos(f), -Q * d.y * d.y * k * a * sin(f));
+						crest += max(0.0, sin(f)) * a;
+					}
+					vWaveN = normalize(cross(dZ, dX)); vCrest = crest / max(uAmp, 0.05);
+					mirrorCoord = wp; worldPosition = wp;
+					mirrorCoord = textureMatrix * mirrorCoord;
+					vec4 mvPosition = viewMatrix * wp;`);
+  m.fragmentShader = m.fragmentShader.replace("uniform float distortionScale;", "uniform float distortionScale; uniform float uFoam; varying vec3 vWaveN; varying float vCrest;")
+    .replace("vec3 surfaceNormal = normalize( noise.xzy * vec3( 1.5, 1.0, 1.5 ) );", "vec3 surfaceNormal = normalize( noise.xzy * vec3( 1.5, 1.0, 1.5 ) + vec3(vWaveN.x, 0.0, vWaveN.z) * 2.2 );")
+    .replace("vec3 outgoingLight = albedo;", "float foam = smoothstep(0.75, 1.15, vCrest) * uFoam * (0.4 + 0.6 * noise.x) * 0.7; vec3 outgoingLight = mix(albedo, vec3(0.75, 0.78, 0.8) * (0.25 + diffuseLight * 0.6) + reflectionSample * 0.15, clamp(foam, 0.0, 0.85));");
+  m.needsUpdate = true; }
+// the same waves in JS (spray, floating things)
+const waveY = (x, z, amp, tt) => { let y = 0; for (const w of WAVES) { const k = TAU / w.z, c = Math.sqrt(9.81 / k); y += w.w * amp * Math.sin(k * (w.x * x + w.y * z - c * tt)); } return y; };
 
 // ---------- the promenade: worn concrete, a kerb and railing at the water, benches, bins, lamps, young trees ----------
 const CITY = new THREE.Group(); scene.add(CITY);
@@ -107,9 +146,9 @@ const quay = sh(new THREE.Mesh(new THREE.BoxGeometry(90, 3.2, 1.2), new THREE.Me
 const steel = H.metal(0x9aa3ab, 0.35);
 for (let x = -44; x <= 44; x += 1.6) { const p = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.05, 8), steel)); p.position.set(x, 0.52, 2.2); CITY.add(p); }
 for (const y of [1.05, 0.6]) { const r = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 88, 8), steel)); r.rotation.z = Math.PI / 2; r.position.set(0, y, 2.2); CITY.add(r); }
-const LAMPS = [];
+const LAMPS = [], PROPS = [];
 for (const x of [-20, -10, 0, 10, 20]) {
-  const g = new THREE.Group(); g.position.set(x + 3, 0, 3.4); CITY.add(g);
+  const g = new THREE.Group(); g.position.set(x + 3, 0, 3.4); CITY.add(g); PROPS.push(g);
   const pole = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 4.6, 12), H.metal(0x2a2d31, 0.4))); pole.position.y = 2.3; g.add(pole);
   const arm = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.9, 8), H.metal(0x2a2d31, 0.4))); arm.rotation.z = Math.PI / 2; arm.position.set(0.4, 4.55, 0); g.add(arm);
   const head = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 0.18, 16), new THREE.MeshBasicMaterial({ color: new THREE.Color(1, 0.8, 0.55).multiplyScalar(4), toneMapped: false })); head.position.set(0.8, 4.45, 0); g.add(head);
@@ -117,7 +156,7 @@ for (const x of [-20, -10, 0, 10, 20]) {
   LAMPS.push({ g, head, L, ph: rand(x) * 10 });
 }
 for (const x of [-15, -5, 5, 15]) { // benches facing the water
-  const b = new THREE.Group(); b.position.set(x, 0, 4.4); CITY.add(b);
+  const b = new THREE.Group(); b.position.set(x, 0, 4.4); CITY.add(b); PROPS.push(b);
   const wood = new THREE.MeshStandardMaterial({ color: 0x6b4a32, roughness: 0.7 });
   for (let i = 0; i < 3; i++) { const s = sh(new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.04, 0.12), wood)); s.position.set(0, 0.45, -0.18 + i * 0.16); b.add(s); }
   for (let i = 0; i < 2; i++) { const s = sh(new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.1, 0.04), wood)); s.position.set(0, 0.62 + i * 0.16, 0.22); b.add(s); }
@@ -125,7 +164,7 @@ for (const x of [-15, -5, 5, 15]) { // benches facing the water
 }
 const firG = await gltf("kit/ph/fir_sapling/fir_sapling_1k.gltf");
 const fit = (o) => { o.traverse((m) => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; } }); return o; };
-for (const [x, z] of [[-24, 13], [-12.5, 14.5], [12.5, 14.5], [24, 13]]) { const f = fit(firG.scene.clone()); f.scale.setScalar(2.4); f.position.set(x, 0, z); CITY.add(f); }
+for (const [x, z] of [[-24, 13], [-12.5, 14.5], [12.5, 14.5], [24, 13]]) { const f = fit(firG.scene.clone()); f.scale.setScalar(2.4); f.position.set(x, 0, z); CITY.add(f); PROPS.push(f); }
 
 // ---------- the skyline across the bay: towers with lit windows, red aviation lights; some will fall ----------
 const winTex = (seed, warm) => H.canvasTex(256, 512, (g, w, h) => {
@@ -168,7 +207,7 @@ diskLight.target.position.set(0, 0, 8); scene.add(diskLight, diskLight.target);
 // the Moon's debris streaming into the hole
 const STREAM_N = 1600, streamP = new Float32Array(STREAM_N * 3);
 const dotTex = H.canvasTex(64, 64, (g, w) => { const q = g.createRadialGradient(32, 32, 0, 32, 32, 32); q.addColorStop(0, "rgba(255,255,255,1)"); q.addColorStop(0.35, "rgba(255,255,255,0.5)"); q.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = q; g.fillRect(0, 0, w, w); });
-const STREAM = new THREE.Points(new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(streamP, 3)), new THREE.PointsMaterial({ map: dotTex, color: new THREE.Color(2.2, 1.4, 0.8), size: 9, sizeAttenuation: false, transparent: true, depthWrite: false, toneMapped: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+const STREAM = new THREE.Points(new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(streamP, 3)), new THREE.PointsMaterial({ map: dotTex, color: new THREE.Color(1.4, 0.8, 0.45), size: 4, sizeAttenuation: false, transparent: true, depthWrite: false, toneMapped: false, blending: THREE.AdditiveBlending, opacity: 0 }));
 STREAM.frustumCulled = false; scene.add(STREAM);
 
 // ---------- people ----------
@@ -192,11 +231,14 @@ for (let i = 0; i < 46; i++) {
 const mkPts = (n, size, color, add = false, att = true) => { const pos = new Float32Array(n * 3); const P = new THREE.Points(new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(pos, 3)), new THREE.PointsMaterial({ map: dotTex, size, color, transparent: true, depthWrite: false, sizeAttenuation: att, opacity: 0, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending })); P.frustumCulled = false; scene.add(P); return { P, pos, n }; };
 const SPRAY = mkPts(2500, 0.12, 0xcfe0ee);
 const DUST = mkPts(3000, 26, 0x6b625a);
-const DEBRIS = (() => { const g = new THREE.Group(); scene.add(g); const geo = new THREE.IcosahedronGeometry(0.6, 0); const ms = [0x5a554f, 0x8a8178, 0x6b6560, 0x9c948a].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.95, flatShading: true }));
+const DEBRIS = (() => { const g = new THREE.Group(); scene.add(g); const geo = new THREE.IcosahedronGeometry(0.6, 0); const ms = [0x7a746c, 0x9a9188, 0x8b847c, 0xaca398].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.95, flatShading: true }));
   const list = []; for (let i = 0; i < 220; i++) { const m = new THREE.Mesh(geo, ms[i % 4]); const s = 0.04 + Math.pow(rand(i + 0.3), 4) * 0.45; m.scale.set(s * (0.5 + rand(i + 1)), s * (0.3 + rand(i + 2)), s * (0.5 + rand(i + 3))); m.castShadow = true; g.add(m);
     list.push({ m, p0: V(-24 + rand(i + 4) * 48, 0.05, 3 + rand(i + 5) * 13), t0: 60 + rand(i + 6) * 9, v: 0.4 + rand(i + 7) * 1.6, spin: V(rand(i + 8), rand(i + 9), rand(i + 10)).multiplyScalar(3) }); }
   return list; })();
 const ASH = mkPts(9000, 0.09, 0x8f8a84);
+const INFALL_N = 14000, infallP = new Float32Array(INFALL_N * 3), infallC = new Float32Array(INFALL_N * 3);
+const INFALL = new THREE.Points(new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(infallP, 3)).setAttribute("color", new THREE.BufferAttribute(infallC, 3)), new THREE.PointsMaterial({ map: dotTex, size: 3.2, sizeAttenuation: false, vertexColors: true, transparent: true, depthWrite: false, toneMapped: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+INFALL.frustumCulled = false; scene.add(INFALL);
 // lava cracks across the promenade as the crust tears
 const crackTex = H.canvasTex(1024, 1024, (g, w, h) => { g.fillStyle = "#000"; g.fillRect(0, 0, w, h); g.lineCap = "round";
   for (let k = 0; k < 9; k++) { let x = rand(k + 0.1) * w, y = rand(k + 0.2) * h, a = rand(k + 0.3) * TAU; for (let s = 0; s < 70; s++) { const nx = x + Math.cos(a) * 16, ny = y + Math.sin(a) * 16; for (const [lw, c] of [[18, "rgba(255,90,20,0.25)"], [7, "rgba(255,150,50,0.8)"], [2.5, "rgba(255,240,190,1)"]]) { g.strokeStyle = c; g.lineWidth = lw * (1 - s / 90); g.beginPath(); g.moveTo(x, y); g.lineTo(nx, ny); g.stroke(); } x = nx; y = ny; a += (rand(k * 100 + s) - 0.5) * 0.8; } } });
@@ -268,9 +310,20 @@ const fmtKm = (d) => `${fmt(d)} km`;
 const fmtTide = (m) => (m >= 1000 ? `+${(m / 1000).toFixed(m >= 10000 ? 0 : 1)} km` : `+${m >= 10 ? fmt(m) : m.toFixed(1)} m`);
 const ALLMATS = []; [CITY, ...TOWERS.map((q) => q.g)].forEach((g) => g.traverse((m) => { if (m.isMesh && m.material.isMeshStandardMaterial && !ALLMATS.includes(m.material)) { ALLMATS.push(m.material); m.material.userData.c0 = m.material.color.clone(); } }));
 const GREY = new THREE.Color(0.3, 0.29, 0.28);
+const PBH = CAM.clone().add(BH_DIR.clone().multiplyScalar(420));
+const AX_U = new THREE.Vector3().crossVectors(BH_DIR, V(0, 1, 0)).normalize(), AX_V = new THREE.Vector3().crossVectors(AX_U, BH_DIR).normalize();
+/** a thing at p0 let go at t0 falls into the hole over dur seconds: accelerating, spiralling, gone at the centre */
+function infall(p0, t0, dur, t, seed, out) {
+  const s = clamp((t - t0) / dur), e = Math.pow(s, 2.3);
+  const a = seed * 6.3 + e * 7.5, rad = (6 + seed * 30) * Math.sin(Math.PI * Math.min(1, e * 1.1)) * (1 - e);
+  out.copy(p0).lerp(PBH, e).addScaledVector(AX_U, Math.cos(a) * rad).addScaledVector(AX_V, Math.sin(a) * rad);
+  return e;
+}
+const _v = new THREE.Vector3();
 const wrap = (x, a, b) => a + ((((x - a) % (b - a)) + (b - a)) % (b - a));
 
 function quakeAmp(t) { return t < 46 ? 0 : t < 49 ? lerp(0, 0.035, prog(t, 46, 49)) : t < 58 ? 0.05 + 0.04 * Math.max(0, Math.sin(t * 1.7)) : t < 70 ? 0.02 : t < 78 ? lerp(0.05, 0.12, prog(t, 70, 76)) : 0; }
+const ampAt = (t) => t < 22 ? 0.6 : t < 34 ? lerp(0.6, 1.4, prog(t, 22, 34)) : t < 46 ? lerp(1.4, 2.4, prog(t, 34, 46)) : t < 58 ? lerp(2.4, 5, prog(t, 46, 58)) : t < 70 ? lerp(5, 7, prog(t, 58, 70)) : 7;
 function waterLevel(t) {
   const tide = (a, b, y0, y1, amp, w = 0.8) => lerp(y0, y1, ease(prog(t, a, b))) + amp * Math.sin(t * w);
   if (t < 22) return -2.2 + 0.08 * Math.sin(t * 0.7);
@@ -278,7 +331,7 @@ function waterLevel(t) {
   if (t < 46) return tide(34, 46, -0.9, -0.1, 0.55);
   if (t < 58) return tide(46, 58, -0.1, 0.55, 0.3, 1.3);
   if (t < 70) return tide(58, 70, 0.55, 1.05, 0.25, 1.1);
-  return lerp(1.05, -9, ease(prog(t, 70, 78)));
+  return lerp(1.05, 3.5, ease(prog(t, 70, 86)));
 }
 
 function caption(t) {
@@ -294,7 +347,7 @@ function counters(t, d) {
 }
 
 function people(t) {
-  const ash = prog(t, 72, 76.5);
+  const ash = prog(t, 70, 80) * 0.5;
   for (const q of PEOPLE) {
     const { p, acts } = q; let mode = "walk", x, z = q.z, y = 0, h;
     const walkX = (s) => wrap(q.x0 + q.dir * q.spd * (s + q.off), -27, 27);
@@ -302,14 +355,15 @@ function people(t) {
     else if (t < q.react) { x = walkX(t); h = q.dir * Math.PI / 2; }
     else if (t < q.react + 3.2) { mode = "idle"; x = q.still ? q.x0 : walkX(q.react); h = lerp(q.still ? Math.PI + q.dir * 0.4 : q.dir * Math.PI / 2, Math.PI - 0.25, out(prog(t, q.react, q.react + 1))); }
     else { const xr = q.still ? q.x0 : walkX(q.react); const rt = Math.min(t, q.lift) - q.react - 3.2; mode = "run";
-      x = wrap(xr + q.dir * 3.8 * rt, -27, 27); z = lerp(q.z, 21, out(clamp(rt / 5))); h = Math.atan2(q.dir * 0.85, 0.5); }
-    if (t > q.lift) { const s = t - q.lift; mode = "idle"; y = 0.32 * s * s; x += BH_DIR.x * 0.12 * s * s; z -= 0.08 * s * s; }
+      x = wrap(xr + q.dir * 3.8 * rt, -27, 27); z = lerp(q.z, Math.min(q.z + 3, 13), out(clamp(rt / 5))); h = Math.atan2(q.dir * 0.85, 0.5); }
+    let gone = false;
+    if (t > q.lift) { const s = t - q.lift; mode = "idle"; y = 0.32 * s * Math.min(s, 3); _v.set(x, y, z); const e = infall(_v.clone(), q.lift + 3, 12 + q.off * 2, t, q.off / 4, _v); x = _v.x; y = _v.y; z = _v.z; gone = e > 0.96; }
     p.position.set(x, y, z); p.rotation.set(0, h + q.f0, 0);
     if (t > q.lift) { const s = t - q.lift; p.rotation.x += q.spin.x * s; p.rotation.z += q.spin.z * s; p.rotation.y += q.spin.y * s; }
     acts.walk.weight = mode === "walk" ? 1 : 0; acts.run.weight = mode === "run" ? 1 : 0; acts.idle.weight = mode === "idle" ? 1 : 0;
     acts.run.timeScale = 1.15; q.mx.setTime(t + q.off);
     for (const m of q.mats) m.color.copy(m.userData.c1 || (m.userData.c1 = m.color.clone())).lerp(GREY, ash);
-    p.visible = t < 77 && y < 60;
+    p.visible = !gone;
   }
 }
 
@@ -319,12 +373,12 @@ function towers(t, power) {
     T.g.rotation.z = Math.sin(t * 2.3 + T.ph) * qa * 0.06; T.g.rotation.x = Math.sin(t * 1.9 + T.ph * 2) * qa * 0.03;
     T.mat.emissiveIntensity = 1.25 * power * (0.85 + 0.15 * Math.sin(t * 3 + T.ph * 9) * (t > 46 ? 1 : 0));
     T.red.visible = power > 0.5 && Math.sin(t * 3.4 + T.ph) > 0;
-    const lift = t > 64 ? 0.5 * 2.2 * (t - 64) ** 2 : 0;
     T.segs.forEach((s, i) => {
-      if (T.fall && t > T.tFall + i * 0.3) { const f = t - T.tFall - i * 0.3; s.m.position.set(s.dx * Math.min(f, 3) * 0.3, s.y0 - 0.5 * 9.8 * f * f * (1 - i * 0.08) + lift, 0); s.m.rotation.set(s.rx * f, 0, s.rz * f); s.m.visible = s.m.position.y > -40; }
-      else { s.m.position.set(0, s.y0 + lift * (1 + i * 0.1), 0); s.m.rotation.set(lift > 0 ? s.rx * (t - 64) * 0.4 : 0, 0, lift > 0 ? s.rz * (t - 64) * 0.4 : 0); s.m.visible = true; }
+      const tIn = 64 + T.ph * 2.2 + (T.segs.length - i) * 0.5;
+      if (T.fall && t > T.tFall + i * 0.3 && t < tIn) { const f = t - T.tFall - i * 0.3; s.m.position.set(s.dx * Math.min(f, 3) * 0.3, Math.max(-30, s.y0 - 0.5 * 9.8 * f * f * (1 - i * 0.08)), 0); s.m.rotation.set(s.rx * Math.min(f, 4), 0, s.rz * Math.min(f, 4)); s.m.visible = s.m.position.y > -29; }
+      else { s.m.position.set(0, s.y0, 0); s.m.rotation.set(0, 0, 0); s.m.visible = !(T.fall && t > T.tFall + i * 0.3 && t < tIn); }
+      if (t > tIn) { const w0 = T.g.localToWorld(V(0, s.y0, 0)); const e = infall(w0, tIn, 14, t, T.ph / 6, _v); s.m.visible = e < 0.97; s.m.position.copy(T.g.worldToLocal(_v.clone())); s.m.rotation.set(s.rx * (t - tIn), s.rz * (t - tIn) * 0.5, s.rz * (t - tIn)); }
     });
-    T.g.visible = t < 78;
   }
   // dust clouds rolling out from the towers that came down
   const falling = TOWERS.filter((T) => T.fall); let k = 0;
@@ -340,7 +394,7 @@ function moonAndStream(t) {
   if (t < 38.4) { const d = MOON_DIR.clone().lerp(BH_DIR, ease(k) * 0.9).normalize(); MOON.position.copy(CAM).add(d.multiplyScalar(MOON_D)); MOON.visible = true;
     MOON.lookAt(CAM); const pm = MOON.position.clone().project(cam), pb = BH_DIR.clone().add(CAM).project(cam);
     MOON.rotateZ(Math.atan2(pb.y - pm.y, (pb.x - pm.x) * (W / HH)) + Math.PI);
-    const st = Math.pow(k, 2); MOON.scale.set(1 + st * 7, 1 - st * 0.6, 1); MOON.material.color.setRGB(1.6 + st * 3, 1.6 + st * 1.4, 1.6 + st * 0.4);
+    const st = Math.pow(k, 2); MOON.scale.set(1 + st * 7, 1 - st * 0.6, 1); MOON.material.color.setRGB(1.6 + st * 1.2, 1.5 + st * 0.5, 1.4 + st * 0.1);
   } else MOON.visible = false;
   const sk = win(t, 36.5, 46, 0.8, 2.5); STREAM.material.opacity = sk;
   if (sk > 0) for (let i = 0; i < STREAM_N; i++) { const u = (rand(i) + (t - 36.5) * 0.25) % 1; const from = MOON.visible ? MOON.position.clone().sub(CAM).normalize() : BH_DIR.clone().lerp(MOON_DIR, 0.1);
@@ -353,11 +407,22 @@ function particles(t) {
   // spray off the quay once the sea is wild, rising freely once nothing weighs anything
   const sk = t > 46 && t < 76 ? 1 : 0; SPRAY.P.material.opacity = sk * 0.75;
   for (let i = 0; i < SPRAY.n; i++) { const ph = (rand(i) + t * (0.6 + rand(i + 1) * 0.5)) % 1; const x = -26 + rand(i + 2) * 52;
-    const float = t > 60 ? (t - 60) * (0.6 + rand(i + 3)) : 0; const y = waterLevel(t) + Math.sin(ph * Math.PI) * (1.2 + rand(i + 4) * 2) + float * float * 0.25;
+    const float = t > 60 ? (t - 60) * (0.6 + rand(i + 3)) : 0; const zz = 1 + rand(i + 5) * 3; const crest = Math.max(0, waveY(x, zz, ampAt(t), t)); const y = waterLevel(t) + crest + Math.sin(ph * Math.PI) * crest * 1.5 + float * float * 0.25;
     SPRAY.pos[i * 3] = x; SPRAY.pos[i * 3 + 1] = y; SPRAY.pos[i * 3 + 2] = 1 + rand(i + 5) * (t > 60 ? 14 : 3) - ph * 1.5; }
   SPRAY.P.geometry.attributes.position.needsUpdate = true;
   for (const D of DEBRIS) { const s = t - D.t0; const m = D.m; m.visible = t > 50 && t < 77;
-    if (s < 0) { m.position.copy(D.p0); m.rotation.set(0, D.v, 0); } else { m.position.set(D.p0.x + BH_DIR.x * 0.1 * s * s, D.p0.y + 0.3 * D.v * s * s, D.p0.z - 0.05 * s * s); m.rotation.set(D.spin.x * s, D.spin.y * s, D.spin.z * s); } }
+    if (s < 0) { m.position.copy(D.p0); m.rotation.set(0, D.v, 0); } else { const e = infall(D.p0, D.t0, 9 + D.v * 3, t, D.v, m.position); m.rotation.set(D.spin.x * s, D.spin.y * s, D.spin.z * s); m.visible = e < 0.97; } }
+  // the promenade itself comes loose: lamps, benches, trees
+  PROPS.forEach((g, i) => { if (!g.userData.p0) g.userData.p0 = g.position.clone(); const t0 = 71 + rand(i + 0.4) * 9; if (t < t0) { g.position.copy(g.userData.p0); g.rotation.set(0, 0, 0); g.visible = true; return; }
+    const e = infall(g.userData.p0, t0, 8, t, rand(i + 0.9), g.position); g.rotation.set((t - t0) * 0.9, (t - t0) * 0.4, (t - t0) * 0.7); g.visible = e < 0.97; });
+  // a river of everything — water, dust, glass, light — spiralling in, heating as it goes
+  const ik = t < 60 ? 0 : smooth(prog(t, 60, 66)); INFALL.material.opacity = ik;
+  if (ik > 0) for (let i = 0; i < INFALL_N; i++) { const t0 = 60 + rand(i * 1.3) * 26, life = 5 + rand(i * 2.1) * 6;
+    const p0 = _v.set(-70 + rand(i * 3.7) * 140, rand(i * 4.1) * 40 - 2, -60 - rand(i * 5.3) * 800); const st = p0.clone();
+    if (t < t0) { infallP.set([0, -999, 0], i * 3); continue; }
+    const e = infall(st, t0, life, t, rand(i * 6.1), _v); infallP.set([_v.x, _v.y, _v.z], i * 3);
+    const h = Math.pow(e, 2); infallC.set([0.35 + h * 2.2, 0.33 + h * 1.1, 0.32 + h * 0.25].map((c) => c * (e > 0.985 ? 0 : 1)), i * 3); }
+  INFALL.geometry.attributes.position.needsUpdate = true; INFALL.geometry.attributes.color.needsUpdate = true;
   // ash: everything streaming up into the disk
   const ak = win(t, 72, 82, 1.5, 2); ASH.P.material.opacity = ak;
   if (ak > 0) for (let i = 0; i < ASH.n; i++) { const s = (t - 72) * (0.7 + rand(i) * 0.8) + rand(i + 1) * 2; const base = V(-30 + rand(i + 2) * 60, rand(i + 3) * 6, -10 + rand(i + 4) * 26);
@@ -377,27 +442,29 @@ H.frame("Some things vanish without a trace", async (t) => {
   for (const Lp of LAMPS) { Lp.L.intensity = 30 * power; Lp.head.material.color.setRGB(1, 0.8, 0.55).multiplyScalar(4 * power + 0.03); Lp.g.rotation.z = Math.sin(t * 2.6 + Lp.ph) * qa * 0.5; }
   // the sea
   const wl = waterLevel(t); water.position.y = wl; water.visible = t < 79;
-  water.material.uniforms.time.value = t * (t < 46 ? 0.55 : 1.4); water.material.uniforms.distortionScale.value = t < 46 ? 2.6 : 6.5;
+  water.material.uniforms.time.value = t * 0.5; water.material.uniforms.distortionScale.value = 2.2; water.material.uniforms.uWT.value = t; water.material.uniforms.uAmp.value = ampAt(t); water.material.uniforms.uFoam.value = clamp((ampAt(t) - 1.2) / 2); water.visible = true;
   const disk = t > 38 ? 1 : 0;
   water.material.uniforms.sunDirection.value.copy(disk ? BH_DIR : MOON_DIR); water.material.uniforms.sunColor.value.set(disk ? 0xffb070 : 0x9fb3d6);
   // its size on screen: a dark dot that bends starlight, then the Moon's debris lights it up and it grows as it nears
   const U = BH.uniforms;
-  const Sz = t < 38 ? lerp(0.004, 0.012, prog(t, 5, 38)) : t < 66 ? lerp(0.012, 0.055, Math.pow(prog(t, 38, 66), 1.3)) : t < 80 ? lerp(0.055, 0.12, prog(t, 66, 80)) : 0.12 + Math.pow(prog(t, 80, 87), 2.0) * 1.4;
+  // from the same place in the sky it only ever grows: from nothing to past the edges of the frame
+  const SK = [[1.5, 0.0004], [10, 0.0028], [22, 0.0055], [34, 0.0095], [46, 0.017], [58, 0.03], [66, 0.046], [74, 0.075], [80, 0.12], [85, 0.24], [88.5, 0.65], [93, 3]];
+  let Sz = 0; for (let i = 1; i < SK.length; i++) if (t <= SK[i][0]) { const [a0, s0] = SK[i - 1], [a1, s1] = SK[i]; Sz = t < a0 ? 0 : Math.exp(lerp(Math.log(s0), Math.log(s1), (t - a0) / (a1 - a0))); break; }
+  if (t > 93) Sz = 3;
   U.S.value = Sz; U.uT.value = t;
-  U.rE.value = t < 8 ? 0 : Math.min(1, prog(t, 8, 14)) * Sz * 1.5;
-  U.dB.value = t < 38 ? 0 : t < 40.5 ? smooth(prog(t, 38, 40.5)) * 0.55 : t < 70 ? lerp(0.55, 0.75, prog(t, 40.5, 70)) : t < 82 ? 0.85 : lerp(0.85, 0, prog(t, 82, 87.5)); H.bloom.strength = 0.22;
-  U.white.value = t < 74 ? 0 : t < 77 ? smooth(prog(t, 74, 77)) * 0.9 : t < 79.5 ? 0.9 * (1 - smooth(prog(t, 77, 79.5))) : 0;
-  U.dark.value = t > 86 ? smooth(prog(t, 86, 88.4)) : 0;
+  U.rE.value = Sz * 1.6;
+  U.dB.value = smooth(prog(t, 1.5, 6)) * (t < 38 ? 0.42 : lerp(0.42, 0.8, smooth(prog(t, 38, 42))));
+  U.white.value = 0;
+  U.dark.value = 0;
   diskLight.intensity = t < 38 ? 0 : t < 40 ? lerp(0, 0.9, prog(t, 38, 40)) : t < 58 ? lerp(0.9, 2, prog(t, 40, 58)) : t < 72 ? lerp(2, 4, prog(t, 58, 72)) : 4;
   moonLight.intensity = t < 38 ? 0.35 : 0.05; H.hemi.intensity = 0.25 + (t > 38 ? 0.25 : 0);
   H.r.toneMappingExposure = 1.15;
   // the crust tears: glowing fissures across the promenade
-  CRACKS.material.opacity = smooth(prog(t, 69.5, 73)) * (t < 77 ? 1 : 0); lavaLight.intensity = 120 * CRACKS.material.opacity;
+  CRACKS.material.opacity = smooth(prog(t, 69.5, 73)); lavaLight.intensity = 120 * CRACKS.material.opacity;
   // everything turns to ash, lifts and is gone in the glare; then only the hole, its disk and bent starlight
-  const ash = prog(t, 72, 76.5);
+  const ash = prog(t, 70, 82) * 0.55;
   for (const m of ALLMATS) { m.color.copy(m.userData.c0).lerp(GREY, ash); if (m.emissive && ash > 0) m.emissiveIntensity *= 1 - ash; }
-  const up = t > 74 ? 0.5 * 14 * (t - 74) ** 2 : 0; CITY.position.set(BH_DIR.x * up * 0.3, up, 0); CITY.visible = t < 78.5;
-  HILLS.visible = t < 78; GLOW.visible = t < 78;
+
   people(t); towers(t, power); moonAndStream(t); particles(t);
   if (t < 5.6) hudShow("ttl", win(t, 0.5, 5.6, 0.6, 0.5), { transform: `translateY(${(1 - out(clamp((t - 0.5) / 0.9))) * 18}px)` });
   counters(t, d); caption(t);

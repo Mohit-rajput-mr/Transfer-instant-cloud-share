@@ -10,7 +10,7 @@
   },
   {
    "key": "c2",
-   "text": "You can't see it. Only stars bending around it.",
+   "text": "It glows from gas falling in. Starlight bends around it.",
    "at": 10.5,
    "dur": 4.6
   },
@@ -76,26 +76,26 @@
   },
   {
    "key": "c13",
-   "text": "Every piece falls into the disk and burns.",
+   "text": "Everything falls in: water, stone, people, light.",
    "at": 75.0,
    "dur": 5.0
   },
   {
    "key": "c14",
-   "text": "Past the event horizon, even light can't escape.",
-   "at": 80.5,
-   "dur": 5.4
+   "text": "Its gravity bends the light of the whole city.",
+   "at": 80.3,
+   "dur": 4.4
   },
   {
    "key": "c15",
-   "text": "No one would ever see Earth again.",
-   "at": 86.2,
-   "dur": 2.6
+   "text": "Past the event horizon, nothing ever comes back.",
+   "at": 85.0,
+   "dur": 3.9
   },
   {
    "key": "end",
    "text": "",
-   "at": 89.0,
+   "at": 89.3,
    "dur": 4.0
   }
  ]

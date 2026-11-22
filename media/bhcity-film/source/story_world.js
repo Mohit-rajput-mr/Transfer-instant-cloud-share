@@ -9,9 +9,48 @@ const GLOW = new THREE.Mesh(new THREE.SphereGeometry(8800, 64, 32), new THREE.Sh
   fragmentShader: `uniform float k; uniform vec3 col; varying vec3 vP; void main(){ float h = max(vP.y, 0.0); gl_FragColor = vec4(col * k * (exp(-h * 9.0) * 0.55 + exp(-h * 3.0) * 0.12), 1.0); }` }));
 GLOW.renderOrder = -1; scene.add(GLOW);
 
-// water of the bay: ocean shader (reflections of the skyline, lamps, Moon and later the disk)
-const water = new Water(new THREE.PlaneGeometry(12000, 12000), { textureWidth: 512, textureHeight: 512, waterNormals, sunDirection: MOON_DIR.clone(), sunColor: 0x9fb3d6, waterColor: 0x04101a, distortionScale: 2.6, fog: false });
-water.rotation.x = -Math.PI / 2; scene.add(water);
+// water of the bay: the ocean shader (reflections) on a real moving surface — eight Gerstner waves (deep-water speed
+// c = √(g/k)) displace the mesh, tilt its normals and whiten their crests; storm and tides scale them
+const WAVES = [[0.35, 1, 47, 0.26], [-0.7, 0.75, 31, 0.2], [0.95, 0.55, 19.7, 0.14], [-0.25, 1, 13.3, 0.1], [0.75, -0.45, 8.9, 0.07], [-0.9, 0.3, 6.1, 0.05], [0.2, -0.95, 4.3, 0.032], [-0.45, -0.85, 2.9, 0.02]]
+  .map(([x, z, L, a]) => { const n = Math.hypot(x, z); return new THREE.Vector4(x / n, z / n, L, a); });
+const waterGeo = (() => { // dense near the camera, coarse far away (local XY; the mesh is rotated flat, world z = −local y)
+  const zs = []; for (let z = 46; z > -4200; z -= 0.22 * (1 + Math.max(0, 31 - z) / 7)) zs.push(z);
+  const xs = [0]; for (let x = 0.3; x < 2200; x += 0.3 * (1 + x / 9)) { xs.push(x); xs.unshift(-x); }
+  const pos = new Float32Array(zs.length * xs.length * 3), idx = [];
+  zs.forEach((z, j) => xs.forEach((x, i) => pos.set([x, -z, 0], (j * xs.length + i) * 3)));
+  for (let j = 0; j < zs.length - 1; j++) for (let i = 0; i < xs.length - 1; i++) { const a = j * xs.length + i, b = a + 1, c = a + xs.length, d = c + 1; idx.push(a, c, b, b, c, d); }
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(pos.length).map((_, i) => (i % 3 === 2 ? 1 : 0)), 3)); g.setIndex(idx); return g;
+})();
+const water = new Water(waterGeo, { textureWidth: 512, textureHeight: 512, waterNormals, sunDirection: MOON_DIR.clone(), sunColor: 0x9fb3d6, waterColor: 0x04101a, distortionScale: 2.6, fog: false });
+water.rotation.x = -Math.PI / 2; scene.add(water); water.frustumCulled = false;
+{ const m = water.material;
+  m.uniforms.uW = { value: WAVES }; m.uniforms.uAmp = { value: 0.6 }; m.uniforms.uWT = { value: 0 }; m.uniforms.uFoam = { value: 0 };
+  m.vertexShader = m.vertexShader.replace("varying vec4 worldPosition;", `varying vec4 worldPosition; varying vec3 vWaveN; varying float vCrest;
+    uniform vec4 uW[8]; uniform float uAmp, uWT;`).replace(`mirrorCoord = modelMatrix * vec4( position, 1.0 );
+					worldPosition = mirrorCoord.xyzw;
+					mirrorCoord = textureMatrix * mirrorCoord;
+					vec4 mvPosition =  modelViewMatrix * vec4( position, 1.0 );`, `vec4 wp = modelMatrix * vec4( position, 1.0 );
+					vec3 base = wp.xyz; vec3 dX = vec3(1.0, 0.0, 0.0), dZ = vec3(0.0, 0.0, 1.0); float crest = 0.0;
+					float fade = 1.0 / (1.0 + max(0.0, 31.0 - base.z) / 220.0);
+					for (int i = 0; i < 8; i++) {
+						vec2 d = uW[i].xy; float k = 6.2831853 / uW[i].z, a = uW[i].w * uAmp * fade, c = sqrt(9.81 / k);
+						float f = k * (dot(d, base.xz) - c * uWT), Q = 0.55 / (k * max(a, 1e-4) * 8.0);
+						Q = min(Q, 1.0 / (k * max(a, 1e-4) * 8.0));
+						wp.x += Q * a * d.x * cos(f); wp.z += Q * a * d.y * cos(f); wp.y += a * sin(f);
+						dX += vec3(-Q * d.x * d.x * k * a * sin(f), d.x * k * a * cos(f), -Q * d.x * d.y * k * a * sin(f));
+						dZ += vec3(-Q * d.x * d.y * k * a * sin(f), d.y * k * a * cos(f), -Q * d.y * d.y * k * a * sin(f));
+						crest += max(0.0, sin(f)) * a;
+					}
+					vWaveN = normalize(cross(dZ, dX)); vCrest = crest / max(uAmp, 0.05);
+					mirrorCoord = wp; worldPosition = wp;
+					mirrorCoord = textureMatrix * mirrorCoord;
+					vec4 mvPosition = viewMatrix * wp;`);
+  m.fragmentShader = m.fragmentShader.replace("uniform float distortionScale;", "uniform float distortionScale; uniform float uFoam; varying vec3 vWaveN; varying float vCrest;")
+    .replace("vec3 surfaceNormal = normalize( noise.xzy * vec3( 1.5, 1.0, 1.5 ) );", "vec3 surfaceNormal = normalize( noise.xzy * vec3( 1.5, 1.0, 1.5 ) + vec3(vWaveN.x, 0.0, vWaveN.z) * 2.2 );")
+    .replace("vec3 outgoingLight = albedo;", "float foam = smoothstep(0.75, 1.15, vCrest) * uFoam * (0.4 + 0.6 * noise.x) * 0.7; vec3 outgoingLight = mix(albedo, vec3(0.75, 0.78, 0.8) * (0.25 + diffuseLight * 0.6) + reflectionSample * 0.15, clamp(foam, 0.0, 0.85));");
+  m.needsUpdate = true; }
+// the same waves in JS (spray, floating things)
+const waveY = (x, z, amp, tt) => { let y = 0; for (const w of WAVES) { const k = TAU / w.z, c = Math.sqrt(9.81 / k); y += w.w * amp * Math.sin(k * (w.x * x + w.y * z - c * tt)); } return y; };
 
 // ---------- the promenade: worn concrete, a kerb and railing at the water, benches, bins, lamps, young trees ----------
 const CITY = new THREE.Group(); scene.add(CITY);
@@ -22,9 +61,9 @@ const quay = sh(new THREE.Mesh(new THREE.BoxGeometry(90, 3.2, 1.2), new THREE.Me
 const steel = H.metal(0x9aa3ab, 0.35);
 for (let x = -44; x <= 44; x += 1.6) { const p = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.05, 8), steel)); p.position.set(x, 0.52, 2.2); CITY.add(p); }
 for (const y of [1.05, 0.6]) { const r = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 88, 8), steel)); r.rotation.z = Math.PI / 2; r.position.set(0, y, 2.2); CITY.add(r); }
-const LAMPS = [];
+const LAMPS = [], PROPS = [];
 for (const x of [-20, -10, 0, 10, 20]) {
-  const g = new THREE.Group(); g.position.set(x + 3, 0, 3.4); CITY.add(g);
+  const g = new THREE.Group(); g.position.set(x + 3, 0, 3.4); CITY.add(g); PROPS.push(g);
   const pole = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 4.6, 12), H.metal(0x2a2d31, 0.4))); pole.position.y = 2.3; g.add(pole);
   const arm = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.9, 8), H.metal(0x2a2d31, 0.4))); arm.rotation.z = Math.PI / 2; arm.position.set(0.4, 4.55, 0); g.add(arm);
   const head = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 0.18, 16), new THREE.MeshBasicMaterial({ color: new THREE.Color(1, 0.8, 0.55).multiplyScalar(4), toneMapped: false })); head.position.set(0.8, 4.45, 0); g.add(head);
@@ -32,7 +71,7 @@ for (const x of [-20, -10, 0, 10, 20]) {
   LAMPS.push({ g, head, L, ph: rand(x) * 10 });
 }
 for (const x of [-15, -5, 5, 15]) { // benches facing the water
-  const b = new THREE.Group(); b.position.set(x, 0, 4.4); CITY.add(b);
+  const b = new THREE.Group(); b.position.set(x, 0, 4.4); CITY.add(b); PROPS.push(b);
   const wood = new THREE.MeshStandardMaterial({ color: 0x6b4a32, roughness: 0.7 });
   for (let i = 0; i < 3; i++) { const s = sh(new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.04, 0.12), wood)); s.position.set(0, 0.45, -0.18 + i * 0.16); b.add(s); }
   for (let i = 0; i < 2; i++) { const s = sh(new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.1, 0.04), wood)); s.position.set(0, 0.62 + i * 0.16, 0.22); b.add(s); }
@@ -40,7 +79,7 @@ for (const x of [-15, -5, 5, 15]) { // benches facing the water
 }
 const firG = await gltf("kit/ph/fir_sapling/fir_sapling_1k.gltf");
 const fit = (o) => { o.traverse((m) => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; } }); return o; };
-for (const [x, z] of [[-24, 13], [-12.5, 14.5], [12.5, 14.5], [24, 13]]) { const f = fit(firG.scene.clone()); f.scale.setScalar(2.4); f.position.set(x, 0, z); CITY.add(f); }
+for (const [x, z] of [[-24, 13], [-12.5, 14.5], [12.5, 14.5], [24, 13]]) { const f = fit(firG.scene.clone()); f.scale.setScalar(2.4); f.position.set(x, 0, z); CITY.add(f); PROPS.push(f); }
 
 // ---------- the skyline across the bay: towers with lit windows, red aviation lights; some will fall ----------
 const winTex = (seed, warm) => H.canvasTex(256, 512, (g, w, h) => {
@@ -83,7 +122,7 @@ diskLight.target.position.set(0, 0, 8); scene.add(diskLight, diskLight.target);
 // the Moon's debris streaming into the hole
 const STREAM_N = 1600, streamP = new Float32Array(STREAM_N * 3);
 const dotTex = H.canvasTex(64, 64, (g, w) => { const q = g.createRadialGradient(32, 32, 0, 32, 32, 32); q.addColorStop(0, "rgba(255,255,255,1)"); q.addColorStop(0.35, "rgba(255,255,255,0.5)"); q.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = q; g.fillRect(0, 0, w, w); });
-const STREAM = new THREE.Points(new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(streamP, 3)), new THREE.PointsMaterial({ map: dotTex, color: new THREE.Color(2.2, 1.4, 0.8), size: 9, sizeAttenuation: false, transparent: true, depthWrite: false, toneMapped: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+const STREAM = new THREE.Points(new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(streamP, 3)), new THREE.PointsMaterial({ map: dotTex, color: new THREE.Color(1.4, 0.8, 0.45), size: 4, sizeAttenuation: false, transparent: true, depthWrite: false, toneMapped: false, blending: THREE.AdditiveBlending, opacity: 0 }));
 STREAM.frustumCulled = false; scene.add(STREAM);
 
 // ---------- people ----------
@@ -107,11 +146,14 @@ for (let i = 0; i < 46; i++) {
 const mkPts = (n, size, color, add = false, att = true) => { const pos = new Float32Array(n * 3); const P = new THREE.Points(new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(pos, 3)), new THREE.PointsMaterial({ map: dotTex, size, color, transparent: true, depthWrite: false, sizeAttenuation: att, opacity: 0, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending })); P.frustumCulled = false; scene.add(P); return { P, pos, n }; };
 const SPRAY = mkPts(2500, 0.12, 0xcfe0ee);
 const DUST = mkPts(3000, 26, 0x6b625a);
-const DEBRIS = (() => { const g = new THREE.Group(); scene.add(g); const geo = new THREE.IcosahedronGeometry(0.6, 0); const ms = [0x5a554f, 0x8a8178, 0x6b6560, 0x9c948a].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.95, flatShading: true }));
+const DEBRIS = (() => { const g = new THREE.Group(); scene.add(g); const geo = new THREE.IcosahedronGeometry(0.6, 0); const ms = [0x7a746c, 0x9a9188, 0x8b847c, 0xaca398].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.95, flatShading: true }));
   const list = []; for (let i = 0; i < 220; i++) { const m = new THREE.Mesh(geo, ms[i % 4]); const s = 0.04 + Math.pow(rand(i + 0.3), 4) * 0.45; m.scale.set(s * (0.5 + rand(i + 1)), s * (0.3 + rand(i + 2)), s * (0.5 + rand(i + 3))); m.castShadow = true; g.add(m);
     list.push({ m, p0: V(-24 + rand(i + 4) * 48, 0.05, 3 + rand(i + 5) * 13), t0: 60 + rand(i + 6) * 9, v: 0.4 + rand(i + 7) * 1.6, spin: V(rand(i + 8), rand(i + 9), rand(i + 10)).multiplyScalar(3) }); }
   return list; })();
 const ASH = mkPts(9000, 0.09, 0x8f8a84);
+const INFALL_N = 14000, infallP = new Float32Array(INFALL_N * 3), infallC = new Float32Array(INFALL_N * 3);
+const INFALL = new THREE.Points(new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(infallP, 3)).setAttribute("color", new THREE.BufferAttribute(infallC, 3)), new THREE.PointsMaterial({ map: dotTex, size: 3.2, sizeAttenuation: false, vertexColors: true, transparent: true, depthWrite: false, toneMapped: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+INFALL.frustumCulled = false; scene.add(INFALL);
 // lava cracks across the promenade as the crust tears
 const crackTex = H.canvasTex(1024, 1024, (g, w, h) => { g.fillStyle = "#000"; g.fillRect(0, 0, w, h); g.lineCap = "round";
   for (let k = 0; k < 9; k++) { let x = rand(k + 0.1) * w, y = rand(k + 0.2) * h, a = rand(k + 0.3) * TAU; for (let s = 0; s < 70; s++) { const nx = x + Math.cos(a) * 16, ny = y + Math.sin(a) * 16; for (const [lw, c] of [[18, "rgba(255,90,20,0.25)"], [7, "rgba(255,150,50,0.8)"], [2.5, "rgba(255,240,190,1)"]]) { g.strokeStyle = c; g.lineWidth = lw * (1 - s / 90); g.beginPath(); g.moveTo(x, y); g.lineTo(nx, ny); g.stroke(); } x = nx; y = ny; a += (rand(k * 100 + s) - 0.5) * 0.8; } } });
