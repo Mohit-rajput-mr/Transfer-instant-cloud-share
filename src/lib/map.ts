@@ -8,7 +8,9 @@
 export const mapView = { on: false, k: 1 };
 
 /** `near`: the key of what it belongs to (a file wired to a task panel): it is put down right beside that */
-export type Thing = { key: string; w: number; h: number; born: number; near?: string };
+/** `row`: which row of that panel it is wired to (its order top to bottom), so wired files line up in the same order
+ *  beside the panel and their cables never cross */
+export type Thing = { key: string; w: number; h: number; born: number; near?: string; row?: number };
 export type Spot = { x: number; y: number };
 
 function hash(s: string) {
@@ -38,7 +40,10 @@ export function worldSize(things: Thing[], vw: number, vh: number) {
   const f = Math.max(1, Math.ceil(Math.sqrt(need) * 4) / 4);
   // the widest thing must fit too, with room to drag it sideways (a phone screen is barely wider than a panel)
   const minW = Math.max(0, ...things.map((t) => t.w * 1.5 + 2 * GAP));
-  const minH = Math.max(0, ...things.map((t) => t.h + 2 * GAP));
+  // and the lanes of files wired to a panel (one lane per task row, stacked) must fit top to bottom
+  const laneH = new Map<string, { rows: Set<number>; h: number }>();
+  for (const t of things) if (t.near && t.row !== undefined) { const l = laneH.get(t.near) ?? { rows: new Set<number>(), h: 0 }; l.rows.add(t.row); l.h = Math.max(l.h, t.h); laneH.set(t.near, l); }
+  const minH = Math.max(0, ...things.map((t) => t.h + 2 * GAP), ...[...laneH.values()].map((l) => l.rows.size * (l.h + GAP + 2) + 2 * GAP));
   return { W: Math.max(vw * f, minW), H: Math.max(vh * f, minH), f };
 }
 
@@ -86,6 +91,35 @@ export function place(things: Thing[], W: number, H: number) {
   const placed: { x: number; y: number; w: number; h: number }[] = [];
   const rects = new Map<string, { x: number; y: number; w: number; h: number }>();
   const free = (r: { x: number; y: number; w: number; h: number }) => placed.reduce((a, p) => a + overlaps(r, p), 0);
+  // wired files are laid out per panel, all at once, as lanes: one lane per task row (top to bottom in the same order
+  // as the rows), that task's files side by side in it, to the right of the panel. Rows and lanes go down in the same
+  // order, so no two tasks' cables cross. Lanes that hit something step further right together.
+  const lane = new Map<string, Spot>();
+  const laidOut = new Set<string>();
+  const layLane = (anchorKey: string) => {
+    laidOut.add(anchorKey);
+    const a = rects.get(anchorKey);
+    if (!a) return;
+    const mine = things.filter((t) => t.near === anchorKey && t.row !== undefined && !pins.has(t.key)).sort((p, q) => p.row! - q.row! || p.born - q.born || p.key.localeCompare(q.key));
+    if (!mine.length) return;
+    const w = Math.max(...mine.map((t) => t.w)), h = Math.max(...mine.map((t) => t.h));
+    const rows = [...new Set(mine.map((t) => t.row!))];
+    const step = h + GAP + 2, stepX = w + GAP + 2; // +2: the spot is kept as a fraction of the world, so leave a hair of slack
+    const total = rows.length * step - GAP - 2;
+    const y0 = Math.min(H - GAP - total, Math.max(GAP, a.y - total / 2));
+    const x0 = a.x + a.w / 2 + GAP + 40 + w / 2;
+    const boxes = mine.map((t) => { const li = rows.indexOf(t.row!), k = mine.filter((m) => m.row === t.row).indexOf(t); return { t, li, k, r: { x: 0, y: y0 + li * step + h / 2, w: t.w, h: t.h } }; });
+    // each lane steps right on its own until it is in open sky (the lanes keep their top-to-bottom order either way)
+    for (let li = 0; li < rows.length; li++) {
+      const inLane = boxes.filter((b) => b.li === li);
+      let x = x0;
+      const setX = () => inLane.forEach((b) => (b.r.x = x + b.k * stepX));
+      setX();
+      for (let i = 0; i < 8 && inLane.some((b) => free(b.r) > 0) && x + stepX < W; i++) { x += stepX; setX(); }
+    }
+    for (const b of boxes) lane.set(b.t.key, { x: b.r.x / W, y: b.r.y / H });
+  };
+
   for (const t of [...things].sort((a, b) => order(a) - order(b) || a.born - b.born || a.key.localeCompare(b.key))) {
     const mx = Math.min(0.5, (t.w / 2 + GAP) / W), my = Math.min(0.5, (t.h / 2 + GAP) / H);
     const clampF = (v: number, m: number) => Math.min(1 - m, Math.max(m, v));
@@ -98,8 +132,13 @@ export function place(things: Thing[], W: number, H: number) {
       const gx = Math.max(0, Math.abs(s.x * W - anchor.x) - (anchor.w + t.w) / 2), gy = Math.max(0, Math.abs(s.y * H - anchor.y) - (anchor.h + t.h) / 2);
       return Math.hypot(gx, gy) < 150;
     };
+    if (t.near && t.row !== undefined && !pins.has(t.key)) {
+      if (!laidOut.has(t.near)) layLane(t.near);
+      const l = lane.get(t.key);
+      if (l && free(at(l)) === 0) best = l;
+    }
     const had = pins.get(t.key) ?? spots.get(t.key);
-    if (had && (pins.has(t.key) || (free(at(had)) === 0 && near(had)))) best = had;
+    if (!best && had && (pins.has(t.key) || (free(at(had)) === 0 && near(had)))) best = had;
     if (!best && anchor) {
       // rings around the anchor, its right side first (where its cables leave), then above/below, then the left
       const angles = [0, -0.5, 0.5, -1, 1, -1.5, 1.5, Math.PI, Math.PI - 0.6, Math.PI + 0.6];

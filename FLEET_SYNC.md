@@ -19,6 +19,14 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-22 · DEFECT (owner: "each file line attached does not look structured"): files wired to a task panel on the map were put down
+  at random spots on rings around the panel (lib/map.ts `place`), so cables from different tasks crossed and a task's files ended up on
+  any side. FIX: files carry the row of the task they're wired to (`Thing.row`, set in Void.tsx); `place` lays them out per panel as
+  lanes: one lane per task row, top-to-bottom in row order, that task's files side by side to the panel's right, each lane stepping
+  right on its own if something is in the way; `worldSize` grows the world tall enough for every lane (before, a short world pushed a
+  lane to the panel's left). Hand-moved (pinned) files keep their spot. Tests: src/lib/map.test.ts (order, one lane per task, world
+  height). Verified: local prod build + Playwright on /work (dark) with 4 tasks / 5 files: lanes in order, no crossing cables
+  (media/poster/workspace-lanes-after.png). Not deployed.
 - 2026-11-20 · FEATURE (owner: "send and receive offline"): `/offline` page (`src/app/offline/*`, `src/lib/offline.ts`, `public/offline-sw.js`).
   Same Wi-Fi or a phone hotspot, no internet: WebRTC with NO ice servers; the offer/answer travel as QR codes (slimmed SDP, deflate, base64url,
   ~570 chars) scanned with the camera (BarcodeDetector, else jsQR) or pasted. Files stream over the data channel (64 KB chunks, back-pressure).

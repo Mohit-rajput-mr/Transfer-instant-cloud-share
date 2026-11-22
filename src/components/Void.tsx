@@ -2262,6 +2262,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
     void pinTick;
     const things: Thing[] = [];
     const taskKey = new Map(tGroups.flatMap((g) => g.tasks.map((t) => [t.id, `t:${g.key}`] as const)));
+    const taskRow = new Map(tGroups.flatMap((g) => g.tasks.map((t, i) => [t.id, i] as const)));
     const sz = (k: string, w: number, h: number) => sizes.get(k) ?? { w, h };
     if (showTasks)
       for (const g of tGroups) {
@@ -2281,7 +2282,7 @@ export default function Void({ ui }: { ui?: "work" } = {}) {
       // wired to a task (a group: any of its files): it sits beside that task's panel
       const wired = showTasks ? (n ? groups.get(o.id)?.find((m) => m.task)?.task : o.task) : null;
       const near = wired ? taskKey.get(wired) : undefined;
-      things.push({ key: `o:${alias.current.get(o.id) ?? o.id}`, w: L ? L.W + 60 : 210, h: L ? L.H + 120 : 250, born: Date.parse(o.createdAt), near });
+      things.push({ key: `o:${alias.current.get(o.id) ?? o.id}`, w: L ? L.W + 60 : 210, h: L ? L.H + 120 : 250, born: Date.parse(o.createdAt), near, row: wired ? taskRow.get(wired) : undefined });
     }
     // the public void starts exactly the size of the free screen (between the header, the send button and the
     // tools), so it opens at full size with its glass edge just off screen; it only shows once zoomed out (MapWorld)
