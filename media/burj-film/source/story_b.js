@@ -61,8 +61,8 @@ cityMat.customProgramCacheKey = () => "dubai";
     const n = 2 + Math.floor(H.rnd() * 3), dens = Math.exp(-r / 1500);
     for (let k = 0; k < n; k++) { const w = 22 + H.rnd() * 30, d = 22 + H.rnd() * 30; const x = cx + (H.rnd() - 0.5) * (120 - w), z = cz + (H.rnd() - 0.5) * (120 - d);
       const tall = (cz < -540 && cz > -820) ? 1 : 0;                                                // the Sheikh Zayed Road towers
-      let hgt = 10 + Math.pow(H.rnd(), 2.2) * (26 + 180 * dens + 220 * tall); const glassB = H.rnd() < 0.15 + 0.45 * dens + 0.3 * tall ? 1 : 0, sd = H.rnd(); B.push([x, z, w, d, hgt, glassB, sd, 0]);
-      if (hgt > 60 && H.rnd() < 0.5) B.push([x, z, w * 0.6, d * 0.6, hgt * 0.18, glassB, sd, hgt]); } }
+      let hgt = 8 + Math.pow(H.rnd(), 1.6) * (14 + 24 * dens); const glassB = 0, sd = H.rnd(); B.push([x, z, w, d, hgt, glassB, sd, 0]);
+      } }
   const bg = new THREE.BoxGeometry(1, 1, 1); bg.translate(0, 0.5, 0);
   const im = new THREE.InstancedMesh(bg, cityMat, B.length); const kind = new Float32Array(B.length * 2); const m4 = new THREE.Matrix4();
   B.forEach(([x, z, w, d, hh, gb, s, y0], i) => { m4.makeScale(w, hh, d).setPosition(x, y0, z); im.setMatrixAt(i, m4); kind[i * 2] = gb; kind[i * 2 + 1] = s; });
@@ -75,6 +75,67 @@ cityMat.customProgramCacheKey = () => "dubai";
   tr.castShadow = lf.castShadow = true; pg.add(tr, lf);
   // the Dubai Mall podium next to the lake
   const mall = sh(new THREE.Mesh(new RoundedBoxGeometry(420, 28, 170, 3, 4), new THREE.MeshPhysicalMaterial({ color: 0xcfc4b0, roughness: 0.5, metalness: 0.1, clearcoat: 0.3 }))); mall.position.set(120, 14, 440); CITY.add(mall); }
+// Downtown Dubai: glass towers of many heights, shapes and glass colours round the Burj and along Sheikh Zayed Road;
+// the facades reflect the real sky (same equirect as the sky dome), vertical fins, floor spandrels, sun glints.
+const glassMat = new THREE.MeshStandardMaterial({ roughness: 0.35, metalness: 0.1 });
+glassMat.onBeforeCompile = (s) => { s.uniforms.uSky = { value: skyTex }; s.uniforms.uSunG = { value: SUN };
+  s.vertexShader = s.vertexShader.replace("#include <common>", "#include <common>\nattribute vec3 aTint; attribute float aSeed; varying vec3 vGW; varying vec3 vGN; varying vec3 vTint; varying float vSeed; varying vec3 vGL;")
+    .replace("#include <begin_vertex>", `#include <begin_vertex>
+      mat4 im4 = mat4(1.0);
+      #ifdef USE_INSTANCING
+        im4 = instanceMatrix;
+      #endif
+      vec4 gw = modelMatrix * im4 * vec4(transformed, 1.0); vGW = gw.xyz; vGN = normalize(mat3(modelMatrix * im4) * normal);
+      vec3 scl = vec3(length(im4[0].xyz), length(im4[1].xyz), length(im4[2].xyz)); vGL = position * scl; vTint = aTint; vSeed = aSeed;`);
+  s.fragmentShader = s.fragmentShader.replace("#include <common>", `#include <common>
+      uniform sampler2D uSky; uniform vec3 uSunG; varying vec3 vGW; varying vec3 vGN; varying vec3 vTint; varying float vSeed; varying vec3 vGL;
+      float hg(vec2 p){ return fract(sin(dot(p, vec2(41.3, 289.1))) * 14375.5); }
+      vec3 skyG(vec3 r){ if (r.y < 0.0) return mix(vec3(0.42, 0.38, 0.32), vec3(0.75, 0.7, 0.62), smoothstep(-0.25, 0.0, r.y)); return texture2D(uSky, vec2(atan(r.z, r.x) / 6.2831853 + 0.5, asin(clamp(r.y, -1.0, 1.0)) / 3.14159265 + 0.5)).rgb; }`)
+    .replace("#include <dithering_fragment>", `#include <dithering_fragment>
+      { vec3 N = normalize(vGN); if (abs(N.y) < 0.5) {
+          vec3 Vd = normalize(cameraPosition - vGW); float dist = length(cameraPosition - vGW);
+          float u = abs(N.x) > abs(N.z) ? vGL.z : vGL.x; if (abs(N.x) > 0.2 && abs(N.z) > 0.2) u = atan(vGL.z, vGL.x) * 20.0;
+          float fh = 3.6, fy = fract(vGW.y / fh), fx = fract(u / 1.5); float far = smoothstep(400.0, 1600.0, dist);
+          float fin = (step(fx, 0.07) + step(0.93, fx)) * (1.0 - far), spand = step(fy, 0.16) * (1.0 - far * 0.7);
+          vec3 R = reflect(-Vd, N); vec3 env = skyG(R); float F = 0.08 + 0.92 * pow(1.0 - max(dot(N, Vd), 0.0), 5.0);
+          float pane = hg(vec2(floor(vGW.y / fh), floor(u / 1.5)) + vSeed * 31.0);
+          vec3 inside = vec3(0.04, 0.05, 0.06) * (0.6 + 0.8 * pane);
+          vec3 glass = inside + env * vTint * mix(0.45, 1.0, F) * (0.92 + 0.12 * pane) + vec3(1.0, 0.85, 0.6) * pow(max(dot(R, uSunG), 0.0), 300.0) * 5.0;
+          vec3 frame = vTint * 0.5 + 0.25 * env;
+          vec3 c = mix(glass, frame, max(fin * 0.8, spand * 0.65));
+          if (vGW.y < 12.0) c = mix(c, vec3(0.62, 0.58, 0.52) * (0.5 + 0.5 * max(dot(N, uSunG), 0.0)), 0.8);   // podium stone
+          gl_FragColor.rgb = mix(c, fogColor, fogDepthMix(dist)); } }`)
+    .replace("#include <fog_fragment>", "#include <fog_fragment>");
+  s.fragmentShader = s.fragmentShader.replace("uniform sampler2D uSky;", "float fogDepthMix(float d){ return 1.0 - exp(-pow(d * " + FOG.d.toFixed(6) + ", 2.0)); }\nuniform sampler2D uSky;"); };
+glassMat.customProgramCacheKey = () => "dubai-glass";
+const TOWERS = [];   // [x, z, w, d, h, shape(0 box,1 round,2 stepped), tint r,g,b, seed, rot]
+{ H.reseed(41); const TINTS = [[0.62, 0.78, 0.95], [0.55, 0.82, 0.8], [0.82, 0.86, 0.9], [0.95, 0.8, 0.58], [0.7, 0.78, 0.86], [0.5, 0.66, 0.82]];
+  const add = (x, z, h) => { const tn = TINTS[Math.floor(H.rnd() * TINTS.length)], shp = H.rnd() < 0.18 ? 1 : H.rnd() < 0.3 ? 2 : 0, w = 28 + H.rnd() * 22, d = shp === 1 ? w : 26 + H.rnd() * 24;
+    if (TOWERS.some((T) => Math.hypot(T[0] - x, T[1] - z) < (T[2] + w) * 0.62)) return; TOWERS.push([x, z, w, d, h, shp, ...tn, H.rnd(), H.rnd() * 0.6 - 0.3]); };
+  for (let i = 0; i < 420; i++) { const a = H.rnd() * TAU, r = 380 + Math.pow(H.rnd(), 0.8) * 900; const x = Math.cos(a) * r, z = Math.sin(a) * r * 0.8 + 100; if (Math.hypot(x / 1.0, (z - 150) / 0.62) < 430 || (z > -680 && z < -560)) continue; add(x, z, 90 + Math.pow(H.rnd(), 1.5) * 240 * Math.exp(-(r - 380) / 900)); }
+  for (let x = -3200; x < 2400; x += 55 + H.rnd() * 40) for (const s of [-1, 1]) if (H.rnd() < 0.85) add(x, -620 + s * (70 + H.rnd() * 60), 110 + Math.pow(H.rnd(), 1.3) * 230);   // Sheikh Zayed Road
+  for (let i = 0; i < 160; i++) add(900 + H.rnd() * 1100, -350 + H.rnd() * 650, 90 + Math.pow(H.rnd(), 1.4) * 180);                                                      // Business Bay
+  const box = new THREE.BoxGeometry(1, 1, 1); box.translate(0, 0.5, 0); const cylG = new THREE.CylinderGeometry(0.5, 0.5, 1, 32); cylG.translate(0, 0.5, 0);
+  const sets = [[0, box], [1, cylG], [2, box]];
+  for (const [shp, g0] of sets) { const L = TOWERS.filter((T) => T[5] === shp); const g = g0.clone(); const n = L.length * (shp === 2 ? 2 : 1); const im = new THREE.InstancedMesh(g, glassMat, n);
+    const tint = new Float32Array(n * 3), seed = new Float32Array(n), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(); let k = 0;
+    for (const [x, z, w, d, h, , r, gg, b, sd, rot] of L) { q.setFromAxisAngle(V(0, 1, 0), rot);
+      if (shp === 2) { m4.compose(V(x, 0, z), q, V(w, h * 0.72, d)); im.setMatrixAt(k, m4); tint.set([r, gg, b], k * 3); seed[k++] = sd; m4.compose(V(x, h * 0.72, z), q, V(w * 0.7, h * 0.28, d * 0.7)); im.setMatrixAt(k, m4); tint.set([r, gg, b], k * 3); seed[k++] = sd; }
+      else { m4.compose(V(x, 0, z), q, V(w, h, d)); im.setMatrixAt(k, m4); tint.set([r, gg, b], k * 3); seed[k++] = sd; } }
+    g.setAttribute("aTint", new THREE.InstancedBufferAttribute(tint, 3)); g.setAttribute("aSeed", new THREE.InstancedBufferAttribute(seed, 1)); im.castShadow = im.receiveShadow = true; im.frustumCulled = false; CITY.add(im); }
+  // crowns: thin lit spires on some of the tallest
+  const tall = TOWERS.filter((T) => T[4] > 220); const sp = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.4, 1.4, 1, 8), metal(0xc9ced4, 0.3), tall.length); const m4 = new THREE.Matrix4();
+  tall.forEach((T, i) => { const hh = 20 + T[9] * 30; m4.makeScale(1, hh, 1).setPosition(T[0], T[4] * (T[5] === 2 ? 1 : 1) + hh / 2, T[1]); sp.setMatrixAt(i, m4); }); CITY.add(sp); }
+// Sheikh Zayed Road traffic (12 lanes) and the Dubai Fountain jets in the lake
+const CARS = new THREE.InstancedMesh(new RoundedBoxGeometry(1.9, 1.4, 4.6, 2, 0.35), new THREE.MeshStandardMaterial({ roughness: 0.3, metalness: 0.6 }), 600); CARS.frustumCulled = false; CITY.add(CARS);
+{ const c = new THREE.Color(); for (let i = 0; i < 600; i++) CARS.setColorAt(i, c.setHSL(hash(i), 0.2 + hash(i + 1) * 0.3, 0.2 + hash(i + 2) * 0.6)); }
+function traffic(t) { const m4 = new THREE.Matrix4(), q = new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), Math.PI / 2); for (let i = 0; i < 600; i++) { const dir = i % 2 ? 1 : -1, lane = (i % 12) >> 1, sp = 22 + hash(i) * 8;
+  const x = ((hash(i + 4) * 6000 + dir * sp * t) % 6000 + 6000) % 6000 - 3600; m4.compose(V(x, 0.7, -620 + dir * (4 + lane * 3.4)), q, V(1, 1, 1)); CARS.setMatrixAt(i, m4); } CARS.instanceMatrix.needsUpdate = true; }
+const JETS = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 8, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.4, 1.45, 1.5), transparent: true, opacity: 0.55, depthWrite: false, toneMapped: false }), 2400); JETS.frustumCulled = false; CITY.add(JETS);
+function fountain(t, k) { JETS.visible = k > 0; if (!k) return; const m4 = new THREE.Matrix4(); for (let i = 0; i < 2400; i++) { const j = i % 60, p = ((i / 60) | 0) / 40; const a = (j / 59 - 0.5) * 2.2; const bx = Math.sin(a) * 250, bz = 150 + Math.cos(a) * 120 - 120;
+  const hgt = (40 + 60 * (0.5 + 0.5 * Math.sin(t * 1.3 + j * 0.4))) * k; const ph = (p + t * 0.6) % 1; const y = hgt * 4 * ph * (1 - ph), sway = Math.sin(t * 0.8 + j * 0.3) * 6 * ph;
+  const s = (1.6 + 2.2 * ph) * k; m4.makeScale(s, s * 1.6, s).setPosition(bx + sway, y, bz); JETS.setMatrixAt(i, m4); } JETS.instanceMatrix.needsUpdate = true; }
+
 // low desert dunes far out
 { const g = new THREE.BufferGeometry(), A = 256, Rr = 8, pos = [], idx = [];
   for (let j = 0; j <= Rr; j++) for (let i = 0; i <= A; i++) { const a = i / A * TAU, r = 5200 + j / Rr * 9000; const n = Math.sin(a * 7 + j) * 0.4 + Math.sin(a * 19 - j * 2) * 0.25 + 0.5;
@@ -105,43 +166,63 @@ const cyl = sh(new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 26, 48), new 
 cyl.geometry.translate(0, 13, 0); LAB.add(cyl);
 const mini = new THREE.Mesh(burjGeo, new THREE.MeshPhysicalMaterial({ color: 0xc7d2dc, metalness: 0.7, roughness: 0.25, clearcoat: 0.6 })); mini.scale.setScalar(MS); mini.castShadow = true; LAB.add(mini);
 const miniSp = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.37, (TIP - TOPC) * MS, 12), metal(0xb9c0c6, 0.3)); miniSp.position.y = (TOPC + (TIP - TOPC) / 2) * MS; LAB.add(miniSp);
-const smokeU = (seed, chaotic) => ({ uT: { value: 0 }, uU: { value: 6.0 }, uD: { value: 4.4 }, uK: { value: 1 }, uChaos: { value: chaotic }, uSeed: { value: seed }, uCol: { value: new THREE.Color(chaotic ? 0x7dffc0 : 0xff8a5c) } });
-const SMOKE_FS = `uniform float uT, uU, uD, uK, uChaos, uSeed; uniform vec3 uCol; varying vec2 vP;
-  float h(float n){ return fract(sin(n * 91.7 + uSeed * 13.1) * 43758.5453); }
-  void main(){
-    vec2 p = vP; float dens = 0.0, swirl = 0.0;
-    // the incoming streaklines, split round the body
-    float lane = abs(fract(p.y / 2.2 + 0.5) - 0.5);
-    float up = step(p.x, 0.0) * smoothstep(0.05, 0.0, lane) * smoothstep(-60.0, -6.0, p.x) * 0.35;
-    float T = uD / (0.2 * uU), hT = T * 0.5;               // Strouhal: one vortex every half period, alternating sides
-    for (int i = 0; i < 18; i++) {
-      float fi = float(i);
-      float jitter = uChaos * (h(fi + floor(uT / hT)) - 0.5);
-      float tb = (floor(uT / hT) - fi) * hT + jitter * hT;    // when it was shed
-      float age = uT - tb; if (age < 0.0) continue;
-      float side = mod(floor(uT / hT) - fi, 2.0) * 2.0 - 1.0;
-      if (uChaos > 0.5) side = (h(fi * 3.1 + floor(uT / hT)) - 0.5) * 2.0;
-      vec2 c = vec2(uD * 0.6 + 0.85 * uU * age, side * uD * 0.42 * (1.0 + 0.15 * age) * mix(1.0, 0.6, uChaos));
-      if (uChaos > 0.5) { c.y = (h(fi * 7.3 + floor(uT / hT)) - 0.5) * uD * 1.6 * (1.0 + 0.2 * age); c.x += (h(fi * 2.9 + floor(uT / hT)) - 0.5) * uD * 2.0; }
-      float str = mix(1.0, 0.25 + 0.35 * h(fi + 7.0 + floor(uT / hT)), uChaos);
-      vec2 d = p - c; float r = length(d), a = atan(d.y, d.x), rad = uD * (0.45 + 0.07 * age) * mix(1.0, 0.6, uChaos);
-      float core = exp(-r * r / (rad * rad * 0.18));
-      float sp = a * side + log(max(r, 0.05)) * 3.2 - uT * side * 1.6;
-      float arm = pow(0.5 + 0.5 * cos(sp * 2.0), 8.0) * exp(-r * r / (rad * rad * 2.2)) * mix(1.0, 0.35 + 0.65 * h(fi * 5.1 + floor(uT * 3.0)), uChaos);
-      dens += (core * 0.45 + arm * 0.85) * str * exp(-age * 0.05);
-    }
-    // the wake right behind the body
-    dens += exp(-pow(p.y / (uD * 0.5), 2.0)) * smoothstep(uD * 0.4, uD * 1.2, p.x) * smoothstep(uD * 6.0, uD * 1.5, p.x) * 0.5;
-    dens = dens * step(-uD * 0.5, p.x) + up;
-    float body = 1.0 - smoothstep(uD * 0.48, uD * 0.52, length(p));
-    gl_FragColor = vec4(uCol * dens * uK * (1.0 - body) * 0.95, 1.0);
-  }`;
-function smokePlane(seed, chaotic, y) { const U = smokeU(seed, chaotic);
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(140, 46), new THREE.ShaderMaterial({ uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
-    vertexShader: `varying vec2 vP; void main(){ vP = position.xy + vec2(50.0, 0.0); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`, fragmentShader: SMOKE_FS }));
-  m.geometry.translate(50, 0, 0); m.rotation.x = -Math.PI / 2; m.position.y = y; return { m, U }; }
-const SMOKE_C = [smokePlane(2, 0, 14)];
-const SMOKE_B = [smokePlane(5, 1, 14)];
+// smoke: thousands of particles released from a rake of nozzles upstream and carried by the flow (potential flow round the
+// body + the shed vortices, Lamb–Oseen cores), lit by a green laser sheet at mid-height. Each frame integrates every
+// particle from its release time, so any frame renders on its own (the film renders in parallel).
+const smokeSprite = H.canvasTex(64, 64, (g, w) => { const r = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); r.addColorStop(0, "rgba(255,255,255,1)"); r.addColorStop(0.4, "rgba(255,255,255,0.45)"); r.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = r; g.fillRect(0, 0, w, w); });
+const SM_U = 6.0, SM_D = 4.4, SM_R = 2.2, SM_LIFE = 13, SM_N = 9000, SM_X0 = -34;
+const hs = (n) => { const x = Math.sin(n * 91.7 + 7.13) * 43758.5453; return x - Math.floor(x); };
+/** the shed vortices alive at time t: [x, z, Γ, core] — orderly street for the plain cylinder, incoherent for the Burj */
+function vortices(t, chaotic) { const T = SM_D / (0.2 * SM_U), hT = T / 2, out = []; const k0 = Math.floor(t / hT);
+  for (let i = 0; i < 16; i++) { const k = k0 - i; const tb = k * hT + (chaotic ? (hs(k * 1.7) - 0.5) * hT : 0), age = t - tb; if (age < 0) continue;
+    let side = (k & 1) ? 1 : -1, str = 1, x = SM_D * 0.7 + 0.85 * SM_U * age, z = side * SM_D * 0.4 * (1 + 0.12 * age);
+    if (chaotic) { side = hs(k * 3.1) < 0.5 ? -1 : 1; str = 0.22 + 0.3 * hs(k * 5.3); z = (hs(k * 7.3) - 0.5) * SM_D * 1.4; x += (hs(k * 2.9) - 0.5) * SM_D * 1.2; }
+    const gam = -side * 2.2 * SM_U * SM_D * 0.42 * str * Math.min(1, age / 0.6);
+    out.push([x, z, gam, 0.7 + 0.25 * age]); }
+  return out; }
+function velAt(x, z, V2, RB = SM_R) { const r2 = x * x + z * z, R2 = RB * RB; let u = SM_U, w = 0;
+  if (r2 > 0.01) { const r4 = r2 * r2; u -= SM_U * R2 * (x * x - z * z) / r4; w -= SM_U * R2 * 2 * x * z / r4; }
+  for (const [vx, vz, g, c] of V2) { const dx = x - vx, dz = z - vz, d2 = dx * dx + dz * dz + c * c; const f = g / (2 * Math.PI * d2); u += -dz * f; w += dx * f; }
+  if (r2 < R2 * 1.05) { const r = Math.sqrt(r2) || 1; u += (x / r) * 4; w += (z / r) * 4; }    // keep particles off the body
+  return [u, w]; }
+function makeSmoke(chaotic, y) {
+  const geo = new THREE.BufferGeometry(); const pos = new Float32Array(SM_N * 3), col = new Float32Array(SM_N * 3);
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  const m = new THREE.Points(geo, new THREE.PointsMaterial({ size: 2.4, map: smokeSprite, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true, fog: false }));
+  m.frustumCulled = false; m.position.y = y;
+  const U = { uT: { value: 0 } }; let last = -1;
+  const RB = chaotic ? SM_R * 0.55 : SM_R;
+  const update = () => { const t = U.uT.value; if (t === last) return; last = t; const dt = 0.07; const cache = new Map(); const fieldAt = (tt) => { const key = Math.round(tt / dt); if (!cache.has(key)) cache.set(key, vortices(key * dt, chaotic)); return cache.get(key); };
+    const base = chaotic ? new THREE.Color(0.55, 1.0, 0.7) : new THREE.Color(0.75, 1.0, 0.8);
+    for (let i = 0; i < SM_N; i++) { const lane = i % 22, ph = hs(i * 0.37 + chaotic) * SM_LIFE; const age = ((t + ph) % SM_LIFE); const t0 = t - age;
+      const shoulder = i % 10 < 7; let x = shoulder ? -0.6 + hs(i * 1.3) * 0.5 : SM_X0 + hs(i * 1.3) * 0.8, z = shoulder ? ((i % 2) ? 1 : -1) * (RB + 0.12 + hs(i * 3.3) * 0.25) : ((i % 8) - 3.5) * 3.2 + (hs(i) - 0.5) * 0.2; const steps = Math.floor(age / dt); const dif = (hs(i * 5.7) - 0.5) * 0.09, dif2 = (hs(i * 8.1) - 0.5) * 0.06;
+      for (let s = 0; s < steps; s++) { const tt = t0 + s * dt; const [u, w] = velAt(x, z, fieldAt(tt), RB); x += u * dt + dif2 * Math.sqrt(s * dt); z += w * dt + dif * Math.sqrt(s * dt) * (x > 0 ? 1.6 : 0.4); if (x > 70) break; }
+      const yv = (hs(i * 2.1) - 0.5) * 0.8 * (1 + age * 0.15);   // smoke thickens slowly off the sheet
+      pos[i * 3] = x; pos[i * 3 + 1] = yv; pos[i * 3 + 2] = -z;
+      const fade = (shoulder ? 1 : 0.35) * Math.min(1, age / 0.4) * Math.max(0, 1 - Math.max(0, (x - 40) / 30)) * (1 - Math.abs(yv) / 1.6) * (0.55 + 0.45 * hs(i * 4.7));
+      col[i * 3] = base.r * fade * 0.22; col[i * 3 + 1] = base.g * fade * 0.22; col[i * 3 + 2] = base.b * fade * 0.22; }
+    geo.attributes.position.needsUpdate = true; geo.attributes.color.needsUpdate = true; };
+  return { m, U, update }; }
+const SMOKE_C = [makeSmoke(0, 14)];
+const SMOKE_B = [makeSmoke(1, 14)];
+// the tunnel itself: steel walls with panel seams, a honeycomb flow straightener at the inlet, the fan at the outlet, the laser
+const steelT = H.canvasTex(512, 512, (g, w) => { g.fillStyle = "#1a1d21"; g.fillRect(0, 0, w, w); g.strokeStyle = "rgba(255,255,255,0.08)"; g.lineWidth = 3; for (let i = 0; i <= 4; i++) { g.strokeRect(i * 128, 0, 128, w); }
+  g.fillStyle = "rgba(255,255,255,0.12)"; for (let i = 0; i <= 4; i++) for (let j = 0; j < 16; j++) { g.beginPath(); g.arc(i * 128 + 6, j * 32 + 16, 2.2, 0, 7); g.fill(); g.beginPath(); g.arc(i * 128 + 122, j * 32 + 16, 2.2, 0, 7); g.fill(); } });
+steelT.wrapS = steelT.wrapT = THREE.RepeatWrapping; steelT.repeat.set(8, 2);
+const wallM = new THREE.MeshStandardMaterial({ map: steelT, roughness: 0.55, metalness: 0.6, color: 0x9aa2aa });
+for (const s of [-1, 1]) { const w = sh(new THREE.Mesh(new THREE.BoxGeometry(170, 36, 0.8), wallM), false, true); w.position.set(15, 18, s * 26); LAB.add(w); }
+const hex = H.canvasTex(512, 512, (g, w) => { g.fillStyle = "#06080a"; g.fillRect(0, 0, w, w); g.strokeStyle = "#8a9299"; g.lineWidth = 3; const r = 16;
+  for (let y = 0; y < w + r; y += r * 1.5) for (let x = 0; x < w + r; x += r * Math.sqrt(3)) { const ox = x + ((y / (r * 1.5)) % 2) * r * Math.sqrt(3) / 2; g.beginPath(); for (let k = 0; k <= 6; k++) { const a = k * Math.PI / 3 + Math.PI / 6; g.lineTo(ox + Math.cos(a) * r, y + Math.sin(a) * r); } g.stroke(); } });
+hex.wrapS = hex.wrapT = THREE.RepeatWrapping; hex.repeat.set(4, 3);
+const honey = new THREE.Mesh(new THREE.PlaneGeometry(52, 36), new THREE.MeshStandardMaterial({ map: hex, metalness: 0.7, roughness: 0.4, side: THREE.DoubleSide })); honey.rotation.y = Math.PI / 2; honey.position.set(-62, 18, 0); LAB.add(honey);
+const FAN = new THREE.Group(); FAN.position.set(98, 18, 0); FAN.rotation.y = Math.PI / 2; LAB.add(FAN);
+{ const duct = sh(new THREE.Mesh(new THREE.TorusGeometry(16, 1.2, 12, 64), metal(0x3a3f45, 0.4))); FAN.add(duct); const hub = sh(new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 3, 24), metal(0x2a2e33, 0.4))); hub.rotation.x = Math.PI / 2; FAN.add(hub);
+  for (let i = 0; i < 7; i++) { const b = sh(new THREE.Mesh(new THREE.BoxGeometry(2.6, 13, 0.4), metal(0x50565c, 0.35))); b.position.y = 8; const p = new THREE.Group(); p.add(b); p.rotation.z = i / 7 * TAU; b.rotation.y = 0.5; FAN.add(p); } }
+const laserSheet = new THREE.Mesh(new THREE.PlaneGeometry(150, 50), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.1, 0.5, 0.2), transparent: true, opacity: 0.05, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+laserSheet.rotation.x = -Math.PI / 2; laserSheet.position.set(10, 14, 0); LAB.add(laserSheet);
+const laserBox = sh(new THREE.Mesh(new RoundedBoxGeometry(3, 2, 2, 2, 0.3), metal(0x22262a, 0.4))); laserBox.position.set(-20, 14, -25); LAB.add(laserBox);
+const laserDot = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 8), glow(0x3dff8c, 4)); laserDot.position.set(-20, 14, -23.9); LAB.add(laserDot);
+const rake = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 27), metal(0x6a7076, 0.3)); rake.position.set(SM_X0 - 0.5, 14, 0); LAB.add(rake);
 const CYLG = new THREE.Group(), BURG = new THREE.Group(); LAB.add(CYLG, BURG);
 CYLG.add(cyl); SMOKE_C.forEach((s) => CYLG.add(s.m)); BURG.add(mini, miniSp); SMOKE_B.forEach((s) => BURG.add(s.m));
 const labKey = new THREE.DirectionalLight(0xffffff, 1.6); labKey.position.set(20, 60, 40); LAB.add(labKey, labKey.target);
@@ -163,5 +244,9 @@ function drawLap(g, st) { if (IMG.lshare) g.drawImage(IMG.lshare, 0, 0, 1440, 90
     for (let i = 0; i < 12; i++) { const k = clamp(st.up * 12 - i); g.fillStyle = k >= 1 ? green : "rgba(255,255,255,.12)"; rr(g, 96 + i * 58, 782, 50, 46, 8); g.fill(); if (k > 0 && k < 1) { g.fillStyle = green; rr(g, 96 + i * 58, 782, 50 * k, 46, 8); g.fill(); } }
     if (st.pause) { g.fillStyle = "#ff8a3d"; g.font = "700 30px M"; g.fillText("SIGNAL LOST · WAITING", 520, 752); } else if (st.up > 0 && st.up < 1) { g.fillStyle = green; g.font = "700 30px M"; g.fillText(`${Math.round(st.up * 100)}%  ·  3 AT ONCE`, 560, 752); } } }
 function drawPhone(g, st) { if (IMG.pobj) g.drawImage(IMG.pobj, 0, 0, 780, 1688); else { g.fillStyle = "#0b0d10"; g.fillRect(0, 0, 780, 1688); }
-  if (st.land < 1) { g.fillStyle = `rgba(0,0,0,${1 - st.land})`; g.fillRect(0, 0, 780, 1688); }
+  if (st.land > 0) { g.fillStyle = "#0b0d10"; g.fillRect(60, 560, 660, 120); g.fillStyle = "rgba(14,18,22,.96)"; g.strokeStyle = green; g.lineWidth = 3; rr(g, 60, 560, 660, 380, 40); g.fill(); g.stroke();
+    g.fillStyle = "#1c2a22"; rr(g, 100, 600, 150, 150, 26); g.fill(); g.fillStyle = green; g.font = "800 56px D"; g.fillText("▶", 150, 698);
+    g.fillStyle = "#fff"; g.font = "800 40px D"; g.fillText("dubai-skyline.mov", 280, 660); g.fillStyle = "#9aa6b2"; g.font = "600 30px M"; g.fillText("20 GB · video", 280, 710);
+    g.fillStyle = "rgba(255,255,255,.12)"; rr(g, 100, 790, 580, 26, 13); g.fill(); g.fillStyle = green; rr(g, 100, 790, 580 * Math.min(1, st.land), 26, 13); g.fill();
+    g.font = "800 40px D"; g.fillText(st.land >= 1 ? "✓ RECEIVED" : `RECEIVING ${Math.round(st.land * 100)}%`, 100, 890); }
   if (st.wifi) { g.fillStyle = "rgba(8,10,14,.85)"; rr(g, 140, 120, 500, 90, 45); g.fill(); g.fillStyle = st.wifi === "off" ? "#ff5a4a" : green; g.font = "700 34px M"; g.fillText(st.wifi === "off" ? "NO SIGNAL" : "BACK ONLINE", 230, 178); } }

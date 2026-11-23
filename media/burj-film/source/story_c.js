@@ -37,6 +37,7 @@ function lab(t, both) {
   scene.background = new THREE.Color(0x07080a); H.key.intensity = 0.6; H.hemi.intensity = 0.3; H.bloom.strength = 0.5;
   for (const s of [...SMOKE_C, ...SMOKE_B]) s.U.uT.value = t;
   CYLG.position.set(0, 0, both ? -15 : 0); BURG.position.set(0, 0, 15); BURG.visible = both;
+  SMOKE_C.forEach((s) => s.update()); if (both) SMOKE_B.forEach((s) => s.update());
   const T = 4.4 / (0.2 * 6.0);                                   // shedding period of the plain cylinder (s)
   return T;
 }
@@ -48,10 +49,11 @@ const LP = (x, y, z) => LAB.position.clone().add(V(x, y, z));
 // THE FILM
 // =====================================================================================================================
 H.frame("Big files, no weak point", async (t) => {
+  H.cam.up.set(0, 1, 0);
   dayLook(); camRange(1, 70000); sky.visible = true; CITY.visible = true; burj.visible = true; burjShadow.visible = true; for (const o of SWAYERS) o.visible = true;
   LAB.visible = false; XR.visible = false; FND.visible = false; OR.visible = false; streaks.visible = false; scene.background = null; H.zoom = 1; H.bloom.strength = 0.3;
   BU.uX.value = 0; BU.uHiK.value = 0; setSway(0); burj.material.depthWrite = true; ground.visible = true; cityFloor.visible = true;
-  gulf.material.uniforms.time.value = t * 0.6; lake.material.uniforms.time.value = t * 0.4; keyShadow(V(0, 200, 0), 500);
+  gulf.material.uniforms.time.value = t * 0.6; lake.material.uniforms.time.value = t * 0.4; keyShadow(V(0, 200, 0), 500); traffic(t); fountain(t, 0); skyU.uT.value = t;
   const swayNow = (amp) => setSway(amp * Math.sin(t * TAU / 9.6));
 
   if (t < at("tower")) { // HOOK: over the desert toward the tower, then straight down onto its Y plan → a flower
@@ -61,7 +63,7 @@ H.frame("Big files, no weak point", async (t) => {
       hudShow("flower", win(t, cutA + 0.5, at("tower"), 0.5, 0.3), { transform: `rotate(${(t - cutA) * 4}deg)` }); hudShow("flowerT", win(t, cutA + 0.6, at("tower"), 0.5, 0.3)); }
   } else if (t < at("enemy")) { // the tower: rise up the facade to the tip; the stats
     const k = prog(t, at("tower"), at("enemy"));
-    move(t, at("tower"), at("enemy"), [orb(0.6, 640, 230), V(0, 220, 0), 34], [orb(1.3, 760, 780), V(0, 640, 0), 34], 0.4);
+    fountain(t, 1); move(t, at("tower"), at("enemy"), [orb(0.6, 640, 230), V(0, 220, 0), 34], [orb(1.3, 760, 780), V(0, 640, 0), 34], 0.4);
     callout("h828", t, fr("tower", 0.25), at("enemy"), V(0, TIP, 0), 760, 360);
     hudShow("stats", win(t, fr("tower", 0.3), at("enemy"), 0.4, 0.3));
     if (k > 0.7) title(t, fr("tower", 0.7), at("enemy") + 0.1, "Burj Khalifa", "828 m", 150);
@@ -122,7 +124,7 @@ H.frame("Big files, no weak point", async (t) => {
     move(t, at("spire"), at("orbi"), [V(70, 640, 110), V(0, 700, 0), 34], [V(55, 700, 80), V(0, 760, 0), 32], 0.5);
     callout("spire", t, fr("spire", 0.15), at("orbi"), V(BU.uSway.value.x * 0.6, 700, 0), 300, 1180); callout("h828", t, fr("spire", 0.45), at("orbi"), V(BU.uSway.value.x, TIP, 0), 760, 300);
   } else { // ORBI: a hotel window over Dubai; the big file goes in parts, pauses with the signal, resumes
-    OR.visible = true; camRange(0.05, 70000); keyShadow(OR.position.clone(), 6); H.envK.value = 0.6; orbiL.intensity = 4;
+    OR.visible = true; camRange(0.05, 70000); keyShadow(OR.position.clone(), 6); H.envK.value = 0.6; orbiL.intensity = 0.5;
     const L = OR.position; OR.updateMatrixWorld(); const OW = (x, y, z) => OR.localToWorld(V(x, y, z));
     const up = t < at("orbi2") ? 0 : t < fr("orbi3", 0.15) ? 0.62 * prog(t, at("orbi2"), fr("orbi3", 0.15)) : t < fr("orbi3", 0.55) ? 0.62 : lerp(0.62, 1, prog(t, fr("orbi3", 0.55), at("end")));
     const pause = t > fr("orbi3", 0.15) && t < fr("orbi3", 0.55);
@@ -135,8 +137,9 @@ H.frame("Big files, no weak point", async (t) => {
     if (t < at("orbi2")) move(t, at("orbi"), at("orbi2"), [OW(0.4, 2.0, 9), OW(0.4, 1.2, 0), 36], [OW(0.3, 1.8, 7.2), OW(0.4, 1.0, 0), 36], 0.3);
     else if (t < at("orbi3")) { move(t, at("orbi2"), at("orbi3"), [OW(-0.6, 3.2, 4.8), OW(0.4, 0.6, 0.3), 34], [OW(-0.2, 3.0, 4.4), OW(0.6, 0.6, 0.4), 34], 0.2);
       callout("parts", t, fr("orbi2", 0.2), at("orbi3"), OR.localToWorld(PARTS[1].position.clone()), 760, 560); }
-    else { move(t, at("orbi3"), at("end"), [OW(2.0, 1.6, 3.4), OW(2.0, 0.3, 0.5), 34], [OW(1.8, 1.5, 3.0), OW(2.0, 0.3, 0.5), 34], 0.2);
-      hudShow("chips", win(t, fr("orbi3", 0.6), at("end"))); }
+    else { const pn = V(0, 0, 1).applyEuler(ph.g.rotation), pc = ph.g.position.clone(), up2 = V(0, 1, 0).applyEuler(ph.g.rotation);
+      move(t, at("orbi3"), at("end"), [OW(...pc.clone().addScaledVector(pn, 3.3).toArray()), OW(...pc.toArray()), 34], [OW(...pc.clone().addScaledVector(pn, 3.0).toArray()), OW(...pc.toArray()), 34], 0.03);
+      H.cam.up.copy(up2.transformDirection(OR.matrixWorld)); H.cam.lookAt(OW(...pc.toArray())); hudShow("chips", win(t, fr("orbi3", 0.6), at("end"))); }
   }
 });
 await H.ready();

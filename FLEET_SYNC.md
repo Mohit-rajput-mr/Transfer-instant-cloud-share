@@ -19,6 +19,16 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-23 · DEFECT (fix brief `media/BRIEF_LANDMARKS_FIX.md`: landmark films below quality): cause = landmarks/cities built from
+  primitives and never compared with photos; flat foggy skies; diagrams as clip-art. FIX (eiffel-film, before shipping): Paris rebuilt
+  as a procedural Haussmann city (Voronoi blocks cut by radiating boulevards, ≈25k buildings, facade + zinc-mansard shaders, chimneys,
+  courtyards, Trocadéro, École Militaire, boats), procedural clouds + thinner blue-grey fog, the rivet redone as a true-scale gusset
+  joint 150 m up the tower (no glowing blob), tower colour gradient + floor friezes, Orbi on a rooftop with a readable phone close-up,
+  counters reach the sourced value fast (no "2.1 million" mid-count frames), one temperature range everywhere (+32/−10 °C → 15 cm).
+  Reference photos: Wikimedia Commons (needs hosts commons/upload/thumb.wikimedia.org + a descriptive User-Agent, else HTTP 429)
+  → `source/ref/` + credits.json. Burj (already sent) still needs the same pass. Format rule (owner): 9:16 ONLY, no landscape.
+  Also found: the brief's Orbi line for Pisa listed "5, 10, 15, 20 or 30 minutes"; the site offers 5/10/15/20/25/30 (Panels.tsx LIVES) —
+  the film uses the real list. Golden Gate's Orbi feature changed from "parts" (Burj already used it) to folders-as-one-bundle (bundle.ts).
 - 2026-11-22 · DEFECT (owner: "each file line attached does not look structured"): files wired to a task panel on the map were put down
   at random spots on rings around the panel (lib/map.ts `place`), so cables from different tasks crossed and a task's files ended up on
   any side. FIX: files carry the row of the task they're wired to (`Thing.row`, set in Void.tsx); `place` lays them out per panel as

@@ -1,0 +1,104 @@
+[
+ {
+  "key": "hook",
+  "text": "Do you know each of the Golden Gate Bridge's two main cables is made of twenty-seven thousand, five hundred and seventy-two steel wires?",
+  "emo": 1.1,
+  "gap": 0.5
+ },
+ {
+  "key": "bridge",
+  "text": "Its towers rise two hundred and twenty-seven metres above the water. And twelve hundred and eighty metres of road hang between them.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "hang",
+  "text": "Because the road doesn't rest on the towers. It hangs.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "load",
+  "text": "A truck pushes down on the deck. The deck hangs from vertical steel ropes. And the ropes hang from the two main cables.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "towers",
+  "text": "The cables run over the tops of the towers. And the towers only push straight down, into the sea floor.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "anchor",
+  "text": "At each end, the cables dive into concrete anchorages. Each one weighs sixty thousand tons.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "cable",
+  "text": "Now look inside one cable. It's ninety-two centimetres thick.",
+  "emo": 1.0,
+  "gap": 0.4
+ },
+ {
+  "key": "strands",
+  "text": "It's made of sixty-one bundles.",
+  "emo": 1.0,
+  "gap": 0.4
+ },
+ {
+  "key": "wires",
+  "text": "And those are made of twenty-seven thousand, five hundred and seventy-two wires, each about five millimetres thick.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "spin",
+  "text": "They were spun across the strait, one wire at a time, then squeezed together into a perfect circle.",
+  "emo": 1.0,
+  "gap": 0.5
+ },
+ {
+  "key": "move",
+  "text": "And the whole road moves. Heat stretches the cables, and the middle of the deck sinks. Cold shortens them, and it rises.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "range",
+  "text": "It was built to move more than three metres down, and almost two metres up.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "orange",
+  "text": "Its colour began as a primer. The architect kept it, partly because it stands out in the fog.",
+  "emo": 1.0,
+  "gap": 0.5
+ },
+ {
+  "key": "orbi",
+  "text": "Thousands of wires, bundled into one cable. Orbi Transfer does the same with your folders.",
+  "emo": 1.0,
+  "gap": 0.4
+ },
+ {
+  "key": "orbi2",
+  "text": "Drop in a whole folder, hundreds of files, and it travels as one bundle, up to twenty gigabytes.",
+  "emo": 1.0,
+  "gap": 0.4
+ },
+ {
+  "key": "orbi3",
+  "text": "On the other side, it unpacks back into a folder. No app, no login.",
+  "emo": 1.05,
+  "gap": 0.4
+ },
+ {
+  "key": "end",
+  "text": "Orbi Transfer dot com.",
+  "emo": 1.0,
+  "gap": 0.6
+ }
+]

@@ -19,15 +19,21 @@ function camRange(near, far) { if (H.cam.near !== near || H.cam.far !== far) { H
 // ---------- sky (Poly Haven "Qwantani late afternoon", CC0): its sun is at u 0.607, 20° up → the scene's sun ----------
 const SUN = (() => { const a = (0.6074 - 0.5) * TAU, el = THREE.MathUtils.degToRad(20); return V(Math.cos(a) * Math.cos(el), Math.sin(el), Math.sin(a) * Math.cos(el)).normalize(); })();
 H.key.color.set(0xffe0b8); H.hemi.color.set(0xc9d8ea); H.hemi.groundColor.set(0x7a6448);
-const FOG = { c: new THREE.Color(0xc9c2b4), d: 0.00011 };
+const FOG = { c: new THREE.Color(0xc8c0b0), d: 0.00007 };
 scene.fog = new THREE.FogExp2(FOG.c.getHex(), FOG.d);
 const skyTex = tex("kit/ph/qwantani_late_afternoon_puresky/sky_4k.jpg", true); skyTex.wrapS = THREE.RepeatWrapping; skyTex.repeat.set(1, 1);
-const skyU = { uSky: { value: skyTex }, uSun: { value: SUN }, uWarm: { value: 0.35 } };
+const skyU = { uSky: { value: skyTex }, uSun: { value: SUN }, uWarm: { value: 0.35 }, uT: { value: 0 } };
 const sky = new THREE.Mesh(new THREE.SphereGeometry(30000, 64, 32), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false, uniforms: skyU,
   vertexShader: `varying vec3 vD; void main(){ vD = normalize(position); vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }`,
-  fragmentShader: `uniform sampler2D uSky; uniform vec3 uSun; uniform float uWarm; varying vec3 vD;
+  fragmentShader: `uniform sampler2D uSky; uniform vec3 uSun; uniform float uWarm, uT; varying vec3 vD;
+    float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f); return mix(mix(h(i), h(i+vec2(1,0)), f.x), mix(h(i+vec2(0,1)), h(i+vec2(1,1)), f.x), f.y); }
+    float fbm(vec2 p){ float v = 0.0, a = 0.5; for (int i = 0; i < 6; i++){ v += a * n(p); p = p * 2.03 + vec2(1.7, 9.2); a *= 0.5; } return v; }
     void main(){ vec3 d = normalize(vD); vec2 uv = vec2(atan(d.z, d.x) / 6.2831853 + 0.5, asin(clamp(d.y, -1.0, 1.0)) / 3.14159265 + 0.5);
       vec3 c = texture2D(uSky, uv).rgb; if (d.y < 0.0) c = vec3(0.78, 0.72, 0.62);
+      if (d.y > 0.0) { vec2 q = d.xz / (d.y + 0.1) * 1.3 + vec2(uT * 0.006, uT * 0.002); float w = fbm(q * 0.8); float cl = fbm(q + w * 1.3);
+        float cov = smoothstep(0.62, 0.84, cl) * smoothstep(0.02, 0.22, d.y); float sh = smoothstep(0.55, 0.85, fbm(q + w * 1.3 + uSun.xz * 0.08));
+        float sd = max(dot(d, uSun), 0.0); vec3 cc = mix(vec3(1.0, 0.9, 0.76), vec3(0.74, 0.7, 0.68), sh * 0.6) * (0.9 + 0.4 * pow(sd, 6.0)); c = mix(c, cc, cov * 0.75); }
       c *= mix(vec3(1.0), vec3(1.12, 0.98, 0.82), uWarm * (1.0 - smoothstep(0.0, 0.5, d.y)));   // desert dust warms the low sky
       c += vec3(1.0, 0.82, 0.55) * pow(max(dot(d, uSun), 0.0), 1400.0) * 4.0;
       gl_FragColor = vec4(c, 1.0); }` }));

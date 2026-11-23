@@ -1,0 +1,114 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know the Eiffel Tower is taller in summer?",
+   "dur": 3.043,
+   "at": 0.35
+  },
+  {
+   "key": "tower",
+   "text": "This is the Eiffel Tower. Seven thousand three hundred tonnes of iron, standing over three hundred metres above Paris.",
+   "dur": 7.117,
+   "at": 4.14
+  },
+  {
+   "key": "iron",
+   "text": "It's built from puddled iron, an early kind of wrought iron. And like every metal, it grows when it gets warm.",
+   "dur": 6.115,
+   "at": 11.96
+  },
+  {
+   "key": "summer",
+   "text": "Iron stretches about twelve millionths of its length for every degree. Over three hundred metres, a hot summer day can make the tower about fifteen centimetres taller.",
+   "dur": 10.445,
+   "at": 18.77
+  },
+  {
+   "key": "winter",
+   "text": "On a freezing winter night, it shrinks back down.",
+   "dur": 3.299,
+   "at": 29.92
+  },
+  {
+   "key": "sun",
+   "text": "But the sun never heats it evenly. It shines on one side, and that side grows more than the side in the shade.",
+   "dur": 6.712,
+   "at": 33.92
+  },
+  {
+   "key": "lean",
+   "text": "So the top bends away from the sun. By up to eighteen centimetres.",
+   "dur": 3.704,
+   "at": 41.33
+  },
+  {
+   "key": "loop",
+   "text": "And as the sun crosses the sky, the top follows it, drawing a slow curve through the air. Every single day.",
+   "dur": 7.608,
+   "at": 45.73
+  },
+  {
+   "key": "parts",
+   "text": "To build it, Gustave Eiffel's team made eighteen thousand and thirty-eight iron parts.",
+   "dur": 5.351,
+   "at": 54.09
+  },
+  {
+   "key": "rivets",
+   "text": "And joined them with two and a half million rivets.",
+   "dur": 3.405,
+   "at": 60.09
+  },
+  {
+   "key": "hot",
+   "text": "Each rivet was heated until it glowed red, pushed through the holes, and hammered flat.",
+   "dur": 5.155,
+   "at": 64.2
+  },
+  {
+   "key": "cool",
+   "text": "As it cooled, it shrank, and pulled the plates together tighter than a bolt ever could.",
+   "dur": 5.283,
+   "at": 70.05
+  },
+  {
+   "key": "wind",
+   "text": "And all that open lattice lets the wind pass straight through. In a storm, the top sways only about nine centimetres.",
+   "dur": 7.011,
+   "at": 76.04
+  },
+  {
+   "key": "curve",
+   "text": "Eiffel said his biggest worry was the wind. So the curve of the four legs comes straight from his wind calculations.",
+   "dur": 6.157,
+   "at": 83.8
+  },
+  {
+   "key": "orbi",
+   "text": "It adapts to the conditions. So does Orbi Transfer.",
+   "dur": 3.853,
+   "at": 90.7
+  },
+  {
+   "key": "orbi2",
+   "text": "It tries the direct path between your two devices first.",
+   "dur": 4.067,
+   "at": 95.21
+  },
+  {
+   "key": "orbi3",
+   "text": "And when it can't, it uses an encrypted copy in the cloud. Locked before it ever leaves your device.",
+   "dur": 5.927,
+   "at": 99.92
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com.",
+   "dur": 1.975,
+   "at": 106.5
+  }
+ ],
+ "duration": 110.88
+}
