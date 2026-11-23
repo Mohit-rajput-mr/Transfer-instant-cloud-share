@@ -1,5 +1,8 @@
 # FIX BRIEF — Burj Khalifa + Eiffel Tower films are NOT at the required quality. Redo the visuals before handing them over.
 
+## FORMAT (owner 2026-11-22, repeated 2026-11-23 — wins over everything below): 9:16 vertical (TikTok size, 1080×1920) ONLY.
+No 16:9 / landscape renders or contact sheets, for these films or any future film. Where this brief says "BOTH 9:16 and 16:9", do 9:16 only.
+
 The owner reviewed contact sheets of `burj-film` and `eiffel-film` and rejected them: the landmarks don't look like the
 real buildings, the cities are grey boxes, the skies are flat white fog, and several shots are primitives or flat 2D
 graphics. This breaks the hard rule in `CLAUDE.md` (HIGH END ONLY) and `media/BRIEF_LANDMARKS.md` §2. Do NOT send the
@@ -88,12 +91,12 @@ Pick the best available path, in this order:
 ## 4. Checks before you hand anything to the owner (all must pass)
 1. **Side-by-side test:** for every hero shot, put your frame next to its reference photo (one PNG per pair in
    `media/<film>/source/check/`). A stranger must recognise the landmark and the city instantly. If not, fix and repeat.
-2. **Contact sheets** of every section in BOTH 9:16 and 16:9 (`kit/preview.py`, `AR=land`): no empty or near-blank
+2. **Contact sheets** of every section in 9:16 only (`kit/preview.py`): no empty or near-blank
    frames, no white-wall fog, no primitive stand-ins, no overlapping HUD/subtitles, readable screens.
 3. **Lighting:** a visible sun or a clear key light in every outdoor shot; the brightest pixels never clip across more
    than a small area (check a histogram); the darkest shots still show detail.
 4. **Facts:** every number on screen matches the README sources ("16,192 iron parts" vs "18,000", "2.1 million" vs "2.5
    million" rivets: pick ONE sourced value and use it everywhere, voice and HUD).
 5. **Orbi claims:** only the playbook's verified facts; never "gone in 30 minutes" (the sender picks 5–30 min).
-6. Then render both formats, verify the MP4s (ffprobe, contact sheet, Whisper on the audio), commit, push, and send.
+6. Then render (9:16 only), verify the MP4s (ffprobe, contact sheet, Whisper on the audio), commit, push, and send.
    Log what you changed in FLEET_SYNC.md (Defect log: "landmark films shipped below quality: cause + fix").
