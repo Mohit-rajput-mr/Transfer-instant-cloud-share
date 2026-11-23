@@ -10,7 +10,8 @@ wind-shaped curve of the legs. Orbi ending: direct device-to-device first, an en
   EXTRA_GAIN=1.3 python3 kit/synth.py` → `cat story_a.js story_b.js story_c.js > story.js` → 4 × `node kit/render.cjs a b frames`.
 
 ## What's on screen (real scale, metres)
-- The tower is a true instanced lattice (~10,000 members) from its measured profile: 125 m base, four curved box-girder legs
+- The tower is a true instanced lattice (~10,000 members) from a profile measured on a Trocadéro photo (scaled by the
+  2nd-floor platform, 41 m): 125 m base, four curved box-girder legs
   with X-bracing at two scales meeting at the 2nd floor (115.7 m), the four decorative arches, 1st floor (57.6 m) and 2nd
   floor platforms with friezes and railings, the shaft to the 3rd floor (276 m), the top and antennas (330 m). Bronze-brown
   paint, lighter towards the top.
@@ -21,6 +22,10 @@ wind-shaped curve of the legs. Orbi ending: direct device-to-device first, an en
 - Thermal camera: each member coloured by how hot its side of the tower is; the lean and the daily path are exaggerated
   ×33 and labelled MOTION EXAGGERATED.
 - The rivet: a gusset joint of L-angle chords and lattice bars at true scale (26 mm domed heads), 150 m up, Paris behind.
+
+## Checks (2026-11-23 final render)
+- Side-by-side film vs reference photo: `source/check/pair_00–04.png` (Trocadéro view, legs, lattice, Champ de Mars, top).
+- ffprobe: 1080×1920, 30 fps, H.264 + AAC, 110.9 s, 65 MB. Whisper (faster-whisper) WER 0.025 against `script.json`.
 
 ## Facts and sources
 | Fact | Source |
@@ -39,7 +44,7 @@ wind-shaped curve of the legs. Orbi ending: direct device-to-device first, an en
 ## Assets and licences
 - Skies: Poly Haven "Qwantani dawn" and "Qwantani noon" (pure sky), CC0, with procedural clouds.
 - Textures: Poly Haven (CC0) asphalt_02, grass_ground, gravel_floor, old_sandstone_02, grey_roof_01, green_metal_rust,
-  wood_table_001. Water: three.js `Water.js` (MIT). Everything else is procedural.
+  wood_table_001. Trees: Poly Haven "Island Tree 02" (CC0) baked into impostors. Water: three.js `Water.js` (MIT). Everything else is procedural.
 - Orbi screens: live orbitransfer.com captures (2026-11-22, `source/shots_live/`), with the state drawn on top.
 - Voice: Chatterbox (MIT) cloned from the house reference voice (Kokoro bm_george, Apache-2.0); checked with faster-whisper.
 - Reference photos for the side-by-side check (`source/ref/`, credits in `source/ref/credits.json`): Wikimedia Commons,
