@@ -8,12 +8,21 @@ its 27 spiralling setbacks ("confusing the wind"), the buttressed hexagonal core
   EXTRA_GAIN=1.3 python3 kit/synth.py` → `cat story_a.js story_b.js story_c.js > story.js` → 4 × `node kit/render.cjs a b frames`.
 
 ## What's on screen (real scale, metres)
-- The tower is lofted from its plan: three wings (capsules) in a Y round a hexagonal core (r 12.5 m), 27 setbacks that
-  shorten the wings one at a time in a spiral (110 → 575 m), circular crown to 585 m, steel spire to 828 m.
-- Vortex shedding: an analytic vortex street (Strouhal St ≈ 0.2: one vortex every D/(0.2·U)/2 s, alternating sides) drawn
-  as glowing smoke. The plain cylinder sheds in step and rocks (exaggerated, labelled); the Burj's wake is drawn
-  incoherent (random phases, positions and strengths), as wind tunnel tests describe. Real sway ≈ 1.5 m (shown ×20, labelled).
-- X-ray: hexagonal core + the three buttress walls; concrete pump line to 606 m; raft + 192 piles in layered ground.
+- The tower is modelled from its plan and checked against photos (`source/ref/`, side-by-side PNGs in `source/check/`):
+  a fat Y of three wings round a hexagonal core (r 12.5 m); each wing has a rounded tip and rows of convex glass bays
+  down both sides with V-notches between them. The 27 setbacks remove one wing's tip bay at a time (wing 0, 1, 2, …),
+  78 m → 598 m; the tip distances were fitted to the width profile measured on a ground-level photo. Trefoil tiers carry
+  on to 652 m, then the clad, stepped spire base and the steel needle with its rings to 828 m.
+- Facade shader (from close-up photos): dark blue-grey reflective glass mirroring the sky, a pale silver band at every
+  floor (163 floors in 585 m), stainless fins on every 1.5 m mullion, bronze-silver louvre bands at the mechanical
+  floors and where each tube stops; stripes are anti-aliased with screen-space filtering.
+- Downtown Dubai: glass and stone-clad towers of varied heights and tints (they reflect the same sky), Sheikh Zayed Road
+  with traffic, the Dubai Fountain lake with its arcs of jets, palms, desert and the Gulf; procedural clouds.
+- Wind tunnel: a real tunnel set (steel walls, honeycomb flow straightener, fan, laser sheet); thousands of smoke particles
+  are advected through potential flow round the model plus Lamb–Oseen vortices shed at the Strouhal rhythm (St ≈ 0.2),
+  an orderly street behind the cylinder, an incoherent wake behind the Burj model (its real geometry, scaled).
+- X-ray: the scene dims to dusk, the skin turns to glass edges, the hexagonal core glows blue, the buttress walls green;
+  concrete pump line to 606 m; raft + 192 piles in layered ground.
 
 ## Facts and sources
 | Fact | Source |
@@ -33,3 +42,21 @@ its 27 spiralling setbacks ("confusing the wind"), the buttressed hexagonal core
 - Water shader: three.js `Water.js` (MIT); procedural normals. Everything else is procedural.
 - Orbi screens: live orbitransfer.com captures (2026-11-22, `source/shots_live/`), with the upload state drawn on top.
 - Voice: Chatterbox (MIT) cloned from the house reference voice (Kokoro bm_george, Apache-2.0); checked with faster-whisper.
+- Reference photos (`source/ref/`), Creative Commons via Openverse / Flickr and Wikimedia Commons:
+  - `burj_dubai_001.jpg`: "File:Burj Dubai 001.jpg" by Nepenthes, CC BY-SA 2.5 (https://commons.wikimedia.org/wiki/File:Burj_Dubai_001.jpg)
+  - `burj_khalifa_0.jpg`: "Burj Khalifa Park #2" by mckaysavage, BY 2.0 (https://www.flickr.com/photos/56796376@N00/5374367940)
+  - `burj_khalifa_1.jpg`: "Architecture: Burj Khalifa and the Moon" by dodongjan, BY-ND 2.0 (https://www.flickr.com/photos/44301197@N08/5193950675)
+  - `burj_khalifa_dubai_fountain_1.jpg`: "Burj Khalifa Dancing Water Fountain show" by Infomastern, BY-SA 2.0 (https://www.flickr.com/photos/55856449@N04/8278133482)
+  - `downtown_dubai_skyline_0.jpg`: "Downtown Dubai Skyline" by tempoworld.net, BY-SA 2.0 (https://www.flickr.com/photos/83318973@N00/6985587904)
+  - `burj_khalifa_tower_0.jpg`: "Burj Khalifa Park #2" by mckaysavage, BY 2.0 (https://www.flickr.com/photos/56796376@N00/5374367940)
+  - `burj_khalifa_tower_1.jpg`: "Burj Dubai" by Leandro's World Tour, BY 2.0 (https://www.flickr.com/photos/18115835@N00/4128599775)
+  - `burj_khalifa_looking_up_0.jpg`: "mall and lake tilt-shift" by _gee_, BY 2.0 (https://www.flickr.com/photos/32426344@N00/20576596426)
+  - `burj_khalifa_spire_0.jpg`: "Burj Al-Khalifa" by mikecogh, BY-SA 2.0 (https://www.flickr.com/photos/89165847@N00/9827348995)
+  - `burj_khalifa_glass_0.jpg`: "Glass Curtain Wall II Burj Khalifa" by andryn2006, BY-SA 2.0 (https://www.flickr.com/photos/84985982@N00/9852400295)
+  - `burj_khalifa_glass_1.jpg`: "High High ... High Enough to Dream" by MNmagic, PDM 1.0 (https://www.flickr.com/photos/21416599@N08/22648611076)
+  - `burj_khalifa_sunset_0.jpg`: "burj khalifa sunset" by Hungarian Snow, BY-SA 2.0 (https://www.flickr.com/photos/19546327@N00/14325285230)
+  - `burj_khalifa_sunset_1.jpg`: "burj khalifa sunset" by Hungarian Snow, BY-SA 2.0 (https://www.flickr.com/photos/19546327@N00/14325248108)
+  - `burj_khalifa_night_0.jpg`: "Dubai City" by slp07, BY-SA 2.0 (https://www.flickr.com/photos/128413581@N05/15479505345)
+  - `burj_khalifa_night_1.jpg`: "Glowing Dubai" by huskyte77, BY-ND 2.0 (https://www.flickr.com/photos/74101223@N00/8526340947)
+  - `burj_khalifa_aerial_0.jpg`: "Looking out over Dubai looking NE" by mckaysavage, BY 2.0 (https://www.flickr.com/photos/56796376@N00/5374320022)
+  - `burj_khalifa_aerial_1.jpg`: "Dubai - vue depuis la Burj Khalifa - 18-06-2011 - 17h39" by Panoramas, BY-ND 2.0 (https://www.flickr.com/photos/33834913@N00/5857279327)

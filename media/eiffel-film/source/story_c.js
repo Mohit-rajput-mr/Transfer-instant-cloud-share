@@ -147,5 +147,6 @@ H.frame("Direct first, cloud if not", async (t) => {
       directBeam.material.opacity = 0; cloudMat.opacity = 0; cloudIcon.visible = false; lock.visible = false; blockX.visible = false;
       H.cam.up.copy(up2.clone().transformDirection(OR.matrixWorld)); H.cam.lookAt(OW(...pc.toArray())); hudShow("chips", win(t, fr("orbi3", 0.65), at("end"))); }
   }
+  if (window.DBG) { const d = window.DBG[0].split(",").map(Number); H.cam.up.set(0, 1, 0); look(V(d[0], d[1], d[2]), V(d[3], d[4], d[5]), d[6]); if (window.DBG[1] === "clean") { for (const id of ["hud", "lines", "title", "sub"]) H.$(id).style.visibility = "hidden"; } }
 });
 await H.ready();

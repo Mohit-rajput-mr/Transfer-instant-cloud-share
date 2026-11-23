@@ -4,7 +4,7 @@
 // =====================================================================================================================
 const CITY = new THREE.Group(); scene.add(CITY);
 const sandT = (n, srgb, r) => tex(`kit/ph/aerial_sand/aerial_sand_${n}_2k.jpg`, srgb, r, r);
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(40000, 40000), new THREE.MeshStandardMaterial({ map: sandT("diff", true, 900), normalMap: sandT("nor_gl", false, 900), roughness: 1, color: 0xe2cfae }));
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(40000, 40000), new THREE.MeshStandardMaterial({ map: sandT("diff", true, 900), normalMap: sandT("nor_gl", false, 900), roughness: 1, color: 0xbfa680 }));
 ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; CITY.add(ground);
 // the city floor: blocks, roads and parks painted over the sand within ~3.5 km
 const cityFloor = new THREE.Mesh(new THREE.CircleGeometry(3600, 96), new THREE.MeshStandardMaterial({ roughness: 0.92, transparent: true,
@@ -40,13 +40,13 @@ cityMat.onBeforeCompile = (s) => {
   s.fragmentShader = s.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vWP; varying vec3 vWN; varying vec2 vKind; float hh(vec2 p){ return fract(sin(dot(p, vec2(41.3, 289.1))) * 14375.5); }")
     .replace("#include <color_fragment>", `#include <color_fragment>
       { vec3 n = abs(vWN); float glassB = step(0.5, vKind.x);
-        if (n.y > 0.5) { diffuseColor.rgb = vec3(0.7, 0.66, 0.6) * (0.8 + 0.3 * hh(floor(vWP.xz / 3.0))); }
+        if (n.y > 0.5) { float r = hh(floor(vWP.xz / 4.0)); diffuseColor.rgb = vec3(0.58, 0.55, 0.5) * (0.75 + 0.35 * r); if (r > 0.82) diffuseColor.rgb = vec3(0.82, 0.83, 0.84); if (fract(vWP.x / 9.0) < 0.12 && fract(vWP.z / 7.0) < 0.2) diffuseColor.rgb *= 0.5; }
         else { float u = (n.x > 0.5 ? vWP.z : vWP.x); float fh = mix(3.4, 3.8, glassB); float fy = fract(vWP.y / fh), fx = fract(u / mix(2.8, 1.6, glassB));
           float win = step(0.2, fy) * step(fy, 0.8) * step(0.18, fx) * step(fx, 0.82); if (glassB > 0.5) win = step(0.12, fy);
           float lit = hh(floor(vec2(vWP.y / fh, u / 2.6)) + vKind.y);
           int pi = int(floor(vKind.y * 5.0)); vec3 wall = pi == 0 ? vec3(0.88, 0.82, 0.7) : pi == 1 ? vec3(0.8, 0.76, 0.68) : pi == 2 ? vec3(0.72, 0.62, 0.5) : pi == 3 ? vec3(0.92, 0.9, 0.86) : vec3(0.82, 0.72, 0.6);
           wall *= (0.82 + 0.16 * hh(floor(vWP.xy * 0.7 + vWP.zz * 0.7)));
-          float far = smoothstep(500.0, 1800.0, length(cameraPosition - vWP)); win = mix(win, 0.42, far);
+          float far = smoothstep(900.0, 3000.0, length(cameraPosition - vWP)); win = mix(win, 0.42, far);
           vec3 glassC = mix(vec3(0.2, 0.24, 0.28), vec3(0.36, 0.4, 0.44), lit * 0.5);
           if (glassB > 0.5) glassC = mix(vec3(0.22, 0.3, 0.38), vec3(0.42, 0.52, 0.6), lit * 0.4);
           diffuseColor.rgb = mix(wall, glassC, win * mix(0.8, 1.0, glassB)); if (vWP.y < 4.0) diffuseColor.rgb *= 0.6; } }`)
@@ -90,19 +90,27 @@ glassMat.onBeforeCompile = (s) => { s.uniforms.uSky = { value: skyTex }; s.unifo
   s.fragmentShader = s.fragmentShader.replace("#include <common>", `#include <common>
       uniform sampler2D uSky; uniform vec3 uSunG; varying vec3 vGW; varying vec3 vGN; varying vec3 vTint; varying float vSeed; varying vec3 vGL;
       float hg(vec2 p){ return fract(sin(dot(p, vec2(41.3, 289.1))) * 14375.5); }
-      vec3 skyG(vec3 r){ if (r.y < 0.0) return mix(vec3(0.42, 0.38, 0.32), vec3(0.75, 0.7, 0.62), smoothstep(-0.25, 0.0, r.y)); return texture2D(uSky, vec2(atan(r.z, r.x) / 6.2831853 + 0.5, asin(clamp(r.y, -1.0, 1.0)) / 3.14159265 + 0.5)).rgb; }`)
+      vec3 skyG(vec3 r){ if (r.y < 0.0) return mix(vec3(0.42, 0.38, 0.32), vec3(0.75, 0.7, 0.62), smoothstep(-0.25, 0.0, r.y)); vec3 c = texture2D(uSky, vec2(atan(r.z, r.x) / 6.2831853 + 0.5, asin(clamp(r.y, -1.0, 1.0)) / 3.14159265 + 0.5)).rgb; float l = dot(c, vec3(0.3, 0.59, 0.11)); return pow(max(mix(vec3(l), c, 1.35), 0.0), vec3(1.25)) * 1.1; }`)
     .replace("#include <dithering_fragment>", `#include <dithering_fragment>
       { vec3 N = normalize(vGN); if (abs(N.y) < 0.5) {
           vec3 Vd = normalize(cameraPosition - vGW); float dist = length(cameraPosition - vGW);
           float u = abs(N.x) > abs(N.z) ? vGL.z : vGL.x; if (abs(N.x) > 0.2 && abs(N.z) > 0.2) u = atan(vGL.z, vGL.x) * 20.0;
           float fh = 3.6, fy = fract(vGW.y / fh), fx = fract(u / 1.5); float far = smoothstep(400.0, 1600.0, dist);
           float fin = (step(fx, 0.07) + step(0.93, fx)) * (1.0 - far), spand = step(fy, 0.16) * (1.0 - far * 0.7);
-          vec3 R = reflect(-Vd, N); vec3 env = skyG(R); float F = 0.08 + 0.92 * pow(1.0 - max(dot(N, Vd), 0.0), 5.0);
+          vec3 R = reflect(-Vd, N); vec3 env = skyG(R); float F;
           float pane = hg(vec2(floor(vGW.y / fh), floor(u / 1.5)) + vSeed * 31.0);
-          vec3 inside = vec3(0.04, 0.05, 0.06) * (0.6 + 0.8 * pane);
-          vec3 glass = inside + env * vTint * mix(0.45, 1.0, F) * (0.92 + 0.12 * pane) + vec3(1.0, 0.85, 0.6) * pow(max(dot(R, uSunG), 0.0), 300.0) * 5.0;
-          vec3 frame = vTint * 0.5 + 0.25 * env;
-          vec3 c = mix(glass, frame, max(fin * 0.8, spand * 0.65));
+          F = 0.1 + 0.9 * pow(1.0 - max(dot(N, Vd), 0.0), 5.0);
+          vec3 inside = vec3(0.025, 0.03, 0.04) * (0.6 + 0.8 * pane);
+          float dif = max(dot(N, uSunG), 0.0);
+          vec3 glass = inside + env * vTint * F * (0.85 + 0.2 * pane) + vec3(1.0, 0.85, 0.6) * pow(max(dot(R, uSunG), 0.0), 300.0) * 6.0;
+          vec3 frame = vTint * 0.35 * (0.3 + 0.8 * dif) + 0.2 * env;
+          vec3 c = mix(glass, frame, max(fin * 0.7, spand * 0.55));
+          if (vSeed > 0.62) {   // stone-clad residential towers (beige panels, punched windows, balconies)
+            float wx = fract(u / 3.2), wy = fract(vGW.y / 3.3); float win = step(0.22, wx) * step(wx, 0.78) * step(0.18, wy) * step(wy, 0.8);
+            vec3 stone = mix(vec3(0.8, 0.72, 0.6), vec3(0.88, 0.84, 0.76), fract(vSeed * 7.3)) * (0.32 + 0.85 * dif);
+            vec3 wglass = inside * 1.5 + env * vec3(0.5, 0.6, 0.7) * F * 0.7;
+            c = mix(stone, wglass, win * (1.0 - far * 0.6)); c = mix(c, stone * 0.7, step(0.86, wy) * step(fract(vGW.y / 9.9), 0.34) * (1.0 - far));
+          }
           if (vGW.y < 12.0) c = mix(c, vec3(0.62, 0.58, 0.52) * (0.5 + 0.5 * max(dot(N, uSunG), 0.0)), 0.8);   // podium stone
           gl_FragColor.rgb = mix(c, fogColor, fogDepthMix(dist)); } }`)
     .replace("#include <fog_fragment>", "#include <fog_fragment>");
@@ -131,10 +139,16 @@ const CARS = new THREE.InstancedMesh(new RoundedBoxGeometry(1.9, 1.4, 4.6, 2, 0.
 { const c = new THREE.Color(); for (let i = 0; i < 600; i++) CARS.setColorAt(i, c.setHSL(hash(i), 0.2 + hash(i + 1) * 0.3, 0.2 + hash(i + 2) * 0.6)); }
 function traffic(t) { const m4 = new THREE.Matrix4(), q = new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), Math.PI / 2); for (let i = 0; i < 600; i++) { const dir = i % 2 ? 1 : -1, lane = (i % 12) >> 1, sp = 22 + hash(i) * 8;
   const x = ((hash(i + 4) * 6000 + dir * sp * t) % 6000 + 6000) % 6000 - 3600; m4.compose(V(x, 0.7, -620 + dir * (4 + lane * 3.4)), q, V(1, 1, 1)); CARS.setMatrixAt(i, m4); } CARS.instanceMatrix.needsUpdate = true; }
-const JETS = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 8, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.4, 1.45, 1.5), transparent: true, opacity: 0.55, depthWrite: false, toneMapped: false }), 2400); JETS.frustumCulled = false; CITY.add(JETS);
-function fountain(t, k) { JETS.visible = k > 0; if (!k) return; const m4 = new THREE.Matrix4(); for (let i = 0; i < 2400; i++) { const j = i % 60, p = ((i / 60) | 0) / 40; const a = (j / 59 - 0.5) * 2.2; const bx = Math.sin(a) * 250, bz = 150 + Math.cos(a) * 120 - 120;
-  const hgt = (40 + 60 * (0.5 + 0.5 * Math.sin(t * 1.3 + j * 0.4))) * k; const ph = (p + t * 0.6) % 1; const y = hgt * 4 * ph * (1 - ph), sway = Math.sin(t * 0.8 + j * 0.3) * 6 * ph;
-  const s = (1.6 + 2.2 * ph) * k; m4.makeScale(s, s * 1.6, s).setPosition(bx + sway, y, bz); JETS.setMatrixAt(i, m4); } JETS.instanceMatrix.needsUpdate = true; }
+// the Dubai Fountain: arcs of jets across the lake (thin plumes of spray, mist at their feet)
+const NJ = 90, NPJ = 70;
+const JETS = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 6, 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.05, 1.1, 1.18), transparent: true, opacity: 0.22, depthWrite: false, toneMapped: false, blending: THREE.AdditiveBlending, fog: true }), NJ * NPJ); JETS.frustumCulled = false; CITY.add(JETS);
+function fountain(t, k) { JETS.visible = k > 0; if (!k) return; const m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
+  for (let j = 0; j < NJ; j++) { const a = (j / (NJ - 1) - 0.5) * 2.4; const bx = Math.sin(a) * 240, bz = 150 + Math.cos(a) * 110 - 110;
+    const hgt = (35 + 55 * (0.5 + 0.5 * Math.sin(t * 1.4 + j * 0.35))) * k, lean = Math.sin(t * 0.9 + j * 0.21) * 0.18;
+    for (let p = 0; p < NPJ; p++) { const ph = ((p / NPJ) + t * 0.55 + hash(j * 7 + p) * 0.05) % 1; const y = hgt * 4 * ph * (1 - ph) * (p % 7 === 0 ? 0.25 : 1);
+      const spread = 0.4 + ph * 3.2 * (p % 5) / 4; const s = (0.45 + 1.4 * ph) * k * (p % 7 === 0 ? 3.5 : 1);
+      m4.compose(V(bx + lean * y + (hash(j + p * 3.1) - 0.5) * spread, y + 0.5, bz + (hash(j * 2 + p) - 0.5) * spread), q, V(s, s * 1.8, s)); JETS.setMatrixAt(j * NPJ + p, m4); } }
+  JETS.instanceMatrix.needsUpdate = true; }
 
 // low desert dunes far out
 { const g = new THREE.BufferGeometry(), A = 256, Rr = 8, pos = [], idx = [];
@@ -165,7 +179,7 @@ const MS = 0.04;                                              // lab scale: 828 
 const cyl = sh(new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 26, 48), new THREE.MeshPhysicalMaterial({ color: 0xb9c2ca, metalness: 0.6, roughness: 0.3, clearcoat: 0.5 })));
 cyl.geometry.translate(0, 13, 0); LAB.add(cyl);
 const mini = new THREE.Mesh(burjGeo, new THREE.MeshPhysicalMaterial({ color: 0xc7d2dc, metalness: 0.7, roughness: 0.25, clearcoat: 0.6 })); mini.scale.setScalar(MS); mini.castShadow = true; LAB.add(mini);
-const miniSp = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.37, (TIP - TOPC) * MS, 12), metal(0xb9c0c6, 0.3)); miniSp.position.y = (TOPC + (TIP - TOPC) / 2) * MS; LAB.add(miniSp);
+const miniSp = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.42, (TIP - BODY_TOP) * MS, 12), metal(0xb9c0c6, 0.3)); miniSp.position.y = (BODY_TOP + (TIP - BODY_TOP) / 2) * MS; LAB.add(miniSp);
 // smoke: thousands of particles released from a rake of nozzles upstream and carried by the flow (potential flow round the
 // body + the shed vortices, Lamb–Oseen cores), lit by a green laser sheet at mid-height. Each frame integrates every
 // particle from its release time, so any frame renders on its own (the film renders in parallel).

@@ -29,7 +29,8 @@ const setBig = (n, l, col = "#ffd166") => { H.$("bigN").textContent = n; H.$("bi
 // HELPERS
 // =====================================================================================================================
 function setSway(x, z = 0) { BU.uSway.value.set(x, z); for (const o of SWAYERS) { const k = Math.pow(o.userData.sy / TIP, 2); o.position.set(o.userData.base.x + x * k, o.userData.base.y, o.userData.base.z + z * k); } }
-function dayLook() { H.key.intensity = 3.2; H.hemi.intensity = 0.8; H.envK.value = 0.45; scene.fog.color.copy(FOG.c); scene.fog.density = FOG.d; H.rimA.intensity = 0.25; H.rimB.intensity = 0.4; H.key.position.copy(SUN.clone().multiplyScalar(1500)); H.key.target.position.set(0, 0, 0); }
+function xrayLook(k) { skyU.uDim.value = 1 - 0.85 * k; H.key.intensity = lerp(2.7, 0.35, k); H.hemi.intensity = lerp(0.65, 0.18, k); H.envK.value = lerp(0.38, 0.12, k); scene.fog.color.copy(FOG.c).lerp(new THREE.Color(0x0c1420), k); H.bloom.strength = lerp(0.3, 0.6, k); }
+function dayLook() { skyU.uDim.value = 1; H.key.intensity = 2.7; H.hemi.intensity = 0.65; H.envK.value = 0.38; scene.fog.color.copy(FOG.c); scene.fog.density = FOG.d; H.rimA.intensity = 0.25; H.rimB.intensity = 0.4; H.key.position.copy(SUN.clone().multiplyScalar(1500)); H.key.target.position.set(0, 0, 0); }
 function keyShadow(c, r) { const s = H.key.shadow.camera; H.key.target.position.copy(c); H.key.position.copy(c.clone().add(SUN.clone().multiplyScalar(r * 2))); Object.assign(s, { left: -r, right: r, top: r, bottom: -r, near: 1, far: r * 4 }); s.updateProjectionMatrix(); H.key.shadow.bias = -0.0004; H.key.shadow.normalBias = r * 0.002; }
 const orb = (a, rad, h, c = V(0, 0, 0)) => V(c.x + Math.sin(a) * rad, c.y + h, c.z + Math.cos(a) * rad);
 function lab(t, both) {
@@ -58,7 +59,7 @@ H.frame("Big files, no weak point", async (t) => {
 
   if (t < at("tower")) { // HOOK: over the desert toward the tower, then straight down onto its Y plan → a flower
     const cutA = fr("hook", 0.45);
-    if (t < cutA) { move(t, 0, cutA, [V(2600, 190, 2400), V(0, 380, 0), 30], [V(2050, 240, 1850), V(0, 400, 0), 28], 0.6); title(t, fr("hook", 0.03), fr("hook", 0.42), "Dubai", "The tallest building", 150); }
+    if (t < cutA) { fountain(t, 1); move(t, 0, cutA, [V(-150, 14, 470), V(0, 330, 0), 46], [V(-110, 30, 400), V(0, 360, 0), 44], 0.4); title(t, fr("hook", 0.03), fr("hook", 0.42), "Dubai", "The tallest building", 150); }
     else { camRange(10, 70000); move(t, cutA, at("tower"), [V(0.1, 1500, 0.1), V(0, 0, 0), 14], [V(0.1, 1300, 0.1), V(0, 0, 0), 13], 0.1);
       hudShow("flower", win(t, cutA + 0.5, at("tower"), 0.5, 0.3), { transform: `rotate(${(t - cutA) * 4}deg)` }); hudShow("flowerT", win(t, cutA + 0.6, at("tower"), 0.5, 0.3)); }
   } else if (t < at("enemy")) { // the tower: rise up the facade to the tip; the stats
@@ -103,18 +104,18 @@ H.frame("Big files, no weak point", async (t) => {
     move(t, at("sway"), at("core"), [V(820, 380, 900), V(0, 470, 0), 30], [V(760, 420, 820), V(0, 500, 0), 30], 0.3);
     callout("top", t, fr("sway", 0.15), at("core"), V(BU.uSway.value.x, TIP - 20, 0), 760, 420); hudShow("exag", win(t, at("sway") + 0.2, at("core")));
   } else if (t < at("pump")) { // x-ray: the hexagonal core and the three wings bracing it
-    XR.visible = true; for (const o of SWAYERS) o.visible = false; BU.uX.value = smooth(prog(t, at("core"), at("core") + 0.8)); burj.material.depthWrite = false; butMat.emissiveIntensity = 0.6 * smooth(prog(t, fr("core", 0.45), fr("core", 0.6)));
+    XR.visible = true; for (const o of SWAYERS) o.visible = false; BU.uX.value = smooth(prog(t, at("core"), at("core") + 0.8)); burj.material.depthWrite = false; xrayLook(BU.uX.value); coreMat.emissiveIntensity = 0.9; butMat.emissiveIntensity = 0.6 * smooth(prog(t, fr("core", 0.45), fr("core", 0.6)));
     if (t < fr("core", 0.5)) move(t, at("core"), fr("core", 0.5), [orb(0.9, 620, 330), V(0, 300, 0), 42], [orb(1.3, 560, 360), V(0, 300, 0), 42], 0.3);
     else { camRange(5, 70000); move(t, fr("core", 0.5), at("pump"), [V(0.1, 1250, 0.1), V(0, 200, 0), 12], [V(0.1, 1150, 0.1), V(0, 200, 0), 12], 0.1); }
     callout("core", t, fr("core", 0.12), at("pump"), t < fr("core", 0.5) ? V(0, 300, CORE_R) : V(0, TOPC - 40, 0), 300, 1180); callout("brace", t, fr("core", 0.55), at("pump"), V(Math.cos(WING[1]) * 30, TOPC - 60, -Math.sin(WING[1]) * 30), 760, 1250);
   } else if (t < at("piles")) { // concrete pumped up the core: slugs racing up to 606 m
-    XR.visible = true; BU.uX.value = 1; burj.material.depthWrite = false; const k = prog(t, at("pump"), at("piles"));
+    XR.visible = true; BU.uX.value = 1; burj.material.depthWrite = false; xrayLook(1); butMat.emissiveIntensity = 0.1; coreMat.emissiveIntensity = 0.5; const k = prog(t, at("pump"), at("piles"));
     SLUGS.forEach((m, i) => { const u = ((i / SLUG_N + (t - at("pump")) * 0.35) % 1); m.position.y = u * 606 * Math.min(1, k * 1.6 + 0.05); m.visible = m.position.y < 606; });
     const yC = lerp(40, 606, ease(prog(t, at("pump"), fr("pump", 0.8))));
-    move(t, at("pump"), at("piles"), [orb(0.8, 430, 120), V(0, 100, 0), 40], [orb(1.0, 400, 640), V(0, 580, 0), 40], 0.3);
+    move(t, at("pump"), at("piles"), [orb(0.55, 560, 140), V(0, 120, 0), 40], [orb(0.75, 520, 640), V(0, 580, 0), 40], 0.3);
     setBig(`${Math.round(yC)} m`, "CONCRETE PUMPED UP"); hudShow("big", win(t, at("pump") + 0.2, at("piles"))); callout("rec", t, fr("pump", 0.75), at("piles"), V(16, 606, 0), 300, 1200);
   } else if (t < at("spire")) { // under the desert: the raft and its 192 piles in the layered ground
-    FND.visible = true; XR.visible = true; BU.uX.value = 0.85; burj.material.depthWrite = false; ground.visible = false; cityFloor.visible = false; camRange(1, 70000);
+    FND.visible = true; XR.visible = true; BU.uX.value = 0.85; burj.material.depthWrite = false; butMat.emissiveIntensity = 0.2; coreMat.emissiveIntensity = 0.5; ground.visible = false; cityFloor.visible = false; camRange(1, 70000);
     scene.fog.density = 0.004; scene.fog.color.set(0x2a2219); scene.background = new THREE.Color(0x2a2219); sky.visible = false; CITY.visible = false; H.hemi.intensity = 1.4; H.key.intensity = 1.5; keyShadow(V(0, -20, 0), 120);
     move(t, at("piles"), at("spire"), [V(150, 30, 175), V(0, -20, 0), 40], [V(120, -32, 150), V(0, -26, 0), 42], 0.3);
     const n = Math.round(192 * ease(prog(t, at("piles"), fr("piles", 0.5)))); setBig(String(n), "PILES"); hudShow("big", win(t, at("piles") + 0.2, fr("piles", 0.55), 0.3, 0.3));
@@ -141,5 +142,6 @@ H.frame("Big files, no weak point", async (t) => {
       move(t, at("orbi3"), at("end"), [OW(...pc.clone().addScaledVector(pn, 3.3).toArray()), OW(...pc.toArray()), 34], [OW(...pc.clone().addScaledVector(pn, 3.0).toArray()), OW(...pc.toArray()), 34], 0.03);
       H.cam.up.copy(up2.transformDirection(OR.matrixWorld)); H.cam.lookAt(OW(...pc.toArray())); hudShow("chips", win(t, fr("orbi3", 0.6), at("end"))); }
   }
+  if (window.DBG) { const d = window.DBG[0].split(",").map(Number); look(V(d[0], d[1], d[2]), V(d[3], d[4], d[5]), d[6]); if (window.DBG[2] === "solo") { CITY.visible = false; } if (window.DBG[1] === "clean") { for (const id of ["hud", "lines", "title", "sub"]) H.$(id).style.visibility = "hidden"; } }
 });
 await H.ready();
