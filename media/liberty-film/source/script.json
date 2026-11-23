@@ -1,0 +1,18 @@
+[
+ {"key": "hook", "text": "Do you know the Statue of Liberty's skin is only about as thick as two coins?", "emo": 1.1, "gap": 0.5},
+ {"key": "statue", "text": "From the ground to the tip of the torch, she stands ninety-three metres over New York Harbor.", "emo": 1.0, "gap": 0.45},
+ {"key": "skin", "text": "But her copper skin is just two point four millimetres thick. The thickness of two pennies, pressed together.", "emo": 1.05, "gap": 0.45},
+ {"key": "hollow", "text": "So how does something that thin stand up to Atlantic storms? Look inside.", "emo": 1.05, "gap": 0.45},
+ {"key": "frame", "text": "She's hollow. Holding her up is an iron skeleton, designed by Gustave Eiffel, the engineer of the Eiffel Tower.", "emo": 1.0, "gap": 0.45},
+ {"key": "pylon", "text": "A tall iron tower runs up the middle. From it, a web of flexible iron bars reaches out to the skin.", "emo": 1.0, "gap": 0.45},
+ {"key": "flex", "text": "Eiffel made it flexible on purpose. A rigid frame would pile up stress in the copper, until it cracked.", "emo": 1.05, "gap": 0.45},
+ {"key": "sway", "text": "So in strong wind, she sways. Up to three inches. And the torch up to six.", "emo": 1.0, "gap": 0.5},
+ {"key": "hammer", "text": "Each copper sheet was heated, then hammered into shape by hand, over wooden moulds. It's called repoussé.", "emo": 1.0, "gap": 0.45},
+ {"key": "brown", "text": "When she was unveiled in eighteen eighty-six, she was shiny copper brown.", "emo": 1.0, "gap": 0.45},
+ {"key": "green", "text": "But copper reacts with the air and the sea. After nineteen hundred, a green patina spread over her.", "emo": 1.0, "gap": 0.45},
+ {"key": "protect", "text": "People thought it was damage. Engineers studied it, and found the opposite. The green layer protects the copper beneath.", "emo": 1.05, "gap": 0.5},
+ {"key": "orbi", "text": "Thin, but protected. That's how Orbi Transfer treats your files.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi2", "text": "Every file is locked on your own device, with AES two fifty-six, before it ever leaves.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi3", "text": "The server only ever sees scrambled bytes. No account, no app.", "emo": 1.05, "gap": 0.4},
+ {"key": "end", "text": "Orbi Transfer dot com.", "emo": 1.0, "gap": 0.6}
+]
