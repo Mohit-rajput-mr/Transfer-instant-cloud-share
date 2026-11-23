@@ -54,10 +54,11 @@ function flows(k) { const set = (m, a, b) => (m.material.uniforms.uP.value = cla
 // =====================================================================================================================
 const IMG = { lap: await img("shots_live/laptop.png"), ph: await img("shots_live/phone.png") };
 const ph = makePhone(), lap = makeLaptop(); const OR = new THREE.Group(); OR.add(ph.g, lap.g); scene.add(OR); OR.visible = false;
-OR.position.set(-420, 150, 1250);
+OR.position.set(-300, 0, 1450); OR.position.y = groundY(-300, 1450) + 1.3;   // on a Marin headlands overlook, at road height
 const OR_D = V(0, 120, 0).sub(OR.position).setY(0).normalize(); OR.rotation.y = Math.atan2(-OR_D.x, -OR_D.z);
 const lock = makeLock(); OR.add(lock);
-const wall = sh(new THREE.Mesh(new RoundedBoxGeometry(9, 0.5, 4.2, 3, 0.1), new THREE.MeshStandardMaterial({ color: 0x9c968a, roughness: 0.9, map: tex("kit/ph/concrete_wall_008/concrete_wall_008_diff_1k.jpg", true, 2, 1) }))); OR.add(wall); wall.position.set(0.6, -0.35, 0);
+const wall = sh(new THREE.Mesh(new RoundedBoxGeometry(9, 0.5, 4.2, 3, 0.1), new THREE.MeshStandardMaterial({ color: 0xd2ccbf, roughness: 0.9, map: tex("kit/ph/concrete_wall_008/concrete_wall_008_diff_1k.jpg", true, 2, 1) }))); OR.add(wall); wall.position.set(0.6, -0.35, 0);
+{ const pad = sh(new THREE.Mesh(new THREE.BoxGeometry(40, 1.2, 24), new THREE.MeshStandardMaterial({ color: 0xc4bdae, roughness: 0.95, map: tex("kit/ph/concrete_wall_008/concrete_wall_008_diff_1k.jpg", true, 6, 4) }))); pad.position.set(0.6, -1.7, -8); OR.add(pad); pad.receiveShadow = true; }
 lap.g.position.set(-1.2, 0, 0.2); lap.g.rotation.y = 0.35; ph.g.position.set(2.2, 0.06, 0.6); ph.g.rotation.set(-Math.PI / 2 + 0.55, 0, -0.25);
 const orbiL = new THREE.PointLight(0x3dff8c, 0, 4, 2); OR.add(orbiL);
 // a folder of many files → one bundle → unpacked into a folder on the phone

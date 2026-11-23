@@ -34,11 +34,11 @@ H.frame("Whole folders, sent as one.", async (t) => {
 
   if (t < at("bridge")) { // HOOK: sunrise, fog rolling through the south tower; the cable fills the frame
     const c = fr("hook", 0.55);
-    if (t < c) { move(t, 0, c, [V(-700, 40, -1500), V(0, 140, -ZT), 30], [V(-520, 70, -1200), V(0, 160, -ZT), 30], 0.5); title(t, fr("hook", 0.03), c, "San Francisco", "Two cables", 150); }
+    if (t < c) { move(t, 0, c, [V(-75, 88, 120), V(0, 150, -ZT), 30], [V(-48, 112, -60), V(0, 165, -ZT), 30], 0.5); title(t, fr("hook", 0.03), c, "San Francisco", "Two cables", 150); }
     else { keyShadow(V(-CX, cableY(-300), -300), 90); move(t, c, at("bridge"), [V(-CX - 7, cableY(-250) - 1, -250), V(-CX, cableY(-420), -420), 44], [V(-CX - 5, cableY(-270) + 1, -270), V(-CX, cableY(-460), -460), 40], 0.4);
       setBig(Math.round(27572 * ease(prog(t, c, at("bridge") - 0.3))).toLocaleString("en-US"), "WIRES IN ONE CABLE"); hudShow("big", win(t, c + 0.2, at("bridge"))); }
   } else if (t < at("hang")) { // the whole bridge, drone rising past a tower
-    move(t, at("bridge"), at("hang"), [V(-620, 170, -1500), V(0, 120, -100), 38], [V(-480, 290, -1350), V(0, 110, -100), 38], 0.4);
+    move(t, at("bridge"), at("hang"), [V(-330, 115, -1230), V(0, 135, -250), 40], [V(-260, 200, -1090), V(0, 120, -180), 40], 0.4);
     callout("tower", t, fr("bridge", 0.1), fr("bridge", 0.55), V(0, TOWER_H, -ZT), 300, 420); callout("span", t, fr("bridge", 0.5), at("hang"), V(0, DECK + 2, 0), 760, 1150);
   } else if (t < at("load")) { // under the deck: it hangs
     keyShadow(V(0, DECK, 0), 80); move(t, at("hang"), at("load"), [V(-60, DECK - 30, -40), V(0, DECK, 20), 40], [V(-45, DECK - 22, -20), V(0, DECK + 4, 30), 40], 0.4);
@@ -50,7 +50,7 @@ H.frame("Whole folders, sent as one.", async (t) => {
     else { move(t, at("towers"), at("anchor"), [V(-520, 90, ZT - 380), V(0, 110, ZT), 40], [V(-470, 70, ZT - 300), V(0, 100, ZT), 40], 0.3); callout("push", t, fr("towers", 0.4), at("anchor"), V(-CX, 40, ZT), 760, 1200); }
   } else if (t < at("cable")) { // anchorage: the cables dive into 60,000 tons of concrete (cross-section)
     flows(0.75 + 0.25 * prog(t, at("anchor"), fr("anchor", 0.6))); keyShadow(V(0, 30, ZA), 120);
-    move(t, at("anchor"), at("cable"), [V(260, 150, ZA - 260), V(0, 50, ZA), 40], [V(220, 125, ZA - 200), V(0, 45, ZA + 10), 40], 0.3);
+    move(t, at("anchor"), at("cable"), [V(-250, 130, ZA - 250), V(0, 45, ZA), 40], [V(-210, 110, ZA - 190), V(0, 40, ZA + 10), 40], 0.3);
     callout("anch", t, fr("anchor", 0.3), at("cable"), V(0, 40, ZA + 30), 760, 1180);
   } else if (t < at("move")) { // INSIDE THE CABLE: cut, strands, wires; spun across, compacted
     CC.visible = true; BRIDGE.visible = false; LAND.visible = false; sea.visible = false; sky.visible = false; for (const f of FOGL) f.visible = false; scene.background = new THREE.Color(0x0c0e12); scene.fog.density = 0; camRange(0.002, 200);
@@ -69,10 +69,10 @@ H.frame("Whole folders, sent as one.", async (t) => {
     if (t < at("range")) hudShow("therm", win(t, at("move") + 0.2, at("range"))); else hudShow("range", win(t, at("range") + 0.2, at("orange")));
     hudShow("exag", win(t, at("move") + 0.3, at("orange"))); callout("sag", t, fr("move", 0.2), at("orange"), V(0, DECK - deckDrop(0), 0), 760, 1000);
   } else if (t < at("orbi")) { // International Orange in the fog
-    FOGU.uK.value = 1.6; move(t, at("orange"), at("orbi"), [V(-300, 75, -900), V(0, 150, -ZT), 30], [V(-260, 82, -820), V(0, 160, -ZT), 30], 0.4);
+    FOGU.uK.value = 1.6; move(t, at("orange"), at("orbi"), [V(-130, 80, -1010), V(0, 150, -ZT), 30], [V(-110, 88, -930), V(0, 160, -ZT), 30], 0.4);
     hudShow("orange", win(t, fr("orange", 0.15), at("orbi")));
   } else { // ORBI at the Battery Spencer overlook
-    OR.visible = true; camRange(0.05, 70000); keyShadow(OR.position.clone(), 6); orbiL.intensity = 0.5; OR.updateMatrixWorld(); const OW = (x, y, z) => OR.localToWorld(V(x, y, z));
+    OR.visible = true; camRange(0.05, 70000); keyShadow(OR.position.clone(), 6); H.hemi.intensity = 1.25; H.key.intensity = 3.0; orbiL.intensity = 0.5; OR.updateMatrixWorld(); const OW = (x, y, z) => OR.localToWorld(V(x, y, z));
     const bk = t < at("orbi2") ? -1 : clamp(prog(t, fr("orbi2", 0.1), fr("orbi2", 0.8))); const got = t < at("orbi3") ? 0 : clamp(prog(t, at("orbi3"), fr("orbi3", 0.6)));
     screen(lap, { k: bk < 0 ? (t > fr("orbi", 0.4) ? 0 : -1) : Math.round(bk * 50) / 50 }, drawLap); screen(ph, { got: Math.round(got * 40) / 40 }, drawPhone);
     const a0 = lap.g.position.clone().add(V(0.3, 1.0, 0.25)), hub = lap.g.position.clone().add(V(0.6, 2.1, 0.4)), b0 = ph.g.position.clone().add(V(0, 0.25, 0));
