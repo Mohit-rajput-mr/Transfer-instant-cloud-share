@@ -1,0 +1,108 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know the first flight of an airplane was shorter than the wings of a jumbo jet?",
+   "dur": 4.323,
+   "at": 0.35
+  },
+  {
+   "key": "real",
+   "text": "This is the real Wright Flyer, laser scanned by the Smithsonian. Every wire, every rib.",
+   "dur": 6.605,
+   "at": 5.17
+  },
+  {
+   "key": "build",
+   "text": "Twelve metres wide. A frame of spruce and ash, covered in cotton muslin.",
+   "dur": 4.28,
+   "at": 12.23
+  },
+  {
+   "key": "engine",
+   "text": "No car engine was light enough. So their mechanic, Charlie Taylor, built one from scratch. Twelve horsepower.",
+   "dur": 7.629,
+   "at": 16.96
+  },
+  {
+   "key": "props",
+   "text": "Bicycle chains drive two hand-carved propellers. One chain is crossed, so they spin in opposite directions.",
+   "dur": 7.356,
+   "at": 25.04
+  },
+  {
+   "key": "tunnel",
+   "text": "Their secret was a homemade wind tunnel. In nineteen oh one, they tested two hundred little wings in it.",
+   "dur": 7.079,
+   "at": 32.84
+  },
+  {
+   "key": "lift",
+   "text": "A curved wing pushes the air down. And the air pushes the wing up. That's lift.",
+   "dur": 5.091,
+   "at": 40.37
+  },
+  {
+   "key": "warp",
+   "text": "To steer, the pilot swung his hips in a cradle. Wires twisted the wing tips, and turned the rudder.",
+   "dur": 5.965,
+   "at": 45.91
+  },
+  {
+   "key": "day",
+   "text": "December seventeenth, nineteen oh three. Kitty Hawk, North Carolina. A strong wind, over thirty kilometres an hour.",
+   "dur": 7.459,
+   "at": 52.33
+  },
+  {
+   "key": "rail",
+   "text": "The Flyer ran down a wooden rail, straight into the wind. And it lifted off.",
+   "dur": 5.795,
+   "at": 60.24
+  },
+  {
+   "key": "twelve",
+   "text": "Twelve seconds. Thirty-seven metres. A jumbo jet's wings are wider than that.",
+   "dur": 5.027,
+   "at": 66.53
+  },
+  {
+   "key": "four",
+   "text": "They flew four times that day. The last flight lasted fifty-nine seconds, and covered two hundred and sixty metres.",
+   "dur": 7.736,
+   "at": 72.06
+  },
+  {
+   "key": "gust",
+   "text": "Minutes later, a gust of wind flipped the Flyer over. It never flew again.",
+   "dur": 4.689,
+   "at": 80.25
+  },
+  {
+   "key": "orbi",
+   "text": "The Wrights kept their work secret, shared with only a few people. Orbi Transfer Spaces work the same way.",
+   "dur": 7.139,
+   "at": 85.43
+  },
+  {
+   "key": "orbi2",
+   "text": "A private Space is a named room with a passcode. Its files never show up in public, and only members can open them.",
+   "dur": 6.307,
+   "at": 92.97
+  },
+  {
+   "key": "orbi3",
+   "text": "No account, no app.",
+   "dur": 1.635,
+   "at": 99.68
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com.",
+   "dur": 1.975,
+   "at": 101.71
+  }
+ ],
+ "duration": 106.09
+}

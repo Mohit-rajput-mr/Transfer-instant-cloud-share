@@ -19,6 +19,12 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-24 Wright Flyer film (media/wright-film, Smithsonian CC0 scan — shape only, real materials applied; media/wright-model).
+  Fixed in preview: sand too dark (texture gamma), cameras inside the wings in 9:16, wind-tunnel box hid its inside (near wall → glass),
+  dust puffs as big spheres, flight-path aerials unreadable (lines widened, camera up = +z, matrix refresh after lookAt so callouts
+  project right). Overstated line ("kept their work between the two of them") reworded to the sourced "secret, shared with only a few".
+  Verified: WER 0.068, side-by-sides in wright-film/source/check. Open: the engine reads grey; museum photos show it dark.
+  Process defect: running the voice model during a 4-worker render made it ~100× slower → voice only when no render runs.
 - 2026-11-24 Apollo 11 film (media/apollo-film, real Smithsonian CC0 scan, media/apollo-model/USE_THIS_MODEL.md). Defects found in preview and fixed:
   plasma/heat glow blew frames to white (emission 3× too strong; atmosphere shell drawn on top of the capsule because transparent
   objects sort after opaque → made it opaque-additive, renderOrder first); cameras 2–3× too close for 9:16; honeycomb section unreadable

@@ -1,0 +1,104 @@
+[
+ {
+  "key": "hook",
+  "text": "Do you know the first flight of an airplane was shorter than the wings of a jumbo jet?",
+  "emo": 1.1,
+  "gap": 0.5
+ },
+ {
+  "key": "real",
+  "text": "This is the real Wright Flyer, laser scanned by the Smithsonian. Every wire, every rib.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "build",
+  "text": "Twelve metres wide. A frame of spruce and ash, covered in cotton muslin.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "engine",
+  "text": "No car engine was light enough. So their mechanic, Charlie Taylor, built one from scratch. Twelve horsepower.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "props",
+  "text": "Bicycle chains drive two hand-carved propellers. One chain is crossed, so they spin in opposite directions.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "tunnel",
+  "text": "Their secret was a homemade wind tunnel. In nineteen oh one, they tested two hundred little wings in it.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "lift",
+  "text": "A curved wing pushes the air down. And the air pushes the wing up. That's lift.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "warp",
+  "text": "To steer, the pilot swung his hips in a cradle. Wires twisted the wing tips, and turned the rudder.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "day",
+  "text": "December seventeenth, nineteen oh three. Kitty Hawk, North Carolina. A strong wind, over thirty kilometres an hour.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "rail",
+  "text": "The Flyer ran down a wooden rail, straight into the wind. And it lifted off.",
+  "emo": 1.1,
+  "gap": 0.5
+ },
+ {
+  "key": "twelve",
+  "text": "Twelve seconds. Thirty-seven metres. A jumbo jet's wings are wider than that.",
+  "emo": 1.05,
+  "gap": 0.5
+ },
+ {
+  "key": "four",
+  "text": "They flew four times that day. The last flight lasted fifty-nine seconds, and covered two hundred and sixty metres.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "gust",
+  "text": "Minutes later, a gust of wind flipped the Flyer over. It never flew again.",
+  "emo": 1.05,
+  "gap": 0.5
+ },
+ {
+  "key": "orbi",
+  "text": "The Wrights kept their work secret, shared with only a few people. Orbi Transfer Spaces work the same way.",
+  "emo": 1.0,
+  "gap": 0.4
+ },
+ {
+  "key": "orbi2",
+  "text": "A private Space is a named room with a passcode. Its files never show up in public, and only members can open them.",
+  "emo": 1.0,
+  "gap": 0.4
+ },
+ {
+  "key": "orbi3",
+  "text": "No account, no app.",
+  "emo": 1.05,
+  "gap": 0.4
+ },
+ {
+  "key": "end",
+  "text": "Orbi Transfer dot com.",
+  "emo": 1.0,
+  "gap": 0.6
+ }
+]
