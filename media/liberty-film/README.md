@@ -8,12 +8,18 @@ before it leaves; the server only sees scrambled bytes.
 
 - `OrbiTransfer-statue-of-liberty.mp4`: 1080×1920, H.264 + AAC; `cover.jpg`.
 - Source: `source/` (kit/hd.js). Build: `/tmp/cb/bin/python kit/vo.py` → `python3 make_events.py && python3 liberty_sfx.py &&
-  EXTRA_GAIN=1.3 python3 kit/synth.py` → `cat story_a.js story_b.js story_c.js > story.js` → 4 × `node kit/render.cjs a b frames`.
+  EXTRA_GAIN=1.3 python3 kit/synth.py` → `node gen_statue.cjs` (writes `statue.bin`, not committed) → `cat story_a.js story_b.js
+  story_c.js > story.js` → 4 × `node kit/render.cjs a b frames`.
 
 ## What's on screen (real scale, metres)
-- The statue is lofted from a measured profile (heel to torch 46.05 m, heel to top of head 33.86 m, head 5.26 m, right arm
-  12.8 m, waist 10.67 m, tablet 7.19 × 4.14 × 0.61 m, crown of 7 rays) on Hunt's pedestal and the star-shaped Fort Wood
-  (pedestal top 46.94 m; ground to torch 92.99 m). Drapery folds, the palla, the torch balcony and gold-leaf flame.
+- The statue is sculpted as a signed-distance model and polygonised with surface nets (`gen_statue.cjs`): the stola's
+  falling folds, the palla rolled diagonally from the left shoulder to the right hip and hanging on her left under the
+  tablet, the raised right arm with the sleeve slid to the shoulder and the fist round the torch, the left hand's fingers
+  round the tablet, a classical face, waved hair and the bun (head at 3.5 cm detail). Proportions from NPS: heel to torch
+  46.05 m, heel to top of head 33.86 m, head 5.26 m, ear to ear 3.05 m, nose 1.48 m, mouth 0.91 m, right arm 12.8 m,
+  tablet 7.19 × 4.14 × 0.61 m; the diadem with 25 windows and 7 rays; torch balcony and gold-leaf flame.
+- Hunt's pedestal in light grey granite (rusticated corner pilasters, the loggia, a row of shields round the parapet) on
+  the star-shaped Fort Wood (pedestal top 46.94 m; ground to torch 92.99 m); island trees from a Poly Haven model.
 - Copper → patina shader driven by time (streaks + noise), x-ray mode revealing the iron pylon, the secondary frame that
   follows the skin and the flat bars out to it, and the arm truss. Sway shown ×20 and labelled MOTION EXAGGERATED.
 - Macro: the copper sheet edge (2.4 mm) beside two pennies; the patina layer (thickness exaggerated, labelled).
@@ -33,7 +39,8 @@ before it leaves; the server only sees scrambled bytes.
 
 ## Assets and licences
 - Sky: Poly Haven "Qwantani dawn (pure sky)", CC0, with a procedural storm deck. Textures: Poly Haven (CC0) green_metal_rust,
-  old_sandstone_02, grass_ground, concrete_wall_008, wood_table_001. Water: three.js `Water.js` (MIT) with Gerstner waves.
+  grass_ground, concrete_wall_008, wood_table_001; trees: Poly Haven "Island Tree 02" (CC0) baked to impostors. Water: three.js `Water.js` (MIT) with Gerstner waves.
 - Orbi screens: live orbitransfer.com captures (2026-11-22, `source/shots_live/`), with the state drawn on top.
 - Voice: Chatterbox (MIT) cloned from the house reference voice (Kokoro bm_george, Apache-2.0); checked with faster-whisper.
-- Reference photos (`source/ref/`, credits in `source/ref/credits.json`): Wikimedia Commons, free licences.
+- Reference photos for the side-by-side check (`source/ref/`, author + licence + link per file in `source/ref/credits.json`):
+  Flickr via Openverse (CC BY / BY-SA / BY-ND) — reference only, not shown in the film.

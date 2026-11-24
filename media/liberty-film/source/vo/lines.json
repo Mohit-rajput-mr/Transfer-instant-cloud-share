@@ -1,103 +1,102 @@
 {
  "sr": 24000,
- "duration": 114.71,
  "lines": [
   {
    "key": "hook",
    "text": "Do you know the Statue of Liberty's skin is only about as thick as two coins?",
-   "at": 0.35,
-   "dur": 6.83
+   "dur": 5.005,
+   "at": 0.35
   },
   {
    "key": "statue",
    "text": "From the ground to the tip of the torch, she stands ninety-three metres over New York Harbor.",
-   "at": 7.68,
-   "dur": 7.24
+   "dur": 6.029,
+   "at": 5.86
   },
   {
    "key": "skin",
    "text": "But her copper skin is just two point four millimetres thick. The thickness of two pennies, pressed together.",
-   "at": 15.37,
-   "dur": 7.65
+   "dur": 7.16,
+   "at": 12.33
   },
   {
    "key": "hollow",
    "text": "So how does something that thin stand up to Atlantic storms? Look inside.",
-   "at": 23.47,
-   "dur": 5.61
+   "dur": 5.432,
+   "at": 19.94
   },
   {
    "key": "frame",
    "text": "She's hollow. Holding her up is an iron skeleton, designed by Gustave Eiffel, the engineer of the Eiffel Tower.",
-   "at": 29.52,
-   "dur": 8.06
+   "dur": 7.377,
+   "at": 25.83
   },
   {
    "key": "pylon",
    "text": "A tall iron tower runs up the middle. From it, a web of flexible iron bars reaches out to the skin.",
-   "at": 38.03,
-   "dur": 8.87
+   "dur": 6.925,
+   "at": 33.65
   },
   {
    "key": "flex",
    "text": "Eiffel made it flexible on purpose. A rigid frame would pile up stress in the copper, until it cracked.",
-   "at": 47.35,
-   "dur": 8.06
+   "dur": 6.179,
+   "at": 41.03
   },
   {
    "key": "sway",
    "text": "So in strong wind, she sways. Up to three inches. And the torch up to six.",
-   "at": 55.85,
-   "dur": 6.83
+   "dur": 4.877,
+   "at": 47.66
   },
   {
    "key": "hammer",
    "text": "Each copper sheet was heated, then hammered into shape by hand, over wooden moulds. It's called repouss\u00e9.",
-   "at": 63.18,
-   "dur": 7.24
+   "dur": 7.224,
+   "at": 53.04
   },
   {
    "key": "brown",
    "text": "When she was unveiled in eighteen eighty-six, she was shiny copper brown.",
-   "at": 70.87,
-   "dur": 5.2
+   "dur": 4.984,
+   "at": 60.71
   },
   {
    "key": "green",
    "text": "But copper reacts with the air and the sea. After nineteen hundred, a green patina spread over her.",
-   "at": 76.52,
-   "dur": 7.65
+   "dur": 6.797,
+   "at": 66.14
   },
   {
    "key": "protect",
    "text": "People thought it was damage. Engineers studied it, and found the opposite. The green layer protects the copper beneath.",
-   "at": 84.62,
-   "dur": 8.06
+   "dur": 6.801,
+   "at": 73.39
   },
   {
    "key": "orbi",
    "text": "Thin, but protected. That's how Orbi Transfer treats your files.",
-   "at": 93.17,
-   "dur": 4.38
+   "dur": 4.625,
+   "at": 80.69
   },
   {
    "key": "orbi2",
    "text": "Every file is locked on your own device, with AES two fifty-six, before it ever leaves.",
-   "at": 97.96,
-   "dur": 6.83
+   "dur": 5.645,
+   "at": 85.72
   },
   {
    "key": "orbi3",
    "text": "The server only ever sees scrambled bytes. No account, no app.",
-   "at": 105.19,
-   "dur": 4.79
+   "dur": 4.301,
+   "at": 91.76
   },
   {
    "key": "end",
    "text": "Orbi Transfer dot com.",
-   "at": 110.38,
-   "dur": 1.93
+   "dur": 1.975,
+   "at": 96.46
   }
  ],
- "provisional": true
+ "duration": 100.84
 }

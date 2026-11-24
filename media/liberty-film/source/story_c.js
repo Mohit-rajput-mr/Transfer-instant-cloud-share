@@ -111,5 +111,6 @@ H.frame("Locked on your device. No account, no app.", async (t) => {
       H.cam.up.copy(up2.transformDirection(OR.matrixWorld)); H.cam.lookAt(OW(...pc.toArray())); }
     else { move(t, at("orbi3"), at("end"), [OW(1.0, 2.0, 7.8), OW(1.6, 2.4, -0.6), 44], [OW(0.8, 1.9, 7.0), OW(1.6, 2.4, -0.6), 44], 0.2); callout("srv", t, fr("orbi3", 0.05), fr("orbi3", 0.6), OW(3.6, 2.15, -1.5), 760, 900); hudShow("chips", win(t, fr("orbi3", 0.5), at("end"))); }
   }
+  if (window.DBG) { const d = window.DBG[0].split(",").map(Number); look(SL(d[0], d[1], d[2]), SL(d[3], d[4], d[5]), d[6]); if (window.DBG[1] === "clean") { for (const id of ["hud", "lines", "title", "sub"]) { const e = H.$(id); if (e) e.style.visibility = "hidden"; } } }
 });
 await H.ready();

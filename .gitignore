@@ -41,3 +41,4 @@ yarn-error.log*
 next-env.d.ts
 /live/node_modules
 /live/.wrangler
+media/liberty-film/source/statue.bin

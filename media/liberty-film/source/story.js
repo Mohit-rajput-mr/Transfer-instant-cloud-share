@@ -5,6 +5,7 @@
 // Morning over New York Harbor (Gerstner swell), an Atlantic storm (rain, sway ×20 labelled), the patina spreading.
 import { THREE, H, RoundedBoxGeometry } from "./kit/hd.js";
 import { Water } from "./kit/lib/jsm/objects/Water.js";
+import { GLTFLoader } from "./kit/lib/jsm/loaders/GLTFLoader.js";
 import { makePhone, makeLaptop, makeLock, screen, green, rr, img } from "./kit/orbiset.js";
 const { V, clamp, ease, smooth, out, back, lerp, win, prog, at, end, fr, move, look, callout, title, hudEl, hudShow, flash, metal, paint, matte, glow, sh } = H;
 const scene = H.scene, TAU = Math.PI * 2;
@@ -63,19 +64,34 @@ const grassT = (n, srgb, r) => tex(`kit/ph/grass_ground/grass_ground_${n}_1k.jpg
   lawn.rotation.x = -Math.PI / 2; lawn.position.y = -0.05; WORLD.add(lawn);
   const wall = sh(new THREE.Mesh(new THREE.CylinderGeometry(191, 193, 4.5, 96, 1, true), new THREE.MeshStandardMaterial({ color: 0x8d8a82, roughness: 0.9, map: tex("kit/ph/concrete_wall_008/concrete_wall_008_diff_1k.jpg", true, 60, 1) }))); wall.position.y = -2.3; WORLD.add(wall);
   const path = sh(new THREE.Mesh(new THREE.RingGeometry(80, 88, 96), matte(0xb9b2a4, 0.9)), false, true); path.rotation.x = -Math.PI / 2; path.position.y = 0.02; WORLD.add(path);
-  const treeG = (() => { const g = new THREE.IcosahedronGeometry(1, 3); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const v = V(p.getX(i), p.getY(i), p.getZ(i)); const n = 1 + 0.18 * Math.sin(v.x * 7 + v.y * 5) * Math.sin(v.z * 6 - v.y * 4) + 0.08 * Math.sin(v.x * 17 + v.z * 13); p.setXYZ(i, v.x * n, v.y * n, v.z * n); } g.computeVertexNormals(); return g; })();
-  const treeM = new THREE.MeshStandardMaterial({ color: 0x46603a, roughness: 1, map: grassT("diff", true, 3) }); const N = 420; const trees = new THREE.InstancedMesh(treeG, treeM, N); const m4 = new THREE.Matrix4();
-  for (let i = 0; i < N; i++) { const c = Math.floor(i / 3); const a = hash(c) * TAU, r = 95 + hash(c + 2) * 80; if (Math.abs(Math.sin(a - 1.57)) > 0.9 && Math.cos(a) * 0 + Math.sin(a) > 0) { m4.makeScale(0, 0, 0); trees.setMatrixAt(i, m4); continue; }
-    const s = 1.8 + hash(i + 4) * 1.6; const ox = (hash(i + 7) - 0.5) * 4, oz = (hash(i + 9) - 0.5) * 4; m4.makeScale(s, s * 0.9, s).setPosition(Math.cos(a) * r + ox, 2.2 + s * 0.7 + hash(i + 11) * 1.5, Math.sin(a) * r + oz); trees.setMatrixAt(i, m4); }
-  trees.castShadow = true; WORLD.add(trees); }
+  // trees: Poly Haven "Island Tree 02" (CC0) baked once into an impostor (front view, sun side lit), drawn as crossed quads
+  const IMP = await (async () => { const gl = await new GLTFLoader().loadAsync("kit/ph/island_tree_02/island_tree_02_1k.gltf"); const obj = gl.scene;
+    const box = new THREE.Box3().setFromObject(obj); const sz = box.getSize(V()), c = box.getCenter(V()); const S = new THREE.Scene(); S.add(obj); S.add(new THREE.HemisphereLight(0xdfe8ff, 0x3a3020, 1.2));
+    const dl = new THREE.DirectionalLight(0xfff0d8, 2.2); dl.position.set(c.x + sz.x, c.y + sz.y * 1.2, c.z + sz.x * 1.6); dl.target.position.copy(c); S.add(dl, dl.target);
+    const half = Math.max(sz.x, sz.z) / 2, size = 640, W = Math.round(size * (2 * half) / sz.y); const cam = new THREE.OrthographicCamera(-half, half, sz.y / 2, -sz.y / 2, 0.1, 1000); cam.position.set(c.x, c.y, c.z + half * 4); cam.lookAt(c);
+    const rt = new THREE.WebGLRenderTarget(W, size, { samples: 4 }); rt.texture.colorSpace = THREE.LinearSRGBColorSpace; const r = H.r, pt = r.getRenderTarget(), pc = new THREE.Color(); r.getClearColor(pc); const pa = r.getClearAlpha();
+    r.setRenderTarget(rt); r.setClearColor(0x000000, 0); r.clear(); r.render(S, cam); r.setRenderTarget(pt); r.setClearColor(pc, pa); obj.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+    return { tex: rt.texture, w: 2 * half, h: sz.y }; })();
+  const tq = (() => { const g1 = new THREE.PlaneGeometry(1, 1); g1.translate(0, 0.5, 0); const g2 = g1.clone(); g2.rotateY(Math.PI / 2); const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute([...g1.attributes.position.array, ...g2.attributes.position.array], 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute([...g1.attributes.uv.array, ...g2.attributes.uv.array], 2)); g.setIndex([0, 2, 1, 2, 3, 1, 4, 6, 5, 6, 7, 5]); return g; })();
+  const TPOS = []; for (let i = 0; i < 420; i++) { const c = Math.floor(i / 3); const a = hash(c) * TAU, r = 95 + hash(c + 2) * 80; if (Math.abs(Math.sin(a - 1.57)) > 0.9 && Math.sin(a) > 0) continue; { const tx = Math.cos(a) * r, tz = Math.sin(a) * r; if (Math.hypot(tx - 30, tz - 120) < 34 || Math.hypot(tx - 22, tz - 92) < 26) continue; }   // keep the drone's climb clear
+    TPOS.push([Math.cos(a) * r + (hash(i + 7) - 0.5) * 6, Math.sin(a) * r + (hash(i + 9) - 0.5) * 6, i]); }
+  const trees = new THREE.InstancedMesh(tq, new THREE.MeshBasicMaterial({ map: IMP.tex, alphaTest: 0.42, side: THREE.DoubleSide, fog: true }), TPOS.length); const m4 = new THREE.Matrix4(), col = new THREE.Color();
+  TPOS.forEach(([x, z, i], k) => { const hgt = 9 + hash(i) * 6, wdt = hgt * IMP.w / IMP.h; m4.compose(V(x, 0, z), new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), hash(i + 5) * TAU), V(wdt, hgt, wdt)); trees.setMatrixAt(k, m4);
+    trees.setColorAt(k, col.setRGB(0.62 + hash(i + 3) * 0.2, 0.66 + hash(i + 7) * 0.16, 0.6 + hash(i + 9) * 0.14)); });
+  trees.frustumCulled = false; WORLD.add(trees);
+  const shadowTrees = new THREE.InstancedMesh(new THREE.SphereGeometry(0.42, 8, 6), new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }), TPOS.length);
+  TPOS.forEach(([x, z, i], k) => { const hgt = 9 + hash(i) * 6; m4.makeScale(hgt * 0.8, hgt * 0.7, hgt * 0.8).setPosition(x, hgt * 0.62, z); shadowTrees.setMatrixAt(k, m4); }); shadowTrees.castShadow = true; shadowTrees.frustumCulled = false; WORLD.add(shadowTrees); }
+
 
 // =====================================================================================================================
 // FORT WOOD (11-point star) + FOUNDATION + PEDESTAL (granite): top at 46.94 m
 // =====================================================================================================================
 const PT = 46.94;
-const stoneT = (n, srgb, r) => tex(`kit/ph/old_sandstone_02/old_sandstone_02_${n}_1k.jpg`, srgb, r, r);
-const granite = new THREE.MeshStandardMaterial({ map: stoneT("diff", true, 6), normalMap: stoneT("nor_gl", false, 6), roughness: 0.85, color: 0xb9c2cc });
-const fortM = new THREE.MeshStandardMaterial({ map: stoneT("diff", true, 14), normalMap: stoneT("nor_gl", false, 14), roughness: 0.9, color: 0x9aa2aa });
+// pedestal: light grey Stony Creek granite (pinkish grey, as in the reference photos); Fort Wood: grey granite and concrete
+const stoneT = (n, srgb, r) => tex(`kit/ph/concrete_wall_008/concrete_wall_008_${n}_1k.jpg`, srgb, r, r);
+const granite = new THREE.MeshStandardMaterial({ map: stoneT("diff", true, 4), normalMap: stoneT("nor_gl", false, 4), roughness: 0.8, color: 0xf2e6dc });
+const fortM = new THREE.MeshStandardMaterial({ map: stoneT("diff", true, 12), normalMap: stoneT("nor_gl", false, 12), roughness: 0.88, color: 0xd6d0c8 });
 const PED = new THREE.Group(); scene.add(PED);
 { const s = new THREE.Shape(); for (let i = 0; i <= 22; i++) { const a = (i / 22) * TAU + Math.PI / 2, r = i % 2 ? 44 : 64; const x = Math.cos(a) * r, y = Math.sin(a) * r; i ? s.lineTo(x, y) : s.moveTo(x, y); }
   const g = new THREE.ExtrudeGeometry(s, { depth: 7.5, bevelEnabled: false }); g.rotateX(-Math.PI / 2); const fort = sh(new THREE.Mesh(g, fortM)); PED.add(fort);
@@ -88,7 +104,12 @@ const PED = new THREE.Group(); scene.add(PED);
   const dark = matte(0x1a1c1f, 0.9);
   for (let f = 0; f < 4; f++) for (let i = 0; i < 3; i++) { const o = sh(new THREE.Mesh(new THREE.BoxGeometry(2.6, 4.8, 0.6), dark), false, false); o.position.set((i - 1) * 6.2, 36.6, 12.05); o.position.applyAxisAngle(V(0, 1, 0), (f * Math.PI) / 2); o.rotation.y = (f * Math.PI) / 2; PED.add(o);
     for (const dx of [-1.7, 1.7]) { const c = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 5.2, 16), granite)); c.position.set((i - 1) * 6.2 + dx, 36.8, 12.5); c.position.applyAxisAngle(V(0, 1, 0), (f * Math.PI) / 2); PED.add(c); } }
-  box(26.4, 1.1, 26.4, 40.9); box(22.8, 3.6, 22.8, 42.0); box(24.0, 1.34, 24.0, 45.6); }
+  box(26.4, 1.1, 26.4, 40.9); box(22.8, 3.6, 22.8, 42.0); box(24.0, 1.34, 24.0, 45.6);
+  // rusticated corner pilasters on the shaft, a row of shields (discs) round the top parapet, a gallery rail under the loggia
+  for (let f = 0; f < 4; f++) for (const sx of [-1, 1]) { const q = sh(new THREE.Mesh(new THREE.BoxGeometry(3.2, 9.2, 0.7), granite)); q.position.set(sx * 11.4, 28.8, 13.3); q.position.applyAxisAngle(V(0, 1, 0), (f * Math.PI) / 2); q.rotation.y = (f * Math.PI) / 2; PED.add(q);
+      for (let k = 0; k < 6; k++) { const g = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.08, 0.75), dark); g.position.set(sx * 11.4, 24.6 + k * 1.5, 13.32); g.position.applyAxisAngle(V(0, 1, 0), (f * Math.PI) / 2); g.rotation.y = (f * Math.PI) / 2; PED.add(g); } }
+  for (let f = 0; f < 4; f++) for (let i = 0; i < 10; i++) { const d = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.25, 24), granite)); d.rotation.x = Math.PI / 2; d.position.set((i - 4.5) * 2.05, 43.8, 11.5); d.position.applyAxisAngle(V(0, 1, 0), (f * Math.PI) / 2); d.rotation.set(Math.PI / 2, 0, 0); d.rotateOnWorldAxis(V(0, 1, 0), (f * Math.PI) / 2); PED.add(d); }
+  for (let f = 0; f < 4; f++) { const r = sh(new THREE.Mesh(new THREE.BoxGeometry(25.6, 0.9, 0.5), granite)); r.position.set(0, 34.0, 13.0); r.position.applyAxisAngle(V(0, 1, 0), (f * Math.PI) / 2); r.rotation.y = (f * Math.PI) / 2; PED.add(r); } }
 
 // =====================================================================================================================
 // THE STATUE: robed figure lofted from a profile with drapery folds, raised right arm + torch, tablet, crown of 7 rays
@@ -123,8 +144,8 @@ skinMat.onBeforeCompile = (s) => { Object.assign(s.uniforms, SW);
         vec3 copper = vec3(0.78, 0.4, 0.22) * (0.75 + 0.9 * lum) + vec3(0.1, 0.03, 0.0) * n3(vLP * 9.0);
         vec3 pat = mix(vec3(0.36, 0.62, 0.52), diffuseColor.rgb * vec3(0.9, 1.25, 1.15), 0.35) * (0.85 + 0.3 * nz);
         diffuseColor.rgb = mix(copper, pat, cover); }`)
-    .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(0.3, 0.78, cover);")
-    .replace("#include <metalnessmap_fragment>", "#include <metalnessmap_fragment>\nmetalnessFactor = mix(0.92, 0.12, cover);")
+    .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(0.4, 0.78, cover);")          // new copper: polished but not a mirror
+    .replace("#include <metalnessmap_fragment>", "#include <metalnessmap_fragment>\nmetalnessFactor = mix(0.55, 0.12, cover);")
     .replace("#include <dithering_fragment>", `#include <dithering_fragment>
       { float edge = pow(1.0 - abs(dot(normalize(normal), normalize(vViewPosition))), 2.0);
         gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.35, 0.8, 1.0) * (0.04 + 1.0 * edge), uX);
@@ -141,41 +162,19 @@ function bodyPoint(th, y, out) { const r = profR(y), cx = Math.cos(th), sz = Mat
   const x = r * cx; const yl = 19.5 + 1.6 * x; const palla = y < 27.5 ? 0.5 * Math.exp(-Math.pow((y - yl) / 1.3, 2)) * (0.4 + 0.6 * front) + (y > yl && y < 27.5 ? 0.18 : 0) * front : 0;
   const hem = y < 1.2 ? 0.25 * Math.sin(th * 9) * (1.2 - y) : 0;
   const rr2 = r + folds + palla + hem; out.set(rr2 * cx, y, rr2 * depth(y) * sz); return out; }
-{ const NU = 220, NV = 200, pos = [], uv = [], idx = [], p = V();
-  for (let j = 0; j <= NV; j++) { const y = (j / NV) * 30.2; for (let i = 0; i <= NU; i++) { const th = (i / NU) * TAU; bodyPoint(th, y, p); pos.push(p.x, p.y, p.z); uv.push((i / NU) * 9, y / 3.4); } }
-  for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) { const a = j * (NU + 1) + i, b = a + 1, c = a + NU + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
-  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
-  ST.add(sh(new THREE.Mesh(g, skinMat))); }
-// a tube with a varying radius along a curve (arms, sleeves)
-function limb(pts, radii, segs = 60, rad = 28) { const c = new THREE.CatmullRomCurve3(pts); const fr2 = c.computeFrenetFrames(segs, false); const pos = [], uv = [], idx = [];
-  for (let i = 0; i <= segs; i++) { const u = i / segs, P = c.getPointAt(u); const r = (() => { const k = u * (radii.length - 1), a = Math.floor(k), b = Math.min(a + 1, radii.length - 1); return lerp(radii[a], radii[b], smooth(k - a)); })();
-    for (let j = 0; j <= rad; j++) { const a = (j / rad) * TAU; const fold = 1 + 0.06 * Math.sin(a * 7 + u * 9); const n = fr2.normals[i].clone().multiplyScalar(Math.cos(a)).add(fr2.binormals[i].clone().multiplyScalar(Math.sin(a)));
-      const q = P.clone().addScaledVector(n, r * fold); pos.push(q.x, q.y, q.z); uv.push((j / rad) * 2, u * 4); } }
-  for (let i = 0; i < segs; i++) for (let j = 0; j < rad; j++) { const a = i * (rad + 1) + j, b = a + 1, c2 = a + rad + 1, d = c2 + 1; idx.push(a, b, c2, b, d, c2); }
-  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
-  const m = sh(new THREE.Mesh(g, skinMat)); ST.add(m); return m; }
-const ARM_R = [V(-4.7, 26.6, 0.1), V(-5.9, 30.5, 0.5), V(-6.5, 34.5, 0.8), V(-6.7, 38.6, 1.0)];
-limb(ARM_R, [1.9, 1.75, 1.35, 1.05, 0.85]);                                      // raised right arm (12.8 m)
-limb([V(-4.6, 27.2, 0.2), V(-5.8, 29.2, 0.4), V(-6.5, 30.2, 0.6), V(-6.6, 29.0, 0.5)], [1.4, 1.6, 1.2, 0.5], 40);   // falling sleeve at the elbow
-limb([V(4.6, 26.8, 0.2), V(5.9, 23.8, 0.6), V(6.3, 21.0, 1.4), V(5.4, 20.4, 3.0)], [1.7, 1.4, 1.1, 0.8]);          // left arm, bent, holding the tablet
-// hand round the torch handle + hand under the tablet
-for (const [p, s] of [[V(-6.7, 39.2, 1.0), V(1.0, 1.3, 1.0)], [V(5.3, 20.2, 3.1), V(0.9, 0.7, 1.1)]]) { const m = sh(new THREE.Mesh(new THREE.SphereGeometry(1, 32, 20), skinMat)); m.position.copy(p); m.scale.copy(s); ST.add(m); }
-// head (chin → cranium 5.26 m, ear to ear 3.05 m): an ellipsoid shaped into a face; hair, bun
-{ const g = new THREE.SphereGeometry(1, 96, 64); const p = g.attributes.position;
-  for (let i = 0; i < p.count; i++) { let x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-    if (z > 0) { z *= 1 - 0.18 * Math.max(0, z - 0.5);                                   // flatter face
-      z += 0.22 * Math.exp(-(x * x) / 0.012) * Math.exp(-Math.pow((y + 0.05) / 0.22, 2)) * (y < 0.15 ? 1 : 0.3);   // nose
-      z -= 0.07 * Math.exp(-Math.pow(Math.abs(x) - 0.33, 2) / 0.012) * Math.exp(-Math.pow((y - 0.18) / 0.1, 2));  // eye sockets
-      z += 0.05 * Math.exp(-Math.pow((y - 0.33) / 0.08, 2)) * (1 - x * x);                                        // brow
-      z += 0.04 * Math.exp(-(x * x) / 0.05) * Math.exp(-Math.pow((y + 0.42) / 0.07, 2)); }                           // lips
-    if (y < -0.55) { x *= 1 - (-0.55 - y) * 0.55; }                                                                // chin
-    p.setXYZ(i, x * 1.52, y * 2.63, z * 1.75); }
-  g.computeVertexNormals(); const head = sh(new THREE.Mesh(g, skinMat)); head.position.set(0, 31.2, 0.35); ST.add(head);
-  const bun = sh(new THREE.Mesh(new THREE.SphereGeometry(1.1, 32, 20), skinMat)); bun.position.set(0, 31.6, -1.7); bun.scale.set(1.1, 0.9, 0.8); ST.add(bun);
-  for (let i = 0; i < 7; i++) { const w = sh(new THREE.Mesh(new THREE.TorusGeometry(1.62 - i * 0.02, 0.16, 10, 40, Math.PI * 1.2), skinMat)); w.position.set(0, 30.3 + i * 0.32, -0.1); w.rotation.set(Math.PI / 2 + 0.15, 0, Math.PI * 1.4 + 0.0); ST.add(w); } }
+const ARM_R = [V(-4.3, 26.9, 0.3), V(-5.85, 32.2, 0.75), V(-6.25, 35.0, 0.88), V(-6.6, 37.7, 1.0)];   // raised right arm axis (matches gen_statue.cjs)
+// the sculpted figure (gen_statue.cjs → statue.bin): robe with falling folds, the palla, arms, hands, neck at 0.1 m and the
+// head (classical face, wavy hair, bun) at 0.035 m, polygonised from a signed-distance model. bodyPoint() above stays the
+// skin envelope for the x-ray skeleton.
+{ const SB = await (await fetch("statue.bin")).arrayBuffer(); const hd = new Uint32Array(SB, 0, 4); let o = 16;
+  for (let m = 0; m < 2; m++) { const np = hd[m * 2], ni = hd[m * 2 + 1];
+    const pos = new Float32Array(SB, o, np); o += np * 4; const nor = new Float32Array(SB, o, np); o += np * 4; const idx = new Uint32Array(SB, o, ni); o += ni * 4;
+    const uv = new Float32Array((np / 3) * 2); for (let i = 0; i < np / 3; i++) { uv[i * 2] = (Math.atan2(pos[i * 3 + 2], pos[i * 3]) / TAU + 0.5) * 9; uv[i * 2 + 1] = pos[i * 3 + 1] / 3.4; }
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
+    g.setAttribute("uv", new THREE.BufferAttribute(uv, 2)); g.setIndex(new THREE.BufferAttribute(idx, 1)); g.computeBoundingSphere(); ST.add(sh(new THREE.Mesh(g, skinMat))); } }
 // crown: diadem with 25 windows and 7 rays (up to 2.74 m)
-{ const band = sh(new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.75, 1.0, 64, 1, true), skinMat)); band.position.set(0, 33.0, 0.25); band.material.side; ST.add(band);
-  const winM = matte(0x0c0e10, 0.9); for (let i = 0; i < 25; i++) { const a = (i / 24 - 0.5) * 2.2 + Math.PI / 2; const w = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.36, 0.08), winM); w.position.set(Math.cos(a) * 1.86, 33.0, Math.sin(a) * 1.86 + 0.25); w.rotation.y = -a + Math.PI / 2; ST.add(w); }
+{ const band = sh(new THREE.Mesh(new THREE.CylinderGeometry(1.92, 1.74, 1.2, 64, 1, false), skinMat)); band.position.set(0, 33.0, 0.25); ST.add(band);   // diadem
+  const winM = matte(0x0c0e10, 0.9); for (let i = 0; i < 25; i++) { const a = (i / 24 - 0.5) * 2.5 + Math.PI / 2; const w = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.5, 0.1), winM); w.position.set(Math.cos(a) * 1.87, 33.0, Math.sin(a) * 1.87 + 0.25); w.rotation.y = -a + Math.PI / 2; ST.add(w); }   // 25 windows with mullions between
   for (let i = 0; i < 7; i++) { const a = Math.PI / 2 + (i - 3) * 0.42; const L = 2.74; const r = sh(new THREE.Mesh(new THREE.ConeGeometry(0.3, L, 4), skinMat)); const dir = V(Math.cos(a), 0.42 - Math.abs(i - 3) * 0.03, Math.sin(a)).normalize();
     r.position.set(Math.cos(a) * 1.9, 33.35, Math.sin(a) * 1.9 + 0.25).addScaledVector(dir, L / 2); r.quaternion.setFromUnitVectors(V(0, 1, 0), dir); ST.add(r); } }
 // tablet (7.19 × 4.14 × 0.61 m), JULY IV MDCCLXXVI
@@ -231,6 +230,23 @@ const KIND_C = [new THREE.Color(0.24, 1.0, 0.55), new THREE.Color(1.0, 0.82, 0.4
 /** light up the skeleton by kind: ks = [pylon, secondary, armature, arm] 0..1 */
 function skelGlow(ks) { const c = new THREE.Color(); BEAMS.forEach(([, , , k], i) => SKEL.setColorAt(i, c.copy(KIND_C[k]).multiplyScalar(ks[k] || 0))); SKEL.instanceColor.needsUpdate = true; HIK.uGlow.value = 1.6; }
 skelGlow([0, 0, 0, 0]);
+
+// the double-helix stair to the crown (162 steps) round the pylon, with visitors climbing (seen in the x-ray)
+const STAIR = new THREE.Group(); LIB.add(STAIR);
+{ const N = 162, im = new THREE.InstancedMesh(new THREE.BoxGeometry(0.9, 0.08, 0.32), new THREE.MeshStandardMaterial({ color: 0x8a8f96, roughness: 0.5, metalness: 0.6 }), N * 2); const m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
+  for (let h = 0; h < 2; h++) for (let i = 0; i < N; i++) { const a = i * 0.24 + h * Math.PI, y = 1 + i * 0.185, r = 3.4 - y * 0.05; q.setFromAxisAngle(V(0, 1, 0), -a); m4.compose(V(Math.cos(a) * r, y, Math.sin(a) * r * 0.8), q, V(1, 1, 1)); im.setMatrixAt(h * N + i, m4); }
+  STAIR.add(im);
+  const pm = new THREE.MeshStandardMaterial({ color: 0xd9b48c, roughness: 0.7, emissive: 0xffc890, emissiveIntensity: 0.25 }); const body = new THREE.CapsuleGeometry(0.2, 0.9, 3, 8), head = new THREE.SphereGeometry(0.13, 10, 8);
+  for (let k = 0; k < 14; k++) { const i = 8 + k * 11, hh = k % 2, a = i * 0.24 + hh * Math.PI, y = 1 + i * 0.185, r = 3.4 - y * 0.05; const g = new THREE.Group(); g.position.set(Math.cos(a) * r, y + 0.6, Math.sin(a) * r * 0.8);
+    const b = new THREE.Mesh(body, pm); g.add(b); const hd = new THREE.Mesh(head, pm); hd.position.y = 0.72; g.add(hd); STAIR.add(g); } }
+STAIR.visible = false;
+// gulls over the harbour
+const GULLS = new THREE.Group(); scene.add(GULLS);
+const gullMat = new THREE.MeshStandardMaterial({ color: 0xeeeeea, roughness: 0.8, side: THREE.DoubleSide });
+const GL = Array.from({ length: 14 }, (_, i) => { const g = new THREE.Group(); const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.45, 3, 6), gullMat); body.rotation.z = Math.PI / 2; g.add(body);
+  const wing = (s) => { const w = new THREE.Mesh(new THREE.PlaneGeometry(0.75, 0.22), gullMat); w.geometry.translate(0.37 * s, 0, 0); g.add(w); return w; }; g.userData = { L: wing(-1), R: wing(1), i }; GULLS.add(g); return g; });
+function gulls(t, center) { GL.forEach((g, i) => { const a = t * (0.12 + hash(i) * 0.08) + hash(i + 3) * TAU, r = 30 + hash(i + 5) * 60; g.position.set(center.x + Math.cos(a) * r, center.y + 10 + hash(i + 7) * 40 + Math.sin(t * 0.7 + i) * 3, center.z + Math.sin(a) * r);
+  g.rotation.y = -a; const f = Math.sin(t * 9 + i * 1.7) * 0.6; g.userData.L.rotation.x = 0; g.userData.L.rotation.z = f; g.userData.R.rotation.z = -f; g.scale.setScalar(2.2); }); }
 
 // =====================================================================================================================
 // THE STORM: rain streaks around the camera, wind-blown spray
@@ -385,7 +401,7 @@ H.callouts({
   arm: ["Arm truss", "#ff8a3d", "carries the torch"], rigid: ["Rigid", "#ff6a4d", "stress piles up"], flexi: ["Flexible", "#3dff8c", "bends, then springs back"],
   torch: ["Torch", "#9fd4ff", "sways up to 6 in"], mold: ["Wooden mould", "#ffd166", "carved to her shape"], sheet: ["Copper sheet", "#ff9a5c", "heated, then hammered"],
   finger: ["Her index finger", "#cfd6dd", "2.44 m long"], pat: ["Green patina", "#7dffc0", "protects"], cu: ["Copper", "#ff9a5c", "beneath"],
-  lockL: ["Locked here", green, "before it leaves"], srv: ["Server", "#8fd0ff", "sees scrambled bytes"],
+  lockL: ["Locked here", green, "before it leaves"], stair: ["Stairs to the crown", "#ffd166", "visitors climb inside her"], srv: ["Server", "#8fd0ff", "sees scrambled bytes"],
 });
 hudEl("stats", `<div style="width:1080px;display:flex;justify-content:center;gap:18px">${[["UNVEILED", "1886"], ["TO THE TORCH", "93 m"], ["SKIN", "2.4 mm"]].map(([a, b]) => `<div style="padding:20px 26px;border-radius:22px;background:rgba(8,10,16,.8);border:1.5px solid rgba(255,255,255,.2);text-align:center"><div style="font:700 24px M;letter-spacing:.2em;color:#9aa6b2">${a}</div><div style="font:900 60px D;font-stretch:112%;color:#fff;margin-top:6px">${b}</div></div>`).join("")}</div>`, { left: "0px", top: "1420px" });
 hudEl("big", `<div style="width:1080px;text-align:center"><div id="bigN" style="font:900 190px/0.85 D;font-stretch:112%;color:#ff9a5c;text-shadow:0 12px 50px rgba(0,0,0,.65)">0</div><div id="bigL" style="font:800 44px D;color:#fff;letter-spacing:.12em;margin-top:8px"></div></div>`, { left: "0px", top: "230px" });
@@ -414,8 +430,9 @@ const EX = 20;   // sway shown ×20
 // THE FILM
 // =====================================================================================================================
 H.frame("Locked on your device. No account, no app.", async (t) => {
+  H.cam.up.set(0, 1, 0);
   outdoor(true); MC.visible = FX.visible = WS.visible = OR.visible = false; RAIN.visible = false; camRange(0.5, 70000); look_(0); H.zoom = 1; H.bloom.strength = 0.3;
-  SW.uX.value = 0; SW.uAge.value = 1; SW.uSway.value.set(0, 0); skelGlow([0, 0, 0, 0]); SKEL.visible = false; keyShadow(SL(0, 10, 0), 70);
+  SW.uX.value = 0; SW.uAge.value = 1; SW.uSway.value.set(0, 0); skelGlow([0, 0, 0, 0]); SKEL.visible = false; STAIR.visible = false; GULLS.visible = true; gulls(t, SL(0, 0, 0)); keyShadow(SL(0, 10, 0), 70);
   sea.material.uniforms.time.value = t * 0.5; sea.material.uniforms.uWT.value = t; SKYU.uT.value = t; flameMat.emissiveIntensity = 0.25;
 
   if (t < at("statue")) { // HOOK: dawn from the water, low over the swell; then the torch against the sunrise
@@ -431,12 +448,12 @@ H.frame("Locked on your device. No account, no app.", async (t) => {
     setBig("2.4 mm", "COPPER SKIN"); hudShow("big", win(t, fr("skin", 0.1), at("hollow")));
     callout("skin", t, fr("skin", 0.2), fr("skin", 0.6), MP(0.05, 0.004, 0.08), 300, 1150); callout("pen", t, fr("skin", 0.55), at("hollow"), MP(0.082, 0.003, 0.066), 760, 1150);
   } else if (t < at("pylon")) { // storm rolls in; "look inside": she turns to x-ray, Eiffel's skeleton appears
-    const s = smooth(prog(t, at("hollow"), fr("hollow", 0.5))); look_(s); rain(t, s, H.cam.position, 50); SKEL.visible = true;
+    const s = smooth(prog(t, at("hollow"), fr("hollow", 0.5))); look_(s); rain(t, s, H.cam.position, 50); SKEL.visible = true; STAIR.visible = t > at("frame"); GULLS.visible = false;
     const x = t < at("frame") ? smooth(prog(t, fr("hollow", 0.7), at("frame"))) : 1; SW.uX.value = x; skelGlow([t > at("frame") ? smooth(prog(t, at("frame"), fr("frame", 0.4))) : 0, 0, 0, 0]);
     if (t < at("frame")) move(t, at("hollow"), at("frame"), [SL(70, -20, 120), SL(0, 10, 0), 38], [SL(55, -12, 95), SL(0, 14, 0), 38], 0.3);
-    else { move(t, at("frame"), at("pylon"), [SL(40, 5, 55), SL(0, 14, 0), 40], [SL(30, 14, 44), SL(0, 18, 0), 40], 0.2); callout("pylon", t, fr("frame", 0.35), at("pylon"), SL(1.5, 12, 1.2), 760, 1150); }
+    else { move(t, at("frame"), at("pylon"), [SL(40, 5, 55), SL(0, 14, 0), 40], [SL(30, 14, 44), SL(0, 18, 0), 40], 0.2); callout("pylon", t, fr("frame", 0.35), fr("frame", 0.7), SL(1.5, 12, 1.2), 760, 1150); callout("stair", t, fr("frame", 0.7), at("pylon"), SL(-2.6, 20, 1.5), 300, 1100); }
   } else if (t < at("flex")) { // the pylon, the secondary frame, the flat bars to the skin, the arm truss
-    look_(1); rain(t, 1, H.cam.position, 50); SKEL.visible = true; SW.uX.value = 1;
+    look_(1); rain(t, 1, H.cam.position, 50); SKEL.visible = true; STAIR.visible = true; GULLS.visible = false; SW.uX.value = 1;
     skelGlow([0.5, smooth(prog(t, at("pylon"), fr("pylon", 0.3))), smooth(prog(t, fr("pylon", 0.45), fr("pylon", 0.7))), smooth(prog(t, fr("pylon", 0.7), fr("pylon", 0.9)))]);
     move(t, at("pylon"), at("flex"), [SL(-16, 6, 26), SL(0, 16, 0), 40], [SL(-20, 22, 24), SL(-3, 26, 0), 40], 0.2);
     callout("sec", t, fr("pylon", 0.1), fr("pylon", 0.45), SL(RINGS[6][18][0].x, RINGS[6][18][0].y, RINGS[6][18][0].z), 300, 1150);
@@ -450,7 +467,7 @@ H.frame("Locked on your device. No account, no app.", async (t) => {
     move(t, at("flex"), at("sway"), [FP(3.4, 5.0, 8.4), FP(0, 1.5, -0.3), 40], [FP(3.0, 4.7, 7.8), FP(0, 1.5, -0.3), 40], 0.05);
     callout("rigid", t, fr("flex", 0.15), at("sway"), FP(-1.3, 2.6, 0.1), 140, 520); callout("flexi", t, fr("flex", 0.3), at("sway"), FP(1.3, 2.6, 0.1), 600, 520);
   } else if (t < at("hammer")) { // the storm: she sways (×20), the torch twice as much
-    look_(1); rain(t, 1, H.cam.position, 50); const sw = 0.152 * EX * Math.sin((t - at("sway")) * 1.3); SW.uSway.value.set(sw, 0); flash(t, fr("sway", 0.3), 0.5, 6, "#dfe8ff");
+    GULLS.visible = false; look_(1); rain(t, 1, H.cam.position, 50); const sw = 0.152 * EX * Math.sin((t - at("sway")) * 1.3); SW.uSway.value.set(sw, 0); flash(t, fr("sway", 0.3), 0.5, 6, "#dfe8ff");
     move(t, at("sway"), at("hammer"), [SL(0, -30, 150), SL(0, 14, 0), 36], [SL(8, -26, 140), SL(0, 16, 0), 36], 0.2);
     hudShow("exag", win(t, fr("sway", 0.15), at("hammer"))); H.$("exT").textContent = "MOTION EXAGGERATED ×20"; hudShow("sway", win(t, fr("sway", 0.3), at("hammer")));
     const tip = TORCH_TIP(); tip.add(V(sw, 0, 0).applyAxisAngle(V(0, 1, 0), LIB.rotation.y)); callout("torch", t, fr("sway", 0.45), at("hammer"), tip, 760, 420);
@@ -477,13 +494,16 @@ H.frame("Locked on your device. No account, no app.", async (t) => {
     OR.visible = true; camRange(0.05, 70000); keyShadow(OR.position.clone(), 6); orbiL.intensity = 0.6; OR.updateMatrixWorld(); const OW = (x, y, z) => OR.localToWorld(V(x, y, z));
     const lk = clamp(prog(t, fr("orbi", 0.3), fr("orbi2", 0.6))); const got = clamp(prog(t, fr("orbi3", 0.3), fr("orbi3", 0.9)));
     screen(ph, { lock: Math.round(lk * 40) / 40 }, drawPhone); screen(lap, { got: Math.round(got * 40) / 40 }, drawLap);
-    lock.visible = t > at("orbi2"); lock.position.copy(ph.g.position).add(V(0, 0.32 + 0.02 * Math.sin(t * 2), 0)); lock.scale.setScalar(0.45);
+    lock.visible = t > at("orbi3"); lock.position.copy(ph.g.position).add(V(0, 0.32 + 0.02 * Math.sin(t * 2), 0)); lock.scale.setScalar(0.45);
     const a0 = ph.g.position.clone().add(V(0, 0.3, 0)), s0 = RACK.position.clone().add(V(0, 1.4, 0.5)), b0 = lap.g.position.clone().add(V(0.2, 0.9, 0.2));
     PARTS.forEach((m, i) => { const st = fr("orbi2", 0.5) + i * 0.22, k = clamp((t - st) / 1.3), k2 = clamp((t - fr("orbi3", 0.2) - i * 0.12) / 1.0);
       m.visible = k > 0 && k2 < 1; if (k2 > 0) m.position.copy(s0).lerp(b0, ease(k2)).add(V(0, Math.sin(k2 * Math.PI) * 0.6, 0)); else m.position.copy(a0).lerp(s0, ease(k)).add(V(0, Math.sin(k * Math.PI) * 0.8, ((i % 4) - 1.5) * 0.12)); m.rotation.set(t * 2 + i, t * 1.5, 0); });
     if (t < at("orbi2")) move(t, at("orbi"), at("orbi2"), [OW(0.4, 1.7, 9.5), OW(0.3, 3.6, 0), 46], [OW(0.4, 1.6, 8.2), OW(0.3, 3.4, 0), 46], 0.3);
-    else if (t < at("orbi3")) { move(t, at("orbi2"), at("orbi3"), [OW(2.6, 1.6, 3.2), OW(1.4, 0.3, 0.4), 36], [OW(2.4, 1.5, 2.9), OW(1.4, 0.3, 0.4), 36], 0.1); callout("lockL", t, fr("orbi2", 0.2), at("orbi3"), OW(1.4, 0.7, 0.4), 760, 1100); }
+    else if (t < at("orbi3")) { const pn = V(0, 0, 1).applyEuler(ph.g.rotation), pc = ph.g.position.clone(), up2 = V(0, 1, 0).applyEuler(ph.g.rotation);
+      move(t, at("orbi2"), at("orbi3"), [OW(...pc.clone().addScaledVector(pn, 3.4).toArray()), OW(...pc.toArray()), 34], [OW(...pc.clone().addScaledVector(pn, 3.1).toArray()), OW(...pc.toArray()), 34], 0.03);
+      H.cam.up.copy(up2.transformDirection(OR.matrixWorld)); H.cam.lookAt(OW(...pc.toArray())); }
     else { move(t, at("orbi3"), at("end"), [OW(1.0, 2.0, 7.8), OW(1.6, 2.4, -0.6), 44], [OW(0.8, 1.9, 7.0), OW(1.6, 2.4, -0.6), 44], 0.2); callout("srv", t, fr("orbi3", 0.05), fr("orbi3", 0.6), OW(3.6, 2.15, -1.5), 760, 900); hudShow("chips", win(t, fr("orbi3", 0.5), at("end"))); }
   }
+  if (window.DBG) { const d = window.DBG[0].split(",").map(Number); look(SL(d[0], d[1], d[2]), SL(d[3], d[4], d[5]), d[6]); if (window.DBG[1] === "clean") { for (const id of ["hud", "lines", "title", "sub"]) { const e = H.$(id); if (e) e.style.visibility = "hidden"; } } }
 });
 await H.ready();
