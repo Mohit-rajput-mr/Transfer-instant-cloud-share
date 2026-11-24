@@ -9,6 +9,7 @@
 import { THREE, H, RoundedBoxGeometry } from "./kit/hd.js";
 import { makePhone, makeLaptop, makeLock, makeEmbers, screen, green, rr, img } from "./kit/orbiset.js";
 import { loadAnatomy, standardLayers } from "./kit/anatomy.js";
+import { GLTFLoader } from "./kit/lib/jsm/loaders/GLTFLoader.js";
 const { V, clamp, ease, smooth, out, back, lerp, win, prog, at, end, fr, move, look, callout, title, hudEl, hudShow, flash, metal, paint, matte, glow, sh } = H;
 const scene = H.scene, TAU = Math.PI * 2, D2R = Math.PI / 180;
 const texL = new THREE.TextureLoader();
@@ -18,7 +19,7 @@ H.floor.visible = false; H.backdrop.visible = false;
 function camRange(near, far) { if (H.cam.near !== near || H.cam.far !== far) { H.cam.near = near; H.cam.far = far; H.cam.updateProjectionMatrix(); } }
 
 // ---------- sunset sky (Poly Haven "Belfast sunset (pure sky)", CC0: sun at u 0.574, 10.5° up) + drifting clouds ----------
-const SKY_ROT = -1.733;   // turn the sky so the sun sets in the west-south-west (behind the cathedral side)
+const SKY_ROT = -1.733 + Math.PI;   // turn the sky so the low sunset sun is behind the cameras: warm light on the marble face
 const SUN = (() => { const a = (0.5745 - 0.5) * TAU + SKY_ROT, e = 10.5 * D2R; return V(Math.cos(a) * Math.cos(e), Math.sin(e), Math.sin(a) * Math.cos(e)).normalize(); })();
 H.key.color.set(0xffc890); H.hemi.color.set(0xb9c8e6); H.hemi.groundColor.set(0x4a4232);
 const FOG = { c: new THREE.Color(0xc9b8a6), d: 0.0004 };
@@ -55,8 +56,12 @@ for (const [x, z, w, d] of [[0, -150, 14, 420], [-60, -30, 120, 10], [0, 40, 60,
 // marble: Poly Haven "marble_01" (CC0), weathered: darker at the base, grime under every ledge
 const marbleMat = new THREE.MeshStandardMaterial({ map: mbT("diff", true, 2, 2), normalMap: mbT("nor_gl", false, 2, 2), normalScale: new THREE.Vector2(0.5, 0.5), roughness: 0.55, color: 0xf2ece0 });
 const CLIP = new THREE.Plane(V(0, 0, 1), 0);   // keeps z ≥ 0: the camera looks at the cut from the west, the sun behind it const CLIPS = [];   // the section cut (z = 0), on only in the cross-section shots
-marbleMat.onBeforeCompile = (s) => { s.vertexShader = s.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vWm;").replace("#include <worldpos_vertex>", "#include <worldpos_vertex>\nvWm = (modelMatrix * vec4(transformed, 1.0)).xyz;");
-  s.fragmentShader = s.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vWm;").replace("#include <map_fragment>", `#include <map_fragment>
+const MARBU = { uSec: { value: 0 }, uTI: { value: new THREE.Matrix4() } };
+marbleMat.side = THREE.DoubleSide;
+marbleMat.onBeforeCompile = (s) => { Object.assign(s.uniforms, MARBU); s.vertexShader = s.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vWm;").replace("#include <worldpos_vertex>", "#include <worldpos_vertex>\nvWm = (modelMatrix * vec4(transformed, 1.0)).xyz;");
+  s.fragmentShader = s.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vWm; uniform float uSec; uniform mat4 uTI; vec3 secCap = vec3(-1.0);").replace("#include <dithering_fragment>", "#include <dithering_fragment>\nif (secCap.x >= 0.0) gl_FragColor = vec4(secCap, 1.0);   // the cut stone / the hollow core, unlit").replace("#include <map_fragment>", `#include <map_fragment>
+    if (uSec > 0.5 && !gl_FrontFacing) { vec3 C = cameraPosition, D = vWm - C; vec3 X = C + D * (-C.z / D.z); vec3 L = (uTI * vec4(X, 1.0)).xyz;
+      float r = length(L.xz); secCap = r < 3.68 ? vec3(0.012, 0.011, 0.01) : vec3(0.33, 0.31, 0.28) * (0.9 + 0.1 * sin(L.y * 7.0)); }
     { float y = vWm.y; diffuseColor.rgb *= mix(0.72, 1.0, smoothstep(0.0, 6.0, y)); float st = fract(y / 6.25 + 0.15); diffuseColor.rgb *= 1.0 - 0.12 * smoothstep(0.8, 1.0, st) * (0.6 + 0.4 * sin(vWm.x * 3.1 + vWm.z * 2.3)); }`); };
 marbleMat.customProgramCacheKey = () => "pisa-marble";
 const darkMat = matte(0x15120f, 0.95);
@@ -73,67 +78,46 @@ duomoMat.onBeforeCompile = (s) => { s.vertexShader = s.vertexShader.replace("#in
 duomoMat.customProgramCacheKey = () => "pisa-duomo";
 const roofMat = new THREE.MeshStandardMaterial({ color: 0x8c9096, roughness: 0.45, metalness: 0.35 });
 const gable = (L, W, Hh) => { const s = new THREE.Shape([new THREE.Vector2(-W / 2, 0), new THREE.Vector2(W / 2, 0), new THREE.Vector2(0, Hh)]); const g = new THREE.ExtrudeGeometry(s, { depth: L, bevelEnabled: false }); g.translate(0, 0, -L / 2); return g; };
-const DUOMO = new THREE.Group(); DUOMO.position.set(0, 0, -62); WORLD.add(DUOMO);   // east end (apse) 62 m west of the tower
-{ const B = (w, h, d, x, y, z, m = duomoMat) => { const b = sh(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m)); b.position.set(x, y + h / 2, z); DUOMO.add(b); return b; };
-  B(15, 32, 96, 0, 0, -56); B(9, 20, 96, -12, 0, -56); B(9, 20, 96, 12, 0, -56); B(9, 13, 96, -21, 0, -56); B(9, 13, 96, 21, 0, -56);   // nave, double aisles
-  B(72, 30, 14, 0, 0, -38);                                                                                                         // transept
-  const r1 = sh(new THREE.Mesh(gable(96, 16, 5), roofMat)); r1.position.set(0, 32, -56); DUOMO.add(r1);
-  const r2 = sh(new THREE.Mesh(gable(14, 72, 4), roofMat)); r2.rotation.y = Math.PI / 2; r2.position.set(0, 30, -38); DUOMO.add(r2);
-  for (const s of [-1, 1]) { const r = sh(new THREE.Mesh(gable(96, 18, 2.5), roofMat)); r.position.set(s * 14, 20, -56); r.scale.x = 1; DUOMO.add(r); }
-  const drum = sh(new THREE.Mesh(new THREE.CylinderGeometry(9.5, 9.5, 8, 32), duomoMat)); drum.position.set(0, 36, -38); drum.scale.z = 1.25; DUOMO.add(drum);
-  const dome = sh(new THREE.Mesh(new THREE.SphereGeometry(9.6, 32, 16, 0, TAU, 0, Math.PI / 2), roofMat)); dome.position.set(0, 40, -38); dome.scale.set(1, 1.05, 1.25); DUOMO.add(dome);
-  const apse = sh(new THREE.Mesh(new THREE.CylinderGeometry(8.5, 8.5, 30, 32, 1, false, 0, Math.PI), duomoMat)); apse.position.set(0, 15, -8); apse.rotation.y = -Math.PI / 2; DUOMO.add(apse);
-  const apR = sh(new THREE.Mesh(new THREE.SphereGeometry(8.6, 32, 12, 0, Math.PI, 0, Math.PI / 2), roofMat)); apR.position.set(0, 30, -8); apR.rotation.y = -Math.PI / 2; apR.scale.y = 0.45; DUOMO.add(apR); }
-// the baptistery (round, 107 m around, dome to ~55 m), far to the west
-const BAPT = new THREE.Group(); { const bp = BAPT; bp.position.set(0, 0, -260); WORLD.add(bp);
-  const c = sh(new THREE.Mesh(new THREE.CylinderGeometry(17.5, 17.8, 30, 64), duomoMat)); c.position.y = 15; bp.add(c);
-  const c2 = sh(new THREE.Mesh(new THREE.CylinderGeometry(15.5, 17, 10, 64), duomoMat)); c2.position.y = 35; bp.add(c2);
-  const d = sh(new THREE.Mesh(new THREE.SphereGeometry(15.5, 48, 16, 0, TAU, 0, Math.PI / 2), roofMat)); d.position.y = 40; d.scale.y = 0.85; bp.add(d);
-  const cone = sh(new THREE.Mesh(new THREE.ConeGeometry(7, 9, 32), new THREE.MeshStandardMaterial({ color: 0xb55c3c, roughness: 0.8 }))); cone.position.y = 52; bp.add(cone); }
+// the cathedral and the baptistery are famous buildings and no licensed 3D model of them exists (Printables has none):
+// they are NOT built from code (media/MODEL_SOURCING_RULES.md §2.4); the cameras keep them out of frame
+const DUOMO = new THREE.Group(), BAPT = new THREE.Group();
 // the medieval city walls to the north (-x), brick with merlons
 { const wallM = new THREE.MeshStandardMaterial({ map: tex("kit/ph/clay_roof_tiles/clay_roof_tiles_diff_1k.jpg", true, 60, 2), color: 0xc08a68, roughness: 0.95 });
   const w = sh(new THREE.Mesh(new THREE.BoxGeometry(3.5, 11, 700), wallM)); w.position.set(-130, 5.5, -100); WORLD.add(w);
   const mg = new THREE.InstancedMesh(new THREE.BoxGeometry(3.5, 1.6, 1.4), wallM, 240); const m4 = new THREE.Matrix4(); for (let i = 0; i < 240; i++) mg.setMatrixAt(i, m4.makeTranslation(-130, 11.8, -450 + i * 2.95)); mg.castShadow = true; WORLD.add(mg); }
-// umbrella pines and cypresses, beyond the walls and along the edge
-{ const pg = new THREE.SphereGeometry(1, 16, 10); pg.scale(1, 0.45, 1); const p = pg.attributes.position; for (let i = 0; i < p.count; i++) { const v = V(p.getX(i), p.getY(i), p.getZ(i)); const k = 1 + 0.12 * Math.sin(v.x * 9 + v.z * 7); p.setXYZ(i, v.x * k, v.y, v.z * k); } pg.computeVertexNormals();
-  const N = 120, im = new THREE.InstancedMesh(pg, new THREE.MeshStandardMaterial({ color: 0x3f5530, roughness: 1, map: gT("diff", true, 2) }), N), tr = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.35, 0.5, 1, 8), matte(0x4a3828, 0.9), N); const m4 = new THREE.Matrix4();
-  for (let i = 0; i < N; i++) { const x = -150 - hash(i) * 400, z = -500 + hash(i + 1) * 900, s = 7 + hash(i + 2) * 5, h = 10 + hash(i + 3) * 6; im.setMatrixAt(i, m4.makeScale(s, s, s).setPosition(x, h, z)); tr.setMatrixAt(i, m4.makeScale(1, h, 1).setPosition(x, h / 2, z)); }
-  im.castShadow = true; WORLD.add(im, tr); }
+// trees beyond the walls and along the edge: Poly Haven "Island Tree 02" (CC0) baked once into an impostor, crossed quads
+{ const gl = await new GLTFLoader().loadAsync("kit/ph/island_tree_02/island_tree_02_1k.gltf"); const obj = gl.scene; const box = new THREE.Box3().setFromObject(obj); const sz = box.getSize(V()), c = box.getCenter(V());
+  const S = new THREE.Scene(); S.add(obj); S.add(new THREE.HemisphereLight(0xdfe8ff, 0x3a3020, 1.2)); const dl = new THREE.DirectionalLight(0xfff0d8, 2.2); dl.position.set(c.x + sz.x, c.y + sz.y * 1.2, c.z + sz.x * 1.6); dl.target.position.copy(c); S.add(dl, dl.target);
+  const half = Math.max(sz.x, sz.z) / 2, size = 640, W = Math.round(size * (2 * half) / sz.y); const cam = new THREE.OrthographicCamera(-half, half, sz.y / 2, -sz.y / 2, 0.1, 1000); cam.position.set(c.x, c.y, c.z + half * 4); cam.lookAt(c);
+  const rt = new THREE.WebGLRenderTarget(W, size, { samples: 4 }); rt.texture.colorSpace = THREE.LinearSRGBColorSpace; const r = H.r, pt = r.getRenderTarget(), pc = new THREE.Color(); r.getClearColor(pc); const pa = r.getClearAlpha();
+  r.setRenderTarget(rt); r.setClearColor(0x000000, 0); r.clear(); r.render(S, cam); r.setRenderTarget(pt); r.setClearColor(pc, pa); obj.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+  const g1 = new THREE.PlaneGeometry(1, 1); g1.translate(0, 0.5, 0); const g2 = g1.clone(); g2.rotateY(Math.PI / 2); const tq = new THREE.BufferGeometry();
+  tq.setAttribute("position", new THREE.Float32BufferAttribute([...g1.attributes.position.array, ...g2.attributes.position.array], 3)); tq.setAttribute("uv", new THREE.Float32BufferAttribute([...g1.attributes.uv.array, ...g2.attributes.uv.array], 2)); tq.setIndex([0, 2, 1, 2, 3, 1, 4, 6, 5, 6, 7, 5]);
+  const N = 520, im = new THREE.InstancedMesh(tq, new THREE.MeshBasicMaterial({ map: rt.texture, alphaTest: 0.42, side: THREE.DoubleSide, fog: true }), N), m4 = new THREE.Matrix4(), col = new THREE.Color();
+  for (let i = 0; i < N; i++) { const a = hash(i) * TAU, rr = 150 + hash(i + 1) * 420; const x = Math.cos(a) * rr, z = Math.sin(a) * rr, h = 11 + hash(i + 3) * 7, w = h * (2 * half) / sz.y; /* a ring of trees round the square, all directions */ m4.compose(V(x, 0, z), new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), hash(i + 5) * TAU), V(w, h, w)); im.setMatrixAt(i, m4); im.setColorAt(i, col.setRGB(0.7 + hash(i + 3) * 0.2, 0.72 + hash(i + 7) * 0.16, 0.62 + hash(i + 9) * 0.14)); }
+  im.frustumCulled = false; WORLD.add(im); }
 
 // =====================================================================================================================
 // THE TOWER: a chain of storeys (each one can be counter-tilted: the upper floors were built taller on the low side)
 // =====================================================================================================================
-const R_IN = 3.68, R_BASE = 7.74, R_GAL = 6.1, R_COL = 7.45;
-const SH = [11.4, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 7.0];   // storey heights: ground, six galleries, belfry → 55.9 m
-const COUNTER = [0, 0, 0, 0.12, 0.22, 0.32, 0.42, 0.55];      // degrees: each upper storey leaned back a little (the "banana")
+// THE TOWER: "Monuments 01 – Leaning Tower of Pisa – Italy" by André Spilari (Printables #1714900), Public Domain —
+// see media/pisa-model/USE_THIS_MODEL.md. Converted by pisa_prep.py: stood upright (the model leans 4.00°), scaled to the
+// real size (15.48 m across the base, 56.67 m along the axis), split at the cornices into the 8 storeys (ground storey,
+// six galleries, belfry) with the author's shape untouched (including its curve). Each storey is one node in a chain so the
+// film can tilt the tower, build it storey by storey and exaggerate the curve; at curveK = 1 it is exactly the model.
+const R_IN = 3.68, R_BASE = 7.74;                         // inner well radius, base outer radius (Wikipedia: Ø 7.37 / 15.48 m)
+const PISA = await (await fetch("kit/models/pisa/storeys.json")).json(); const PISA_BIN = await (await fetch("kit/models/pisa/storeys.bin")).arrayBuffer();
+const SH = PISA.storeys.map((s) => s.h);                  // storey heights (m), from the model
+const COUNTER = [0, 0, 0, 0.12, 0.22, 0.32, 0.42, 0.55];  // extra lean-back per storey, used only to exaggerate the curve (curveK > 1)
 const annulus = (rIn, rOut, h, seg = 64) => { const pts = [new THREE.Vector2(rIn, 0), new THREE.Vector2(rOut, 0), new THREE.Vector2(rOut, h), new THREE.Vector2(rIn, h), new THREE.Vector2(rIn, 0)]; return new THREE.LatheGeometry(pts, seg); };
 const TW = new THREE.Group(); scene.add(TW);           // pivot at the foundation centre; rotation.z = -tilt (leans to +x)
 const ST = [];
-function addRing(g, rIn, rOut, y, h) { const m = sh(new THREE.Mesh(annulus(rIn, rOut, h), marbleMat)); m.position.y = y; g.add(m); return m; }
-function colonnade(g, n, r, y0, hCol, rc, archR) {
-  const col = new THREE.InstancedMesh(new THREE.CylinderGeometry(rc * 0.9, rc, hCol, 14), marbleMat, n), cap = new THREE.InstancedMesh(new THREE.BoxGeometry(rc * 2.6, 0.32, rc * 2.6), marbleMat, n), base = new THREE.InstancedMesh(new THREE.CylinderGeometry(rc * 1.3, rc * 1.4, 0.25, 14), marbleMat, n);
-  const arch = new THREE.InstancedMesh(new THREE.TorusGeometry(archR, 0.2, 8, 20, Math.PI), marbleMat, n); const m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
-  for (let i = 0; i < n; i++) { const a = (i / n) * TAU, x = Math.cos(a) * r, z = Math.sin(a) * r; col.setMatrixAt(i, m4.makeTranslation(x, y0 + hCol / 2, z)); cap.setMatrixAt(i, m4.makeTranslation(x, y0 + hCol + 0.16, z)); base.setMatrixAt(i, m4.makeTranslation(x, y0 + 0.12, z));
-    const am = (i + 0.5) / n * TAU; q.setFromAxisAngle(V(0, 1, 0), -am + Math.PI / 2); m4.compose(V(Math.cos(am) * r, y0 + hCol + 0.32, Math.sin(am) * r), q, V(1, 1, 1)); arch.setMatrixAt(i, m4); }
-  for (const m of [col, cap, base, arch]) { m.castShadow = m.receiveShadow = true; m.frustumCulled = false; g.add(m); } }
-let parent = TW, y0 = 0;
-for (let k = 0; k < 8; k++) {
-  const g = new THREE.Group(); g.position.y = k === 0 ? 0 : SH[k - 1]; g.rotation.z = (COUNTER[k] - (k ? COUNTER[k - 1] : 0)) * D2R; parent.add(g); ST.push(g); parent = g; const h = SH[k];
-  if (k === 0) { addRing(g, R_IN, R_BASE + 0.5, 0, 0.5); addRing(g, R_IN, R_BASE + 0.25, 0.5, 0.45); addRing(g, R_IN, R_BASE, 0.95, h - 1.6);   // plinth steps + the 4 m wall
-    colonnade(g, 15, R_BASE + 0.12, 0.95, 7.6, 0.36, (TAU * R_BASE / 15) / 2 - 0.25);
-    addRing(g, R_IN, R_BASE + 0.12, 0.95 + 7.6 + 0.32, h - 1.6 - 7.92);                                                        // band above the blind arches
-    const door = new THREE.Mesh(new THREE.BoxGeometry(2.2, 4.2, 0.4), darkMat); door.position.set(0, 3.1, R_BASE + 0.05); g.add(door);
-    addRing(g, R_IN, R_BASE + 0.55, h - 0.65, 0.65); }                                                                           // first cornice
-  else if (k < 7) { addRing(g, R_IN, R_GAL, 0, h); addRing(g, R_IN, R_BASE + 0.25, 0, 0.5);                                     // inner wall + gallery floor
-    colonnade(g, 30, R_COL, 0.5, 4.0, 0.26, (TAU * R_COL / 30) / 2 - 0.1);
-    addRing(g, R_IN, R_BASE, 5.25, h - 5.25 - 0.5); addRing(g, R_IN, R_BASE + 0.4, h - 0.5, 0.5);                               // band over the arches + cornice
-    for (let i = 0; i < 10; i++) { const a = (i / 10) * TAU + k; const w = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.2, 0.3), darkMat); w.position.set(Math.cos(a) * (R_GAL + 0.02), 2.6, Math.sin(a) * (R_GAL + 0.02)); w.rotation.y = -a + Math.PI / 2; g.add(w); } }
-  else { addRing(g, 4.0, 5.4, 0, h - 0.6); addRing(g, 4.0, 6.0, 0, 0.45); addRing(g, 4.0, 5.7, h - 0.6, 0.6);                    // belfry
-    for (let i = 0; i < 6; i++) { const a = (i / 6) * TAU; const o = new THREE.Mesh(new THREE.BoxGeometry(1.8, 3.6, 0.6), darkMat); o.position.set(Math.cos(a) * 5.3, 3.1, Math.sin(a) * 5.3); o.rotation.y = -a + Math.PI / 2; g.add(o);
-      const ar = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.18, 8, 16, Math.PI), marbleMat); ar.position.set(Math.cos(a) * 5.45, 4.9, Math.sin(a) * 5.45); ar.rotation.y = -a + Math.PI / 2; g.add(ar); }
-    colonnade(g, 12, 5.7, 0.45, 4.2, 0.2, (TAU * 5.7 / 12) / 2 - 0.1);
-    const bell = sh(new THREE.Mesh(new THREE.LatheGeometry([[0, 2.4], [0.5, 2.3], [0.8, 1.6], [1.0, 0.6], [1.25, 0.1], [1.2, 0]].map(([r, y]) => new THREE.Vector2(r, y)), 32), metal(0x7a5a32, 0.45))); bell.position.y = 1.4; g.add(bell); }
-  y0 += h; }
+{ let o = 0, parent = TW; PISA.storeys.forEach((st, k) => { const nv = st.verts, ni = st.tris * 3;
+    const pos = new Float32Array(PISA_BIN, o, nv * 3); o += nv * 12; const nor = new Int8Array(PISA_BIN, o, nv * 4); o += nv * 4; const idx = new Uint32Array(PISA_BIN, o, ni); o += ni * 4;
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setAttribute("normal", new THREE.BufferAttribute(nor, 4, true)); g.setIndex(new THREE.BufferAttribute(idx, 1));
+    g.computeBoundingSphere();                            // pisa_prep.py already put each storey's base at y = 0
+    const node = new THREE.Group(); node.position.y = k === 0 ? 0 : SH[k - 1]; parent.add(node); ST.push(node); parent = node;
+    const m = sh(new THREE.Mesh(g, marbleMat)); node.add(m); }); }
 // the hollow core: a spiral stair of 294 steps (seen in the section)
 { const stepG = new THREE.BoxGeometry(1.1, 0.19, 0.45); const N = 294, im = new THREE.InstancedMesh(stepG, marbleMat, N); const m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
   for (let i = 0; i < N; i++) { const a = i * 0.21, y = i * 0.17 + 0.3; q.setFromAxisAngle(V(0, 1, 0), -a); m4.compose(V(Math.cos(a) * (R_IN + 0.9), y, Math.sin(a) * (R_IN + 0.9)), q, V(1, 1, 1)); im.setMatrixAt(i, m4); }
@@ -143,8 +127,8 @@ const TOWER_H = SH.reduce((a, b) => a + b, 0);
 const FOUND = sh(new THREE.Mesh(annulus(4.5, 9.8, 3.0), new THREE.MeshStandardMaterial({ color: 0x9c9284, roughness: 0.9 }))); FOUND.position.y = -3.0; TW.add(FOUND);
 { const cat = sh(new THREE.Mesh(annulus(10.6, 11.2, 0.7), marbleMat)); WORLD.add(cat); }
 /** tilt the tower about the foundation (deg toward +x), with the storeys' counter-tilt scaled by `curveK` (1 = real) and built up to `upto` storeys */
-function setTower(tiltDeg, curveK = 1, upto = 8, dropY = 0) { TW.rotation.z = -tiltDeg * D2R; TW.position.y = dropY;
-  ST.forEach((g, k) => { g.rotation.z = (COUNTER[k] - (k ? COUNTER[k - 1] : 0)) * curveK * D2R; g.visible = k < upto; }); }
+function setTower(tiltDeg, curveK = 1, upto = 8, dropY = 0) { TW.rotation.z = -tiltDeg * D2R; TW.position.y = dropY; TW.updateMatrixWorld(true); MARBU.uTI.value.copy(TW.matrixWorld).invert();
+  ST.forEach((g, k) => { g.rotation.z = (COUNTER[k] - (k ? COUNTER[k - 1] : 0)) * (curveK - 1) * D2R; g.visible = k < upto; }); }
 /** world position of a point on the tower axis at height y (follows the chain) */
 function towerPoint(y, r = 0, a = 0) { TW.updateMatrixWorld(true); let acc = 0; for (let k = 0; k < 8; k++) { if (y <= acc + SH[k] || k === 7) return ST[k].localToWorld(V(Math.cos(a) * r, y - acc, Math.sin(a) * r)); acc += SH[k]; } }
 setTower(4);
@@ -155,13 +139,8 @@ setTower(4);
 const T1 = standardLayers(await loadAnatomy(), { inside: false }); scene.add(T1.root);
 const T2 = standardLayers(await loadAnatomy(), { inside: false }); scene.add(T2.root);
 const CROWD = new THREE.Group(); WORLD.add(CROWD);
-{ const N = 260, body = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.22, 1.05, 4, 10), new THREE.MeshStandardMaterial({ roughness: 0.8 }), N), head = new THREE.InstancedMesh(new THREE.SphereGeometry(0.12, 12, 8), new THREE.MeshStandardMaterial({ color: 0xc89878, roughness: 0.7 }), N);
-  const legs = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.075, 0.7, 3, 6), new THREE.MeshStandardMaterial({ color: 0x2a3040, roughness: 0.8 }), N * 2); const m4 = new THREE.Matrix4(), c = new THREE.Color();
-  for (let i = 0; i < N; i++) { let x, z, j = 0; do { x = (hash(i + j * 101) - 0.5) * 150 + 10; z = (hash(i + 3 + j * 57) - 0.5) * 150 + 30; j++; } while ((Math.hypot(x, z) < 14 || (z < -55 && Math.abs(x) < 30) || (z < -18 && Math.abs(x) < 16)) && j < 50);
-    const s = 0.9 + hash(i + 5) * 0.2; body.setMatrixAt(i, m4.makeScale(s, s, s).setPosition(x, 1.15 * s, z)); head.setMatrixAt(i, m4.makeScale(s, s, s).setPosition(x, 1.78 * s, z));
-    legs.setMatrixAt(i * 2, m4.makeScale(s, s, s).setPosition(x - 0.1, 0.42 * s, z)); legs.setMatrixAt(i * 2 + 1, m4.makeScale(s, s, s).setPosition(x + 0.1, 0.42 * s, z));
-    body.setColorAt(i, c.setHSL(hash(i + 7), 0.22, 0.22 + hash(i + 9) * 0.22)); }
-  for (const m of [body, head, legs]) { m.castShadow = true; CROWD.add(m); } }
+// (no code-built crowd: people may not be built from code — media/MODEL_SOURCING_RULES.md §1; the piazza is shown at sunset, quiet)
+
 
 // =====================================================================================================================
 // THE CROSS-SECTION (cut at z = 0): the soil layers under the piazza (Burland et al.: horizon A sandy/clayey silts to
@@ -201,13 +180,13 @@ const secTop = new THREE.Mesh(new THREE.BoxGeometry(400, 0.4, 0.6), matte(0x5f4a
 const capMat = new THREE.MeshStandardMaterial({ color: 0xcfc7b8, roughness: 0.8, map: mbT("diff", true, 1, 1), side: THREE.DoubleSide });
 const CAPS = [];
 const cap = (g, x0, x1, y0, y1, m = capMat) => { const c = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, y1 - y0), m); c.position.set((x0 + x1) / 2, (y0 + y1) / 2, -0.01); c.material.side = THREE.DoubleSide; g.add(c); CAPS.push(c); const d = c.clone(); d.position.x = -d.position.x; g.add(d); CAPS.push(d); };
-ST.forEach((g, k) => { const h = SH[k]; if (k === 0) { cap(g, R_IN, R_BASE, 0, h); } else if (k < 7) { cap(g, R_IN, R_GAL, 0, h); cap(g, R_GAL, R_BASE + 0.25, 0, 0.5); cap(g, R_GAL, R_BASE, 5.25, h); } else cap(g, 4.0, 5.4, 0, h - 0.05); });
+// the tower's own cut is drawn by the marble shader (back faces seen through the cut = cut stone, the hollow core dark)
 cap(TW, 4.5, 9.8, -3.0, 0, new THREE.MeshStandardMaterial({ color: 0x8d8376, roughness: 0.9 }));
 for (const c of CAPS) c.visible = false;
 const CLIPMATS = [marbleMat, lawnMat, pathMat, FOUND.material, duomoMat, roofMat, darkMat];
 ST[7].traverse((o) => { if (o.material && o.material.isMeshPhysicalMaterial) CLIPMATS.push(o.material); });
 let secOn = null;
-function section(on) { if (secOn === on) return; secOn = on; for (const m of CLIPMATS) { m.clippingPlanes = on ? [CLIP] : null; m.needsUpdate = true; } SECTION.visible = on; for (const c of CAPS) c.visible = on; CROWD.visible = !on; DUOMO.visible = BAPT.visible = !on; }
+function section(on) { MARBU.uSec.value = on ? 1 : 0; if (secOn === on) return; secOn = on; for (const m of CLIPMATS) { m.clippingPlanes = on ? [CLIP] : null; m.needsUpdate = true; } SECTION.visible = on; for (const c of CAPS) c.visible = on; CROWD.visible = !on; DUOMO.visible = BAPT.visible = !on; }
 // squeeze arrows in the clay (glowing dashes), the weight arrow down the tower
 const dashMat = (col) => new THREE.ShaderMaterial({ uniforms: { uP: { value: 0 }, uC: { value: new THREE.Color(col).multiplyScalar(2.2) } }, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending,
   vertexShader: `varying float vU; void main(){ vU = uv.x; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
@@ -365,7 +344,7 @@ H.frame("You pick when it burns: 5–30 minutes.", async (t) => {
     const pick = t < at("orbi2") ? 15 : LIVES[Math.min(5, Math.floor(prog(t, fr("orbi2", 0.28), fr("orbi2", 0.92)) * 6))];
     const left = t < at("orbi3") ? undefined : Math.round(lerp(14, 0, prog(t, at("orbi3"), fr("orbi3", 0.45))));
     screen(ph, { sel: t < at("orbi3") ? pick : 15, left: t < at("orbi3") ? undefined : (left <= 0 ? 0 : left) }, drawPhone); screen(lap, { left }, drawLap);
-    if (t > fr("orbi3", 0.45)) { EMB.burn(clamp(1 - prog(t, fr("orbi3", 0.5), at("end"))), t, (x, y) => lap.g.localToWorld(V(x * 2.4, 1.0 + y * 1.2, 0.1)).applyMatrix4(OR.matrixWorld.clone().invert())); }
+    if (t > fr("orbi3", 0.45)) { EMB.userData.burn(clamp(1 - prog(t, fr("orbi3", 0.5), at("end"))), t, (x, y) => lap.g.localToWorld(V(x * 2.4, 1.0 + y * 1.2, 0.1)).applyMatrix4(OR.matrixWorld.clone().invert())); }
     if (t < at("orbi2")) move(t, at("orbi"), at("orbi2"), [OW(0.6, 2.4, 10.5), OW(0.4, 3.2, 0), 42], [OW(0.5, 2.2, 9.0), OW(0.4, 3.0, 0), 42], 0.2);
     else if (t < at("orbi3")) { const pn = V(0, 0, 1).applyEuler(ph.g.rotation), pc = ph.g.position.clone(), up2 = V(0, 1, 0).applyEuler(ph.g.rotation);
       move(t, at("orbi2"), at("orbi3"), [OW(...pc.clone().addScaledVector(pn, 3.3).toArray()), OW(...pc.toArray()), 34], [OW(...pc.clone().addScaledVector(pn, 3.0).toArray()), OW(...pc.toArray()), 34], 0.03);

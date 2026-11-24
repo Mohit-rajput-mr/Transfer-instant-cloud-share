@@ -19,7 +19,7 @@ H.floor.visible = false; H.backdrop.visible = false;
 function camRange(near, far) { if (H.cam.near !== near || H.cam.far !== far) { H.cam.near = near; H.cam.far = far; H.cam.updateProjectionMatrix(); } }
 
 // ---------- sunset sky (Poly Haven "Belfast sunset (pure sky)", CC0: sun at u 0.574, 10.5° up) + drifting clouds ----------
-const SKY_ROT = -1.733;   // turn the sky so the sun sets in the west-south-west (behind the cathedral side)
+const SKY_ROT = -1.733 + Math.PI;   // turn the sky so the low sunset sun is behind the cameras: warm light on the marble face
 const SUN = (() => { const a = (0.5745 - 0.5) * TAU + SKY_ROT, e = 10.5 * D2R; return V(Math.cos(a) * Math.cos(e), Math.sin(e), Math.sin(a) * Math.cos(e)).normalize(); })();
 H.key.color.set(0xffc890); H.hemi.color.set(0xb9c8e6); H.hemi.groundColor.set(0x4a4232);
 const FOG = { c: new THREE.Color(0xc9b8a6), d: 0.0004 };
@@ -61,7 +61,7 @@ marbleMat.side = THREE.DoubleSide;
 marbleMat.onBeforeCompile = (s) => { Object.assign(s.uniforms, MARBU); s.vertexShader = s.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vWm;").replace("#include <worldpos_vertex>", "#include <worldpos_vertex>\nvWm = (modelMatrix * vec4(transformed, 1.0)).xyz;");
   s.fragmentShader = s.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vWm; uniform float uSec; uniform mat4 uTI; vec3 secCap = vec3(-1.0);").replace("#include <dithering_fragment>", "#include <dithering_fragment>\nif (secCap.x >= 0.0) gl_FragColor = vec4(secCap, 1.0);   // the cut stone / the hollow core, unlit").replace("#include <map_fragment>", `#include <map_fragment>
     if (uSec > 0.5 && !gl_FrontFacing) { vec3 C = cameraPosition, D = vWm - C; vec3 X = C + D * (-C.z / D.z); vec3 L = (uTI * vec4(X, 1.0)).xyz;
-      float r = length(L.xz); secCap = r < 3.68 ? vec3(0.012, 0.011, 0.01) : vec3(0.62, 0.59, 0.54) * (0.94 + 0.06 * sin(L.y * 7.0)); }
+      float r = length(L.xz); secCap = r < 3.68 ? vec3(0.012, 0.011, 0.01) : vec3(0.33, 0.31, 0.28) * (0.9 + 0.1 * sin(L.y * 7.0)); }
     { float y = vWm.y; diffuseColor.rgb *= mix(0.72, 1.0, smoothstep(0.0, 6.0, y)); float st = fract(y / 6.25 + 0.15); diffuseColor.rgb *= 1.0 - 0.12 * smoothstep(0.8, 1.0, st) * (0.6 + 0.4 * sin(vWm.x * 3.1 + vWm.z * 2.3)); }`); };
 marbleMat.customProgramCacheKey = () => "pisa-marble";
 const darkMat = matte(0x15120f, 0.95);
@@ -93,8 +93,8 @@ const DUOMO = new THREE.Group(), BAPT = new THREE.Group();
   r.setRenderTarget(rt); r.setClearColor(0x000000, 0); r.clear(); r.render(S, cam); r.setRenderTarget(pt); r.setClearColor(pc, pa); obj.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
   const g1 = new THREE.PlaneGeometry(1, 1); g1.translate(0, 0.5, 0); const g2 = g1.clone(); g2.rotateY(Math.PI / 2); const tq = new THREE.BufferGeometry();
   tq.setAttribute("position", new THREE.Float32BufferAttribute([...g1.attributes.position.array, ...g2.attributes.position.array], 3)); tq.setAttribute("uv", new THREE.Float32BufferAttribute([...g1.attributes.uv.array, ...g2.attributes.uv.array], 2)); tq.setIndex([0, 2, 1, 2, 3, 1, 4, 6, 5, 6, 7, 5]);
-  const N = 160, im = new THREE.InstancedMesh(tq, new THREE.MeshBasicMaterial({ map: rt.texture, alphaTest: 0.42, side: THREE.DoubleSide, fog: true }), N), m4 = new THREE.Matrix4(), col = new THREE.Color();
-  for (let i = 0; i < N; i++) { const x = -150 - hash(i) * 400, z = -500 + hash(i + 1) * 900, h = 11 + hash(i + 3) * 7, w = h * (2 * half) / sz.y; m4.compose(V(x, 0, z), new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), hash(i + 5) * TAU), V(w, h, w)); im.setMatrixAt(i, m4); im.setColorAt(i, col.setRGB(0.7 + hash(i + 3) * 0.2, 0.72 + hash(i + 7) * 0.16, 0.62 + hash(i + 9) * 0.14)); }
+  const N = 520, im = new THREE.InstancedMesh(tq, new THREE.MeshBasicMaterial({ map: rt.texture, alphaTest: 0.42, side: THREE.DoubleSide, fog: true }), N), m4 = new THREE.Matrix4(), col = new THREE.Color();
+  for (let i = 0; i < N; i++) { const a = hash(i) * TAU, rr = 150 + hash(i + 1) * 420; const x = Math.cos(a) * rr, z = Math.sin(a) * rr, h = 11 + hash(i + 3) * 7, w = h * (2 * half) / sz.y; /* a ring of trees round the square, all directions */ m4.compose(V(x, 0, z), new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), hash(i + 5) * TAU), V(w, h, w)); im.setMatrixAt(i, m4); im.setColorAt(i, col.setRGB(0.7 + hash(i + 3) * 0.2, 0.72 + hash(i + 7) * 0.16, 0.62 + hash(i + 9) * 0.14)); }
   im.frustumCulled = false; WORLD.add(im); }
 
 // =====================================================================================================================
