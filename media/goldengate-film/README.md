@@ -10,8 +10,10 @@ as one bundle and unpacked back into a folder.
   EXTRA_GAIN=1.3 python3 kit/synth.py` → `cat story_a.js story_b.js story_c.js > story.js` → 4 × `node kit/render.cjs a b frames`.
 
 ## What's on screen (real scale, metres)
-- Towers measured on the reference photos: two stepped cellular legs with fluted faces, four portal openings above the road
-  (≈31, 30, 24, 23 m) under Art Deco struts with chamfered corners, an X-brace below the road, cable saddles and a beacon.
+- Towers: "Golden Gate Bridge" by Supratik Athanti (Printables #1562815, CC BY 4.0) — the real, person-made tower cut out of
+  the model (four portal openings, Art Deco struts, X-brace under the road, pier), at real size (227 m above the water);
+  `media/goldengate-model/`. Credit in every post: "Golden Gate Bridge tower model by Supratik Athanti (Printables #1562815),
+  CC BY 4.0". Deck truss, cables and suspender ropes are engineering geometry from the real dimensions.
 - Towers 227 m above the water (legs 10 × 16 m at the base), main span 1,280 m, side spans 343 m, deck 67 m above the
   water, two main cables (parabola, 143 m sag), suspender ropes every 15.2 m, stiffening truss, anchorages, traffic.
 - The cable cutaway: 0.92 m cable, 61 strands in rings (1 + 6 + 12 + 18 + 24), each 452 wires of 4.9 mm → 27,572 wires,
