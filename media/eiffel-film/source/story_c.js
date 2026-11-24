@@ -52,9 +52,9 @@ H.frame("Direct first, cloud if not", async (t) => {
   scene.background = null; H.zoom = 1; H.bloom.strength = 0.3; thermal(0, sunH()); setBend(V(0, 0), 0); seine.material.uniforms.time.value = t * 0.5; keyShadow(V(0, 120, 0), 260);
   directBeam.material.opacity = 0; cloudMat.opacity = 0; cloudIcon.children.forEach((c) => (c.material.opacity = 0)); blockX.visible = false; lock.visible = false;
 
-  if (t < at("tower")) { // HOOK: from the Champ de Mars lawns, morning sun
-    sunAt(0.55); dayLook();
-    move(t, 0, at("tower"), [V(30, 1.8, 640), V(0, 150, 0), 40], [V(18, 2.4, 560), V(0, 155, 0), 40], 0.3);
+  if (t < at("tower")) { // HOOK: from the Trocadéro esplanade, long lens, the low sun raking the lattice
+    sunAt(0.3); dayLook();
+    move(t, 0, at("tower"), [V(-10, 40, -700), V(0, 158, 0), 31], [V(-4, 42, -640), V(0, 162, 0), 31], 0.25);
     title(t, fr("hook", 0.05), at("tower"), "Paris", "Taller in summer?", 150);
   } else if (t < at("iron")) { // the tower: rise round it; stats
     sunAt(0.5); dayLook();
@@ -147,5 +147,6 @@ H.frame("Direct first, cloud if not", async (t) => {
       directBeam.material.opacity = 0; cloudMat.opacity = 0; cloudIcon.visible = false; lock.visible = false; blockX.visible = false;
       H.cam.up.copy(up2.clone().transformDirection(OR.matrixWorld)); H.cam.lookAt(OW(...pc.toArray())); hudShow("chips", win(t, fr("orbi3", 0.65), at("end"))); }
   }
+  if (window.DBG) { const d = window.DBG[0].split(",").map(Number); H.cam.up.set(0, 1, 0); look(V(d[0], d[1], d[2]), V(d[3], d[4], d[5]), d[6]); if (window.DBG[1] === "clean") { for (const id of ["hud", "lines", "title", "sub"]) H.$(id).style.visibility = "hidden"; } }
 });
 await H.ready();

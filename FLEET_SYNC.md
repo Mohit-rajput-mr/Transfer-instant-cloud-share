@@ -19,6 +19,20 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-23 (2) · DEFECT (owner: "Burj doesn't look like the actual Burj Khalifa; the Eiffel doesn't match the real tower"): cause = models
+  built from memory, never measured against photos. FIX: reference photos via Openverse/Flickr (Wikimedia rate-limits this IP;
+  Sketchfab CC-BY models need an account token — declined by the owner, so the procedural path was used). Burj: fat-Y plan with
+  convex bays + V-notches, 27 setbacks fitted to the width profile measured on a ground photo, tiers to 652 m, clad stepped spire,
+  dark reflective glass + silver floor bands + fins + bronze louvres (anti-aliased); glass/stone Downtown, fountain lake, particle
+  wind tunnel, x-ray at dusk. Eiffel: profile measured on a Trocadéro photo (2nd-floor platform = scale), legs 26 m at the foot,
+  arch springing at 15 m with its crown at the 39 m girder, deep 1st-floor girder + arcaded frieze, 2nd-floor railing + lift cages,
+  3rd-floor cage + cupola + short mast, bronze-brown paint, fine alpha lattice, sun raking from the side, Poly Haven trees baked to
+  impostors, Les Invalides dome; acted on the red-pen review in media/review/eiffel-review.png. Burj sent 2026-11-23; Eiffel sent 2026-11-23
+  (WER 0.025). Note: render.cjs builds its to-do list at start, so a 2nd worker on an overlapping range re-renders frames another
+  worker already made — kill the overlapping worker once its own gap is done (it re-rendered ~110 frames here, harmless).
+  Golden Gate: tower rebuilt from photos (4 portal openings, X-brace, fluted struts), clear sky, sent 2026-11-24 (WER 0.039).
+  DEFECT: disk allowance full mid-render (ENOSPC, 4 broken PNGs) — cause: 21 GB of old frames kept. FIX: delete source/frames after
+  each film is encoded + checked; re-check PNGs after any crash.
 - 2026-11-23 · DEFECT (fix brief `media/BRIEF_LANDMARKS_FIX.md`: landmark films below quality): cause = landmarks/cities built from
   primitives and never compared with photos; flat foggy skies; diagrams as clip-art. FIX (eiffel-film, before shipping): Paris rebuilt
   as a procedural Haussmann city (Voronoi blocks cut by radiating boulevards, ≈25k buildings, facade + zinc-mansard shaders, chimneys,

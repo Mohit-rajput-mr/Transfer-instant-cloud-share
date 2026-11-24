@@ -1,109 +1,108 @@
 {
  "sr": 24000,
- "duration": 123.65,
  "lines": [
   {
    "key": "hook",
    "text": "Do you know each of the Golden Gate Bridge's two main cables is made of twenty-seven thousand, five hundred and seventy-two steel wires?",
-   "at": 0.3,
-   "dur": 9.69
+   "dur": 8.572,
+   "at": 0.35
   },
   {
    "key": "bridge",
    "text": "Its towers rise two hundred and twenty-seven metres above the water. And twelve hundred and eighty metres of road hang between them.",
-   "at": 10.49,
-   "dur": 9.28
+   "dur": 8.739,
+   "at": 9.42
   },
   {
    "key": "hang",
    "text": "Because the road doesn't rest on the towers. It hangs.",
-   "at": 20.22,
-   "dur": 4.38
+   "dur": 3.363,
+   "at": 18.61
   },
   {
    "key": "load",
    "text": "A truck pushes down on the deck. The deck hangs from vertical steel ropes. And the ropes hang from the two main cables.",
-   "at": 25.05,
-   "dur": 9.69
+   "dur": 6.904,
+   "at": 22.42
   },
   {
    "key": "towers",
    "text": "The cables run over the tops of the towers. And the towers only push straight down, into the sea floor.",
-   "at": 35.19,
-   "dur": 8.46
+   "dur": 6.029,
+   "at": 29.78
   },
   {
    "key": "anchor",
    "text": "At each end, the cables dive into concrete anchorages. Each one weighs sixty thousand tons.",
-   "at": 44.1,
-   "dur": 6.42
+   "dur": 6.349,
+   "at": 36.26
   },
   {
    "key": "cable",
    "text": "Now look inside one cable. It's ninety-two centimetres thick.",
-   "at": 50.97,
-   "dur": 3.97
+   "dur": 4.429,
+   "at": 43.06
   },
   {
    "key": "strands",
    "text": "It's made of sixty-one bundles.",
-   "at": 55.35,
-   "dur": 2.34
+   "dur": 1.933,
+   "at": 47.89
   },
   {
    "key": "wires",
    "text": "And those are made of twenty-seven thousand, five hundred and seventy-two wires, each about five millimetres thick.",
-   "at": 58.09,
-   "dur": 7.24
+   "dur": 8.419,
+   "at": 50.22
   },
   {
    "key": "spin",
    "text": "They were spun across the strait, one wire at a time, then squeezed together into a perfect circle.",
-   "at": 65.78,
-   "dur": 7.65
+   "dur": 6.307,
+   "at": 59.09
   },
   {
    "key": "move",
    "text": "And the whole road moves. Heat stretches the cables, and the middle of the deck sinks. Cold shortens them, and it rises.",
-   "at": 73.92,
-   "dur": 9.28
+   "dur": 6.776,
+   "at": 65.89
   },
   {
    "key": "range",
    "text": "It was built to move more than three metres down, and almost two metres up.",
-   "at": 83.65,
-   "dur": 6.42
+   "dur": 4.493,
+   "at": 73.12
   },
   {
    "key": "orange",
    "text": "Its colour began as a primer. The architect kept it, partly because it stands out in the fog.",
-   "at": 90.52,
-   "dur": 7.65
+   "dur": 5.965,
+   "at": 78.06
   },
   {
    "key": "orbi",
-   "text": "Thousands of small parts, carrying the load together. That's how Orbi Transfer moves big files.",
-   "at": 98.67,
-   "dur": 6.42
+   "text": "Thousands of wires, bundled into one cable. Orbi Transfer does the same with your folders.",
+   "dur": 6.051,
+   "at": 84.53
   },
   {
    "key": "orbi2",
-   "text": "A twenty-gigabyte file travels as many small parts, up to eight at once.",
-   "at": 105.49,
-   "dur": 5.61
+   "text": "Drop in a whole folder, hundreds of files, and it travels as one bundle, up to twenty gigabytes.",
+   "dur": 6.353,
+   "at": 90.98
   },
   {
    "key": "orbi3",
-   "text": "If one part stumbles, only that part is sent again. No app, no login.",
-   "at": 111.5,
-   "dur": 6.01
+   "text": "On the other side, it unpacks back into a folder. No app, no login.",
+   "dur": 4.903,
+   "at": 97.73
   },
   {
    "key": "end",
    "text": "Orbi Transfer dot com.",
-   "at": 117.91,
-   "dur": 1.93
+   "dur": 1.975,
+   "at": 103.04
   }
  ],
- "provisional": true
+ "duration": 107.41
 }

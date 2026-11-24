@@ -27,6 +27,20 @@ for (const s of [-1, 1]) { const q = sh(new THREE.Mesh(new THREE.BoxGeometry(900
 { const br = new THREE.Group(); br.position.set(0, 0, SEINE_Z); CITY.add(br);
   const deck = sh(new THREE.Mesh(new THREE.BoxGeometry(35, 1.6, 160), stone(2, 10))); deck.position.y = 0.6; br.add(deck);
   for (let i = 0; i < 4; i++) { const p = sh(new THREE.Mesh(new THREE.BoxGeometry(30, 4, 6), stone(2, 1))); p.position.set(0, -2, -60 + i * 40); br.add(p); } }
+
+/** bake a glTF tree into an alpha texture (front view), lit from the sun side; returns { tex, w, h } */
+async function treeImpostor(url, size = 512) {
+  const g = await new GLTFLoader().loadAsync(url); const obj = g.scene;
+  const box = new THREE.Box3().setFromObject(obj); const sz = box.getSize(V()), c = box.getCenter(V());
+  const S = new THREE.Scene(); S.add(obj); S.add(new THREE.HemisphereLight(0xdfe8ff, 0x3a3020, 1.3));
+  const dl = new THREE.DirectionalLight(0xfff0d8, 2.4); dl.position.set(c.x + sz.x, c.y + sz.y * 1.2, c.z + sz.x * 1.6); dl.target.position.copy(c); S.add(dl, dl.target);
+  const half = Math.max(sz.x, sz.z) / 2; const W = Math.round(size * (2 * half) / sz.y);
+  const cam = new THREE.OrthographicCamera(-half, half, sz.y / 2, -sz.y / 2, 0.1, 1000); cam.position.set(c.x, c.y, c.z + half * 4); cam.lookAt(c);
+  const rt = new THREE.WebGLRenderTarget(W, size, { samples: 4 }); rt.texture.colorSpace = THREE.LinearSRGBColorSpace;
+  const r = H.r, prevT = r.getRenderTarget(), prevC = new THREE.Color(); r.getClearColor(prevC); const prevA = r.getClearAlpha();
+  r.setRenderTarget(rt); r.setClearColor(0x000000, 0); r.clear(); r.render(S, cam); r.setRenderTarget(prevT); r.setClearColor(prevC, prevA);
+  obj.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+  return { tex: rt.texture, w: 2 * half, h: sz.y }; }
 // Haussmann Paris: irregular perimeter blocks (Voronoi cells cut by straight boulevards radiating from the squares),
 // 6-storey cream limestone facades (tall French windows, wrought-iron balconies on the 2nd and 5th floors, shops on the
 // ground floor), grey-blue zinc mansard roofs with dormers, chimney stacks; open courtyards inside each block.
@@ -133,9 +147,17 @@ const mansardG = (() => { const g = new THREE.BufferGeometry(); const L = [[0.5,
   for (let i = 0; i < 700; i++) { TP.push([(i % 4 < 2 ? -1 : 1) * (i % 2 ? 118 : 172), 140 + Math.floor(i / 4) * 5.2]); }
   for (let i = 0; i < 800; i++) TP.push([-4000 + i * 10, SEINE_Z + ((i % 2) ? 92 : -92)]);
   for (const r of RAYS.slice(0, -2)) for (let s = 40; s < 2600; s += 9) for (const sd of [-1, 1]) { const x = r.o.x + r.d.x * s + -r.d.z * sd * (r.w - 4), z = r.o.z + r.d.z * s + r.d.x * sd * (r.w - 4); if (Math.hypot(x, z) < 3000 && !inZone(x, z)) TP.push([x, z]); }
-  const trees = new THREE.InstancedMesh(tg, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, map: gT("diff", true, 2) }), TP.length); const col = new THREE.Color();
-  TP.forEach(([x, z], i) => { const s = 3.6 + hash(i) * 1.8; m4.makeScale(s, s * 1.15, s).setPosition(x, 2.5, z); trees.setMatrixAt(i, m4); trees.setColorAt(i, col.setHSL(0.24 + hash(i + 3) * 0.05, 0.42, 0.3 + hash(i + 7) * 0.08)); });
-  trees.castShadow = true; trees.frustumCulled = false; CITY.add(trees); }
+  // real trees: a Poly Haven tree model (CC0) baked once into an impostor (front view, lit by the sun side), drawn as
+  // crossed quads with per-tree size and tint — chestnuts along the Champ de Mars, plane trees on the quays and boulevards
+  const IMP = await treeImpostor("kit/ph/island_tree_02/island_tree_02_1k.gltf", 768);
+  const tq = (() => { const g1 = new THREE.PlaneGeometry(1, 1); g1.translate(0, 0.5, 0); const g2 = g1.clone(); g2.rotateY(Math.PI / 2); const pos = [...g1.attributes.position.array, ...g2.attributes.position.array], uv = [...g1.attributes.uv.array, ...g2.attributes.uv.array];
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex([0, 2, 1, 2, 3, 1, 4, 6, 5, 6, 7, 5]); return g; })();
+  const trees = new THREE.InstancedMesh(tq, new THREE.MeshBasicMaterial({ map: IMP.tex, alphaTest: 0.42, side: THREE.DoubleSide, fog: true }), TP.length); const col = new THREE.Color();
+  TP.forEach(([x, z], i) => { const hgt = 15 + hash(i) * 7, wdt = hgt * IMP.w / IMP.h; const q = new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), hash(i + 5) * TAU);
+    m4.compose(V(x, 0, z), q, V(wdt, hgt, wdt)); trees.setMatrixAt(i, m4); trees.setColorAt(i, col.setRGB(0.82 + hash(i + 3) * 0.3, 0.86 + hash(i + 7) * 0.22, 0.78 + hash(i + 9) * 0.2)); });
+  trees.frustumCulled = false; CITY.add(trees);
+  const shadowTrees = new THREE.InstancedMesh(new THREE.SphereGeometry(0.42, 8, 6), new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }), TP.length);
+  TP.forEach(([x, z], i) => { const hgt = 15 + hash(i) * 7; m4.makeScale(hgt * 0.8, hgt * 0.7, hgt * 0.8).setPosition(x, hgt * 0.62, z); shadowTrees.setMatrixAt(i, m4); }); shadowTrees.castShadow = true; shadowTrees.frustumCulled = false; CITY.add(shadowTrees); }
 // city ground: asphalt streets
 ground.material.map = tex("kit/ph/asphalt_02/asphalt_02_diff_1k.jpg", true, 2400, 2400); ground.material.color.set(0x9a958c); ground.material.needsUpdate = true;
 // Palais de Chaillot (Trocadéro): two curved wings and the pavilions, the gardens and the long fountain basin down to the Seine
@@ -150,6 +172,15 @@ ground.material.map = tex("kit/ph/asphalt_02/asphalt_02_diff_1k.jpg", true, 2400
   const emR = sh(new THREE.Mesh(new THREE.BoxGeometry(321, 6, 41), new THREE.MeshStandardMaterial({ color: 0x6b7480, roughness: 0.5, metalness: 0.3 }))); emR.position.set(0, 25, 1080); CITY.add(emR);
   const dome = sh(new THREE.Mesh(new THREE.SphereGeometry(16, 32, 16, 0, TAU, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x6b7480, roughness: 0.4, metalness: 0.4 }))); dome.position.set(0, 30, 1062); dome.scale.y = 1.3; CITY.add(dome);
   const portico = sh(new THREE.Mesh(new THREE.BoxGeometry(60, 30, 12), stoneC)); portico.position.set(0, 15, 1056); CITY.add(portico); }
+// Les Invalides: the gilded dome (107 m) on its colonnaded drum, ~1.9 km from the tower
+{ const G = new THREE.Group(); G.position.set(1400, 0, 1300); CITY.add(G); const stoneI = new THREE.MeshStandardMaterial({ color: 0xd9cfbd, roughness: 0.85 });
+  const base = sh(new THREE.Mesh(new THREE.BoxGeometry(60, 28, 60), stoneI)); base.position.y = 14; G.add(base);
+  const drum = sh(new THREE.Mesh(new THREE.CylinderGeometry(17, 18, 24, 32), stoneI)); drum.position.y = 40; G.add(drum);
+  const gold = new THREE.MeshPhysicalMaterial({ color: 0xd8a640, metalness: 1, roughness: 0.28, clearcoat: 0.5 });
+  const dome = sh(new THREE.Mesh(new THREE.SphereGeometry(17, 32, 16, 0, TAU, 0, Math.PI / 2), new THREE.MeshPhysicalMaterial({ color: 0x3a4148, metalness: 0.6, roughness: 0.4 }))); dome.position.y = 52; dome.scale.y = 1.35; G.add(dome);
+  for (let k = 0; k < 12; k++) { const rib = new THREE.Mesh(new THREE.TorusGeometry(17.2, 0.6, 6, 24, Math.PI / 2), gold); rib.position.y = 52; rib.rotation.set(0, (k / 12) * TAU, Math.PI / 2); rib.scale.set(1.35, 1, 1); G.add(rib); }
+  const lant = sh(new THREE.Mesh(new THREE.CylinderGeometry(3, 3.5, 10, 16), gold)); lant.position.y = 79; G.add(lant);
+  const sp = sh(new THREE.Mesh(new THREE.ConeGeometry(1.6, 22, 12), gold)); sp.position.y = 95; G.add(sp); }
 // bateaux-mouches on the Seine
 const BOATS = []; for (let i = 0; i < 5; i++) { const b = new THREE.Group(); const hull = sh(new THREE.Mesh(new RoundedBoxGeometry(32, 2.4, 7, 2, 0.6), matte(0xeeeeea, 0.5))); hull.position.y = 0.2; b.add(hull);
   const glass = sh(new THREE.Mesh(new RoundedBoxGeometry(26, 2.2, 6.2, 2, 0.8), new THREE.MeshPhysicalMaterial({ color: 0x223040, roughness: 0.05, metalness: 0.3, clearcoat: 1 }))); glass.position.y = 2.4; b.add(glass);
