@@ -30,6 +30,9 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
   impostors, Les Invalides dome; acted on the red-pen review in media/review/eiffel-review.png. Burj sent 2026-11-23; Eiffel sent 2026-11-23
   (WER 0.025). Note: render.cjs builds its to-do list at start, so a 2nd worker on an overlapping range re-renders frames another
   worker already made — kill the overlapping worker once its own gap is done (it re-rendered ~110 frames here, harmless).
+  Golden Gate: tower rebuilt from photos (4 portal openings, X-brace, fluted struts), clear sky, sent 2026-11-24 (WER 0.039).
+  DEFECT: disk allowance full mid-render (ENOSPC, 4 broken PNGs) — cause: 21 GB of old frames kept. FIX: delete source/frames after
+  each film is encoded + checked; re-check PNGs after any crash.
 - 2026-11-23 · DEFECT (fix brief `media/BRIEF_LANDMARKS_FIX.md`: landmark films below quality): cause = landmarks/cities built from
   primitives and never compared with photos; flat foggy skies; diagrams as clip-art. FIX (eiffel-film, before shipping): Paris rebuilt
   as a procedural Haussmann city (Voronoi blocks cut by radiating boulevards, ≈25k buildings, facade + zinc-mansard shaders, chimneys,
