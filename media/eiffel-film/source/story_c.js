@@ -62,7 +62,7 @@ H.frame("Direct first, cloud if not", async (t) => {
     hudShow("stats", win(t, fr("tower", 0.25), at("iron"))); callout("h330", t, fr("tower", 0.6), at("iron"), V(0, TIPY, 0), 760, 360);
   } else if (t < at("summer")) { // the iron, close: lattice, rivets, the painted puddled iron
     sunAt(0.3); dayLook(); keyShadow(V(halfW(70), 70, 0), 40);
-    move(t, at("iron"), at("summer"), [V(halfW(66) + 14, 64, 26), V(halfW(70), 72, 0), 40], [V(halfW(66) + 8, 70, 16), V(halfW(72), 74, 0), 38], 0.3);
+    move(t, at("iron"), at("summer"), [V(halfW(66) + 62, 52, 86), V(halfW(70) - 4, 76, 0), 34], [V(halfW(66) + 52, 58, 72), V(halfW(72) - 4, 80, 0), 32], 0.3);   // the model's members are print-thick: no macro, a medium shot of the leg
     callout("iron", t, fr("iron", 0.15), at("summer"), V(halfW(72) - 3, 74, 3), 760, 1180);
   } else if (t < at("winter")) { // summer noon: the tower grows (×100) with the formula
     sunAt(1.0); dayLook(); const g = ease(prog(t, fr("summer", 0.4), fr("summer", 0.9))) * 0.15 * 100 / 300; setBend(V(0, 0), g);

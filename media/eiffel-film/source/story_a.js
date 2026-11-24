@@ -164,7 +164,7 @@ const TMAP = [[0.05, 0.02, 0.15], [0.35, 0.05, 0.55], [0.85, 0.2, 0.35], [1.0, 0
 const tcol = (k) => { k = clamp(k) * (TMAP.length - 1); const i = Math.min(TMAP.length - 2, Math.floor(k)), f = k - i; return new THREE.Color(...TMAP[i].map((c, j) => lerp(c, TMAP[i + 1][j], f))); };
 let thermalOn = -1;
 function thermal(k, sunH) { // k: 0 normal, 1 thermal
-  BEND.therm.value = k; LAT.visible = k <= 0.01;
+  BEND.therm.value = k; LAT.visible = k <= 0.01; SUNH.value.set(sunH.x, sunH.z); if (SUNH.value.lengthSq() > 1e-6) SUNH.value.normalize();
   const key = k > 0.01 ? Math.round(k * 20) + "|" + sunH.x.toFixed(2) + sunH.z.toFixed(2) : "off"; if (key === thermalOn) return; thermalOn = key;
   const white = new THREE.Color(1, 1, 1);
   BC.forEach((p, i) => { if (k <= 0.01) { towerIM.setColorAt(i, white.clone().setScalar(lerp(0.8, 1.16, clamp(p.y / 300)))); return; } const w = Math.max(halfW(p.y), 1); const side = (p.x * sunH.x + p.z * sunH.z) / w; // -1 shade … +1 sun
@@ -185,5 +185,27 @@ ironMat.onBeforeCompile = (s) => { s.uniforms.uLean = BEND.lean; s.uniforms.uGro
     gl_Position = projectionMatrix * mvPosition;`); };
 ironMat.customProgramCacheKey = () => "eiffel-iron";
 latMat.onBeforeCompile = ironMat.onBeforeCompile; friezeMat.onBeforeCompile = ironMat.onBeforeCompile;
+// THE TOWER SHOWN: "Eiffel Tower" by Michal Fanta (Printables #572), public domain — a real, person-made model
+// (media/MODEL_SOURCING_RULES.md), converted by landmark_prep.py to metres (base y = 0, antenna tip 330 m) in
+// media/kit/models/eiffel/. The code-built lattice above is NOT shown: it only remains as data (halfW for camera targets).
+for (const o of [...TOWER.children]) TOWER.remove(o);
+const SUNH = { value: new THREE.Vector2(1, 0) };
+const eiffelMat = new THREE.MeshStandardMaterial({ color: 0x9a6a46, roughness: 0.6, metalness: 0.3 });   // "Eiffel Tower brown"
+eiffelMat.onBeforeCompile = (s) => { ironMat.onBeforeCompile(s); s.uniforms.uSunH = SUNH;
+  s.vertexShader = s.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vOPe;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvOPe = position;");
+  s.fragmentShader = s.fragmentShader.replace("#include <common>", `#include <common>
+    varying vec3 vOPe; uniform vec2 uSunH;
+    vec3 tmap(float k){ k = clamp(k, 0.0, 1.0) * 4.0; vec3 c0 = vec3(0.05, 0.02, 0.15), c1 = vec3(0.35, 0.05, 0.55), c2 = vec3(0.85, 0.2, 0.35), c3 = vec3(1.0, 0.55, 0.1), c4 = vec3(1.0, 0.95, 0.6);
+      return k < 1.0 ? mix(c0, c1, k) : k < 2.0 ? mix(c1, c2, k - 1.0) : k < 3.0 ? mix(c2, c3, k - 2.0) : mix(c3, c4, k - 3.0); }`)
+    .replace("#include <map_fragment>", "#include <map_fragment>\ndiffuseColor.rgb *= mix(0.8, 1.16, clamp(vOPe.y / 300.0, 0.0, 1.0));   // the paint is graded lighter towards the top")
+    .replace("#include <emissivemap_fragment>", `#include <emissivemap_fragment>
+      { float side = dot(normalize(vOPe.xz + vec2(1e-4)), uSunH);   // −1 shade … +1 sun side
+        totalEmissiveRadiance += tmap(0.5 + 0.42 * side) * uTherm * 0.9; diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.05), uTherm); }`); };
+eiffelMat.customProgramCacheKey = () => "eiffel-model";
+{ const [PB, NB, IB] = await Promise.all(["pos", "nor", "idx"].map((n) => fetch(`kit/models/eiffel/${n}.bin`).then((r) => r.arrayBuffer())));
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(PB), 3)); g.setAttribute("normal", new THREE.BufferAttribute(new Int8Array(NB), 4, true));
+  g.setIndex(new THREE.BufferAttribute(new Uint32Array(IB), 1));
+  g.scale(125 / 149.15, 1, 125 / 149.15);   // the print model is ~19% wide (made stable for printing): base to the real 125 m, height stays 330 m — it then matches the photo-measured profile (PROF) at every floor
+  g.computeBoundingSphere(); const m = sh(new THREE.Mesh(g, eiffelMat)); m.frustumCulled = false; TOWER.add(m); }
 function setBend(lean, grow) { BEND.lean.value.set(lean.x, lean.y); BEND.grow.value = grow; const hk = (y) => Math.pow(y / TIPY, 2);
   for (const o of [TOP]) { o.position.set(lean.x * hk(F3), F3 * grow, lean.y * hk(F3)); } }

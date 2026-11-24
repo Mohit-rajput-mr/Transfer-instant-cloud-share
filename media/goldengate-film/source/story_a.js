@@ -81,44 +81,21 @@ const ORANGE = new THREE.Color(0xc0362c);                                       
 const orangeMat = new THREE.MeshStandardMaterial({ color: ORANGE, roughness: 0.55, metalness: 0.25 });
 const BRIDGE = new THREE.Group(); scene.add(BRIDGE);
 let sagNow = SAG;                                                                  // main-span sag (changes with heat, shown exaggerated)
-const cableY = (z) => { const az = Math.abs(z); if (az <= ZT) { const u = z / ZT; return TOWER_H + 1.5 - sagNow * (1 - u * u); } const u = (az - ZT) / (ZA - ZT); return lerp(TOWER_H + 1.5, DECK + 6, u) - 18 * Math.sin(Math.PI * u); };
+const cableY = (z) => { const az = Math.abs(z); if (az <= ZT) { const u = z / ZT; return TOWER_H - 1.5 - sagNow * (1 - u * u); } const u = (az - ZT) / (ZA - ZT); return lerp(TOWER_H - 1.5, DECK + 6, u) - 18 * Math.sin(Math.PI * u); };
 const deckDrop = (z) => (Math.abs(z) <= ZT ? (sagNow - SAG) * (1 - (z / ZT) ** 2) * 0.6 : 0);  // the deck follows the cable at midspan
-// towers, measured on the reference photos (source/check): two cellular legs stepping in at every strut; above the road
-// four portal openings (≈31, 30, 24, 23 m tall) under struts with Art Deco vertical fluting and chamfered corners; below the
-// road an X-brace; cable saddles on the leg tops and a beacon on the crown
-const TIERS = [[0, 58, 10, 16, 9.4, 15], [58, 105.5, 9.4, 15, 8.6, 13.4], [105.5, 149, 8.6, 13.4, 7.8, 11.8], [149, 184.5, 7.8, 11.8, 7, 10.4], [184.5, TOWER_H, 7, 10.4, 6.4, 9.4]];
-const legW = (y) => { for (const [y0, y1, w0, , w1] of TIERS) if (y <= y1) return lerp(w0, w1, (y - y0) / (y1 - y0)); return 6.4; };
-const STRUTS = [[105.5, 15], [149, 12], [184.5, 11], [TOWER_H - 7, 14]];          // above the road: centre, depth (m)
-const OPEN = [[DECK, 98, false], [113, 143, true], [155, 179, true], [190, 213, true]];  // openings: bottom, top, chamfer bottom too
-function tower(z) { const g = new THREE.Group(); g.position.z = z; BRIDGE.add(g); const box = (w, h, d, x, y, zz = 0, rz = 0) => { const m = sh(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), orangeMat)); m.position.set(x, y, zz); m.rotation.z = rz; g.add(m); return m; };
-  for (const s of [-1, 1]) { const leg = new THREE.Group(); leg.position.x = s * CX; g.add(leg);
-    for (const [y0, y1, w0, d0, w1, d1] of TIERS) { const geo = new THREE.CylinderGeometry(1, 1, y1 - y0, 4, 1); geo.rotateY(Math.PI / 4); const p = geo.attributes.position;
-      for (let i = 0; i < p.count; i++) { const top = p.getY(i) > 0; const w = (top ? w1 : w0) / Math.SQRT2, d = (top ? d1 : d0) / Math.SQRT2; p.setX(i, p.getX(i) * w); p.setZ(i, p.getZ(i) * d); }
-      geo.computeVertexNormals(); const m = sh(new THREE.Mesh(geo, orangeMat)); m.position.y = (y0 + y1) / 2; leg.add(m);
-      // vertical battens on every face (the recessed cell lines that read as fluting)
-      const wm = (w0 + w1) / 2, dm = (d0 + d1) / 2;
-      for (const r of [-0.36, -0.12, 0.12, 0.36]) for (const f of [-1, 1]) { const b1 = sh(new THREE.Mesh(new THREE.BoxGeometry(0.45, y1 - y0, 0.45), orangeMat)); b1.position.set(f * (wm / 2 + 0.12), (y0 + y1) / 2, r * dm); leg.add(b1); }
-      for (const r of [-0.3, 0, 0.3]) for (const f of [-1, 1]) { const b2 = sh(new THREE.Mesh(new THREE.BoxGeometry(0.45, y1 - y0, 0.45), orangeMat)); b2.position.set(r * wm, (y0 + y1) / 2, f * (dm / 2 + 0.12)); leg.add(b2); } }
-    // cable saddle housing on the leg top
-    const sad = sh(new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.4, 9, 20, 1, false, 0, Math.PI), orangeMat)); sad.rotation.set(Math.PI / 2, 0, Math.PI / 2); sad.position.y = TOWER_H; leg.add(sad);
-    box(6.2, 1.2, 9.6, s * CX, TOWER_H + 0.6); }
-  const inner = (y) => CX - legW(y) / 2;                                              // x of the leg's inner face
-  // struts above the road: full-width members with Art Deco fluting (vertical fins) on both faces
-  for (const [y, hgt] of STRUTS) { const w = 2 * inner(y) + 2; box(w, hgt, 7.2, 0, y);
-    const nF = Math.max(5, Math.round(w / 2.1)); for (let i = 0; i < nF; i++) { const x = lerp(-w / 2 + 1.2, w / 2 - 1.2, i / (nF - 1)); box(0.7, hgt - 1.6, 7.9, x, y); }
-    box(w, 0.8, 8.2, 0, y - hgt / 2 + 0.4); box(w, 0.8, 8.2, 0, y + hgt / 2 - 0.4); }
-  // chamfered (knee-braced) corners of the openings
-  for (const [y0, y1, both] of OPEN) for (const sx of [-1, 1]) { const c = 3.6;
-    box(c * 1.414, c * 1.414, 6.6, sx * inner(y1), y1, 0, Math.PI / 4);           // a square turned 45° on the corner fills the triangle
-    if (both) box(c * 1.414, c * 1.414, 6.6, sx * inner(y0), y0, 0, Math.PI / 4); }
-  // below the road: strut under the deck, a strut above the pier and the X-brace between
-  box(2 * inner(DECK - 9) + 2, 6, 7, 0, DECK - 9); box(2 * inner(16) + 2, 4, 7, 0, 16);
-  for (const sx of [-1, 1]) { const x0 = -sx * inner(18), x1 = sx * inner(54), y0 = 18, y1 = 54; const len = Math.hypot(x1 - x0, y1 - y0);
-    const br = box(2.6, len, 4.2, (x0 + x1) / 2, (y0 + y1) / 2, 0, -Math.atan2(x1 - x0, y1 - y0)); }
-  // beacon on the crown
-  box(1.4, 3, 1.4, 0, TOWER_H + 1.5); const bl = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 8), new THREE.MeshBasicMaterial({ color: 0xff3020 })); bl.position.y = TOWER_H + 3.4; g.add(bl);
-  const pier = sh(new THREE.Mesh(new THREE.BoxGeometry(46, 14, 36), new THREE.MeshStandardMaterial({ color: 0x9a968c, roughness: 0.9, map: tex("kit/ph/concrete_wall_008/concrete_wall_008_diff_1k.jpg", true, 4, 1) }))); pier.position.y = 0; g.add(pier);
-  return g; }
+// THE TOWERS: cut from "Golden Gate Bridge" by Supratik Athanti (Printables #1562815, CC BY 4.0) — a real, person-made
+// model (media/MODEL_SOURCING_RULES.md): four portal openings with chamfered corners, Art Deco struts, the X-brace under
+// the road, the pier. Its print shortens the span, so only the tower is used, at real size (227 m above the water, ~35 m
+// across; media/kit/models/goldengate/meta.json); two of them stand 1,280 m apart. Deck truss, cables and suspender ropes
+// are plain engineering geometry from the real dimensions. Concrete below 14 m (the pier), International Orange above.
+const GGT = await (async () => { const [PB, NB, IB] = await Promise.all(["pos", "nor", "idx"].map((n) => fetch(`kit/models/goldengate/${n}.bin`).then((r) => r.arrayBuffer())));
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(PB), 3)); g.setAttribute("normal", new THREE.BufferAttribute(new Int8Array(NB), 4, true));
+  g.setIndex(new THREE.BufferAttribute(new Uint32Array(IB), 1)); g.computeBoundingSphere(); return g; })();
+const towerMat = orangeMat.clone();
+towerMat.onBeforeCompile = (s) => { s.vertexShader = s.vertexShader.replace("#include <common>", "#include <common>\nvarying float vTY;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvTY = position.y;");
+  s.fragmentShader = s.fragmentShader.replace("#include <common>", "#include <common>\nvarying float vTY;").replace("#include <color_fragment>", "#include <color_fragment>\nif (vTY < 14.0) diffuseColor.rgb = vec3(0.6, 0.59, 0.56);   // concrete pier"); };
+towerMat.customProgramCacheKey = () => "gg-tower";
+function tower(z) { const g = new THREE.Group(); g.position.z = z; BRIDGE.add(g); g.add(sh(new THREE.Mesh(GGT, towerMat))); return g; }
 const TOWERS = [tower(-ZT), tower(ZT)];
 // main cables (rebuilt when the sag changes), suspender ropes, the deck + stiffening truss
 const cableMat = new THREE.MeshStandardMaterial({ color: ORANGE.clone().multiplyScalar(0.95), roughness: 0.5, metalness: 0.3 });

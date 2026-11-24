@@ -81,33 +81,21 @@ function planR(phi, L) { const ux = Math.cos(phi), uz = Math.sin(phi); let best 
   return best; }
 const NP = 900;
 const ring = (y) => { const L = wingLens(y), pts = []; for (let i = 0; i < NP; i++) { const a = (i / NP) * TAU; const r = planR(a, L); pts.push([Math.cos(a) * r, Math.sin(a) * r]); } return pts; };
-// geometry: walls per tier (vertical, smooth normals across a bay, sharp at the notches), terraces at each setback
-const BG = { pos: [], nor: [], uv: [], kind: [], end: [] };
-function wall(y0, y1, pts, endMask) { const n = pts.length, N = [];
-  for (let i = 0; i < n; i++) { const p = pts[(i + n - 1) % n], q = pts[(i + 1) % n]; const v = V(q[1] - p[1], 0, -(q[0] - p[0])).normalize(); N.push(v); }
-  // sharpen the V-notches: where the outline turns inward, use the segment normals instead of the averaged one
-  let u = 0; const U = [0]; for (let i = 1; i <= n; i++) { const p = pts[i - 1], q = pts[i % n]; u += Math.hypot(q[0] - p[0], q[1] - p[1]); U.push(u); }
-  for (let i = 0; i < n; i++) { const j = (i + 1) % n, p = pts[i], q = pts[j];
-    const segN = V(q[1] - p[1], 0, -(q[0] - p[0])).normalize(); const kink = (a) => N[a].dot(segN) < 0.97;
-    const na = kink(i) ? segN : N[i], nb = kink(j) ? segN : N[j];
-    const A = [p[0], y0, p[1]], B = [q[0], y0, q[1]], C = [p[0], y1, p[1]], D = [q[0], y1, q[1]];
-    for (const [v, nn, uu, vv, e] of [[A, na, U[i], y0, endMask[i]], [C, na, U[i], y1, endMask[i]], [B, nb, U[i + 1], y0, endMask[j]], [B, nb, U[i + 1], y0, endMask[j]], [C, na, U[i], y1, endMask[i]], [D, nb, U[i + 1], y1, endMask[j]]]) {
-      BG.pos.push(...v); BG.nor.push(nn.x, nn.y, nn.z); BG.uv.push(uu, vv); BG.kind.push(0); BG.end.push(0); } } }
-function terrace(y, lo, hi) { for (let i = 0; i < lo.length; i++) { const j = (i + 1) % lo.length; if (Math.hypot(lo[i][0] - hi[i][0], lo[i][1] - hi[i][1]) < 0.05 && Math.hypot(lo[j][0] - hi[j][0], lo[j][1] - hi[j][1]) < 0.05) continue;
-  for (const v of [lo[i], hi[i], lo[j], lo[j], hi[i], hi[j]]) { BG.pos.push(v[0], y, v[1]); BG.nor.push(0, 1, 0); BG.uv.push(v[0], v[1]); BG.kind.push(1); BG.end.push(0); } } }
-function capTop(y, pts) { for (let i = 0; i < pts.length; i++) { const p = pts[i], q = pts[(i + 1) % pts.length];
-  for (const v of [[0, y, 0], [q[0], y, q[1]], [p[0], y, p[1]]]) { BG.pos.push(...v); BG.nor.push(0, 1, 0); BG.uv.push(v[0], v[2]); BG.kind.push(1); BG.end.push(0); } } }
-{ const levels = [0, ...SETS, 622];
-  let lo = ring(0.1);
-  for (let i = 0; i < levels.length - 1; i++) { const hi = ring(levels[i + 1] + 0.1); const endMask = lo.map((p, a) => Math.hypot(p[0] - hi[a][0], p[1] - hi[a][1]) > 0.3 ? 1 : 0);
-    wall(levels[i], levels[i + 1], lo, endMask); if (i < levels.length - 2) terrace(levels[i + 1], lo, hi); else capTop(levels[i + 1], lo); lo = hi; }
-  // the crown: the three last tube stubs and the core, stepping in three times up to 585 m (trefoil rings)
-  const tref = (rc, rt, dt) => Array.from({ length: 360 }, (_, i) => { const a = (i / 360) * TAU, ux = Math.cos(a), uz = Math.sin(a); let best = rc;
-    for (const w of WING) { const cx = Math.cos(w) * dt, cz = Math.sin(w) * dt, b = ux * cx + uz * cz, disc = b * b - (dt * dt - rt * rt); if (disc >= 0) best = Math.max(best, b + Math.sqrt(disc)); } return [ux * best, uz * best]; });
-  for (const [y0, y1, rc, rt, dt] of [[622, 638, 13.2, 6.6, 10.5], [638, 646, 12.8, 5.2, 8.6], [646, BODY_TOP, 12.4, 0, 0]]) { const pts = tref(rc, rt, dt); wall(y0, y1, pts, pts.map(() => 1)); capTop(y1, pts); } }
+// THE TOWER: "Burj Khalifa" by Thomas Lagler / MiniWorld3D (Printables #1659229), public domain — a real, person-made model
+// (media/MODEL_SOURCING_RULES.md), converted by landmark_prep.py to metres (base y = 0, spire tip 828 m) in
+// media/kit/models/burj/. Turned so wing 0 points to +z like the scene's plan (its wings were at −10°, 120°, −130°).
+// The plan functions above (ring, planR, wingLens) remain only for the x-ray core/buttress diagram and the foundation raft.
+const BURJ_ROT = THREE.MathUtils.degToRad(-100);
 const burjGeo = new THREE.BufferGeometry();
-burjGeo.setAttribute("position", new THREE.Float32BufferAttribute(BG.pos, 3)); burjGeo.setAttribute("normal", new THREE.Float32BufferAttribute(BG.nor, 3));
-burjGeo.setAttribute("uv", new THREE.Float32BufferAttribute(BG.uv, 2)); burjGeo.setAttribute("aKind", new THREE.Float32BufferAttribute(BG.kind, 1)); burjGeo.setAttribute("aEnd", new THREE.Float32BufferAttribute(BG.end, 1));
+{ const [PB, NB, IB] = await Promise.all(["pos", "nor", "idx"].map((n) => fetch(`kit/models/burj/${n}.bin`).then((r) => r.arrayBuffer())));
+  const p = new Float32Array(PB), n8 = new Int8Array(NB), nv = p.length / 3, cb = Math.cos(BURJ_ROT), sb = Math.sin(BURJ_ROT);
+  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), uv = new Float32Array(nv * 2), kind = new Float32Array(nv), end = new Float32Array(nv);
+  for (let i = 0; i < nv; i++) { const x = p[i * 3], y = p[i * 3 + 1], z = p[i * 3 + 2]; const X = x * cb + z * sb, Z = -x * sb + z * cb; pos.set([X, y, Z], i * 3);
+    const nx = n8[i * 4] / 127, ny = n8[i * 4 + 1] / 127, nz = n8[i * 4 + 2] / 127; const NX = nx * cb + nz * sb, NZ = -nx * sb + nz * cb; nor.set([NX, ny, NZ], i * 3);
+    const hl = Math.hypot(NX, NZ); kind[i] = ny > 0.6 ? 1 : 0;                       // up-facing: terraces / roofs
+    uv[i * 2] = Math.atan2(Z, X) * Math.max(8, Math.hypot(X, Z)); uv[i * 2 + 1] = y; }   // round the tower (mullions every ≈1.5 m, always vertical)
+  burjGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); burjGeo.setAttribute("normal", new THREE.BufferAttribute(nor, 3)); burjGeo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  burjGeo.setAttribute("aKind", new THREE.BufferAttribute(kind, 1)); burjGeo.setAttribute("aEnd", new THREE.BufferAttribute(end, 1)); burjGeo.setIndex(new THREE.BufferAttribute(new Uint32Array(IB), 1)); burjGeo.computeBoundingSphere(); }
 // facade (from the photos): blue-grey reflective glass, a pale silver spandrel band at every floor (163 floors in 585 m),
 // stainless mullions/fins every 1.5 m catching the sun, bronze-silver louvre bands at the mechanical floors and at the top
 // of every tube where it ends; sky reflections and sun glints; sway in the vertex shader; x-ray mode for the core
@@ -146,7 +134,7 @@ const burjMat = new THREE.ShaderMaterial({ uniforms: BU, side: THREE.DoubleSide,
         vec3 steel = vec3(0.8, 0.82, 0.85) * (0.18 + 1.0 * difF) + skyAt(Rf) * 0.55 + vec3(1.0, 0.9, 0.72) * pow(max(dot(Rf, uSun), 0.0), 30.0) * 3.0;
         vec3 silver = vec3(0.5, 0.52, 0.55) * (0.16 + 0.55 * dif) + env * 0.28 + vec3(1.0, 0.9, 0.75) * pow(max(dot(R, uSun), 0.0), 24.0) * 1.6;
         col = mix(glass, silver, spand);
-        col = mix(col, steel, fin * 0.7);
+        col = mix(col, steel, fin * 0.45);
         // far away the stripes average out: silver bands + fins over the dark glass, still mirror-like
         vec3 farC = glass * 0.7 + silver * 0.24 + steel * 0.06; col = mix(col, farC, dF * 0.9);
         // louvre bands: the mechanical floors, and the top two floors of each tube where it stops
@@ -162,31 +150,10 @@ const burjMat = new THREE.ShaderMaterial({ uniforms: BU, side: THREE.DoubleSide,
       vec3 xr = vec3(0.35, 0.8, 1.0) * (0.05 + 1.1 * edge);
       float a = mix(1.0, 0.08 + 0.55 * edge, uX);
       gl_FragColor = vec4(mix(col, xr, uX), a); }` });
-// the louvred crown of each tube where it stops (a separate thin band mesh, follows the tube's own outline)
-{ const levels = [0, ...SETS, 622]; let lo = ring(0.1);
-  for (let i = 0; i < levels.length - 1; i++) { const hi = ring(levels[i + 1] + 0.1); const y1 = levels[i + 1];
-    const seg = lo.map((p, a) => Math.hypot(p[0] - hi[a][0], p[1] - hi[a][1]) > 0.3); 
-    for (let a = 0; a < lo.length; a++) { const b = (a + 1) % lo.length; if (!seg[a] || !seg[b]) continue; const p = lo[a], q = lo[b]; const n = V(q[1] - p[1], 0, -(q[0] - p[0])).normalize();
-      for (const [x, yy, z] of [[p[0], y1 - 3.6, p[1]], [p[0], y1, p[1]], [q[0], y1 - 3.6, q[1]], [q[0], y1 - 3.6, q[1]], [p[0], y1, p[1]], [q[0], y1, q[1]]]) { BG.pos.push(x + n.x * 0.05, yy, z + n.z * 0.05); BG.nor.push(n.x, n.y, n.z); BG.uv.push(0, -1); BG.kind.push(0); BG.end.push(1); } }
-    lo = hi; } }
-burjGeo.setAttribute("position", new THREE.Float32BufferAttribute(BG.pos, 3)); burjGeo.setAttribute("normal", new THREE.Float32BufferAttribute(BG.nor, 3));
-burjGeo.setAttribute("uv", new THREE.Float32BufferAttribute(BG.uv, 2)); burjGeo.setAttribute("aKind", new THREE.Float32BufferAttribute(BG.kind, 1)); burjGeo.setAttribute("aEnd", new THREE.Float32BufferAttribute(BG.end, 1));
 const burj = new THREE.Mesh(burjGeo, burjMat); burj.frustumCulled = false; scene.add(burj);
 const burjShadow = new THREE.Mesh(burjGeo, new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false })); burjShadow.castShadow = true; burjShadow.frustumCulled = false; scene.add(burjShadow);
-// the spire (over 4,000 t of steel, 244 m): clad in the same glass + fins at its base, then a steel needle with rings
+// the spire is part of the model; nothing else sways separately
 const SWAYERS = []; const sway = (o, y) => { o.userData.sy = y; o.userData.base = o.position.clone(); SWAYERS.push(o); return o; };
-{ const B0 = BODY_TOP, steps = [[15.5, 652, 678], [12.5, 678, 702], [10.0, 702, 724], [8.0, 724, 746], [6.5, 746, 764]];
-  const clad = []; steps.forEach(([r, y0, y1]) => { clad.push(new THREE.Vector2(r, y0 - B0 + 0.4), new THREE.Vector2(r, y1 - B0)); });
-  const cg = new THREE.LatheGeometry(clad, 64); { const n = cg.attributes.position.count, k = new Float32Array(n), e = new Float32Array(n), uv = cg.attributes.uv, p = cg.attributes.position;
-    for (let i = 0; i < n; i++) { const r = Math.hypot(p.getX(i), p.getZ(i)); uv.setX(i, uv.getX(i) * TAU * r); uv.setY(i, p.getY(i) + B0); } cg.setAttribute("aKind", new THREE.BufferAttribute(k, 1)); cg.setAttribute("aEnd", new THREE.BufferAttribute(e, 1)); }
-  const cm = new THREE.Mesh(cg, burjMat.clone()); cm.material.vertexShader = BURJ_VS.replace("vY = position.y;", `vY = position.y + ${B0}.0;`).replace(`pow(max(p.y, 0.0) / ${TIP}.0, 2.0)`, `pow(max(p.y + ${B0}.0, 0.0) / ${TIP}.0, 2.0)`); cm.material.uniforms = BU;
-  cm.position.y = B0; cm.frustumCulled = false; scene.add(cm);
-  for (const [r, , y1] of steps) { const b = new THREE.Mesh(new THREE.CylinderGeometry(r + 0.18, r + 0.18, 0.8, 64), metal(0x8c8a84, 0.4)); b.position.y = y1 - 0.4; scene.add(sway(b, y1)); }
-  const prof = [[5.6, 764], [4.8, 776], [3.8, 790], [2.7, 804], [1.7, 815], [0.9, 822], [0.3, TIP]].map(([r, y]) => new THREE.Vector2(r, y - B0));
-  const spire = sh(new THREE.Mesh(new THREE.LatheGeometry(prof, 32), new THREE.MeshPhysicalMaterial({ color: 0xc4c9ce, metalness: 0.92, roughness: 0.22, clearcoat: 0.5 })));
-  spire.position.y = B0; scene.add(sway(spire, 790));
-  for (let y = 768; y < 818; y += 7) { const r = prof.reduce((a, b) => (b.y + B0 <= y ? b : a)).x; const g = new THREE.Mesh(new THREE.TorusGeometry(r + 0.2, 0.12, 6, 32), metal(0x8a9096, 0.35)); g.rotation.x = Math.PI / 2; g.position.y = y; scene.add(sway(g, y)); }
-  const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 8), glow(0xff3020, 3)); beacon.position.y = TIP; scene.add(sway(beacon, TIP)); }
 // the hexagonal core and the three buttress walls (seen in x-ray), the concrete pump line inside the core
 const XR = new THREE.Group(); scene.add(XR); XR.visible = false;
 const coreMat = new THREE.MeshStandardMaterial({ color: 0x3a4652, roughness: 0.7, emissive: new THREE.Color(0.15, 0.55, 0.9), emissiveIntensity: 0.9 });

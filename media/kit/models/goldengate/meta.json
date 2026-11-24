@@ -1,0 +1,18 @@
+{
+ "credit": "Golden Gate Bridge model by Supratik Athanti (Printables #1562815), CC BY 4.0 \u2014 tower only",
+ "scale_m_per_unit": 1610.1672832210968,
+ "verts": 7345,
+ "tris": 5609,
+ "bounds": [
+  [
+   -40.25400161743164,
+   1.9329999685287476,
+   -13.461000442504883
+  ],
+  [
+   40.25400161743164,
+   227.0,
+   14.91100025177002
+  ]
+ ]
+}
