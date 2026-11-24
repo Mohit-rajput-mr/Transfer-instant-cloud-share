@@ -40,6 +40,8 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
   Liberty re-rendered with the owner's model (media/liberty-model, VinceCZ CC BY 4.0); Pisa uses André Spilari's public-domain
   Printables model (media/pisa-model); cathedral/baptistery/crowd removed (no licensed models); Burj/Eiffel/Golden Gate to redo.
   Env: api/files/media.printables.com + 3d-api.si.edu added to the allowlist.
+  Owner 2026-11-24: do NOT redo the Eiffel Tower or Burj Khalifa films (real models are ready in media/eiffel-model,
+  media/burj-model if ever needed); Golden Gate is re-rendered with the real towers (media/goldengate-model).
 - 2026-11-23 · DEFECT (fix brief `media/BRIEF_LANDMARKS_FIX.md`: landmark films below quality): cause = landmarks/cities built from
   primitives and never compared with photos; flat foggy skies; diagrams as clip-art. FIX (eiffel-film, before shipping): Paris rebuilt
   as a procedural Haussmann city (Voronoi blocks cut by radiating boulevards, ≈25k buildings, facade + zinc-mansard shaders, chimneys,
