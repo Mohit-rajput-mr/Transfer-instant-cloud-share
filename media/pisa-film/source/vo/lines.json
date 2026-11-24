@@ -1,0 +1,108 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know engineers saved the Leaning Tower of Pisa by digging soil out from under it?",
+   "dur": 5.624,
+   "at": 0.35
+  },
+  {
+   "key": "tower",
+   "text": "It's fifty-six metres of white marble, and its top leans almost four metres out of line.",
+   "dur": 5.069,
+   "at": 6.72
+  },
+  {
+   "key": "soil",
+   "text": "The problem is underneath. Its foundation is only three metres deep, set in weak, unstable ground.",
+   "dur": 7.665,
+   "at": 12.49
+  },
+  {
+   "key": "sink",
+   "text": "Building began in eleven seventy-three. Five years later, as the second floor went up, one side was already sinking.",
+   "dur": 7.843,
+   "at": 20.86
+  },
+  {
+   "key": "pause",
+   "text": "Then war stopped the work for almost a century. That pause saved it. The soil underneath had time to settle.",
+   "dur": 8.28,
+   "at": 29.4
+  },
+  {
+   "key": "curve",
+   "text": "When building restarted, the upper floors were made taller on one side, to make up for the tilt. So the tower isn't straight. It's curved.",
+   "dur": 7.821,
+   "at": 38.38
+  },
+  {
+   "key": "grow",
+   "text": "But the lean kept growing, century after century. In nineteen ninety, the tower was closed to the public.",
+   "dur": 6.797,
+   "at": 46.9
+  },
+  {
+   "key": "weights",
+   "text": "First, engineers stacked eight hundred and seventy tonnes of lead at its base, on the high side.",
+   "dur": 5.645,
+   "at": 54.4
+  },
+  {
+   "key": "cables",
+   "text": "Steel cables were looped around the third level and anchored far away, to hold it safe.",
+   "dur": 4.963,
+   "at": 60.75
+  },
+  {
+   "key": "dig",
+   "text": "Then came the clever part. Long drills, slanted under the high side, pulled out the soil, a little at a time.",
+   "dur": 6.755,
+   "at": 66.41
+  },
+  {
+   "key": "settle",
+   "text": "Thirty-eight cubic metres in all. As the ground closed in, the high side slowly sank.",
+   "dur": 5.773,
+   "at": 73.86
+  },
+  {
+   "key": "back",
+   "text": "And the tower eased back by forty-five centimetres, to where it stood in eighteen thirty-eight.",
+   "dur": 5.645,
+   "at": 80.34
+  },
+  {
+   "key": "stable",
+   "text": "It reopened in two thousand and one, and engineers expect it to stay stable for at least three hundred years.",
+   "dur": 6.221,
+   "at": 86.68
+  },
+  {
+   "key": "orbi",
+   "text": "Careful and controlled. That's how Orbi Transfer treats what you send.",
+   "dur": 5.351,
+   "at": 93.65
+  },
+  {
+   "key": "orbi2",
+   "text": "You choose exactly when your file burns: five, ten, fifteen, twenty, twenty-five or thirty minutes.",
+   "dur": 6.988,
+   "at": 99.6
+  },
+  {
+   "key": "orbi3",
+   "text": "When the clock hits zero, the stored copy is deleted. No account, no trace.",
+   "dur": 5.325,
+   "at": 107.19
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com.",
+   "dur": 1.975,
+   "at": 113.12
+  }
+ ],
+ "duration": 117.49
+}

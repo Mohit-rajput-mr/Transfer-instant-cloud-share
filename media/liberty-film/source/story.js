@@ -126,76 +126,66 @@ const swayVS = (s) => s.replace("#include <common>", "#include <common>\nuniform
     #endif
     float hk = clamp(mvPosition.y / 46.05, 0.0, 1.3); mvPosition.xz += uSway * hk * hk;
     mvPosition = modelViewMatrix * mvPosition; gl_Position = projectionMatrix * mvPosition;`);
-// copper skin: bright copper (1886) → green patina (uAge), with streaks; x-ray mode (uX)
-const patT = (n, srgb, r) => tex(`kit/ph/green_metal_rust/green_metal_rust_${n}_1k.jpg`, srgb, r, r);
-const skinMat = new THREE.MeshStandardMaterial({ map: patT("diff", true, 3), normalMap: patT("nor_gl", false, 3), normalScale: new THREE.Vector2(0.6, 0.6), roughness: 0.7, metalness: 0.3, transparent: true });
+// THE STATUE: the owner's model (media/liberty-model/USE_THIS_MODEL.md) — "Statue of Liberty model by VinceCZ (Printables
+// #110125), CC BY 4.0", re-meshed (456k vertices, smooth normals) in media/kit/models/liberty/. Same transform as
+// media/liberty-model/source/story.js: rotateX(-90°), centred in x/z, base at y = 0, scaled to 46.05 m heel → torch (NPS).
+// Front = +z, her left (tablet) = +x. Landmarks (statue-local m): flame tip (-6.09, 46.05, 3.22), torch cup ≈ (-6.4, 43, 4.4),
+// face ≈ (-1.6, 32.2, 1.6), tablet ≈ (5.5, 18, 0.5).
+// Skin: the model's verdigris (rain-washed up-facing areas lighter, folds darker, brown streaks, hammered-copper normal
+// noise, gilded flame) + this film's ageing from bright copper (1886, uAge 0) to patina (uAge 1), x-ray (uX), sway (uSway).
+const patT = (n, srgb, r) => tex(`kit/ph/green_metal_rust/green_metal_rust_${n}_1k.jpg`, srgb, r, r);   // patina texture for the macro sheets (story_b)
+SW.uTop = { value: 46.05 }; SW.uFlame = { value: 0.25 };
+const skinMat = new THREE.MeshPhysicalMaterial({ color: 0x6fa497, roughness: 0.62, metalness: 0.18, clearcoat: 0.15, clearcoatRoughness: 0.6, transparent: true });
 skinMat.onBeforeCompile = (s) => { Object.assign(s.uniforms, SW);
-  s.vertexShader = swayVS(s.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vLP;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvLP = position;"));
+  s.vertexShader = swayVS(s.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vOP; varying vec3 vON;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvOP = position; vON = normal;"));
   s.fragmentShader = s.fragmentShader.replace("#include <common>", `#include <common>
-    uniform float uAge, uX, uHot; varying vec3 vLP; float cover;
+    varying vec3 vOP; varying vec3 vON; uniform float uTop, uAge, uX, uHot, uFlame; float cover, flame;
     float h3(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
     float n3(vec3 p){ vec3 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
-      return mix(mix(mix(h3(i), h3(i+vec3(1,0,0)), f.x), mix(h3(i+vec3(0,1,0)), h3(i+vec3(1,1,0)), f.x), f.y), mix(mix(h3(i+vec3(0,0,1)), h3(i+vec3(1,0,1)), f.x), mix(h3(i+vec3(0,1,1)), h3(i+vec3(1,1,1)), f.x), f.y), f.z); }`)
-    .replace("#include <map_fragment>", `#include <map_fragment>
-      { float nz = n3(vLP * 0.45) * 0.55 + n3(vLP * 1.7) * 0.3 + n3(vLP * 6.0) * 0.15;
-        float streak = 0.25 * n3(vec3(vLP.x * 3.0, vLP.y * 0.12, vLP.z * 3.0));
-        cover = smoothstep(-0.06, 0.06, uAge * 1.35 - 0.2 - nz * 0.8 - streak + 0.15);
-        float lum = dot(diffuseColor.rgb, vec3(0.3, 0.55, 0.15));
-        vec3 copper = vec3(0.78, 0.4, 0.22) * (0.75 + 0.9 * lum) + vec3(0.1, 0.03, 0.0) * n3(vLP * 9.0);
-        vec3 pat = mix(vec3(0.36, 0.62, 0.52), diffuseColor.rgb * vec3(0.9, 1.25, 1.15), 0.35) * (0.85 + 0.3 * nz);
-        diffuseColor.rgb = mix(copper, pat, cover); }`)
-    .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(0.4, 0.78, cover);")          // new copper: polished but not a mirror
-    .replace("#include <metalnessmap_fragment>", "#include <metalnessmap_fragment>\nmetalnessFactor = mix(0.55, 0.12, cover);")
+      return mix(mix(mix(h3(i), h3(i+vec3(1,0,0)), f.x), mix(h3(i+vec3(0,1,0)), h3(i+vec3(1,1,0)), f.x), f.y), mix(mix(h3(i+vec3(0,0,1)), h3(i+vec3(1,0,1)), f.x), mix(h3(i+vec3(0,1,1)), h3(i+vec3(1,1,1)), f.x), f.y), f.z); }
+    float fb(vec3 p){ return n3(p) * 0.5 + n3(p * 2.1) * 0.3 + n3(p * 4.3) * 0.2; }`)
+    .replace("#include <color_fragment>", `#include <color_fragment>
+      { vec3 n = normalize(vON); float up = n.y;
+        float streak = fb(vec3(vOP.x * 3.0, vOP.y * 0.25, vOP.z * 3.0));
+        vec3 light = vec3(0.50, 0.74, 0.66), dark = vec3(0.20, 0.36, 0.33), brown = vec3(0.32, 0.27, 0.19);
+        vec3 c = mix(dark, light, clamp(0.45 + 0.55 * up + (streak - 0.5) * 0.7, 0.0, 1.0));
+        c = mix(c, brown, smoothstep(0.62, 0.9, streak) * 0.35 * (1.0 - max(up, 0.0)));
+        c *= 0.9 + 0.2 * fb(vOP * 9.0);
+        float nz = n3(vOP * 0.45) * 0.55 + n3(vOP * 1.7) * 0.3 + n3(vOP * 6.0) * 0.15;
+        cover = smoothstep(-0.06, 0.06, uAge * 1.35 - 0.2 - nz * 0.8 - 0.25 * (streak - 0.5) + 0.1 * up);
+        vec3 copper = vec3(0.74, 0.42, 0.24) * (0.82 + 0.3 * fb(vOP * 7.0)) * (0.88 + 0.16 * max(up, 0.0));
+        flame = smoothstep(uTop - 2.9, uTop - 2.6, vOP.y);
+        diffuseColor.rgb = mix(mix(copper, c, cover), vec3(0.98, 0.72, 0.28), flame); }`)
+    .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(mix(0.36, roughnessFactor, cover), 0.22, flame);")
+    .replace("#include <metalnessmap_fragment>", "#include <metalnessmap_fragment>\nmetalnessFactor = mix(mix(0.62, metalnessFactor, cover), 1.0, flame);")
+    .replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>
+      { vec3 q = vOP * 14.0; float e = 0.02; float b0 = fb(q); normal = normalize(normal + vec3(fb(q + vec3(e,0,0)) - b0, fb(q + vec3(0,e,0)) - b0, fb(q + vec3(0,0,e)) - b0) * 3.0); }`)
+    .replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\ntotalEmissiveRadiance += vec3(1.0, 0.62, 0.25) * flame * uFlame;")
     .replace("#include <dithering_fragment>", `#include <dithering_fragment>
       { float edge = pow(1.0 - abs(dot(normalize(normal), normalize(vViewPosition))), 2.0);
         gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.35, 0.8, 1.0) * (0.04 + 1.0 * edge), uX);
-        gl_FragColor.rgb += vec3(1.0, 0.3, 0.1) * uHot * 0.0;
-        gl_FragColor.a = mix(1.0, 0.05 + 0.5 * edge, uX); }`); };
-skinMat.customProgramCacheKey = () => "libskin";
+        gl_FragColor.a = mix(1.0, 0.07 + 0.7 * edge, uX); }`); };
+skinMat.customProgramCacheKey = () => "libskin-model";
 const ST = new THREE.Group(); LIB.add(ST);
-// --- body: radius profile (half-width, m) and front-back depth; folds + the diagonal palla across the chest
-const PROF = [[0, 5.7], [2, 5.5], [6, 5.2], [11, 5.0], [15, 5.1], [17.5, 5.33], [21, 5.05], [24.5, 5.3], [26.6, 5.6], [27.6, 5.0], [28.3, 2.6], [28.9, 1.35], [30.2, 1.3]];
-const profR = (y) => { for (let i = 1; i < PROF.length; i++) if (y <= PROF[i][0]) { const [a, ra] = PROF[i - 1], [b, rb] = PROF[i]; const k = (y - a) / (b - a); return lerp(ra, rb, k * k * (3 - 2 * k)); } return 1.3; };
-const depth = (y) => lerp(0.74, 0.6, clamp(y / 26)) * (y > 27.6 ? lerp(1, 1.6, clamp((y - 27.6) / 1.3)) : 1);
-function bodyPoint(th, y, out) { const r = profR(y), cx = Math.cos(th), sz = Math.sin(th); const front = Math.max(0, sz);
-  const A = 0.38 * (1 - smooth(clamp(y / 24))) + 0.07; const folds = A * (0.6 * Math.sin(14 * th + 0.22 * y) + 0.4 * Math.sin(23 * th - 0.09 * y + 1.3)) * (y < 27 ? 1 : 0.2);
-  const x = r * cx; const yl = 19.5 + 1.6 * x; const palla = y < 27.5 ? 0.5 * Math.exp(-Math.pow((y - yl) / 1.3, 2)) * (0.4 + 0.6 * front) + (y > yl && y < 27.5 ? 0.18 : 0) * front : 0;
-  const hem = y < 1.2 ? 0.25 * Math.sin(th * 9) * (1.2 - y) : 0;
-  const rr2 = r + folds + palla + hem; out.set(rr2 * cx, y, rr2 * depth(y) * sz); return out; }
-const ARM_R = [V(-4.3, 26.9, 0.3), V(-5.85, 32.2, 0.75), V(-6.25, 35.0, 0.88), V(-6.6, 37.7, 1.0)];   // raised right arm axis (matches gen_statue.cjs)
-// the sculpted figure (gen_statue.cjs → statue.bin): robe with falling folds, the palla, arms, hands, neck at 0.1 m and the
-// head (classical face, wavy hair, bun) at 0.035 m, polygonised from a signed-distance model. bodyPoint() above stays the
-// skin envelope for the x-ray skeleton.
-{ const SB = await (await fetch("statue.bin")).arrayBuffer(); const hd = new Uint32Array(SB, 0, 4); let o = 16;
-  for (let m = 0; m < 2; m++) { const np = hd[m * 2], ni = hd[m * 2 + 1];
-    const pos = new Float32Array(SB, o, np); o += np * 4; const nor = new Float32Array(SB, o, np); o += np * 4; const idx = new Uint32Array(SB, o, ni); o += ni * 4;
-    const uv = new Float32Array((np / 3) * 2); for (let i = 0; i < np / 3; i++) { uv[i * 2] = (Math.atan2(pos[i * 3 + 2], pos[i * 3]) / TAU + 0.5) * 9; uv[i * 2 + 1] = pos[i * 3 + 1] / 3.4; }
-    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
-    g.setAttribute("uv", new THREE.BufferAttribute(uv, 2)); g.setIndex(new THREE.BufferAttribute(idx, 1)); g.computeBoundingSphere(); ST.add(sh(new THREE.Mesh(g, skinMat))); } }
-// crown: diadem with 25 windows and 7 rays (up to 2.74 m)
-{ const band = sh(new THREE.Mesh(new THREE.CylinderGeometry(1.92, 1.74, 1.2, 64, 1, false), skinMat)); band.position.set(0, 33.0, 0.25); ST.add(band);   // diadem
-  const winM = matte(0x0c0e10, 0.9); for (let i = 0; i < 25; i++) { const a = (i / 24 - 0.5) * 2.5 + Math.PI / 2; const w = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.5, 0.1), winM); w.position.set(Math.cos(a) * 1.87, 33.0, Math.sin(a) * 1.87 + 0.25); w.rotation.y = -a + Math.PI / 2; ST.add(w); }   // 25 windows with mullions between
-  for (let i = 0; i < 7; i++) { const a = Math.PI / 2 + (i - 3) * 0.42; const L = 2.74; const r = sh(new THREE.Mesh(new THREE.ConeGeometry(0.3, L, 4), skinMat)); const dir = V(Math.cos(a), 0.42 - Math.abs(i - 3) * 0.03, Math.sin(a)).normalize();
-    r.position.set(Math.cos(a) * 1.9, 33.35, Math.sin(a) * 1.9 + 0.25).addScaledVector(dir, L / 2); r.quaternion.setFromUnitVectors(V(0, 1, 0), dir); ST.add(r); } }
-// tablet (7.19 × 4.14 × 0.61 m), JULY IV MDCCLXXVI
-const TAB = new THREE.Group(); TAB.position.set(6.4, 21.6, 2.3); TAB.rotation.set(0.12, -0.5, -0.22); ST.add(TAB);
-{ const t = sh(new THREE.Mesh(new RoundedBoxGeometry(4.14, 7.19, 0.61, 3, 0.12), skinMat)); TAB.add(t);
-  const c = document.createElement("canvas"); c.width = 256; c.height = 448; const g = c.getContext("2d"); g.fillStyle = "#808080"; g.fillRect(0, 0, 256, 448); g.fillStyle = "#3a3a3a"; g.font = "bold 40px serif"; g.textAlign = "center"; g.fillText("JULY IV", 128, 190); g.fillText("MDCCLXXVI", 128, 250);
-  const bump = new THREE.CanvasTexture(c); const face = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 6.4), new THREE.MeshStandardMaterial({ color: 0x000000, transparent: true, opacity: 0.0 })); face.position.z = 0.31; TAB.add(face);
-  const ins = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 6.3), new THREE.MeshBasicMaterial({ map: bump, transparent: true, opacity: 0.35, blending: THREE.MultiplyBlending, premultipliedAlpha: true })); ins.position.z = 0.312; TAB.add(ins); }
-// torch: handle, cup, balcony with railing, gold-leaf flame (tip at 46.05 m)
-const TORCH = new THREE.Group(); TORCH.position.set(-6.7, 38.2, 1.0); ST.add(TORCH);
-const flameMat = new THREE.MeshPhysicalMaterial({ color: 0xffc35a, metalness: 1, roughness: 0.22, emissive: 0xff9a2a, emissiveIntensity: 0.25 });
-{ const h = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.36, 4.2, 24), skinMat)); h.position.y = 2.1; TORCH.add(h);
-  for (const y of [1.2, 2.6, 3.7]) { const r = sh(new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.1, 10, 28), skinMat)); r.rotation.x = Math.PI / 2; r.position.y = y; TORCH.add(r); }
-  const cup = sh(new THREE.Mesh(new THREE.CylinderGeometry(1.45, 0.55, 1.0, 32), skinMat)); cup.position.y = 4.7; TORCH.add(cup);
-  const deck = sh(new THREE.Mesh(new THREE.CylinderGeometry(2.15, 2.15, 0.16, 48), skinMat)); deck.position.y = 5.05; TORCH.add(deck);
-  const rail = sh(new THREE.Mesh(new THREE.TorusGeometry(2.1, 0.05, 8, 64), skinMat)); rail.rotation.x = Math.PI / 2; rail.position.y = 6.05; TORCH.add(rail);
-  for (let i = 0; i < 28; i++) { const a = (i / 28) * TAU; const p = sh(new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.0, 6), skinMat)); p.position.set(Math.cos(a) * 2.1, 5.55, Math.sin(a) * 2.1); TORCH.add(p); }
-  const prof = [[0, 0.95], [0.4, 1.15], [1.0, 1.05], [1.6, 0.78], [2.2, 0.45], [2.6, 0.18], [2.75, 0.0]].map(([y, r]) => new THREE.Vector2(r, y));
-  const fg = new THREE.LatheGeometry(prof, 40); const pp = fg.attributes.position; for (let i = 0; i < pp.count; i++) { const y = pp.getY(i), a = Math.atan2(pp.getZ(i), pp.getX(i)); const k = 1 + 0.18 * Math.sin(a * 5 + y * 2.2) * clamp(y / 1.5); pp.setX(i, pp.getX(i) * k); pp.setZ(i, pp.getZ(i) * k); }
-  fg.computeVertexNormals(); const fl = sh(new THREE.Mesh(fg, flameMat)); fl.position.y = 5.13; TORCH.add(fl); }
-const TORCH_TIP = () => ST.localToWorld(TORCH.position.clone().add(V(0, 7.85, 0)));
+const lbuf = async (u, T) => new T(await (await fetch(u)).arrayBuffer());
+const [LP, LN, LI] = await Promise.all([lbuf("kit/models/liberty/pos.bin", Float32Array), lbuf("kit/models/liberty/nor.bin", Float32Array), lbuf("kit/models/liberty/idx.bin", Uint32Array)]);
+const LG = new THREE.BufferGeometry(); LG.setAttribute("position", new THREE.BufferAttribute(LP, 3)); LG.setAttribute("normal", new THREE.BufferAttribute(LN, 3)); LG.setIndex(new THREE.BufferAttribute(LI, 1));
+LG.rotateX(-Math.PI / 2); LG.computeBoundingBox(); { const bb = LG.boundingBox; LG.translate(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2); }
+LG.computeBoundingBox(); { const SC = 46.05 / LG.boundingBox.max.y; LG.scale(SC, SC, SC); } LG.computeBoundingBox(); LG.computeBoundingSphere();
+const STATUE = sh(new THREE.Mesh(LG, skinMat)); ST.add(STATUE);
+const TORCH_TIP = () => ST.localToWorld(V(-6.09, 46.05, 3.22));
+// the skin envelope measured from the model (slices of 0.8 m, 24 sectors round the body, the raised arm and the tablet left
+// out): the x-ray's secondary frame and armature bars reach to just inside this
+const ENV = (() => { const p = LG.attributes.position.array, NS = 36, NA = 24, dy = 0.8; const cx = new Float32Array(NS), cz = new Float32Array(NS), n = new Float32Array(NS), R = new Float32Array(NS * NA);
+  const skip = (x, y) => (x < -3.6 && y > 25.5) || (x > 4.4 && y > 14.5 && y < 26.5);
+  for (let i = 0; i < p.length; i += 3) { const k = Math.floor(p[i + 1] / dy); if (k < 0 || k >= NS || skip(p[i], p[i + 1])) continue; cx[k] += p[i]; cz[k] += p[i + 2]; n[k]++; }
+  for (let k = 0; k < NS; k++) { cx[k] = n[k] ? cx[k] / n[k] : -0.6; cz[k] = n[k] ? cz[k] / n[k] : 0.4; }
+  for (let i = 0; i < p.length; i += 3) { const k = Math.floor(p[i + 1] / dy); if (k < 0 || k >= NS || skip(p[i], p[i + 1])) continue; const dx = p[i] - cx[k], dz = p[i + 2] - cz[k];
+    const a = Math.floor(((Math.atan2(dz, dx) / TAU + 1) % 1) * NA) % NA; R[k * NA + a] = Math.max(R[k * NA + a], Math.hypot(dx, dz)); }
+  return { NS, NA, dy, cx, cz, R }; })();
+function bodyPoint(th, y, out) { const k = clamp(Math.floor(y / ENV.dy), 0, ENV.NS - 1), a = Math.floor(((th / TAU) % 1 + 1) % 1 * ENV.NA) % ENV.NA; const r = Math.max(0.8, (ENV.R[k * ENV.NA + a] || 2) * 0.9 - 0.35);
+  return out.set(ENV.cx[k] + Math.cos(th) * r, y, ENV.cz[k] + Math.sin(th) * r); }
+const ARM_R = [V(-3.9, 27.4, 0.5), V(-5.0, 30.5, 1.0), V(-5.5, 33.5, 2.0), V(-6.5, 37.0, 4.0)];   // raised right arm axis, measured on the model
 
 // =====================================================================================================================
 // THE SKELETON (x-ray): Eiffel's iron pylon, a secondary frame that follows the skin, flat armature bars out to the skin
@@ -211,13 +201,13 @@ for (let y = 0.8; y < 28; y += 1.6) { const ring = []; const n = 24; for (let i 
   for (let i = 0; i < n; i += 3) { const [a] = ring[i]; const c = V(Math.sign(a.x) * hw(y), y, Math.sign(a.z) * hw(y) * 0.8); beam(a, c, 0.12, 1); } }
 for (let r = 0; r + 1 < RINGS.length; r++) for (let i = 0; i < 24; i += 2) beam(RINGS[r][i][0], RINGS[r + 1][(i + 1) % 24][0], 0.08, 1);
 // right-arm truss to the torch, and bars to the sleeve
-{ const c = new THREE.CatmullRomCurve3([V(-1.5, 28.5, 0), ...ARM_R.slice(1), V(-6.7, 42.5, 1.0)]); const N = 26; const off = [[0.45, 0.45], [-0.45, 0.45], [-0.45, -0.45], [0.45, -0.45]];
+{ const c = new THREE.CatmullRomCurve3([V(-1.5, 28.5, 0), ...ARM_R.slice(1), V(-6.4, 42.0, 4.4)]); const N = 26; const off = [[0.45, 0.45], [-0.45, 0.45], [-0.45, -0.45], [0.45, -0.45]];
   const P = (k, o) => c.getPointAt(k).add(V(o[0], 0, o[1]));
   for (const o of off) for (let i = 0; i < N; i++) beam(P(i / N, o), P((i + 1) / N, o), 0.14, 3);
   for (let i = 0; i < N; i++) for (let f = 0; f < 4; f++) { beam(P(i / N, off[f]), P((i + 1) / N, off[(f + 1) % 4]), 0.07, 3); beam(P(i / N, off[f]), P(i / N, off[(f + 1) % 4]), 0.07, 3); }
   for (let i = 2; i < N - 2; i += 2) { const p = c.getPointAt(i / N); for (let j = 0; j < 6; j++) { const a = (j / 6) * TAU; beam(p, p.clone().add(V(Math.cos(a) * 1.0, 0, Math.sin(a) * 1.0)), 0.05, 2); } } }
 // head frame
-for (let j = 0; j < 10; j++) { const a = (j / 10) * TAU; beam(V(0, 28.8, 0), V(Math.cos(a) * 1.3, 31.5, Math.sin(a) * 1.5 + 0.3), 0.07, 1); }
+for (let j = 0; j < 10; j++) { const a = (j / 10) * TAU; beam(V(-1.0, 28.6, -0.2), V(-1.3 + Math.cos(a) * 1.2, 31.6, Math.sin(a) * 1.4 + 0.1), 0.07, 1); }   // head frame (head ≈ x -1.3)
 const beamMat = new THREE.MeshStandardMaterial({ color: 0x4a4e54, roughness: 0.5, metalness: 0.6 });
 const HIK = { uGlow: { value: 0 } };
 beamMat.onBeforeCompile = (s) => { Object.assign(s.uniforms, SW, HIK); s.vertexShader = swayVS(s.vertexShader);
@@ -433,12 +423,12 @@ H.frame("Locked on your device. No account, no app.", async (t) => {
   H.cam.up.set(0, 1, 0);
   outdoor(true); MC.visible = FX.visible = WS.visible = OR.visible = false; RAIN.visible = false; camRange(0.5, 70000); look_(0); H.zoom = 1; H.bloom.strength = 0.3;
   SW.uX.value = 0; SW.uAge.value = 1; SW.uSway.value.set(0, 0); skelGlow([0, 0, 0, 0]); SKEL.visible = false; STAIR.visible = false; GULLS.visible = true; gulls(t, SL(0, 0, 0)); keyShadow(SL(0, 10, 0), 70);
-  sea.material.uniforms.time.value = t * 0.5; sea.material.uniforms.uWT.value = t; SKYU.uT.value = t; flameMat.emissiveIntensity = 0.25;
+  sea.material.uniforms.time.value = t * 0.5; sea.material.uniforms.uWT.value = t; SKYU.uT.value = t; SW.uFlame.value = 0.25;
 
   if (t < at("statue")) { // HOOK: dawn from the water, low over the swell; then the torch against the sunrise
     const c = fr("hook", 0.55);
     if (t < c) { move(t, 0, c, [SL(-40, -45, 230), SL(0, 20, 0), 34], [SL(-30, -38, 190), SL(0, 26, 0), 34], 0.5); title(t, fr("hook", 0.03), c, "New York Harbor", "Two pennies thin", 150); }
-    else move(t, c, at("statue"), [SL(-30, 34, 26), SL(-6.7, 42, 1), 36], [SL(-24, 38, 22), SL(-6.7, 44, 1), 36], 0.3);
+    else move(t, c, at("statue"), [SL(-30, 34, 30), SL(-6.3, 42.5, 4.2), 36], [SL(-24, 38, 26), SL(-6.2, 44.5, 4.0), 36], 0.3);
   } else if (t < at("skin")) { // drone rising from the fort to the torch: 93 m
     keyShadow(SL(0, -10, 0), 80); move(t, at("statue"), at("skin"), [SL(30, -42, 120), SL(0, -25, 0), 38], [SL(18, 30, 70), SL(-3, 30, 0), 38], 0.3);
     callout("h93", t, fr("statue", 0.45), at("skin"), TORCH_TIP(), 300, 420); hudShow("stats", win(t, fr("statue", 0.2), at("skin")));
@@ -458,7 +448,7 @@ H.frame("Locked on your device. No account, no app.", async (t) => {
     move(t, at("pylon"), at("flex"), [SL(-16, 6, 26), SL(0, 16, 0), 40], [SL(-20, 22, 24), SL(-3, 26, 0), 40], 0.2);
     callout("sec", t, fr("pylon", 0.1), fr("pylon", 0.45), SL(RINGS[6][18][0].x, RINGS[6][18][0].y, RINGS[6][18][0].z), 300, 1150);
     callout("bars", t, fr("pylon", 0.45), fr("pylon", 0.75), SL(RINGS[10][12][1].x, RINGS[10][12][1].y, RINGS[10][12][1].z), 760, 1100);
-    callout("arm", t, fr("pylon", 0.75), at("flex"), SL(-6.2, 35, 0.7), 300, 520);
+    callout("arm", t, fr("pylon", 0.75), at("flex"), SL(-6.0, 35.5, 3.0), 300, 520);
   } else if (t < at("sway")) { // RIGID vs FLEXIBLE: wind loads both panels; the rigid one piles up stress and cracks
     outdoor(false); FX.visible = true; camRange(0.05, 200); H.bloom.strength = 0.45; H.key.intensity = 0.3; H.hemi.intensity = 0.9;
     const load = 0.5 + 0.5 * Math.sin((t - at("flex")) * 3.2); const k = prog(t, at("flex"), fr("flex", 0.85));
@@ -481,7 +471,7 @@ H.frame("Locked on your device. No account, no app.", async (t) => {
     callout("finger", t, c + 0.3, at("brown"), WP(1.4, 0.95, -2.3), 760, 1050);
   } else if (t < at("protect")) { // 1886: shiny copper brown → after 1900 the green patina spreads
     keyShadow(SL(0, 25, 0), 30); const yr = t < at("green") ? 1886 : Math.round(lerp(1886, 1920, smooth(prog(t, at("green"), fr("green", 0.9)))));
-    SW.uAge.value = t < at("green") ? 0 : smooth(prog(t, fr("green", 0.2), fr("green", 0.95))); flameMat.emissiveIntensity = 0.1;
+    SW.uAge.value = t < at("green") ? 0 : smooth(prog(t, fr("green", 0.2), fr("green", 0.95))); SW.uFlame.value = 0.1;
     H.$("yrN").textContent = String(yr); H.$("yrL").textContent = yr < 1900 ? "SHINY COPPER" : yr < 1906 ? "TURNING" : "GREEN PATINA"; H.$("yrL").style.color = yr < 1900 ? "#ff9a5c" : "#7dffc0";
     hudShow("year", win(t, at("brown") + 0.2, at("protect")));
     if (t < at("green")) move(t, at("brown"), at("green"), [SL(46, 8, 100), SL(-1, 23, 0), 34], [SL(40, 10, 92), SL(-1, 24, 0), 34], 0.2);

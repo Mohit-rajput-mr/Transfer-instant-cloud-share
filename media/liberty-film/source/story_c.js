@@ -40,12 +40,12 @@ H.frame("Locked on your device. No account, no app.", async (t) => {
   H.cam.up.set(0, 1, 0);
   outdoor(true); MC.visible = FX.visible = WS.visible = OR.visible = false; RAIN.visible = false; camRange(0.5, 70000); look_(0); H.zoom = 1; H.bloom.strength = 0.3;
   SW.uX.value = 0; SW.uAge.value = 1; SW.uSway.value.set(0, 0); skelGlow([0, 0, 0, 0]); SKEL.visible = false; STAIR.visible = false; GULLS.visible = true; gulls(t, SL(0, 0, 0)); keyShadow(SL(0, 10, 0), 70);
-  sea.material.uniforms.time.value = t * 0.5; sea.material.uniforms.uWT.value = t; SKYU.uT.value = t; flameMat.emissiveIntensity = 0.25;
+  sea.material.uniforms.time.value = t * 0.5; sea.material.uniforms.uWT.value = t; SKYU.uT.value = t; SW.uFlame.value = 0.25;
 
   if (t < at("statue")) { // HOOK: dawn from the water, low over the swell; then the torch against the sunrise
     const c = fr("hook", 0.55);
     if (t < c) { move(t, 0, c, [SL(-40, -45, 230), SL(0, 20, 0), 34], [SL(-30, -38, 190), SL(0, 26, 0), 34], 0.5); title(t, fr("hook", 0.03), c, "New York Harbor", "Two pennies thin", 150); }
-    else move(t, c, at("statue"), [SL(-30, 34, 26), SL(-6.7, 42, 1), 36], [SL(-24, 38, 22), SL(-6.7, 44, 1), 36], 0.3);
+    else move(t, c, at("statue"), [SL(-30, 34, 30), SL(-6.3, 42.5, 4.2), 36], [SL(-24, 38, 26), SL(-6.2, 44.5, 4.0), 36], 0.3);
   } else if (t < at("skin")) { // drone rising from the fort to the torch: 93 m
     keyShadow(SL(0, -10, 0), 80); move(t, at("statue"), at("skin"), [SL(30, -42, 120), SL(0, -25, 0), 38], [SL(18, 30, 70), SL(-3, 30, 0), 38], 0.3);
     callout("h93", t, fr("statue", 0.45), at("skin"), TORCH_TIP(), 300, 420); hudShow("stats", win(t, fr("statue", 0.2), at("skin")));
@@ -65,7 +65,7 @@ H.frame("Locked on your device. No account, no app.", async (t) => {
     move(t, at("pylon"), at("flex"), [SL(-16, 6, 26), SL(0, 16, 0), 40], [SL(-20, 22, 24), SL(-3, 26, 0), 40], 0.2);
     callout("sec", t, fr("pylon", 0.1), fr("pylon", 0.45), SL(RINGS[6][18][0].x, RINGS[6][18][0].y, RINGS[6][18][0].z), 300, 1150);
     callout("bars", t, fr("pylon", 0.45), fr("pylon", 0.75), SL(RINGS[10][12][1].x, RINGS[10][12][1].y, RINGS[10][12][1].z), 760, 1100);
-    callout("arm", t, fr("pylon", 0.75), at("flex"), SL(-6.2, 35, 0.7), 300, 520);
+    callout("arm", t, fr("pylon", 0.75), at("flex"), SL(-6.0, 35.5, 3.0), 300, 520);
   } else if (t < at("sway")) { // RIGID vs FLEXIBLE: wind loads both panels; the rigid one piles up stress and cracks
     outdoor(false); FX.visible = true; camRange(0.05, 200); H.bloom.strength = 0.45; H.key.intensity = 0.3; H.hemi.intensity = 0.9;
     const load = 0.5 + 0.5 * Math.sin((t - at("flex")) * 3.2); const k = prog(t, at("flex"), fr("flex", 0.85));
@@ -88,7 +88,7 @@ H.frame("Locked on your device. No account, no app.", async (t) => {
     callout("finger", t, c + 0.3, at("brown"), WP(1.4, 0.95, -2.3), 760, 1050);
   } else if (t < at("protect")) { // 1886: shiny copper brown → after 1900 the green patina spreads
     keyShadow(SL(0, 25, 0), 30); const yr = t < at("green") ? 1886 : Math.round(lerp(1886, 1920, smooth(prog(t, at("green"), fr("green", 0.9)))));
-    SW.uAge.value = t < at("green") ? 0 : smooth(prog(t, fr("green", 0.2), fr("green", 0.95))); flameMat.emissiveIntensity = 0.1;
+    SW.uAge.value = t < at("green") ? 0 : smooth(prog(t, fr("green", 0.2), fr("green", 0.95))); SW.uFlame.value = 0.1;
     H.$("yrN").textContent = String(yr); H.$("yrL").textContent = yr < 1900 ? "SHINY COPPER" : yr < 1906 ? "TURNING" : "GREEN PATINA"; H.$("yrL").style.color = yr < 1900 ? "#ff9a5c" : "#7dffc0";
     hudShow("year", win(t, at("brown") + 0.2, at("protect")));
     if (t < at("green")) move(t, at("brown"), at("green"), [SL(46, 8, 100), SL(-1, 23, 0), 34], [SL(40, 10, 92), SL(-1, 24, 0), 34], 0.2);

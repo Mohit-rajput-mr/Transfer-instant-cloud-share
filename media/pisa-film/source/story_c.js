@@ -92,7 +92,7 @@ H.frame("You pick when it burns: 5–30 minutes.", async (t) => {
     const pick = t < at("orbi2") ? 15 : LIVES[Math.min(5, Math.floor(prog(t, fr("orbi2", 0.28), fr("orbi2", 0.92)) * 6))];
     const left = t < at("orbi3") ? undefined : Math.round(lerp(14, 0, prog(t, at("orbi3"), fr("orbi3", 0.45))));
     screen(ph, { sel: t < at("orbi3") ? pick : 15, left: t < at("orbi3") ? undefined : (left <= 0 ? 0 : left) }, drawPhone); screen(lap, { left }, drawLap);
-    if (t > fr("orbi3", 0.45)) { EMB.burn(clamp(1 - prog(t, fr("orbi3", 0.5), at("end"))), t, (x, y) => lap.g.localToWorld(V(x * 2.4, 1.0 + y * 1.2, 0.1)).applyMatrix4(OR.matrixWorld.clone().invert())); }
+    if (t > fr("orbi3", 0.45)) { EMB.userData.burn(clamp(1 - prog(t, fr("orbi3", 0.5), at("end"))), t, (x, y) => lap.g.localToWorld(V(x * 2.4, 1.0 + y * 1.2, 0.1)).applyMatrix4(OR.matrixWorld.clone().invert())); }
     if (t < at("orbi2")) move(t, at("orbi"), at("orbi2"), [OW(0.6, 2.4, 10.5), OW(0.4, 3.2, 0), 42], [OW(0.5, 2.2, 9.0), OW(0.4, 3.0, 0), 42], 0.2);
     else if (t < at("orbi3")) { const pn = V(0, 0, 1).applyEuler(ph.g.rotation), pc = ph.g.position.clone(), up2 = V(0, 1, 0).applyEuler(ph.g.rotation);
       move(t, at("orbi2"), at("orbi3"), [OW(...pc.clone().addScaledVector(pn, 3.3).toArray()), OW(...pc.toArray()), 34], [OW(...pc.clone().addScaledVector(pn, 3.0).toArray()), OW(...pc.toArray()), 34], 0.03);

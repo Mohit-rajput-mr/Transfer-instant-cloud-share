@@ -35,7 +35,11 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
   each film is encoded + checked; re-check PNGs after any crash.
   Liberty: the figure was a lathe + boxes (box face, tube robe) — rebuilt as a sculpted signed-distance model polygonised with
   surface nets (gen_statue.cjs → statue.bin; first build had inverted winding, the inside of the head showed — fixed); grey
-  granite pedestal, tree impostors; sent 2026-11-24 (WER 0.02). No free downloadable scan reachable (Commons 429, Sketchfab declined).
+  granite pedestal, tree impostors; sent 2026-11-24 (WER 0.02).
+  DEFECT (owner: "one of the ugliest statues"): agents built famous real things from code. FIX: hard rule media/MODEL_SOURCING_RULES.md —
+  Liberty re-rendered with the owner's model (media/liberty-model, VinceCZ CC BY 4.0); Pisa uses André Spilari's public-domain
+  Printables model (media/pisa-model); cathedral/baptistery/crowd removed (no licensed models); Burj/Eiffel/Golden Gate to redo.
+  Env: api/files/media.printables.com + 3d-api.si.edu added to the allowlist.
 - 2026-11-23 · DEFECT (fix brief `media/BRIEF_LANDMARKS_FIX.md`: landmark films below quality): cause = landmarks/cities built from
   primitives and never compared with photos; flat foggy skies; diagrams as clip-art. FIX (eiffel-film, before shipping): Paris rebuilt
   as a procedural Haussmann city (Voronoi blocks cut by radiating boulevards, ≈25k buildings, facade + zinc-mansard shaders, chimneys,

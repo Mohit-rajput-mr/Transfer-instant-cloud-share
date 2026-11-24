@@ -11,13 +11,17 @@ years. Orbi ending: the sender picks when a file burns — 5, 10, 15, 20, 25 or 
   EXTRA_GAIN=1.3 python3 kit/synth.py` → `cat story_a.js story_b.js story_c.js > story.js` → 4 × `node kit/render.cjs a b frames`.
 
 ## What's on screen (real scale, metres)
-- The campanile as a chain of 8 storeys: the ground storey of blind arcades (15 half-columns), six open galleries (30
-  columns + arches each), the belfry with its bell; outer/inner diameters 15.48 / 7.37 m at the base; 294 steps inside.
-  Each upper storey is counter-tilted (the curve); shown ×6 in the curve shot, labelled.
-- Piazza dei Miracoli at sunset: the cathedral's apse (Pisan Romanesque bands, dome), the baptistery, the walls, pines.
+- The tower: "Monuments 01 – Leaning Tower of Pisa – Italy" by André Spilari (Printables #1714900, public domain), chosen
+  from 8 candidates (`media/pisa-model/`, rules: `media/MODEL_SOURCING_RULES.md`). Stood upright (it was modelled at 4.00°),
+  scaled to the real size (15.48 m across the base, 56.67 m along the axis), split at its cornices into the 8 storeys so
+  the film can tilt it, build it storey by storey and exaggerate its curve (×6 in the curve shot, labelled); the author's
+  shape, arcades, galleries and belfry are untouched. White marble (Poly Haven marble_01) weathered at the base.
+- Piazza dei Miracoli at sunset: lawn, marble paths, the city walls, trees (Poly Haven "Island Tree 02", CC0). The cathedral
+  and the baptistery are not shown: no licensed 3D model of them exists and they are not built from code (rules §2.4).
 - Cross-section (cut through the tower and ground): weak, layered subsoil (illustrative layers), the 3 m foundation ring,
   the settlement bowl under the low side, a drill cavity closing, the high side settling. Motion exaggerated ×4, labelled.
-- Tourists: BodyParts3D people posed (CC BY 4.0); the crowd far away is simple figures.
+  The tower's cut is drawn from the model: walls as cut stone, the hollow core (r < 3.68 m) dark, the stair inside.
+- Tourists: BodyParts3D people posed (CC BY 4.0). No code-built crowd.
 
 ## Facts and sources
 | Fact | Source |
@@ -36,8 +40,10 @@ years. Orbi ending: the sender picks when a file burns — 5, 10, 15, 20, 25 or 
 | Orbi: the sender picks a life of 5, 10, 15, 20, 25 or 30 minutes; at zero the stored copy is deleted; no account | site code (`src/components/Panels.tsx` LIVES; about page); `media/VIDEO_PLAYBOOK.md` verified facts |
 
 ## Assets and licences
-- Sky: Poly Haven "Belfast sunset (pure sky)", CC0, with procedural clouds. Textures: Poly Haven (CC0) marble_01, grass_ground,
-  clay_roof_tiles, wood_table_001. People: BodyParts3D (© DBCLS, CC BY 4.0). Everything else is procedural.
+- Tower model: André Spilari, Printables #1714900, public domain — credit: "Leaning Tower of Pisa model by André Spilari
+  (Printables #1714900)". Sky: Poly Haven "Belfast sunset (pure sky)", CC0, with procedural clouds. Textures: Poly Haven (CC0)
+  marble_01, grass_ground, clay_roof_tiles, wood_table_001; trees: Poly Haven "Island Tree 02" (CC0). People: BodyParts3D
+  (© DBCLS, CC BY 4.0). Procedural only: ground, soil section, foundation ring, lead weights, cables, drills, walls.
 - Orbi screens: live orbitransfer.com captures (2026-11-22, `source/shots_live/`), with the state drawn on top.
 - Voice: Chatterbox (MIT) cloned from the house reference voice (Kokoro bm_george, Apache-2.0); checked with faster-whisper.
 - Reference photos (`source/ref/`, credits in `source/ref/credits.json`): Wikimedia Commons, free licences.

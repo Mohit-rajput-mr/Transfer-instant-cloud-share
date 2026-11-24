@@ -1,0 +1,18 @@
+{
+ "credit": "Burj Khalifa model by Thomas Lagler / MiniWorld3D (Printables #1659229), public domain",
+ "height_m": 828.0,
+ "verts": 169160,
+ "tris": 145197,
+ "bounds": [
+  [
+   -73.94400024414062,
+   0.0,
+   -71.03299713134766
+  ],
+  [
+   73.94400024414062,
+   828.0,
+   71.03299713134766
+  ]
+ ]
+}

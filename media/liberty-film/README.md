@@ -8,16 +8,18 @@ before it leaves; the server only sees scrambled bytes.
 
 - `OrbiTransfer-statue-of-liberty.mp4`: 1080×1920, H.264 + AAC; `cover.jpg`.
 - Source: `source/` (kit/hd.js). Build: `/tmp/cb/bin/python kit/vo.py` → `python3 make_events.py && python3 liberty_sfx.py &&
-  EXTRA_GAIN=1.3 python3 kit/synth.py` → `node gen_statue.cjs` (writes `statue.bin`, not committed) → `cat story_a.js story_b.js
+  EXTRA_GAIN=1.3 python3 kit/synth.py` → `cat story_a.js story_b.js
   story_c.js > story.js` → 4 × `node kit/render.cjs a b frames`.
 
 ## What's on screen (real scale, metres)
-- The statue is sculpted as a signed-distance model and polygonised with surface nets (`gen_statue.cjs`): the stola's
-  falling folds, the palla rolled diagonally from the left shoulder to the right hip and hanging on her left under the
-  tablet, the raised right arm with the sleeve slid to the shoulder and the fist round the torch, the left hand's fingers
-  round the tablet, a classical face, waved hair and the bun (head at 3.5 cm detail). Proportions from NPS: heel to torch
-  46.05 m, heel to top of head 33.86 m, head 5.26 m, ear to ear 3.05 m, nose 1.48 m, mouth 0.91 m, right arm 12.8 m,
-  tablet 7.19 × 4.14 × 0.61 m; the diadem with 25 windows and 7 rays; torch balcony and gold-leaf flame.
+- The statue: "Statue of Liberty model by VinceCZ (Printables #110125), CC BY 4.0" — the owner's chosen model
+  (`media/liberty-model/USE_THIS_MODEL.md`, mesh in `media/kit/models/liberty/`), placed exactly as specified there:
+  rotateX(-90°), centred, base at the pedestal top, scaled to 46.05 m heel → torch (NPS). It remixes a Cults3D model by
+  peternak3d and a Thingiverse #65869 torch part whose licences could not be checked from here — confirm before a paid ad.
+  Skin: the model's verdigris shader (rain-washed up-facing areas, darker folds, brown streaks, hammered-copper noise,
+  gilded flame) with this film's ageing from bright copper (1886) to patina, an x-ray mode and the storm sway (×20).
+- The x-ray skeleton (Eiffel's pylon, secondary frame, armature bars, arm truss to the torch) is fitted inside the skin
+  envelope measured from the model.
 - Hunt's pedestal in light grey granite (rusticated corner pilasters, the loggia, a row of shields round the parapet) on
   the star-shaped Fort Wood (pedestal top 46.94 m; ground to torch 92.99 m); island trees from a Poly Haven model.
 - Copper → patina shader driven by time (streaks + noise), x-ray mode revealing the iron pylon, the secondary frame that

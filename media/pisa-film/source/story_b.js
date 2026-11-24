@@ -37,13 +37,13 @@ const secTop = new THREE.Mesh(new THREE.BoxGeometry(400, 0.4, 0.6), matte(0x5f4a
 const capMat = new THREE.MeshStandardMaterial({ color: 0xcfc7b8, roughness: 0.8, map: mbT("diff", true, 1, 1), side: THREE.DoubleSide });
 const CAPS = [];
 const cap = (g, x0, x1, y0, y1, m = capMat) => { const c = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, y1 - y0), m); c.position.set((x0 + x1) / 2, (y0 + y1) / 2, -0.01); c.material.side = THREE.DoubleSide; g.add(c); CAPS.push(c); const d = c.clone(); d.position.x = -d.position.x; g.add(d); CAPS.push(d); };
-ST.forEach((g, k) => { const h = SH[k]; if (k === 0) { cap(g, R_IN, R_BASE, 0, h); } else if (k < 7) { cap(g, R_IN, R_GAL, 0, h); cap(g, R_GAL, R_BASE + 0.25, 0, 0.5); cap(g, R_GAL, R_BASE, 5.25, h); } else cap(g, 4.0, 5.4, 0, h - 0.05); });
+// the tower's own cut is drawn by the marble shader (back faces seen through the cut = cut stone, the hollow core dark)
 cap(TW, 4.5, 9.8, -3.0, 0, new THREE.MeshStandardMaterial({ color: 0x8d8376, roughness: 0.9 }));
 for (const c of CAPS) c.visible = false;
 const CLIPMATS = [marbleMat, lawnMat, pathMat, FOUND.material, duomoMat, roofMat, darkMat];
 ST[7].traverse((o) => { if (o.material && o.material.isMeshPhysicalMaterial) CLIPMATS.push(o.material); });
 let secOn = null;
-function section(on) { if (secOn === on) return; secOn = on; for (const m of CLIPMATS) { m.clippingPlanes = on ? [CLIP] : null; m.needsUpdate = true; } SECTION.visible = on; for (const c of CAPS) c.visible = on; CROWD.visible = !on; DUOMO.visible = BAPT.visible = !on; }
+function section(on) { MARBU.uSec.value = on ? 1 : 0; if (secOn === on) return; secOn = on; for (const m of CLIPMATS) { m.clippingPlanes = on ? [CLIP] : null; m.needsUpdate = true; } SECTION.visible = on; for (const c of CAPS) c.visible = on; CROWD.visible = !on; DUOMO.visible = BAPT.visible = !on; }
 // squeeze arrows in the clay (glowing dashes), the weight arrow down the tower
 const dashMat = (col) => new THREE.ShaderMaterial({ uniforms: { uP: { value: 0 }, uC: { value: new THREE.Color(col).multiplyScalar(2.2) } }, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending,
   vertexShader: `varying float vU; void main(){ vU = uv.x; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
