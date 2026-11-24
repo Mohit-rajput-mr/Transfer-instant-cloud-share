@@ -11,6 +11,8 @@
   shapes standing in for real things (no capsule bones, blob organs, box props). If a real-looking asset can't be found
   or built, change the shot — don't ship a low-end one. Aim to beat the owner's and viewers' expectations every time.
   "New version" = a new story/location/event in the same look and voice.
+  **Never build famous real things (statues, people, landmarks, vehicles) from code:** source a real licensed model first —
+  follow `media/MODEL_SOURCING_RULES.md` (owner 2026-11-24, hard rule).
 
 - **Always answer the owner SHORT.** Main points only, one line each. No long reports, no tables unless asked.
 - Live branch: `claude/festive-keller-rln4jk`. Vercel project `orbit` is linked to GitHub: a push to that branch deploys
