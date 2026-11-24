@@ -1,0 +1,98 @@
+[
+ {
+  "key": "hook",
+  "text": "Do you know the first plane to fly faster than sound was shaped like a bullet?",
+  "emo": 1.1,
+  "gap": 0.5
+ },
+ {
+  "key": "real",
+  "text": "This is the real Bell X-1, laser scanned by the Smithsonian. Its body copies a fifty-calibre machine gun bullet.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "why",
+  "text": "Bullets were already known to stay stable faster than sound. No plane had ever flown that fast.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "sound",
+  "text": "Sound is a pressure wave. Near the ground, it travels about three hundred and forty metres every second.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "pile",
+  "text": "As a plane gets close to that speed, its own pressure waves can't get out of the way. They pile up into a shock wave.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "tail",
+  "text": "Shock waves made normal elevators useless. So on the X-1, the whole tail could tilt, to keep control.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "drop",
+  "text": "It didn't take off from the ground. A B-29 bomber carried it up, and dropped it.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "rocket",
+  "text": "Then four rocket chambers lit up, burning alcohol and liquid oxygen.",
+  "emo": 1.1,
+  "gap": 0.45
+ },
+ {
+  "key": "date",
+  "text": "October fourteenth, nineteen forty-seven. Thirteen point seven kilometres up, where the air is colder, and sound is slower.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "mach",
+  "text": "Mach one point zero five. The X-1 passed its own sound, and the shock wave swept back into a cone.",
+  "emo": 1.1,
+  "gap": 0.5
+ },
+ {
+  "key": "boom",
+  "text": "On the ground, people heard nothing. Until the cone swept over them. Boom.",
+  "emo": 1.1,
+  "gap": 0.5
+ },
+ {
+  "key": "today",
+  "text": "Today, the real X-1 is on display at the Smithsonian, in Washington.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "orbi",
+  "text": "Speed comes from smart engineering. Orbi Transfer splits big files into parts.",
+  "emo": 1.0,
+  "gap": 0.4
+ },
+ {
+  "key": "orbi2",
+  "text": "It uploads three parts at a time, and downloads four at once. Files up to twenty gigabytes.",
+  "emo": 1.05,
+  "gap": 0.4
+ },
+ {
+  "key": "orbi3",
+  "text": "No account, no app.",
+  "emo": 1.05,
+  "gap": 0.4
+ },
+ {
+  "key": "end",
+  "text": "Orbi Transfer dot com.",
+  "emo": 1.0,
+  "gap": 0.6
+ }
+]

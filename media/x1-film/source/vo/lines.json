@@ -1,0 +1,102 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know the first plane to fly faster than sound was shaped like a bullet?",
+   "dur": 4.643,
+   "at": 0.35
+  },
+  {
+   "key": "real",
+   "text": "This is the real Bell X-1, laser scanned by the Smithsonian. Its body copies a fifty-calibre machine gun bullet.",
+   "dur": 8.035,
+   "at": 5.49
+  },
+  {
+   "key": "why",
+   "text": "Bullets were already known to stay stable faster than sound. No plane had ever flown that fast.",
+   "dur": 5.325,
+   "at": 13.98
+  },
+  {
+   "key": "sound",
+   "text": "Sound is a pressure wave. Near the ground, it travels about three hundred and forty metres every second.",
+   "dur": 6.627,
+   "at": 19.75
+  },
+  {
+   "key": "pile",
+   "text": "As a plane gets close to that speed, its own pressure waves can't get out of the way. They pile up into a shock wave.",
+   "dur": 6.691,
+   "at": 26.83
+  },
+  {
+   "key": "tail",
+   "text": "Shock waves made normal elevators useless. So on the X-1, the whole tail could tilt, to keep control.",
+   "dur": 6.733,
+   "at": 33.97
+  },
+  {
+   "key": "drop",
+   "text": "It didn't take off from the ground. A B-29 bomber carried it up, and dropped it.",
+   "dur": 5.133,
+   "at": 41.15
+  },
+  {
+   "key": "rocket",
+   "text": "Then four rocket chambers lit up, burning alcohol and liquid oxygen.",
+   "dur": 5.308,
+   "at": 46.74
+  },
+  {
+   "key": "date",
+   "text": "October fourteenth, nineteen forty-seven. Thirteen point seven kilometres up, where the air is colder, and sound is slower.",
+   "dur": 8.312,
+   "at": 52.5
+  },
+  {
+   "key": "mach",
+   "text": "Mach one point zero five. The X-1 passed its own sound, and the shock wave swept back into a cone.",
+   "dur": 7.331,
+   "at": 61.26
+  },
+  {
+   "key": "boom",
+   "text": "On the ground, people heard nothing. Until the cone swept over them. Boom.",
+   "dur": 4.305,
+   "at": 69.09
+  },
+  {
+   "key": "today",
+   "text": "Today, the real X-1 is on display at the Smithsonian, in Washington.",
+   "dur": 5.4,
+   "at": 73.89
+  },
+  {
+   "key": "orbi",
+   "text": "Speed comes from smart engineering. Orbi Transfer splits big files into parts.",
+   "dur": 5.987,
+   "at": 79.74
+  },
+  {
+   "key": "orbi2",
+   "text": "It uploads three parts at a time, and downloads four at once. Files up to twenty gigabytes.",
+   "dur": 5.513,
+   "at": 86.13
+  },
+  {
+   "key": "orbi3",
+   "text": "No account, no app.",
+   "dur": 1.635,
+   "at": 92.04
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com.",
+   "dur": 1.975,
+   "at": 94.08
+  }
+ ],
+ "duration": 98.45
+}
