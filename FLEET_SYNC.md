@@ -33,6 +33,9 @@ Every agent, every task: root cause, fix the pattern everywhere, verify real beh
   Golden Gate: tower rebuilt from photos (4 portal openings, X-brace, fluted struts), clear sky, sent 2026-11-24 (WER 0.039).
   DEFECT: disk allowance full mid-render (ENOSPC, 4 broken PNGs) — cause: 21 GB of old frames kept. FIX: delete source/frames after
   each film is encoded + checked; re-check PNGs after any crash.
+  Liberty: the figure was a lathe + boxes (box face, tube robe) — rebuilt as a sculpted signed-distance model polygonised with
+  surface nets (gen_statue.cjs → statue.bin; first build had inverted winding, the inside of the head showed — fixed); grey
+  granite pedestal, tree impostors; sent 2026-11-24 (WER 0.02). No free downloadable scan reachable (Commons 429, Sketchfab declined).
 - 2026-11-23 · DEFECT (fix brief `media/BRIEF_LANDMARKS_FIX.md`: landmark films below quality): cause = landmarks/cities built from
   primitives and never compared with photos; flat foggy skies; diagrams as clip-art. FIX (eiffel-film, before shipping): Paris rebuilt
   as a procedural Haussmann city (Voronoi blocks cut by radiating boulevards, ≈25k buildings, facade + zinc-mansard shaders, chimneys,
