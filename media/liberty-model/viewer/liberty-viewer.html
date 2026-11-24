@@ -1,0 +1,217 @@
+<title>Lady Liberty 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: full-bleed 3D stage; a quiet title block top-left, a control rail along the bottom, a spec card top-right. One dark museum-vitrine look on purpose. */
+:root {
+  --ground: #0b0f0e;        /* vitrine night */
+  --verdigris: #7fb5a6;     /* the statue's patina, used as the accent */
+  --gilt: #d9a845;          /* the gilded flame */
+  --ink: #e9efec;
+  --muted: #8fa39d;
+  --glass: rgba(14, 20, 19, 0.72);
+  --line: rgba(127, 181, 166, 0.22);
+  --display: "Fraunces", Georgia, "Times New Roman", serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--body); overflow: hidden; }
+#stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+#stage:active { cursor: grabbing; }
+.ui { position: fixed; z-index: 2; pointer-events: none; }
+.ui > * { pointer-events: auto; }
+.head { top: calc(env(safe-area-inset-top, 0px) + 18px); left: max(16px, env(safe-area-inset-left, 0px)); max-width: min(440px, calc(100vw - 32px)); }
+.head .eyebrow { font: 500 11px/1 var(--mono); letter-spacing: 0.18em; text-transform: uppercase; color: var(--verdigris); }
+.head h1 { margin: 8px 0 6px; font: 600 clamp(28px, 4.4vw, 44px)/1.02 var(--display); letter-spacing: -0.01em; text-wrap: balance; }
+.head p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); max-width: 46ch; }
+.spec { top: calc(env(safe-area-inset-top, 0px) + 18px); right: max(16px, env(safe-area-inset-right, 0px)); background: var(--glass); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: grid; grid-template-columns: auto auto; gap: 6px 16px; font: 500 12px/1.3 var(--mono); font-variant-numeric: tabular-nums; }
+.spec dt { color: var(--muted); } .spec dd { margin: 0; text-align: right; }
+.rail { left: 0; right: 0; bottom: 0; padding: 12px max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 14px) max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between; background: linear-gradient(to top, rgba(11, 15, 14, 0.92), rgba(11, 15, 14, 0)); }
+.group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.group .lab { font: 500 10px/1 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+button { font: 500 13px/1 var(--body); color: var(--ink); background: var(--glass); border: 1px solid var(--line); border-radius: 999px; padding: 9px 14px; cursor: pointer; }
+button:hover { border-color: var(--verdigris); }
+button[aria-pressed="true"] { background: var(--verdigris); color: #08110f; border-color: var(--verdigris); }
+button:focus-visible { outline: 2px solid var(--gilt); outline-offset: 2px; }
+.hint { font: 500 11px/1.3 var(--mono); color: var(--muted); }
+.credit { font-size: 11px; color: var(--muted); }
+.credit a { color: var(--verdigris); }
+#load { position: fixed; inset: 0; z-index: 3; display: grid; place-items: center; background: var(--ground); transition: opacity 0.6s; }
+#load[hidden] { display: none; }
+#load .box { width: min(320px, 80vw); text-align: center; }
+#load .bar { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; margin-top: 14px; }
+#load .bar i { display: block; height: 100%; width: 0; background: var(--verdigris); transition: width 0.2s; }
+#load .t { font: 500 12px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+#load .err { margin-top: 12px; font-size: 13px; color: #e8a090; }
+@media (max-width: 640px) { .spec { display: none; } .head p { font-size: 13px; } .hint { display: none; } }
+@media (prefers-reduced-motion: reduce) { #load { transition: none; } }
+</style>
+
+<canvas id="stage" aria-label="Interactive 3D model of the Statue of Liberty. Drag to rotate, scroll or pinch to zoom."></canvas>
+
+<div class="ui head">
+  <div class="eyebrow">Liberty Enlightening the World · 1886</div>
+  <h1>Lady Liberty</h1>
+  <p>Drag to turn her around, scroll or pinch to zoom, right-drag or two-finger drag to move. Built at true scale: 46.05 m from heel to torch.</p>
+</div>
+
+<dl class="ui spec">
+  <dt>Height</dt><dd>46.05 m</dd>
+  <dt>Triangles</dt><dd id="tri">916,816</dd>
+  <dt>Vertices</dt><dd id="vtx">456,190</dd>
+  <dt>Copper skin</dt><dd>~2.4 mm</dd>
+</dl>
+
+<div class="ui rail">
+  <div class="group" role="group" aria-label="Views">
+    <span class="lab">View</span>
+    <button id="v-full" data-view="full">Full</button>
+    <button id="v-face" data-view="face">Face</button>
+    <button id="v-torch" data-view="torch">Torch</button>
+    <button id="v-tablet" data-view="tablet">Tablet</button>
+    <button id="v-back" data-view="back">Back</button>
+  </div>
+  <div class="group" role="group" aria-label="Finish">
+    <span class="lab">Finish</span>
+    <button id="m-patina" data-mat="patina" aria-pressed="true">Patina today</button>
+    <button id="m-copper" data-mat="copper" aria-pressed="false">Copper, 1886</button>
+    <button id="m-clay" data-mat="clay" aria-pressed="false">Clay</button>
+  </div>
+  <div class="group">
+    <button id="spin" aria-pressed="true">Turntable</button>
+    <span class="hint">Model: VinceCZ (Printables), CC BY</span>
+  </div>
+</div>
+
+<div id="load"><div class="box"><div class="t" id="lt">Loading the statue</div><div class="bar"><i id="lb"></i></div><div class="err" id="le" hidden></div></div></div>
+
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+const $ = (id) => document.getElementById(id);
+const canvas = $("stage");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0b0f0e); scene.fog = new THREE.Fog(0x0b0f0e, 140, 320);
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(renderer), 0.04).texture;
+const cam = new THREE.PerspectiveCamera(32, 1, 0.1, 1000);
+const controls = new OrbitControls(cam, canvas); controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minDistance = 3; controls.maxDistance = 220; controls.maxPolarAngle = Math.PI * 0.62; controls.target.set(0, 22, 0);
+cam.position.set(42, 30, 78);
+
+// light: warm late-afternoon key from the west, cool sky fill, a rim from behind
+const key = new THREE.DirectionalLight(0xffe2b8, 3.2); key.position.set(-40, 70, 60); key.castShadow = true;
+Object.assign(key.shadow.camera, { left: -30, right: 30, top: 55, bottom: -5, near: 10, far: 200 }); key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.04;
+scene.add(key, new THREE.HemisphereLight(0xcfe3ff, 0x2a2620, 0.55));
+const rim = new THREE.DirectionalLight(0x9fc4ff, 1.4); rim.position.set(30, 40, -70); scene.add(rim);
+
+// plinth: a dark granite turntable
+const plinth = new THREE.Mesh(new THREE.CylinderGeometry(15, 16, 1.6, 96), new THREE.MeshStandardMaterial({ color: 0x1c2120, roughness: 0.55, metalness: 0.1 }));
+plinth.position.y = -0.8; plinth.receiveShadow = true; scene.add(plinth);
+const floor = new THREE.Mesh(new THREE.CircleGeometry(400, 64), new THREE.MeshStandardMaterial({ color: 0x0e1312, roughness: 0.9 })); floor.rotation.x = -Math.PI / 2; floor.position.y = -1.6; floor.receiveShadow = true; scene.add(floor);
+
+// materials
+const shaderBits = (mode) => (s) => {
+  s.uniforms.uTop = { value: 46.05 }; s.uniforms.uMode = { value: mode };
+  s.vertexShader = s.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vOP; varying vec3 vON;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvOP = position; vON = normal;");
+  s.fragmentShader = s.fragmentShader.replace("#include <common>", `#include <common>
+    varying vec3 vOP; varying vec3 vON; uniform float uTop; uniform float uMode;
+    float h3(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+    float n3(vec3 p){ vec3 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
+      return mix(mix(mix(h3(i), h3(i+vec3(1,0,0)), f.x), mix(h3(i+vec3(0,1,0)), h3(i+vec3(1,1,0)), f.x), f.y), mix(mix(h3(i+vec3(0,0,1)), h3(i+vec3(1,0,1)), f.x), mix(h3(i+vec3(0,1,1)), h3(i+vec3(1,1,1)), f.x), f.y), f.z); }
+    float fb(vec3 p){ return n3(p) * 0.5 + n3(p * 2.1) * 0.3 + n3(p * 4.3) * 0.2; }`)
+  .replace("#include <color_fragment>", `#include <color_fragment>
+    { vec3 n = normalize(vON); float up = n.y; float streak = fb(vec3(vOP.x * 3.0, vOP.y * 0.25, vOP.z * 3.0));
+      vec3 c;
+      if (uMode < 0.5) { vec3 light = vec3(0.50, 0.74, 0.66), dark = vec3(0.20, 0.36, 0.33), brown = vec3(0.32, 0.27, 0.19);
+        c = mix(dark, light, clamp(0.45 + 0.55 * up + (streak - 0.5) * 0.7, 0.0, 1.0)); c = mix(c, brown, smoothstep(0.62, 0.9, streak) * 0.35 * (1.0 - max(up, 0.0))); }
+      else { c = mix(vec3(0.62, 0.32, 0.18), vec3(0.85, 0.5, 0.32), clamp(0.5 + 0.4 * up + (streak - 0.5) * 0.4, 0.0, 1.0)); }
+      c *= 0.9 + 0.2 * fb(vOP * 9.0);
+      float flame = smoothstep(uTop - 2.9, uTop - 2.6, vOP.y);
+      diffuseColor.rgb = mix(c, vec3(0.98, 0.72, 0.28), flame); }`)
+  .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
+    { float flame = smoothstep(uTop - 2.9, uTop - 2.6, vOP.y); roughnessFactor = mix(roughnessFactor, 0.22, flame); }`)
+  .replace("#include <metalnessmap_fragment>", `#include <metalnessmap_fragment>
+    { float flame = smoothstep(uTop - 2.9, uTop - 2.6, vOP.y); metalnessFactor = mix(metalnessFactor, 1.0, flame); }`)
+  .replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>
+    { vec3 q = vOP * 14.0; float e = 0.02; float b0 = fb(q); normal = normalize(normal + vec3(fb(q + vec3(e,0,0)) - b0, fb(q + vec3(0,e,0)) - b0, fb(q + vec3(0,0,e)) - b0) * 3.0); }`);
+};
+const MAT = {
+  patina: Object.assign(new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.62, metalness: 0.18, clearcoat: 0.15, clearcoatRoughness: 0.6, envMapIntensity: 0.6 }), { onBeforeCompile: shaderBits(0), customProgramCacheKey: () => "patina" }),
+  copper: Object.assign(new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.32, metalness: 0.85, envMapIntensity: 1.0 }), { onBeforeCompile: shaderBits(1), customProgramCacheKey: () => "copper" }),
+  clay: new THREE.MeshStandardMaterial({ color: 0xd9d4cc, roughness: 0.75, metalness: 0 }),
+};
+
+// load the mesh: gzip-compressed, quantised positions (uint16), normals (int8), indices (uint32)
+async function getBin(url, i) {
+  const r = await fetch(url); if (!r.ok) throw new Error(`Couldn't load ${url} (${r.status}).`);
+  const total = +r.headers.get("content-length") || 0; const reader = r.body.getReader(); const parts = []; let got = 0;
+  for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); got += value.length; prog[i] = total ? got / total : 0.5; showProg(); }
+  const blob = new Blob(parts);
+  if (typeof DecompressionStream === "undefined") throw new Error("This browser can't unpack the model. Try a recent Chrome, Edge, Firefox or Safari.");
+  return new Uint8Array(await new Response(blob.stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer()).buffer;
+}
+const prog = [0, 0, 0];
+const showProg = () => { $("lb").style.width = `${Math.round((prog[0] + prog[1] + prog[2]) / 3 * 100)}%`; };
+let mesh;
+try {
+  const meta = await (await fetch("liberty-meta.json")).json();
+  const [pb, nb, ib] = await Promise.all([getBin("liberty-pos.wasm", 0), getBin("liberty-nor.wasm", 1), getBin("liberty-idx.wasm", 2)]);
+  $("lt").textContent = "Building the mesh";
+  const q = new Uint16Array(pb), n8 = new Int8Array(nb), idx = new Uint32Array(ib);
+  const pos = new Float32Array(q.length);
+  for (let i = 0; i < q.length; i += 3) for (let k = 0; k < 3; k++) pos[i + k] = meta.lo[k] + (q[i + k] / 65535) * (meta.hi[k] - meta.lo[k]);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  g.setAttribute("normal", new THREE.BufferAttribute(n8, 3, true));
+  g.setIndex(new THREE.BufferAttribute(idx, 1));
+  g.computeBoundingSphere();
+  mesh = new THREE.Mesh(g, MAT.patina); mesh.castShadow = true; mesh.receiveShadow = true; scene.add(mesh);
+  $("tri").textContent = meta.tris.toLocaleString("en-US"); $("vtx").textContent = meta.verts.toLocaleString("en-US");
+  $("load").style.opacity = 0; setTimeout(() => ($("load").hidden = true), 650);
+} catch (e) {
+  $("lt").textContent = "The model didn't load";
+  $("le").hidden = false; $("le").textContent = e.message + " Reload the page to try again.";
+}
+
+// views (model space: front faces +z, raised right arm toward −x)
+const VIEWS = {
+  full: { t: [0, 22, 0], p: [42, 30, 78] },
+  face: { t: [-1.6, 32.2, 1.6], p: [3.5, 33, 10.5] },
+  torch: { t: [-6.0, 43.6, 3.0], p: [-1.0, 44.5, 13.5] },
+  tablet: { t: [5.5, 18, 0.5], p: [18, 21, 15] },
+  back: { t: [0, 22, 0], p: [-38, 32, -74] },
+};
+let fly = null;
+function go(name) {
+  const v = VIEWS[name]; if (!v) return;
+  fly = { t0: performance.now(), dur: 1200, fp: cam.position.clone(), ft: controls.target.clone(), tp: new THREE.Vector3(...v.p), tt: new THREE.Vector3(...v.t) };
+  if (name !== "full") setSpin(false);
+}
+document.querySelectorAll("[data-view]").forEach((b) => b.addEventListener("click", () => go(b.dataset.view)));
+document.querySelectorAll("[data-mat]").forEach((b) => b.addEventListener("click", () => {
+  if (!mesh) return; mesh.material = MAT[b.dataset.mat];
+  document.querySelectorAll("[data-mat]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+}));
+let spin = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function setSpin(on) { spin = on; $("spin").setAttribute("aria-pressed", String(on)); }
+setSpin(spin);
+$("spin").addEventListener("click", () => setSpin(!spin));
+controls.addEventListener("start", () => { fly = null; });
+
+function resize() { const w = window.innerWidth, h = window.innerHeight; renderer.setSize(w, h, false); cam.aspect = w / h; cam.fov = w < h ? 42 : 32; cam.updateProjectionMatrix(); }
+window.addEventListener("resize", resize); resize();
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+renderer.setAnimationLoop((now) => {
+  if (fly) { const k = Math.min(1, (now - fly.t0) / fly.dur), e = ease(k); cam.position.lerpVectors(fly.fp, fly.tp, e); controls.target.lerpVectors(fly.ft, fly.tt, e); if (k >= 1) fly = null; }
+  if (spin && !fly && mesh) { const a = 0.0025, p = cam.position.clone().sub(controls.target); p.applyAxisAngle(new THREE.Vector3(0, 1, 0), a); cam.position.copy(controls.target).add(p); }
+  controls.update(); renderer.render(scene, cam);
+});
+</script>
