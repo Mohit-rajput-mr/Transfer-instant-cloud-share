@@ -32,6 +32,15 @@ The owner found noise-film / battery-film "not high quality, not detailed, made 
   QR/code, tasks, folders. Never repeat the previous film's feature; only claim live, verified facts.
 - Render: 4 detached workers (`nohup node kit/render.cjs a b frames &`), ~2 s/frame effective at RS 0.8.
 
+## REAL MODELS ONLY (owner 2026-11-24, hard rule, wins over everything)
+- Never build a famous real thing (statue, landmark, famous building, person, face, vehicle) from code. Follow
+  `media/MODEL_SOURCING_RULES.md`: repo models first (`media/*/USE_THIS_MODEL.md`), else a real CC0 / CC BY / CC BY-SA model
+  (Printables API works here), pick from several candidates against photos, then finish it (real scale, materials, sun).
+- The bar the owner approved ("nice, this is nice"): `media/liberty-film/OrbiTransfer-statue-of-liberty.mp4` with the
+  model in `media/liberty-model/` — every landmark film must look at least this real. Send side-by-sides (frame | photo).
+- Models ready: Statue of Liberty (`media/liberty-model/`), Leaning Tower of Pisa (`media/pisa-model/`), Burj Khalifa
+  (`media/kit/models/burj/`, MiniWorld3D / Thomas Lagler, public domain).
+
 ## FORMAT (owner 2026-11-22, wins over everything): 9:16 vertical (TikTok size, 1080×1920) ONLY.
 No landscape / 16:9 renders for any film, now or in future.
 
