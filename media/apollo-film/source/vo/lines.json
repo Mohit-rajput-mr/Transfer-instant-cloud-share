@@ -1,0 +1,114 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know how three astronauts fell out of space at almost forty thousand kilometres an hour, and lived?",
+   "dur": 6.307,
+   "at": 0.35
+  },
+  {
+   "key": "real",
+   "text": "This is the real Apollo eleven capsule, Columbia. Laser scanned, inch by inch, by the Smithsonian.",
+   "dur": 6.797,
+   "at": 7.16
+  },
+  {
+   "key": "small",
+   "text": "It's only three point nine metres wide. Inside, three seats, for three men coming home from the Moon.",
+   "dur": 7.032,
+   "at": 14.4
+  },
+  {
+   "key": "speed",
+   "text": "On the way back, it hit the air at about eleven kilometres every second.",
+   "dur": 3.88,
+   "at": 21.89
+  },
+  {
+   "key": "air",
+   "text": "The air in front can't get out of the way. It's squeezed so hard, it turns into glowing plasma.",
+   "dur": 6.605,
+   "at": 26.22
+  },
+  {
+   "key": "blunt",
+   "text": "That's why the bottom is blunt. It pushes a shock wave out in front, so most of the heat stays in the air.",
+   "dur": 6.48,
+   "at": 33.27
+  },
+  {
+   "key": "shield",
+   "text": "The rest hits the heat shield. A honeycomb, filled with a resin called Avcoat.",
+   "dur": 4.967,
+   "at": 40.2
+  },
+  {
+   "key": "burn",
+   "text": "It's built to burn. The surface chars, and melts away, and carries the heat with it.",
+   "dur": 4.877,
+   "at": 45.62
+  },
+  {
+   "key": "silver",
+   "text": "Columbia left shiny silver. It came home scorched brown.",
+   "dur": 3.619,
+   "at": 50.95
+  },
+  {
+   "key": "blackout",
+   "text": "For about three minutes, the plasma blocked every radio signal. On the ground, they could only wait.",
+   "dur": 5.944,
+   "at": 55.06
+  },
+  {
+   "key": "g",
+   "text": "Inside, the crew were pressed into their seats, at six and a half g.",
+   "dur": 4.045,
+   "at": 61.46
+  },
+  {
+   "key": "chutes",
+   "text": "Then, two small drogue chutes. Then three main parachutes, each twenty-five metres across.",
+   "dur": 7.399,
+   "at": 65.95
+  },
+  {
+   "key": "splash",
+   "text": "July twenty-fourth, nineteen sixty-nine. Columbia hit the Pacific at about thirty-five kilometres an hour.",
+   "dur": 6.84,
+   "at": 73.8
+  },
+  {
+   "key": "flip",
+   "text": "It landed upside down. Three balloons turned it upright.",
+   "dur": 3.896,
+   "at": 81.09
+  },
+  {
+   "key": "orbi",
+   "text": "Losing the signal for a while is normal. What matters is picking up where you left off.",
+   "dur": 6.072,
+   "at": 85.49
+  },
+  {
+   "key": "orbi2",
+   "text": "Orbi Transfer does that with your files. If the connection drops, the upload resumes, and only the missing parts are sent.",
+   "dur": 7.565,
+   "at": 91.96
+  },
+  {
+   "key": "orbi3",
+   "text": "No account, no app.",
+   "dur": 1.635,
+   "at": 99.93
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com.",
+   "dur": 1.975,
+   "at": 101.96
+  }
+ ],
+ "duration": 106.34
+}

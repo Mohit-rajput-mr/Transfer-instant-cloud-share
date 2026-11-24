@@ -1,0 +1,29 @@
+/tmp/cb/lib/python3.13/site-packages/perth/perth_net/__init__.py:1: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import resource_filename
+/tmp/cb/lib/python3.13/site-packages/diffusers/models/lora.py:393: FutureWarning: `LoRACompatibleLinear` is deprecated and will be removed in version 1.0.0. Use of `LoRACompatibleLinear` is deprecated. Please switch to PEFT backend by installing PEFT: `pip install peft`.
+  deprecate("LoRACompatibleLinear", "1.0.0", deprecation_message)
+loaded PerthNet (Implicit) at step 250,000
+hook 6.31
+real 6.8
+small 7.03
+speed 3.88
+air 6.61
+blunt 6.48
+shield 4.97
+burn 4.88
+silver 3.62
+blackout 5.94
+g 4.04
+chutes 7.4
+splash 6.84
+/usr/local/lib/python3.13/contextlib.py:109: FutureWarning: `torch.backends.cuda.sdp_kernel()` is deprecated. In the future, this context manager will be removed. Please see `torch.nn.attention.sdpa_kernel()` for the new context manager, with updated signature.
+  self.gen = func(*args, **kwds)
+`sdpa` attention does not support `output_attentions=True`. Please set your attention to `eager` if you want any of these features.
+Sampling:   0%|          | 0/1000 [00:00<?, ?it/s]Sampling:   0%|          | 1/1000 [00:00<01:48,  9.22it/s]Sampling:   0%|          | 3/1000 [00:00<01:28, 11.30it/s]Sampling:   0%|          | 5/1000 [00:00<01:30, 10.97it/s]Sampling:   1%|          | 7/1000 [00:00<01:31, 10.85it/s]Sampling:   1%|          | 9/1000 [00:00<01:31, 10.82it/s]Sampling:   1%|          | 11/1000 [00:01<01:28, 11.11it/s]Sampling:   1%|▏         | 13/1000 [00:01<01:34, 10.46it/s]Sampling:   2%|▏         | 15/1000 [00:01<01:32, 10.62it/s]Sampling:   2%|▏         | 17/1000 [00:01<01:37, 10.11it/s]Sampling:   2%|▏         | 19/1000 [00:01<01:32, 10.56it/s]Sampling:   2%|▏         | 21/1000 [00:01<01:32, 10.59it/s]Sampling:   2%|▏         | 23/1000 [00:02<01:34, 10.35it/s]Sampling:   2%|▎         | 25/1000 [00:02<01:31, 10.69it/s]Sampling:   3%|▎         | 27/1000 [00:02<01:29, 10.93it/s]Sampling:   3%|▎         | 29/1000 [00:02<01:28, 10.91it/s]Sampling:   3%|▎         | 31/1000 [00:02<01:27, 11.13it/s]Sampling:   3%|▎         | 33/1000 [00:03<01:27, 11.05it/s]Sampling:   4%|▎         | 35/1000 [00:03<01:26, 11.18it/s]Sampling:   4%|▎         | 37/1000 [00:03<01:26, 11.14it/s]Sampling:   4%|▍         | 39/1000 [00:03<01:24, 11.34it/s]Sampling:   4%|▍         | 41/1000 [00:03<01:23, 11.53it/s]Sampling:   4%|▍         | 43/1000 [00:03<01:22, 11.55it/s]Sampling:   4%|▍         | 45/1000 [00:04<01:23, 11.45it/s]Sampling:   5%|▍         | 47/1000 [00:04<01:23, 11.47it/s]Sampling:   5%|▍         | 49/1000 [00:04<01:21, 11.72it/s]Sampling:   5%|▌         | 51/1000 [00:04<01:16, 12.38it/s]Sampling:   5%|▌         | 53/1000 [00:04<01:14, 12.78it/s]Sampling:   6%|▌         | 55/1000 [00:04<01:12, 13.00it/s]Sampling:   6%|▌         | 57/1000 [00:05<01:11, 13.11it/s]Sampling:   6%|▌         | 59/1000 [00:05<01:11, 13.14it/s]Sampling:   6%|▌         | 61/1000 [00:05<01:10, 13.31it/s]Sampling:   6%|▋         | 63/1000 [00:05<01:09, 13.48it/s]Sampling:   6%|▋         | 65/1000 [00:05<01:10, 13.28it/s]Sampling:   7%|▋         | 67/1000 [00:05<01:08, 13.59it/s]Sampling:   7%|▋         | 69/1000 [00:05<01:08, 13.59it/s]Sampling:   7%|▋         | 71/1000 [00:06<01:08, 13.56it/s]Sampling:   7%|▋         | 73/1000 [00:06<01:07, 13.76it/s]Sampling:   8%|▊         | 75/1000 [00:06<01:07, 13.77it/s]Sampling:   8%|▊         | 77/1000 [00:06<01:05, 14.13it/s]Sampling:   8%|▊         | 79/1000 [00:06<01:03, 14.44it/s]Sampling:   8%|▊         | 81/1000 [00:06<01:03, 14.52it/s]Sampling:   8%|▊         | 83/1000 [00:06<01:04, 14.14it/s]Sampling:   8%|▊         | 85/1000 [00:07<01:04, 14.10it/s]Sampling:   9%|▊         | 87/1000 [00:07<01:05, 14.04it/s]Sampling:   9%|▉         | 89/1000 [00:07<01:05, 13.89it/s]Sampling:   9%|▉         | 91/1000 [00:07<01:05, 13.95it/s]Sampling:   9%|▉         | 93/1000 [00:07<01:06, 13.68it/s]Sampling:  10%|▉         | 95/1000 [00:07<01:05, 13.84it/s]Sampling:  10%|▉         | 97/1000 [00:07<01:04, 13.95it/s]Sampling:  10%|▉         | 99/1000 [00:08<01:05, 13.86it/s]Sampling:  10%|█         | 101/1000 [00:08<01:04, 13.84it/s]Sampling:  10%|█         | 102/1000 [00:08<01:12, 12.33it/s]
+flip take 0: wer 0.00 · It landed upside down.  Three balloons turned it upright.
+flip 3.9
+orbi 6.07
+orbi2 7.57
+orbi3 1.64
+end 1.98
+duration 106.3

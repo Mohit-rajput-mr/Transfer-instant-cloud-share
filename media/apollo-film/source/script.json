@@ -1,0 +1,110 @@
+[
+ {
+  "key": "hook",
+  "text": "Do you know how three astronauts fell out of space at almost forty thousand kilometres an hour, and lived?",
+  "emo": 1.1,
+  "gap": 0.5
+ },
+ {
+  "key": "real",
+  "text": "This is the real Apollo eleven capsule, Columbia. Laser scanned, inch by inch, by the Smithsonian.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "small",
+  "text": "It's only three point nine metres wide. Inside, three seats, for three men coming home from the Moon.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "speed",
+  "text": "On the way back, it hit the air at about eleven kilometres every second.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "air",
+  "text": "The air in front can't get out of the way. It's squeezed so hard, it turns into glowing plasma.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "blunt",
+  "text": "That's why the bottom is blunt. It pushes a shock wave out in front, so most of the heat stays in the air.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "shield",
+  "text": "The rest hits the heat shield. A honeycomb, filled with a resin called Avcoat.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "burn",
+  "text": "It's built to burn. The surface chars, and melts away, and carries the heat with it.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "silver",
+  "text": "Columbia left shiny silver. It came home scorched brown.",
+  "emo": 1.05,
+  "gap": 0.5
+ },
+ {
+  "key": "blackout",
+  "text": "For about three minutes, the plasma blocked every radio signal. On the ground, they could only wait.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "g",
+  "text": "Inside, the crew were pressed into their seats, at six and a half g.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "chutes",
+  "text": "Then, two small drogue chutes. Then three main parachutes, each twenty-five metres across.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "splash",
+  "text": "July twenty-fourth, nineteen sixty-nine. Columbia hit the Pacific at about thirty-five kilometres an hour.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "flip",
+  "text": "It landed upside down. Three balloons turned it upright.",
+  "emo": 1.05,
+  "gap": 0.5
+ },
+ {
+  "key": "orbi",
+  "text": "Losing the signal for a while is normal. What matters is picking up where you left off.",
+  "emo": 1.0,
+  "gap": 0.4
+ },
+ {
+  "key": "orbi2",
+  "text": "Orbi Transfer does that with your files. If the connection drops, the upload resumes, and only the missing parts are sent.",
+  "emo": 1.0,
+  "gap": 0.4
+ },
+ {
+  "key": "orbi3",
+  "text": "No account, no app.",
+  "emo": 1.05,
+  "gap": 0.4
+ },
+ {
+  "key": "end",
+  "text": "Orbi Transfer dot com.",
+  "emo": 1.0,
+  "gap": 0.6
+ }
+]

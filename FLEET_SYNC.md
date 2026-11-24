@@ -19,6 +19,13 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-24 Apollo 11 film (media/apollo-film, real Smithsonian CC0 scan, media/apollo-model/USE_THIS_MODEL.md). Defects found in preview and fixed:
+  plasma/heat glow blew frames to white (emission 3× too strong; atmosphere shell drawn on top of the capsule because transparent
+  objects sort after opaque → made it opaque-additive, renderOrder first); cameras 2–3× too close for 9:16; honeycomb section unreadable
+  (cut at cell walls → moved the clip to cell centres, flat section paint); "flipped" heard as "flicked" by Whisper → line reworded.
+  Verified: final WER 0.067, film-vs-photo pairs in apollo-film/source/check/side_by_side.jpg. Facts sourced in the README (Wikipedia;
+  NASA/Smithsonian hosts are blocked here). Open risk: Apollo 11's own entry speed is stated as "about 11 km/s" from Apollo 10's
+  record (11.08 km/s) and lunar-return entries; the mission report value could not be fetched.
 - 2026-11-23 (2) · DEFECT (owner: "Burj doesn't look like the actual Burj Khalifa; the Eiffel doesn't match the real tower"): cause = models
   built from memory, never measured against photos. FIX: reference photos via Openverse/Flickr (Wikimedia rate-limits this IP;
   Sketchfab CC-BY models need an account token — declined by the owner, so the procedural path was used). Burj: fat-Y plan with
