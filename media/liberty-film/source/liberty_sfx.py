@@ -22,7 +22,7 @@ def place(sig, t0, g=1.0, pan=0.0):
 def seg(a, b, fi=0.4, fo=0.4): return np.clip((T - a) / fi, 0, 1) * np.clip((b - T) / fo, 0, 1)
 def bed(x, g, w=0.012): out[0] += x * g; out[1] += np.roll(x, int(w * SR)) * g
 def noise(lo, hi): return filt(rng.standard_normal(N), lo, hi)
-outside = (T < at("rivets")) | ((T >= at("wind")))
+outside = (T < at("frame")) | (T >= at("flex"))                                     # harbour / city outside the statue
 bed(noise(60, 500) * 0.04 * outside, 1, 0.02)                                         # city rumble
 bed(noise(1500, 6000) * 0.006 * outside, 1, 0.011)                                   # far traffic hiss
 outdoor = ((T < at("skin")) | ((T >= at("hollow")) & (T < at("flex"))) | ((T >= at("sway")) & (T < at("hammer"))) | ((T >= at("brown")) & (T < at("protect"))) | (T >= at("orbi")))
