@@ -1,0 +1,96 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know the biggest telescope in space had to be folded up like origami, just to fit inside its rocket?",
+   "dur": 6.84,
+   "at": 0.35
+  },
+  {
+   "key": "this",
+   "text": "This is the James Webb Space Telescope, built from NASA's own 3D model.",
+   "dur": 5.04,
+   "at": 7.69
+  },
+  {
+   "key": "mirror",
+   "text": "Its mirror is six and a half metres wide. Eighteen hexagons of beryllium, coated in gold.",
+   "dur": 5.859,
+   "at": 13.18
+  },
+  {
+   "key": "why",
+   "text": "Gold reflects infrared light. And Webb sees in infrared, the faint heat glow of the first galaxies.",
+   "dur": 7.011,
+   "at": 19.49
+  },
+  {
+   "key": "cold",
+   "text": "But to see faint heat, the telescope itself must stay colder than minus two hundred and twenty degrees Celsius.",
+   "dur": 6.797,
+   "at": 26.95
+  },
+  {
+   "key": "shield",
+   "text": "So it hides behind a huge sunshield. Five layers, each about a tenth of a millimetre thick.",
+   "dur": 5.453,
+   "at": 34.2
+  },
+  {
+   "key": "launch",
+   "text": "On Christmas Day, twenty twenty-one, an Ariane five rocket launched it, folded tight.",
+   "dur": 6.072,
+   "at": 40.1
+  },
+  {
+   "key": "unfold",
+   "text": "Then, on the way, it unfolded itself. The sunshield, the mirror wings, piece by piece.",
+   "dur": 5.411,
+   "at": 46.62
+  },
+  {
+   "key": "risk",
+   "text": "Engineers counted three hundred and forty-four steps that each had to work. With no backup.",
+   "dur": 6.904,
+   "at": 52.48
+  },
+  {
+   "key": "far",
+   "text": "Today, it works about one and a half million kilometres from Earth. No astronaut can go there to repair it.",
+   "dur": 6.503,
+   "at": 59.84
+  },
+  {
+   "key": "align",
+   "text": "Each mirror segment is lined up to within fifty nanometres. More than a thousand times thinner than a hair.",
+   "dur": 7.224,
+   "at": 66.79
+  },
+  {
+   "key": "orbi",
+   "text": "Webb looks very far away. Orbi Transfer looks close by.",
+   "dur": 4.387,
+   "at": 74.46
+  },
+  {
+   "key": "orbi2",
+   "text": "Nearby shows files shared in your area, live, within about a second. Others only ever see the rough area.",
+   "dur": 7.544,
+   "at": 79.25
+  },
+  {
+   "key": "orbi3",
+   "text": "No account, no app.",
+   "dur": 1.635,
+   "at": 87.19
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com.",
+   "dur": 1.975,
+   "at": 89.23
+  }
+ ],
+ "duration": 93.6
+}

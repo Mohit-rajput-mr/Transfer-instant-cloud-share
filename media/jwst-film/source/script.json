@@ -1,0 +1,92 @@
+[
+ {
+  "key": "hook",
+  "text": "Do you know the biggest telescope in space had to be folded up like origami, just to fit inside its rocket?",
+  "emo": 1.1,
+  "gap": 0.5
+ },
+ {
+  "key": "this",
+  "text": "This is the James Webb Space Telescope, built from NASA's own 3D model.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "mirror",
+  "text": "Its mirror is six and a half metres wide. Eighteen hexagons of beryllium, coated in gold.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "why",
+  "text": "Gold reflects infrared light. And Webb sees in infrared, the faint heat glow of the first galaxies.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "cold",
+  "text": "But to see faint heat, the telescope itself must stay colder than minus two hundred and twenty degrees Celsius.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "shield",
+  "text": "So it hides behind a huge sunshield. Five layers, each about a tenth of a millimetre thick.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "launch",
+  "text": "On Christmas Day, twenty twenty-one, an Ariane five rocket launched it, folded tight.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "unfold",
+  "text": "Then, on the way, it unfolded itself. The sunshield, the mirror wings, piece by piece.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "risk",
+  "text": "Engineers counted three hundred and forty-four steps that each had to work. With no backup.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "far",
+  "text": "Today, it works about one and a half million kilometres from Earth. No astronaut can go there to repair it.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "align",
+  "text": "Each mirror segment is lined up to within fifty nanometres. More than a thousand times thinner than a hair.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "orbi",
+  "text": "Webb looks very far away. Orbi Transfer looks close by.",
+  "emo": 1.0,
+  "gap": 0.4
+ },
+ {
+  "key": "orbi2",
+  "text": "Nearby shows files shared in your area, live, within about a second. Others only ever see the rough area.",
+  "emo": 1.0,
+  "gap": 0.4
+ },
+ {
+  "key": "orbi3",
+  "text": "No account, no app.",
+  "emo": 1.05,
+  "gap": 0.4
+ },
+ {
+  "key": "end",
+  "text": "Orbi Transfer dot com.",
+  "emo": 1.0,
+  "gap": 0.6
+ }
+]

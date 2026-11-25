@@ -19,6 +19,12 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-25 Webb film (media/jwst-film; NASA's own model, "free and without copyright"; media/jwst-model). The model's named groups
+  (batwing1/2, shield, mid_booms) drive a simplified deployment (labelled). Fixed: mirror blown out (deeper gold, lower key),
+  Nearby phones invisible from above (stood upright, all at one x from consecutive reseeds → hash positions, laid flat). Defect:
+  overwrote vo/lines.json with estimated timings while vo.py was still running; it then died before the last line → regenerated
+  the last line and rebuilt timings from the real wav durations (vo.py keeps other lines' durations from lines.json when run for
+  a subset — never edit lines.json during a voice run). Verified: WER 0.068; frames vs NASA's own render in jwst-film/source/check.
 - 2026-11-25 Discovery film (media/sts-film; Smithsonian CC0 scan with its own markings; media/sts-model). Fixed in preview: hangar
   spotlights blew out the frame (9000 → 1400), plasma sheath covered the orbiter, tile tops read pink (heat glow too strong;
   real black coating), crush shot hidden by the press (press removed), glide-slope shot framed off the orbiter, a made-up code

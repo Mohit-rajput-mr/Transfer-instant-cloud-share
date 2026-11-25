@@ -1,0 +1,10 @@
+import { THREE, H } from "./kit/hd.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+const { V, look } = H; const scene = H.scene;
+const dl = new DRACOLoader(); dl.setDecoderPath("kit/lib/jsm/libs/draco/gltf/"); const ld = new GLTFLoader(); ld.setDRACOLoader(dl);
+const g = await ld.loadAsync("kit/models/jwst/jwst-nasa-A.glb"); scene.add(g.scene); g.scene.updateMatrixWorld(true);
+const tree = []; const walk = (o, d) => { if (d <= 3 && o.children.length) tree.push("  ".repeat(d) + (o.name || "?") + " [" + o.children.length + "]"); if (d < 3) o.children.forEach((c) => walk(c, d + 1)); }; walk(g.scene, 0); console.log("TREE\n" + tree.slice(0, 80).join("\n"));
+const agg = {}; g.scene.traverse((o) => { if (!o.isMesh) return; const b = new THREE.Box3().setFromObject(o); const c = b.getCenter(V()), s = b.getSize(V()); const k = o.material.name.replace("James_Webb_Space_Telescope:", ""); agg[k] = agg[k] || []; agg[k].push([c.x.toFixed(1), c.y.toFixed(1), c.z.toFixed(1), s.x.toFixed(1), s.y.toFixed(1), s.z.toFixed(1)].join(",")); });
+for (const k of ["mirror_blinn", "pinkmli", "silver_mli", "blk_mli", "mboom_boom_pinkmli", "omnimirror_blinn", "tower_blkmli_tubes", "sa_edge_gold1"]) console.log("MAT " + k + " " + (agg[k] || []).slice(0, 40).join(" | "));
+H.frame("", async () => look(V(30, 10, 30), V(0, 4, 0), 34)); await H.ready();
