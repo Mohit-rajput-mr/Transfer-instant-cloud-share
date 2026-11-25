@@ -1,0 +1,13 @@
+[
+ {"key": "hook", "text": "Do you know NASA crashed one of its best spacecraft into Saturn, on purpose?", "emo": 1.15, "gap": 0.5},
+ {"key": "this", "text": "This is Cassini, built from NASA's own 3D model. It studied Saturn for thirteen years.", "emo": 1.0, "gap": 0.45},
+ {"key": "ocean", "text": "It found something amazing. Enceladus, a small icy moon, sprays water into space, from an ocean under its ice.", "emo": 1.05, "gap": 0.45},
+ {"key": "risk", "text": "An ocean could mean life. And Cassini was running low on fuel. Left to drift, it could one day hit a moon like that, and bring germs from Earth.", "emo": 1.0, "gap": 0.5},
+ {"key": "dives", "text": "So for its grand finale, Cassini dove between Saturn and its rings, twenty-two times. No spacecraft had ever done that.", "emo": 1.05, "gap": 0.45},
+ {"key": "plunge", "text": "Then, on September fifteenth, twenty seventeen, it flew straight into Saturn, sending data until the very end.", "emo": 1.05, "gap": 0.5},
+ {"key": "signal", "text": "Its last signal took eighty-three minutes to reach Earth. By then, Cassini was already gone.", "emo": 1.0, "gap": 0.55},
+ {"key": "orbi", "text": "Sometimes the right thing is to make sure something is gone. Orbi Transfer lets you do that too.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi2", "text": "Destroy a file you sent, and it's gone for everyone, right away. Only the sender can do it.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi3", "text": "No account, no app.", "emo": 1.0, "gap": 0.35},
+ {"key": "end", "text": "Orbi Transfer dot com.", "emo": 1.0, "gap": 0.3}
+]

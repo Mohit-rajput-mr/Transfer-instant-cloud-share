@@ -19,6 +19,11 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-25 Cassini film (media/cassini-film; NASA's own "Cassini-Huygens (A)" model + a real backlit-Saturn photo, public domain;
+  media/cassini-model). New Orbi ending: the sender destroys a file (gone for everyone). Saturn and rings drawn at real radii and
+  Enceladus' jets are labelled illustrations (the real plume image hit Wikimedia 429). Fixed in preview: coarse jet particles,
+  the plunge shot without Saturn, the "Object destroyed" toast under the subtitles. Verified: WER 0.073, 32 MB / 71.2 s,
+  side-by-side vs NASA's model preview in cassini-film/source/check.
 - 2026-11-25 OSIRIS-REx film (media/osirisrex-film; NASA's own model + the real Bennu mosaic, public domain; media/osirisrex-model).
   New Orbi ending: Go private with the team. Model choices: NASA's own Bennu model (1999 RQ36, smooth pre-arrival radar shape) does
   not look like the real asteroid → real photo instead; the probe's sampler arm is merged into one stowed mesh → the touchdown is a
