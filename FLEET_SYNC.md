@@ -19,6 +19,11 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-25 Kepler film (media/kepler-film; NASA's own "Kepler (A)" model; media/kepler-model). New Orbi ending: the Filter (file
+  type / Wi-Fi / mine). Fixed in preview: blown-out star hid the transiting planet; a square halo edge around the star; wheel spin
+  was frame-accumulated (non-deterministic across workers) → driven by t. The voice said "balancing a pencil" but every take was
+  heard as "bouncing" → reworded ("a pencil standing on a fingertip"). Facts kept cautious: "more than 2,000 planets".
+  Verified: WER 0.081, 34 MB / 75.2 s, side-by-side vs NASA's model preview in kepler-film/source/check.
 - 2026-11-25 Cassini film (media/cassini-film; NASA's own "Cassini-Huygens (A)" model + a real backlit-Saturn photo, public domain;
   media/cassini-model). New Orbi ending: the sender destroys a file (gone for everyone). Saturn and rings drawn at real radii and
   Enceladus' jets are labelled illustrations (the real plume image hit Wikimedia 429). Fixed in preview: coarse jet particles,

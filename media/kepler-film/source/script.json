@@ -1,0 +1,14 @@
+[
+ {"key": "hook", "text": "Do you know NASA kept a broken space telescope working by balancing it on sunlight?", "emo": 1.15, "gap": 0.5},
+ {"key": "this", "text": "This is Kepler, built from NASA's own 3D model. It stared at about a hundred and fifty thousand stars at once.", "emo": 1.0, "gap": 0.45},
+ {"key": "dip", "text": "When a planet passes in front of its star, the star dims, just a tiny bit. That's how Kepler found more than two thousand planets.", "emo": 1.0, "gap": 0.45},
+ {"key": "wheels", "text": "To hold perfectly still, it needed three spinning wheels. It carried four.", "emo": 1.0, "gap": 0.45},
+ {"key": "fail", "text": "In May twenty thirteen, the second one failed. With only two, Kepler could not stay pointed.", "emo": 1.05, "gap": 0.5},
+ {"key": "idea", "text": "So engineers used something that was always there: the gentle push of sunlight.", "emo": 1.05, "gap": 0.45},
+ {"key": "balance", "text": "They turned Kepler so sunlight pressed evenly on both sides, like a pencil standing on a fingertip. Sunlight became the third wheel.", "emo": 1.05, "gap": 0.5},
+ {"key": "k2", "text": "The new mission kept finding planets for four more years, until the fuel ran out in twenty eighteen.", "emo": 1.0, "gap": 0.5},
+ {"key": "orbi", "text": "Kepler found planets by filtering out everything else. Orbi Transfer has a filter too.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi2", "text": "Show only photos, videos, documents, audio or archives. Or only what's on your Wi-Fi, or only yours.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi3", "text": "No account, no app.", "emo": 1.0, "gap": 0.35},
+ {"key": "end", "text": "Orbi Transfer dot com.", "emo": 1.0, "gap": 0.3}
+]

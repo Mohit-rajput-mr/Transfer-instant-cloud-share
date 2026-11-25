@@ -1,0 +1,78 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know NASA kept a broken space telescope working by balancing it on sunlight?",
+   "dur": 5.197,
+   "at": 0.35
+  },
+  {
+   "key": "this",
+   "text": "This is Kepler, built from NASA's own 3D model. It stared at about a hundred and fifty thousand stars at once.",
+   "dur": 7.565,
+   "at": 6.05
+  },
+  {
+   "key": "dip",
+   "text": "When a planet passes in front of its star, the star dims, just a tiny bit. That's how Kepler found more than two thousand planets.",
+   "dur": 7.992,
+   "at": 14.06
+  },
+  {
+   "key": "wheels",
+   "text": "To hold perfectly still, it needed three spinning wheels. It carried four.",
+   "dur": 5.155,
+   "at": 22.5
+  },
+  {
+   "key": "fail",
+   "text": "In May twenty thirteen, the second one failed. With only two, Kepler could not stay pointed.",
+   "dur": 7.011,
+   "at": 28.11
+  },
+  {
+   "key": "idea",
+   "text": "So engineers used something that was always there: the gentle push of sunlight.",
+   "dur": 4.451,
+   "at": 35.62
+  },
+  {
+   "key": "balance",
+   "text": "They turned Kepler so sunlight pressed evenly on both sides, like a pencil standing on a fingertip. Sunlight became the third wheel.",
+   "dur": 7.68,
+   "at": 40.52
+  },
+  {
+   "key": "k2",
+   "text": "The new mission kept finding planets for four more years, until the fuel ran out in twenty eighteen.",
+   "dur": 5.773,
+   "at": 48.7
+  },
+  {
+   "key": "orbi",
+   "text": "Kepler found planets by filtering out everything else. Orbi Transfer has a filter too.",
+   "dur": 4.835,
+   "at": 54.97
+  },
+  {
+   "key": "orbi2",
+   "text": "Show only photos, videos, documents, audio or archives. Or only what's on your Wi-Fi, or only yours.",
+   "dur": 8.615,
+   "at": 60.21
+  },
+  {
+   "key": "orbi3",
+   "text": "No account, no app.",
+   "dur": 1.549,
+   "at": 69.22
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com.",
+   "dur": 1.975,
+   "at": 71.12
+  }
+ ],
+ "duration": 75.2
+}
