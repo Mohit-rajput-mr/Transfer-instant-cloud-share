@@ -19,6 +19,12 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-25 OSIRIS-REx film (media/osirisrex-film; NASA's own model + the real Bennu mosaic, public domain; media/osirisrex-model).
+  New Orbi ending: Go private with the team. Model choices: NASA's own Bennu model (1999 RQ36, smooth pre-arrival radar shape) does
+  not look like the real asteroid → real photo instead; the probe's sampler arm is merged into one stowed mesh → the touchdown is a
+  labelled diagram (no arm built); the real SamCam touchdown GIF could not be downloaded (Wikimedia 429 on originals/GIF thumbs).
+  Fixed in preview: probe and fastener-ring framed too close; the passcode ran off the phone screen. Verified: WER 0.09, 36 MB /
+  80.1 s, side-by-side vs NASA's model preview in osirisrex-film/source/check.
 - 2026-11-25 MRO film (media/mro-film; NASA's own "MRO (C)" model + the real HiRISE Phoenix-descent image, public domain;
   media/mro-model). New Orbi ending: notes (links/emails/phones/codes tappable, Copy all). Fixed in preview: the photo shots were
   framed too close (blurry texture; the camera now shows the whole image, then the box, then the enlarged inset), the orbit view sat

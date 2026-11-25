@@ -1,0 +1,14 @@
+[
+ {"key": "hook", "text": "Do you know NASA touched an asteroid, and it almost swallowed the spacecraft?", "emo": 1.15, "gap": 0.5},
+ {"key": "this", "text": "This is OSIRIS-REx, built from NASA's own 3D model. In October twenty twenty, it reached down to the asteroid Bennu.", "emo": 1.0, "gap": 0.45},
+ {"key": "touch", "text": "Its arm touched the surface, and blew a puff of gas to stir up dust and pebbles into its collector.", "emo": 1.0, "gap": 0.45},
+ {"key": "sink", "text": "But the surface was barely held together. The arm sank almost half a metre, like punching into a ball pit.", "emo": 1.1, "gap": 0.45},
+ {"key": "thrust", "text": "About six seconds after contact, it fired its thrusters to back away. It was still sinking. Without them, it would have sunk right into Bennu.", "emo": 1.1, "gap": 0.5},
+ {"key": "home", "text": "In September twenty twenty-three, the sample capsule landed in the Utah desert.", "emo": 1.0, "gap": 0.45},
+ {"key": "stuck", "text": "Then two of the thirty-five fasteners on the sample head would not come off, with the tools allowed in the sealed glovebox.", "emo": 1.0, "gap": 0.45},
+ {"key": "tools", "text": "Engineers designed new tools. In January twenty twenty-four, the last of the sample was finally reached.", "emo": 1.05, "gap": 0.5},
+ {"key": "orbi", "text": "Some work needs a sealed room. On Orbi Transfer, one tap takes your team private.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi2", "text": "A private space with its own passcode. Everyone on your Wi-Fi gets a one-tap invite, and your tasks move with you.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi3", "text": "No account, no app.", "emo": 1.0, "gap": 0.35},
+ {"key": "end", "text": "Orbi Transfer dot com.", "emo": 1.0, "gap": 0.3}
+]
