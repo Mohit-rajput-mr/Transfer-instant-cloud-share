@@ -1,0 +1,84 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know NASA put a secret message on the parachute that landed on Mars?",
+   "dur": 4.515,
+   "at": 0.35
+  },
+  {
+   "key": "this",
+   "text": "This is the Perseverance rover, built from NASA's own 3D model. It landed in Jezero Crater on February eighteenth, twenty twenty-one.",
+   "dur": 10.509,
+   "at": 5.36
+  },
+  {
+   "key": "fast",
+   "text": "It hit the Martian air at about twenty thousand kilometres an hour. Seven minutes later, it had to be standing still on the ground.",
+   "dur": 8.205,
+   "at": 16.32
+  },
+  {
+   "key": "late",
+   "text": "Radio signals took about eleven minutes to reach Earth. So when we heard it had hit the air, it had already landed, or crashed.",
+   "dur": 7.651,
+   "at": 24.98
+  },
+  {
+   "key": "eyes",
+   "text": "So it landed itself. It photographed the ground below, and compared it with a map it carried, to steer away from danger.",
+   "dur": 8.12,
+   "at": 33.13
+  },
+  {
+   "key": "chute",
+   "text": "Its parachute was twenty-one metres across. And its orange and white stripes were a code.",
+   "dur": 5.948,
+   "at": 41.7
+  },
+  {
+   "key": "bits",
+   "text": "Each stripe is a bit, a one or a zero. Each group of bits is a number, and each number is a letter of the alphabet.",
+   "dur": 8.419,
+   "at": 48.1
+  },
+  {
+   "key": "words",
+   "text": "The rings spell Dare Mighty Things, the motto of NASA's Jet Propulsion Laboratory. The outer ring holds its coordinates.",
+   "dur": 7.48,
+   "at": 56.97
+  },
+  {
+   "key": "cracked",
+   "text": "Space fans cracked it in a few hours.",
+   "dur": 2.573,
+   "at": 64.9
+  },
+  {
+   "key": "orbi",
+   "text": "A code in plain sight isn't private. On Orbi Transfer, an anonymous space is never listed.",
+   "dur": 6.627,
+   "at": 68.02
+  },
+  {
+   "key": "orbi2",
+   "text": "To get in, you knock with its four letters. And someone inside has to let you in.",
+   "dur": 5.304,
+   "at": 75.05
+  },
+  {
+   "key": "orbi3",
+   "text": "No account, no app.",
+   "dur": 1.549,
+   "at": 80.75
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com.",
+   "dur": 1.975,
+   "at": 82.65
+  }
+ ],
+ "duration": 86.72
+}

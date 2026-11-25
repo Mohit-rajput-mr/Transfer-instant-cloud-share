@@ -19,6 +19,16 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-25 Perseverance film (media/perseverance-film; NASA's own model; media/perseverance-model). New Orbi ending: anonymous
+  spaces + knock. Defects fixed: the model's KHR_materials_transmission glass rendered the whole rover black (→ plain transparent);
+  copying a line range from another film cut a template string in half (NOISE) → syntax error (node --check the bundle before a
+  render); the planets in the delay diagram were off-frame; phone screens unreadable in a two-phone wide shot (→ one phone at a
+  time); a "Mast cameras" callout pointed at empty sky in the final frames (the model's mast is stowed) → callout removed and the
+  174 affected frames re-rendered. The hook voice line said "hid" but every take was heard as "hit" → reworded ("put").
+  Process: the parachute's exact stripe layout could not be verified and NASA's decoder image is on hosts this environment blocks →
+  the canopy is a labelled diagram of the idea ("not the real pattern"). Background jobs started in a foreground shell die at the
+  30-minute limit → always `setsid nohup` render/encode workers. Verified: WER 0.082 (+ a hallucinated credit line at the end),
+  39 MB / 86.7 s, side-by-side vs NASA's model preview in perseverance-film/source/check.
 - 2026-11-25 Parker Solar Probe film (media/parker-film; NASA's own model; media/parker-model). New Orbi ending: live viewers +
   live download counts. Fixed in preview: the Sun off-frame in the hook (camera now behind the probe so the shield silhouettes
   against it) and washing out the title; the "hot shield" shot was a blown-out white disc (Sun placed in front of the camera, key

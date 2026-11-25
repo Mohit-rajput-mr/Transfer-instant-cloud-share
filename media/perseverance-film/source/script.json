@@ -1,0 +1,80 @@
+[
+ {
+  "key": "hook",
+  "text": "Do you know NASA put a secret message on the parachute that landed on Mars?",
+  "emo": 1.1,
+  "gap": 0.5
+ },
+ {
+  "key": "this",
+  "text": "This is the Perseverance rover, built from NASA's own 3D model. It landed in Jezero Crater on February eighteenth, twenty twenty-one.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "fast",
+  "text": "It hit the Martian air at about twenty thousand kilometres an hour. Seven minutes later, it had to be standing still on the ground.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "late",
+  "text": "Radio signals took about eleven minutes to reach Earth. So when we heard it had hit the air, it had already landed, or crashed.",
+  "emo": 1.05,
+  "gap": 0.5
+ },
+ {
+  "key": "eyes",
+  "text": "So it landed itself. It photographed the ground below, and compared it with a map it carried, to steer away from danger.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "chute",
+  "text": "Its parachute was twenty-one metres across. And its orange and white stripes were a code.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "bits",
+  "text": "Each stripe is a bit, a one or a zero. Each group of bits is a number, and each number is a letter of the alphabet.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "words",
+  "text": "The rings spell Dare Mighty Things, the motto of NASA's Jet Propulsion Laboratory. The outer ring holds its coordinates.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "cracked",
+  "text": "Space fans cracked it in a few hours.",
+  "emo": 1.1,
+  "gap": 0.55
+ },
+ {
+  "key": "orbi",
+  "text": "A code in plain sight isn't private. On Orbi Transfer, an anonymous space is never listed.",
+  "emo": 1.0,
+  "gap": 0.4
+ },
+ {
+  "key": "orbi2",
+  "text": "To get in, you knock with its four letters. And someone inside has to let you in.",
+  "emo": 1.0,
+  "gap": 0.4
+ },
+ {
+  "key": "orbi3",
+  "text": "No account, no app.",
+  "emo": 1.0,
+  "gap": 0.35
+ },
+ {
+  "key": "end",
+  "text": "Orbi Transfer dot com.",
+  "emo": 1.0,
+  "gap": 0.3
+ }
+]
