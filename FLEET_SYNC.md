@@ -19,6 +19,12 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-25 Discovery film (media/sts-film; Smithsonian CC0 scan with its own markings; media/sts-model). Fixed in preview: hangar
+  spotlights blew out the frame (9000 → 1400), plasma sheath covered the orbiter, tile tops read pink (heat glow too strong;
+  real black coating), crush shot hidden by the press (press removed), glide-slope shot framed off the orbiter, a made-up code
+  format on the phones (now masked: the sender chooses the code). Verified: WER 0.103 (numbers as digits), side-by-sides in
+  sts-film/source/check. Process defect: `git ls-tree -l` on a blob-less clone downloaded ~1 GB of NASA models → killed and deleted;
+  fetch single files from raw.githubusercontent.com instead.
 - 2026-11-24 Bell X-1 film (media/x1-film; Smithsonian CC0 scan with its own paint, Draco; media/x1-model). Fixed in preview:
   rocket plumes invisible (shader read the radial axis after rotateX — use the cone axis), white-out haze over the desert backdrop,
   bullet comparison out of proportion (real .50 BMG ratio, side by side), Mach-cone shot framed off the aircraft, "No plane could"

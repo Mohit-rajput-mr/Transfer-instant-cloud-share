@@ -1,0 +1,102 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know the Space Shuttle came home from space with no engine running? It landed as a glider.",
+   "dur": 6.541,
+   "at": 0.35
+  },
+  {
+   "key": "real",
+   "text": "This is the real Discovery, laser scanned by the Smithsonian. It flew to space thirty-nine times. More than any other spacecraft.",
+   "dur": 9.101,
+   "at": 7.39
+  },
+  {
+   "key": "size",
+   "text": "Thirty-seven metres long, with wings almost twenty-four metres wide.",
+   "dur": 4.344,
+   "at": 16.94
+  },
+  {
+   "key": "heat",
+   "text": "Coming home, the heat outside reached one thousand six hundred and fifty degrees Celsius.",
+   "dur": 6.328,
+   "at": 21.74
+  },
+  {
+   "key": "alu",
+   "text": "But its aluminium body could not go above one hundred and seventy-five degrees.",
+   "dur": 4.988,
+   "at": 28.51
+  },
+  {
+   "key": "tiles",
+   "text": "So it wore twenty-four thousand tiles, made of silica, from almost pure quartz sand.",
+   "dur": 6.332,
+   "at": 33.95
+  },
+  {
+   "key": "crush",
+   "text": "They were so light and fragile, you could crush one with your hand.",
+   "dur": 5.863,
+   "at": 40.73
+  },
+  {
+   "key": "rcc",
+   "text": "The nose and the front edges of the wings got the worst of it. They were made of reinforced carbon-carbon.",
+   "dur": 6.179,
+   "at": 47.05
+  },
+  {
+   "key": "colour",
+   "text": "Black tiles underneath, where it was hottest. White on top, where it was cooler.",
+   "dur": 5.479,
+   "at": 53.68
+  },
+  {
+   "key": "glide",
+   "text": "Then, no power at all. On the final approach, it moved only about four and a half metres forward, for every metre it dropped.",
+   "dur": 7.591,
+   "at": 59.6
+  },
+  {
+   "key": "steep",
+   "text": "That's a steep dive for something the size of an airliner.",
+   "dur": 3.345,
+   "at": 67.65
+  },
+  {
+   "key": "orig",
+   "text": "After thirty-nine flights, about eighteen thousand of its tiles were still the originals.",
+   "dur": 5.795,
+   "at": 71.44
+  },
+  {
+   "key": "orbi",
+   "text": "Clever design makes hard things simple. Orbi Transfer does that for sharing files.",
+   "dur": 5.347,
+   "at": 77.69
+  },
+  {
+   "key": "orbi2",
+   "text": "Every file gets its own QR code. A friend scans it, types the code, and the file unlocks on their phone.",
+   "dur": 6.584,
+   "at": 83.43
+  },
+  {
+   "key": "orbi3",
+   "text": "No account, no app.",
+   "dur": 1.635,
+   "at": 90.42
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com.",
+   "dur": 1.975,
+   "at": 92.45
+  }
+ ],
+ "duration": 96.83
+}

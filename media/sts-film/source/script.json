@@ -1,0 +1,98 @@
+[
+ {
+  "key": "hook",
+  "text": "Do you know the Space Shuttle came home from space with no engine running? It landed as a glider.",
+  "emo": 1.1,
+  "gap": 0.5
+ },
+ {
+  "key": "real",
+  "text": "This is the real Discovery, laser scanned by the Smithsonian. It flew to space thirty-nine times. More than any other spacecraft.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "size",
+  "text": "Thirty-seven metres long, with wings almost twenty-four metres wide.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "heat",
+  "text": "Coming home, the heat outside reached one thousand six hundred and fifty degrees Celsius.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "alu",
+  "text": "But its aluminium body could not go above one hundred and seventy-five degrees.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "tiles",
+  "text": "So it wore twenty-four thousand tiles, made of silica, from almost pure quartz sand.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "crush",
+  "text": "They were so light and fragile, you could crush one with your hand.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "rcc",
+  "text": "The nose and the front edges of the wings got the worst of it. They were made of reinforced carbon-carbon.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "colour",
+  "text": "Black tiles underneath, where it was hottest. White on top, where it was cooler.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "glide",
+  "text": "Then, no power at all. On the final approach, it moved only about four and a half metres forward, for every metre it dropped.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "steep",
+  "text": "That's a steep dive for something the size of an airliner.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "orig",
+  "text": "After thirty-nine flights, about eighteen thousand of its tiles were still the originals.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "orbi",
+  "text": "Clever design makes hard things simple. Orbi Transfer does that for sharing files.",
+  "emo": 1.0,
+  "gap": 0.4
+ },
+ {
+  "key": "orbi2",
+  "text": "Every file gets its own QR code. A friend scans it, types the code, and the file unlocks on their phone.",
+  "emo": 1.0,
+  "gap": 0.4
+ },
+ {
+  "key": "orbi3",
+  "text": "No account, no app.",
+  "emo": 1.05,
+  "gap": 0.4
+ },
+ {
+  "key": "end",
+  "text": "Orbi Transfer dot com.",
+  "emo": 1.0,
+  "gap": 0.6
+ }
+]
