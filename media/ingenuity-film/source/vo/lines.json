@@ -1,0 +1,96 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know a piece of the Wright brothers' first airplane has flown on Mars?",
+   "dur": 5.24,
+   "at": 0.35
+  },
+  {
+   "key": "this",
+   "text": "This is Ingenuity, NASA's Mars helicopter, built from NASA's own 3D model. It weighs just one point eight kilograms.",
+   "dur": 8.888,
+   "at": 6.09
+  },
+  {
+   "key": "cloth",
+   "text": "Under its solar panel, NASA attached a small piece of wing cloth from the nineteen oh three Wright Flyer.",
+   "dur": 5.735,
+   "at": 15.43
+  },
+  {
+   "key": "air",
+   "text": "Flying on Mars is brutal. The air there is about a hundred times thinner than on Earth.",
+   "dur": 6.349,
+   "at": 21.61
+  },
+  {
+   "key": "high",
+   "text": "That's like air twenty-six kilometres up, higher than any helicopter on Earth has ever flown.",
+   "dur": 5.603,
+   "at": 28.41
+  },
+  {
+   "key": "rpm",
+   "text": "So its blades spin up to two thousand nine hundred times a minute. About ten times faster than on Earth.",
+   "dur": 6.797,
+   "at": 34.46
+  },
+  {
+   "key": "coax",
+   "text": "Two rotors, one above the other, spinning in opposite directions. Just like the Wright Flyer's two propellers.",
+   "dur": 7.057,
+   "at": 41.71
+  },
+  {
+   "key": "alone",
+   "text": "Radio signals take minutes to reach Mars, so nobody could fly it live. It flew itself.",
+   "dur": 6.2,
+   "at": 49.22
+  },
+  {
+   "key": "first",
+   "text": "April nineteenth, twenty twenty-one. It rose three metres, hovered for about forty seconds, and landed.",
+   "dur": 7.16,
+   "at": 55.87
+  },
+  {
+   "key": "field",
+   "text": "The first powered, controlled flight on another world. NASA named the spot Wright Brothers Field.",
+   "dur": 7.036,
+   "at": 63.53
+  },
+  {
+   "key": "more",
+   "text": "It was meant to fly five times. It flew seventy-two, until its blades broke in twenty twenty-four.",
+   "dur": 6.072,
+   "at": 71.02
+  },
+  {
+   "key": "orbi",
+   "text": "Ingenuity talked to Earth through its rover. Orbi Transfer tries the direct route first.",
+   "dur": 6.2,
+   "at": 77.54
+  },
+  {
+   "key": "orbi2",
+   "text": "Phone to phone, straight across. And if that can't connect, it falls back to storage.",
+   "dur": 5.709,
+   "at": 84.14
+  },
+  {
+   "key": "orbi3",
+   "text": "No account, no app.",
+   "dur": 1.635,
+   "at": 90.25
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com.",
+   "dur": 1.975,
+   "at": 92.28
+  }
+ ],
+ "duration": 96.66
+}

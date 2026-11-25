@@ -1,0 +1,17 @@
+[
+ {"key": "hook", "text": "Do you know a piece of the Wright brothers' first airplane has flown on Mars?", "emo": 1.1, "gap": 0.5},
+ {"key": "this", "text": "This is Ingenuity, NASA's Mars helicopter, built from NASA's own 3D model. It weighs just one point eight kilograms.", "emo": 1.0, "gap": 0.45},
+ {"key": "cloth", "text": "Under its solar panel, NASA attached a small piece of wing cloth from the nineteen oh three Wright Flyer.", "emo": 1.05, "gap": 0.45},
+ {"key": "air", "text": "Flying on Mars is brutal. The air there is about a hundred times thinner than on Earth.", "emo": 1.05, "gap": 0.45},
+ {"key": "high", "text": "That's like air twenty-six kilometres up, higher than any helicopter on Earth has ever flown.", "emo": 1.0, "gap": 0.45},
+ {"key": "rpm", "text": "So its blades spin up to two thousand nine hundred times a minute. About ten times faster than on Earth.", "emo": 1.05, "gap": 0.45},
+ {"key": "coax", "text": "Two rotors, one above the other, spinning in opposite directions. Just like the Wright Flyer's two propellers.", "emo": 1.0, "gap": 0.45},
+ {"key": "alone", "text": "Radio signals take minutes to reach Mars, so nobody could fly it live. It flew itself.", "emo": 1.0, "gap": 0.45},
+ {"key": "first", "text": "April nineteenth, twenty twenty-one. It rose three metres, hovered for about forty seconds, and landed.", "emo": 1.1, "gap": 0.5},
+ {"key": "field", "text": "The first powered, controlled flight on another world. NASA named the spot Wright Brothers Field.", "emo": 1.05, "gap": 0.45},
+ {"key": "more", "text": "It was meant to fly five times. It flew seventy-two, until its blades broke in twenty twenty-four.", "emo": 1.05, "gap": 0.45},
+ {"key": "orbi", "text": "Ingenuity talked to Earth through its rover. Orbi Transfer tries the direct route first.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi2", "text": "Phone to phone, straight across. And if that can't connect, it falls back to storage.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi3", "text": "No account, no app.", "emo": 1.05, "gap": 0.4},
+ {"key": "end", "text": "Orbi Transfer dot com.", "emo": 1.0, "gap": 0.6}
+]

@@ -1,0 +1,11 @@
+import { THREE, H } from "./kit/hd.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+const { V, look } = H; const scene = H.scene; H.cam.near = 0.01; H.cam.far = 200; H.cam.updateProjectionMatrix();
+const dl = new DRACOLoader(); dl.setDecoderPath("kit/lib/jsm/libs/draco/gltf/"); const ld = new GLTFLoader(); ld.setDRACOLoader(dl);
+const g = await ld.loadAsync("kit/models/ingenuity/ingenuity-nasa.glb"); scene.add(g.scene); g.scene.updateMatrixWorld(true);
+const box = new THREE.Box3().setFromObject(g.scene); console.log("box", JSON.stringify(box.min), JSON.stringify(box.max));
+g.scene.traverse((o) => { if (o.name && /rotor|solar|bus|leg/.test(o.name)) { const b = new THREE.Box3().setFromObject(o); console.log("node", o.name, o.type, JSON.stringify(b.getCenter(V())), JSON.stringify(b.getSize(V())), JSON.stringify(o.position), JSON.stringify(o.quaternion)); } });
+H.floor.position.y = box.min.y; H.key.position.set(3, 5, 4); H.key.intensity = 3; H.envK.value = 0.9; const C = box.getCenter(V()); const r = box.getSize(V()).length();
+const SH = [() => look(C.clone().add(V(0, r * 0.2, r * 1.6)), C, 34), () => look(C.clone().add(V(r * 1.1, r * 0.5, r * 1.1)), C, 34), () => look(C.clone().add(V(r * 1.6, 0, 0)), C, 34), () => look(C.clone().add(V(0.01, r * 1.8, 0.01)), C, 34), () => look(C.clone().add(V(r * 0.5, -r * 0.2, r * 0.6)), C.clone().add(V(0, -r * 0.15, 0)), 34)];
+H.frame("", async (t) => { SH[Math.max(0, Math.min(SH.length - 1, Math.floor(t)))](); }); await H.ready();

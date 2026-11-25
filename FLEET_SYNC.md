@@ -19,6 +19,12 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-25 Ingenuity film (media/ingenuity-film; NASA's own model, "free and without copyright"; media/ingenuity-model).
+  Rotors re-parented to spin in opposite directions; Wright Flyer cloth swatch placed under the solar panel. Process: the full
+  render ran while the voice of the next film was being made → render workers reniced to 19 (fine); the encode then shared the CPU
+  with a render + voice and took ~1 h. Verified: WER 0.113 (numbers as digits, "Orbi" heard as "or be"), 43 MB / 96.7 s 1080×1920,
+  side-by-side vs NASA's model preview in ingenuity-film/source/check. Open: a real-photo side-by-side (Wikimedia rate-limited the
+  container: API and Special:FilePath both answer 429 — retry later, one request per minute).
 - 2026-11-25 Webb film (media/jwst-film; NASA's own model, "free and without copyright"; media/jwst-model). The model's named groups
   (batwing1/2, shield, mid_booms) drive a simplified deployment (labelled). Fixed: mirror blown out (deeper gold, lower key),
   Nearby phones invisible from above (stood upright, all at one x from consecutive reseeds → hash positions, laid flat). Defect:
