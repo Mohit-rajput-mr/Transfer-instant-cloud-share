@@ -1,0 +1,72 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know some of the best pictures of Jupiter were made by people at home?",
+   "dur": 4.109,
+   "at": 0.35
+  },
+  {
+   "key": "this",
+   "text": "This is Juno, built from NASA's own 3D model. It reached Jupiter on July fourth, twenty sixteen.",
+   "dur": 6.755,
+   "at": 4.96
+  },
+  {
+   "key": "solar",
+   "text": "It runs on sunlight. Three arms about nine metres long, covered in more than eighteen thousand solar cells.",
+   "dur": 7.053,
+   "at": 12.16
+  },
+  {
+   "key": "weak",
+   "text": "That far from the Sun, all of them together make only about five hundred watts.",
+   "dur": 5.432,
+   "at": 19.67
+  },
+  {
+   "key": "vault",
+   "text": "Jupiter's radiation is brutal. So Juno's electronics sit in a titanium vault, with walls about a centimetre thick.",
+   "dur": 7.761,
+   "at": 25.55
+  },
+  {
+   "key": "cam",
+   "text": "And its camera, JunoCam, has a special job. NASA posts its raw images online, for anyone.",
+   "dur": 6.887,
+   "at": 33.81
+  },
+  {
+   "key": "public",
+   "text": "People around the world download them, and turn them into the pictures of Jupiter you've seen.",
+   "dur": 5.837,
+   "at": 41.15
+  },
+  {
+   "key": "orbi",
+   "text": "Making something together? Orbi Transfer has a board for that.",
+   "dur": 3.491,
+   "at": 47.48
+  },
+  {
+   "key": "orbi2",
+   "text": "Everyone posts notes to a bubble board, each person in their own colour. Change one, and everyone sees it marked as edited.",
+   "dur": 7.416,
+   "at": 51.38
+  },
+  {
+   "key": "orbi3",
+   "text": "No account, no app.",
+   "dur": 1.549,
+   "at": 59.19
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com.",
+   "dur": 1.975,
+   "at": 61.09
+  }
+ ],
+ "duration": 65.17
+}

@@ -1,0 +1,13 @@
+[
+ {"key": "hook", "text": "Do you know some of the best pictures of Jupiter were made by people at home?", "emo": 1.15, "gap": 0.5},
+ {"key": "this", "text": "This is Juno, built from NASA's own 3D model. It reached Jupiter on July fourth, twenty sixteen.", "emo": 1.0, "gap": 0.45},
+ {"key": "solar", "text": "It runs on sunlight. Three arms about nine metres long, covered in more than eighteen thousand solar cells.", "emo": 1.0, "gap": 0.45},
+ {"key": "weak", "text": "That far from the Sun, all of them together make only about five hundred watts.", "emo": 1.05, "gap": 0.45},
+ {"key": "vault", "text": "Jupiter's radiation is brutal. So Juno's electronics sit in a titanium vault, with walls about a centimetre thick.", "emo": 1.0, "gap": 0.5},
+ {"key": "cam", "text": "And its camera, JunoCam, has a special job. NASA posts its raw images online, for anyone.", "emo": 1.05, "gap": 0.45},
+ {"key": "public", "text": "People around the world download them, and turn them into the pictures of Jupiter you've seen.", "emo": 1.05, "gap": 0.5},
+ {"key": "orbi", "text": "Making something together? Orbi Transfer has a board for that.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi2", "text": "Everyone posts notes to a bubble board, each person in their own colour. Change one, and everyone sees it marked as edited.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi3", "text": "No account, no app.", "emo": 1.0, "gap": 0.35},
+ {"key": "end", "text": "Orbi Transfer dot com.", "emo": 1.0, "gap": 0.3}
+]

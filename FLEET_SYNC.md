@@ -19,6 +19,10 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-25 Juno film (media/juno-film; NASA's own "Juno (A)" model; media/juno-model). New Orbi ending: the bubble board
+  (own colour per person, "edited" mark). Hook uses a real JunoCam Great Red Spot image (NASA/JPL-Caltech/SwRI/MSSS, processed by
+  Gerald Eichstaedt & Sean Doran, public domain). Fixed: chat used real-sounding names -> generic Ana/Kai/Mia; VO retakes for
+  "this", "solar", "orbi", "end". Tested: Whisper WER 0.087 on the final MP4 (only "Orbi" misheard), side-by-side vs NASA preview.
 - 2026-11-25 Kepler film (media/kepler-film; NASA's own "Kepler (A)" model; media/kepler-model). New Orbi ending: the Filter (file
   type / Wi-Fi / mine). Fixed in preview: blown-out star hid the transiting planet; a square halo edge around the star; wheel spin
   was frame-accumulated (non-deterministic across workers) → driven by t. The voice said "balancing a pencil" but every take was
