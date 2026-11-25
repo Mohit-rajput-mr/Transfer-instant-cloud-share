@@ -19,6 +19,12 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-25 ISS film (media/iss-film; NASA's detailed "ISS (D) (IGOAL)" model, 96 MB; media/iss-model). New Orbi ending: the
+  task board. Fixed in preview: Earth backdrop washed out white (darker grade, turned to the ocean), orbit/water-loop shots
+  framed off. Defects: one render worker crashed ("Target crashed", heavy model) and rendered nothing — restarted on smaller
+  ranges; a `pkill -f render.cjs` meant for one film killed another film's workers — never pkill by script name while two films
+  render (kill by PID). Wikimedia Special:FilePath works with standard thumbnail widths (960) even when other widths get 429 →
+  real-photo side-by-side for the ISS. Verified: WER 0.10, 37 MB / 81.9 s, side-by-side vs a real NASA photo in iss-film/source/check.
 - 2026-11-25 Perseverance film (media/perseverance-film; NASA's own model; media/perseverance-model). New Orbi ending: anonymous
   spaces + knock. Defects fixed: the model's KHR_materials_transmission glass rendered the whole rover black (→ plain transparent);
   copying a line range from another film cut a template string in half (NOISE) → syntax error (node --check the bundle before a

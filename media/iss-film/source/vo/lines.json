@@ -1,0 +1,84 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know the astronauts on the space station drink water that used to be their own sweat and urine?",
+   "dur": 5.688,
+   "at": 0.35
+  },
+  {
+   "key": "this",
+   "text": "This is the International Space Station, built from NASA's own 3D model. People have lived on it without a break since November two thousand.",
+   "dur": 8.867,
+   "at": 6.54
+  },
+  {
+   "key": "orbit",
+   "text": "It circles the Earth every ninety minutes. The crew sees sixteen sunrises a day.",
+   "dur": 5.688,
+   "at": 15.85
+  },
+  {
+   "key": "water",
+   "text": "Every litre of water has to be launched from Earth. So almost none of it is thrown away.",
+   "dur": 5.496,
+   "at": 21.99
+  },
+  {
+   "key": "urine",
+   "text": "Urine is boiled at low pressure, and the steam is collected. What's left is a salty brine.",
+   "dur": 5.769,
+   "at": 27.94
+  },
+  {
+   "key": "brine",
+   "text": "A newer machine dries that brine with warm air, and pulls out the last of the water.",
+   "dur": 4.728,
+   "at": 34.16
+  },
+  {
+   "key": "clean",
+   "text": "Then everything is filtered, heated in a reactor, and given a little iodine. Sweat from the air goes in too.",
+   "dur": 6.797,
+   "at": 39.34
+  },
+  {
+   "key": "pct",
+   "text": "In twenty twenty-three, the station reached ninety-eight percent water recovery. Ninety-eight of every hundred litres comes back.",
+   "dur": 8.824,
+   "at": 46.58
+  },
+  {
+   "key": "team",
+   "text": "Fifteen countries, five space agencies, one crew. Every job has a name, and someone who owns it.",
+   "dur": 7.073,
+   "at": 55.91
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer gives your team that too. A task board.",
+   "dur": 3.683,
+   "at": 63.48
+  },
+  {
+   "key": "orbi2",
+   "text": "Name a task, assign it with an at sign, attach the files, and move it from in progress, to in review, to done.",
+   "dur": 7.928,
+   "at": 67.56
+  },
+  {
+   "key": "orbi3",
+   "text": "No account, no app.",
+   "dur": 1.549,
+   "at": 75.89
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com.",
+   "dur": 1.975,
+   "at": 77.79
+  }
+ ],
+ "duration": 81.87
+}

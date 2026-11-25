@@ -1,0 +1,15 @@
+[
+ {"key": "hook", "text": "Do you know the astronauts on the space station drink water that used to be their own sweat and urine?", "emo": 1.1, "gap": 0.5},
+ {"key": "this", "text": "This is the International Space Station, built from NASA's own 3D model. People have lived on it without a break since November two thousand.", "emo": 1.0, "gap": 0.45},
+ {"key": "orbit", "text": "It circles the Earth every ninety minutes. The crew sees sixteen sunrises a day.", "emo": 1.0, "gap": 0.45},
+ {"key": "water", "text": "Every litre of water has to be launched from Earth. So almost none of it is thrown away.", "emo": 1.0, "gap": 0.45},
+ {"key": "urine", "text": "Urine is boiled at low pressure, and the steam is collected. What's left is a salty brine.", "emo": 1.0, "gap": 0.45},
+ {"key": "brine", "text": "A newer machine dries that brine with warm air, and pulls out the last of the water.", "emo": 1.0, "gap": 0.45},
+ {"key": "clean", "text": "Then everything is filtered, heated in a reactor, and given a little iodine. Sweat from the air goes in too.", "emo": 1.0, "gap": 0.45},
+ {"key": "pct", "text": "In twenty twenty-three, the station reached ninety-eight percent water recovery. Ninety-eight of every hundred litres comes back.", "emo": 1.1, "gap": 0.5},
+ {"key": "team", "text": "Fifteen countries, five space agencies, one crew. Every job has a name, and someone who owns it.", "emo": 1.0, "gap": 0.5},
+ {"key": "orbi", "text": "Orbi Transfer gives your team that too. A task board.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi2", "text": "Name a task, assign it with an at sign, attach the files, and move it from in progress, to in review, to done.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi3", "text": "No account, no app.", "emo": 1.0, "gap": 0.35},
+ {"key": "end", "text": "Orbi Transfer dot com.", "emo": 1.0, "gap": 0.3}
+]
