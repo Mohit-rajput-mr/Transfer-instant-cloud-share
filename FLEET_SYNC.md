@@ -19,6 +19,14 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-25 Hubble film (media/hubble-film; NASA's own model, "free and without copyright"; media/hubble-model). Defects fixed:
+  GLB is Draco-compressed (needs DRACOLoader); the model's long axis is +y, not z (cutaway/inside rebuilt on that axis); Earth came
+  out white (clouds are in the texture's alpha channel, not red; day/fresnel/atmosphere toned down); callouts overlapped subtitles
+  (moved to y 1390); lock/washer framing. Process: the voice run hit the 1-hour background limit after 11 lines → ran the last 3
+  as a subset; subset mode kept the estimated durations, so lines.json was rebuilt from the real wav durations (85.43 s).
+  render.cjs skips frames that already exist: clear the still folder between preview rounds. Verified: WER 0.136 (all differences
+  are digits vs words), 38 MB / 85.4 s, side-by-side vs a real NASA photo (STS-125) in hubble-film/source/check.
+  Site defect seen (not fixed here): the passcode error reads "1 tries left" (Panels.tsx: `${e.left} tries left`, no singular).
 - 2026-11-25 Ingenuity film (media/ingenuity-film; NASA's own model, "free and without copyright"; media/ingenuity-model).
   Rotors re-parented to spin in opposite directions; Wright Flyer cloth swatch placed under the solar panel. Process: the full
   render ran while the voice of the next film was being made → render workers reniced to 19 (fine); the encode then shared the CPU

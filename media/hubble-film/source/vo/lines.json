@@ -1,0 +1,90 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know one ordinary metal washer left the most famous telescope ever built half blind?",
+   "dur": 5.389,
+   "at": 0.35
+  },
+  {
+   "key": "this",
+   "text": "This is the Hubble Space Telescope, built from NASA's own 3D model. Space Shuttle Discovery carried it up in April nineteen ninety.",
+   "dur": 9.123,
+   "at": 6.24
+  },
+  {
+   "key": "mirror",
+   "text": "Inside is a mirror two point four metres wide, polished smooth to about ten nanometres.",
+   "dur": 6.84,
+   "at": 15.81
+  },
+  {
+   "key": "blur",
+   "text": "But the first pictures came back blurry. Something was wrong.",
+   "dur": 3.299,
+   "at": 23.1
+  },
+  {
+   "key": "edge",
+   "text": "The edge of the mirror was too flat, by about two thousand two hundred nanometres. About one four-hundred-fiftieth of a millimetre.",
+   "dur": 7.757,
+   "at": 26.9
+  },
+  {
+   "key": "why",
+   "text": "Light from the edge focused in a different spot than light from the middle. It's called spherical aberration.",
+   "dur": 6.776,
+   "at": 35.11
+  },
+  {
+   "key": "washer",
+   "text": "The cause? A testing tool on the ground had one lens out of place, by one point three millimetres.",
+   "dur": 6.311,
+   "at": 42.33
+  },
+  {
+   "key": "gap",
+   "text": "A technician had seen a gap, and filled it with an ordinary metal washer.",
+   "dur": 4.451,
+   "at": 49.09
+  },
+  {
+   "key": "fix",
+   "text": "In December nineteen ninety-three, astronauts flew up and installed corrective optics. Glasses, for a telescope.",
+   "dur": 6.695,
+   "at": 54.05
+  },
+  {
+   "key": "sharp",
+   "text": "And the blur was gone. Hubble went on to measure how fast the universe is expanding.",
+   "dur": 5.031,
+   "at": 61.19
+  },
+  {
+   "key": "orbi",
+   "text": "One small error can wreck everything. Orbi Transfer never lets guesses pile up.",
+   "dur": 5.752,
+   "at": 66.67
+  },
+  {
+   "key": "orbi2",
+   "text": "Every file has its own passcode. Twelve wrong tries, and the file locks itself.",
+   "dur": 5.795,
+   "at": 72.82
+  },
+  {
+   "key": "orbi3",
+   "text": "No account, no app.",
+   "dur": 1.635,
+   "at": 79.02
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com.",
+   "dur": 1.975,
+   "at": 81.05
+  }
+ ],
+ "duration": 85.43
+}

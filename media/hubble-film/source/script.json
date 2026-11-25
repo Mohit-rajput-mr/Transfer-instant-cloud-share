@@ -1,0 +1,86 @@
+[
+ {
+  "key": "hook",
+  "text": "Do you know one ordinary metal washer left the most famous telescope ever built half blind?",
+  "emo": 1.1,
+  "gap": 0.5
+ },
+ {
+  "key": "this",
+  "text": "This is the Hubble Space Telescope, built from NASA's own 3D model. Space Shuttle Discovery carried it up in April nineteen ninety.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "mirror",
+  "text": "Inside is a mirror two point four metres wide, polished smooth to about ten nanometres.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "blur",
+  "text": "But the first pictures came back blurry. Something was wrong.",
+  "emo": 1.05,
+  "gap": 0.5
+ },
+ {
+  "key": "edge",
+  "text": "The edge of the mirror was too flat, by about two thousand two hundred nanometres. About one four-hundred-fiftieth of a millimetre.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "why",
+  "text": "Light from the edge focused in a different spot than light from the middle. It's called spherical aberration.",
+  "emo": 1.0,
+  "gap": 0.45
+ },
+ {
+  "key": "washer",
+  "text": "The cause? A testing tool on the ground had one lens out of place, by one point three millimetres.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "gap",
+  "text": "A technician had seen a gap, and filled it with an ordinary metal washer.",
+  "emo": 1.05,
+  "gap": 0.5
+ },
+ {
+  "key": "fix",
+  "text": "In December nineteen ninety-three, astronauts flew up and installed corrective optics. Glasses, for a telescope.",
+  "emo": 1.1,
+  "gap": 0.45
+ },
+ {
+  "key": "sharp",
+  "text": "And the blur was gone. Hubble went on to measure how fast the universe is expanding.",
+  "emo": 1.05,
+  "gap": 0.45
+ },
+ {
+  "key": "orbi",
+  "text": "One small error can wreck everything. Orbi Transfer never lets guesses pile up.",
+  "emo": 1.0,
+  "gap": 0.4
+ },
+ {
+  "key": "orbi2",
+  "text": "Every file has its own passcode. Twelve wrong tries, and the file locks itself.",
+  "emo": 1.05,
+  "gap": 0.4
+ },
+ {
+  "key": "orbi3",
+  "text": "No account, no app.",
+  "emo": 1.05,
+  "gap": 0.4
+ },
+ {
+  "key": "end",
+  "text": "Orbi Transfer dot com.",
+  "emo": 1.0,
+  "gap": 0.6
+ }
+]
