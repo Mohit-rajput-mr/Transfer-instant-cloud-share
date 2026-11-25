@@ -19,6 +19,14 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-25 Parker Solar Probe film (media/parker-film; NASA's own model; media/parker-model). New Orbi ending: live viewers +
+  live download counts. Fixed in preview: the Sun off-frame in the hook (camera now behind the probe so the shield silhouettes
+  against it) and washing out the title; the "hot shield" shot was a blown-out white disc (Sun placed in front of the camera, key
+  ×1.2) → Sun behind the camera, key ×0.35, radial orange glow; thermal view showed only cold (shield out of frame); a GLSL
+  `if (...) float x = …` without braces broke the shader. One voice line was heard as "Coast to the Sun" → reworded ("Near the
+  Sun") and re-recorded alone (subset mode kept the other durations; checked against the wav lengths). Verified: WER 0.135 (digits),
+  38 MB / 86.0 s, side-by-side vs NASA's model preview in parker-film/source/check. Open: real-photo side-by-sides for Parker and
+  Ingenuity (Wikimedia 429s; NASA image hosts are not allowed by this environment's network policy).
 - 2026-11-25 Voyager 1 film (media/voyager-film; NASA's own model "Voyager Probe (B)"; media/voyager-model). New Orbi ending: the
   Viewer (received files open in the browser; nothing downloaded unless asked). Fixed in preview: hook/X-ray/memory-map shots
   framed off the craft; wave-fronts edge-on (camera above the dish so the rings read); Earth beam invisible (rings faced away from

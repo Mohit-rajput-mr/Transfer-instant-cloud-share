@@ -1,0 +1,84 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Do you know the fastest thing humans have ever built is flying through the Sun's atmosphere?",
+   "dur": 6.179,
+   "at": 0.35
+  },
+  {
+   "key": "this",
+   "text": "This is NASA's Parker Solar Probe, built from NASA's own 3D model. It was the first NASA spacecraft named after a living person, Eugene Parker.",
+   "dur": 10.893,
+   "at": 7.03
+  },
+  {
+   "key": "close",
+   "text": "On December twenty-fourth, twenty twenty-four, it passed six point one million kilometres from the Sun's surface.",
+   "dur": 6.669,
+   "at": 18.37
+  },
+  {
+   "key": "speed",
+   "text": "It was moving at about six hundred and ninety thousand kilometres an hour. New York to Tokyo, in under a minute.",
+   "dur": 5.923,
+   "at": 25.49
+  },
+  {
+   "key": "hot",
+   "text": "Its heat shield is built to take about one thousand four hundred degrees Celsius.",
+   "dur": 5.18,
+   "at": 31.91
+  },
+  {
+   "key": "shield",
+   "text": "It's a sandwich. Two thin carbon skins around a foam core eleven centimetres thick. And that foam is ninety-seven percent air.",
+   "dur": 9.144,
+   "at": 37.54
+  },
+  {
+   "key": "cool",
+   "text": "Right behind it, the spacecraft stays at about thirty degrees. Like a summer day.",
+   "dur": 5.176,
+   "at": 47.14
+  },
+  {
+   "key": "alone",
+   "text": "Near the Sun, nobody on Earth can steer it. It keeps its shield pointed at the Sun all by itself.",
+   "dur": 5.837,
+   "at": 52.81
+  },
+  {
+   "key": "wait",
+   "text": "So after the closest pass, the team could only wait. On December twenty-sixth, a beacon came home. Parker was healthy.",
+   "dur": 7.245,
+   "at": 59.1
+  },
+  {
+   "key": "orbi",
+   "text": "Waiting to know if it arrived is the worst part. With Orbi Transfer, you see it live.",
+   "dur": 5.624,
+   "at": 66.9
+  },
+  {
+   "key": "orbi2",
+   "text": "A green dot for every person who has your file open right now. And every download, counted the moment it happens.",
+   "dur": 6.691,
+   "at": 72.92
+  },
+  {
+   "key": "orbi3",
+   "text": "No account, no app.",
+   "dur": 1.549,
+   "at": 80.01
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com.",
+   "dur": 1.975,
+   "at": 81.91
+  }
+ ],
+ "duration": 85.99
+}
