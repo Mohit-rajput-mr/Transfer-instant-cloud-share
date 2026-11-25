@@ -1,0 +1,72 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "This picture looks like a spacecraft falling into a giant crater on Mars. It isn't.",
+   "dur": 5.517,
+   "at": 0.35
+  },
+  {
+   "key": "what",
+   "text": "It's NASA's Phoenix lander, hanging under its parachute. The crater is about twenty kilometres behind it.",
+   "dur": 6.307,
+   "at": 6.37
+  },
+  {
+   "key": "this",
+   "text": "The photo was taken by this. NASA's Mars Reconnaissance Orbiter, built from NASA's own 3D model.",
+   "dur": 6.285,
+   "at": 13.12
+  },
+  {
+   "key": "cam",
+   "text": "Its camera, HiRISE, has a telescope mirror half a metre wide. From about three hundred kilometres up, each pixel covers about thirty centimetres of ground.",
+   "dur": 9.187,
+   "at": 19.86
+  },
+  {
+   "key": "shot",
+   "text": "On May twenty-fifth, two thousand eight, it was seven hundred and sixty kilometres away, moving at three point four kilometres a second. It turned, and caught Phoenix in the air.",
+   "dur": 11.0,
+   "at": 29.5
+  },
+  {
+   "key": "first",
+   "text": "It was the first time a spacecraft had photographed another one coming down onto a planet.",
+   "dur": 5.88,
+   "at": 40.95
+  },
+  {
+   "key": "tiny",
+   "text": "The crater is ten kilometres wide. The parachute is a few pixels. The whole story is in that tiny detail.",
+   "dur": 7.075,
+   "at": 47.33
+  },
+  {
+   "key": "orbi",
+   "text": "Orbi Transfer finds the small details for you.",
+   "dur": 3.085,
+   "at": 54.9
+  },
+  {
+   "key": "orbi2",
+   "text": "Send a note, and every link, email, phone number and code in it is ready to tap. Copy all, in one go.",
+   "dur": 8.355,
+   "at": 58.39
+  },
+  {
+   "key": "orbi3",
+   "text": "No account, no app.",
+   "dur": 1.549,
+   "at": 67.14
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com.",
+   "dur": 1.975,
+   "at": 69.04
+  }
+ ],
+ "duration": 73.11
+}

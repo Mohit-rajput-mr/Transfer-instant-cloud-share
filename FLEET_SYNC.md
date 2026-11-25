@@ -19,6 +19,12 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-25 MRO film (media/mro-film; NASA's own "MRO (C)" model + the real HiRISE Phoenix-descent image, public domain;
+  media/mro-model). New Orbi ending: notes (links/emails/phones/codes tappable, Copy all). Fixed in preview: the photo shots were
+  framed too close (blurry texture; the camera now shows the whole image, then the box, then the enlarged inset), the orbit view sat
+  over the white polar cap (planet turned to a mid-latitude), the note's "https:" was split as a label, the end tagline wrapped.
+  Verified: WER 0.165 (digits, "HiRISE" heard as "high-rise", "Orbi" as "Orbe"), 33 MB / 73.1 s, side-by-side vs NASA's model
+  preview in mro-film/source/check (the real HiRISE photo is in the film itself).
 - 2026-11-25 ISS film (media/iss-film; NASA's detailed "ISS (D) (IGOAL)" model, 96 MB; media/iss-model). New Orbi ending: the
   task board. Fixed in preview: Earth backdrop washed out white (darker grade, turned to the ocean), orbit/water-loop shots
   framed off. Defects: one render worker crashed ("Target crashed", heavy model) and rendered nothing — restarted on smaller

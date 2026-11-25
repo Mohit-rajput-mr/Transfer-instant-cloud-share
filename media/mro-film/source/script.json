@@ -1,0 +1,13 @@
+[
+ {"key": "hook", "text": "This picture looks like a spacecraft falling into a giant crater on Mars. It isn't.", "emo": 1.1, "gap": 0.5},
+ {"key": "what", "text": "It's NASA's Phoenix lander, hanging under its parachute. The crater is about twenty kilometres behind it.", "emo": 1.05, "gap": 0.45},
+ {"key": "this", "text": "The photo was taken by this. NASA's Mars Reconnaissance Orbiter, built from NASA's own 3D model.", "emo": 1.0, "gap": 0.45},
+ {"key": "cam", "text": "Its camera, HiRISE, has a telescope mirror half a metre wide. From about three hundred kilometres up, each pixel covers about thirty centimetres of ground.", "emo": 1.0, "gap": 0.45},
+ {"key": "shot", "text": "On May twenty-fifth, two thousand eight, it was seven hundred and sixty kilometres away, moving at three point four kilometres a second. It turned, and caught Phoenix in the air.", "emo": 1.05, "gap": 0.45},
+ {"key": "first", "text": "It was the first time a spacecraft had photographed another one coming down onto a planet.", "emo": 1.05, "gap": 0.5},
+ {"key": "tiny", "text": "The crater is ten kilometres wide. The parachute is a few pixels. The whole story is in that tiny detail.", "emo": 1.0, "gap": 0.5},
+ {"key": "orbi", "text": "Orbi Transfer finds the small details for you.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi2", "text": "Send a note, and every link, email, phone number and code in it is ready to tap. Copy all, in one go.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi3", "text": "No account, no app.", "emo": 1.0, "gap": 0.35},
+ {"key": "end", "text": "Orbi Transfer dot com.", "emo": 1.0, "gap": 0.3}
+]
