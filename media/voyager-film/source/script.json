@@ -1,0 +1,16 @@
+[
+ {"key": "hook", "text": "Last week, a message from Earth took one full day to reach Voyager 1. Nothing we have ever built is farther away.", "emo": 1.1, "gap": 0.5},
+ {"key": "this", "text": "This is Voyager 1, built from NASA's own 3D model. It launched in September nineteen seventy-seven, and it still talks to us.", "emo": 1.0, "gap": 0.45},
+ {"key": "dish", "text": "Its dish is three point seven metres wide. Its radio sends with about twenty-two watts.", "emo": 1.0, "gap": 0.45},
+ {"key": "far", "text": "Moving at the speed of light, its signal needs a whole day to get home. A question and its answer take two days.", "emo": 1.0, "gap": 0.5},
+ {"key": "gib", "text": "Then, in November twenty twenty-three, Voyager started sending nonsense.", "emo": 1.1, "gap": 0.45},
+ {"key": "chip", "text": "One memory chip in its flight data computer had failed. About three percent of that memory, gone.", "emo": 1.0, "gap": 0.45},
+ {"key": "cant", "text": "Nobody can fly out there and replace a chip. So the engineers decided to move the code.", "emo": 1.0, "gap": 0.45},
+ {"key": "pieces", "text": "No single free spot was big enough. So they cut the code into pieces, and stored each piece in a different place.", "emo": 1.0, "gap": 0.45},
+ {"key": "send", "text": "On April eighteenth, twenty twenty-four, they sent the first piece. Then they waited for the answer.", "emo": 1.0, "gap": 0.5},
+ {"key": "back", "text": "Two days later, Voyager made sense again, for the first time in five months.", "emo": 1.1, "gap": 0.55},
+ {"key": "orbi", "text": "Data you can't read is useless. Orbi Transfer opens what you receive, right away.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi2", "text": "PDF pages with real text you can copy, photos, video, Word, Excel and slides, all inside the browser.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi3", "text": "Nothing is downloaded unless you ask.", "emo": 1.0, "gap": 0.35},
+ {"key": "end", "text": "Orbi Transfer dot com.", "emo": 1.0, "gap": 0.3}
+]

@@ -19,6 +19,13 @@ Last updated: 2026-10-17 (2nd session: A–D done + deployed).
 Every agent, every task: root cause, fix the pattern everywhere, verify real behaviour, report honestly, keep this log.
 
 ## Defect log (running list — keep it current; newest first)
+- 2026-11-25 Voyager 1 film (media/voyager-film; NASA's own model "Voyager Probe (B)"; media/voyager-model). New Orbi ending: the
+  Viewer (received files open in the browser; nothing downloaded unless asked). Fixed in preview: hook/X-ray/memory-map shots
+  framed off the craft; wave-fronts edge-on (camera above the dish so the rings read); Earth beam invisible (rings faced away from
+  the camera). Process: wrote an estimated lines.json during a full voice run (safe only in full mode — vo.py rewrites it at the
+  end; never in subset mode). Callout anchors in still-mode can be one shot stale (camera matrix from the previous still) — not in
+  full renders. Verified: WER 0.111 (digits; "Moving" heard as "Looking"), 43 MB / 96.3 s, side-by-side vs a real NASA/JPL photo
+  (PIA21737) in voyager-film/source/check. Minor: the "High-gain dish" callout dot sits just off the dish rim in the dish shot.
 - 2026-11-25 Hubble film (media/hubble-film; NASA's own model, "free and without copyright"; media/hubble-model). Defects fixed:
   GLB is Draco-compressed (needs DRACOLoader); the model's long axis is +y, not z (cutaway/inside rebuilt on that axis); Earth came
   out white (clouds are in the texture's alpha channel, not red; day/fresnel/atmosphere toned down); callouts overlapped subtitles

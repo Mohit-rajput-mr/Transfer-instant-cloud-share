@@ -1,0 +1,90 @@
+{
+ "sr": 24000,
+ "lines": [
+  {
+   "key": "hook",
+   "text": "Last week, a message from Earth took one full day to reach Voyager 1. Nothing we have ever built is farther away.",
+   "dur": 8.909,
+   "at": 0.35
+  },
+  {
+   "key": "this",
+   "text": "This is Voyager 1, built from NASA's own 3D model. It launched in September nineteen seventy-seven, and it still talks to us.",
+   "dur": 9.251,
+   "at": 9.76
+  },
+  {
+   "key": "dish",
+   "text": "Its dish is three point seven metres wide. Its radio sends with about twenty-two watts.",
+   "dur": 5.432,
+   "at": 19.46
+  },
+  {
+   "key": "far",
+   "text": "Moving at the speed of light, its signal needs a whole day to get home. A question and its answer take two days.",
+   "dur": 8.376,
+   "at": 25.34
+  },
+  {
+   "key": "gib",
+   "text": "Then, in November twenty twenty-three, Voyager started sending nonsense.",
+   "dur": 5.005,
+   "at": 34.22
+  },
+  {
+   "key": "chip",
+   "text": "One memory chip in its flight data computer had failed. About three percent of that memory, gone.",
+   "dur": 6.029,
+   "at": 39.67
+  },
+  {
+   "key": "cant",
+   "text": "Nobody can fly out there and replace a chip. So the engineers decided to move the code.",
+   "dur": 5.453,
+   "at": 46.15
+  },
+  {
+   "key": "pieces",
+   "text": "No single free spot was big enough. So they cut the code into pieces, and stored each piece in a different place.",
+   "dur": 6.733,
+   "at": 52.06
+  },
+  {
+   "key": "send",
+   "text": "On April eighteenth, twenty twenty-four, they sent the first piece. Then they waited for the answer.",
+   "dur": 6.221,
+   "at": 59.24
+  },
+  {
+   "key": "back",
+   "text": "Two days later, Voyager made sense again, for the first time in five months.",
+   "dur": 5.308,
+   "at": 65.96
+  },
+  {
+   "key": "orbi",
+   "text": "Data you can't read is useless. Orbi Transfer opens what you receive, right away.",
+   "dur": 7.907,
+   "at": 71.82
+  },
+  {
+   "key": "orbi2",
+   "text": "PDF pages with real text you can copy, photos, video, Word, Excel and slides, all inside the browser.",
+   "dur": 8.72,
+   "at": 80.13
+  },
+  {
+   "key": "orbi3",
+   "text": "Nothing is downloaded unless you ask.",
+   "dur": 2.637,
+   "at": 89.25
+  },
+  {
+   "key": "end",
+   "text": "Orbi Transfer dot com.",
+   "dur": 1.975,
+   "at": 92.23
+  }
+ ],
+ "duration": 96.31
+}
