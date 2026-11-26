@@ -1,0 +1,14 @@
+[
+ {"key": "hook", "text": "Do you know NASA built a mirror so smooth that, if Earth were that smooth, its tallest mountain would be less than two metres high?", "emo": 1.15, "gap": 0.5},
+ {"key": "this", "text": "It's inside this. Chandra, built from NASA's own 3D model. It sees the sky in X-rays.", "emo": 1.0, "gap": 0.45},
+ {"key": "skip", "text": "X-rays don't bounce off a normal mirror. They only skip off at a shallow angle, like a stone on water.", "emo": 1.0, "gap": 0.45},
+ {"key": "nest", "text": "So Chandra has four pairs of long, barrel-shaped mirrors, nested one inside the other.", "emo": 1.0, "gap": 0.45},
+ {"key": "sharp", "text": "It's sharp enough to read a stop sign about twenty kilometres away.", "emo": 1.05, "gap": 0.5},
+ {"key": "launch", "text": "In July nineteen ninety-nine, Space Shuttle Columbia carried it up. The heaviest cargo a shuttle ever launched.", "emo": 1.0, "gap": 0.5},
+ {"key": "crab", "text": "Here's what it sees. This is the Crab Nebula, what's left of a star that exploded almost a thousand years ago.", "emo": 1.0, "gap": 0.45},
+ {"key": "xray", "text": "In X-rays, it looks completely different. At its heart, a dead star spinning thirty times a second.", "emo": 1.1, "gap": 0.5},
+ {"key": "orbi", "text": "Same thing, a different look. Orbi Transfer lets you change the look too.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi2", "text": "Pick one of forty-seven styles for your files, from gold and marble to toy bricks, and five colour schemes.", "emo": 1.0, "gap": 0.4},
+ {"key": "orbi3", "text": "No account, no app.", "emo": 1.0, "gap": 0.35},
+ {"key": "end", "text": "Orbi Transfer dot com.", "emo": 1.0, "gap": 0.3}
+]
